@@ -5,12 +5,23 @@ from sqlalchemy.orm import Session
 
 from app.database import Base, SessionLocal, engine
 from app.models import Lead
+from typing import Literal
 
 
 app = FastAPI(title="Fenato Business Automation API")
 
 Base.metadata.create_all(bind=engine)
 
+
+class LeadUpdate(BaseModel):
+    status: Literal[
+        "new",
+        "contacted",
+        "qualified",
+        "proposal",
+        "won",
+        "lost",
+    ]
 
 class LeadCreate(BaseModel):
     name: str
@@ -26,6 +37,27 @@ def get_db():
         yield db
     finally:
         db.close()
+
+@app.patch("/leads/{lead_id}")
+def update_lead(
+    lead_id: int,
+    data: LeadUpdate,
+    db: Session = Depends(get_db),
+):
+    lead = db.get(Lead, lead_id)
+
+    if lead is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Lead not found",
+        )
+
+    lead.status = data.status
+
+    db.commit()
+    db.refresh(lead)
+
+    return lead        
 
 
 @app.get("/")
