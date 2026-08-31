@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -58,3 +58,19 @@ def list_leads(db: Session = Depends(get_db)):
     return db.scalars(
         select(Lead).order_by(Lead.id)
     ).all()
+
+
+@app.get("/leads/{lead_id}")
+def get_lead(
+    lead_id: int,
+    db: Session = Depends(get_db),
+):
+    lead = db.get(Lead, lead_id)
+
+    if lead is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Lead not found",
+        )
+
+    return lead
