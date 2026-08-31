@@ -3,14 +3,13 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.database import Base, SessionLocal, engine
+from app.database import SessionLocal
 from app.models import Lead
 from typing import Literal
 
 
 app = FastAPI(title="Fenato Business Automation API")
 
-Base.metadata.create_all(bind=engine)
 
 
 class LeadUpdate(BaseModel):
