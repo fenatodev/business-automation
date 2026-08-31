@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends
 from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import Base, SessionLocal, engine
@@ -53,7 +54,7 @@ def create_lead(
 
 
 @app.get("/leads")
-def list_leads(
-    db: Session = Depends(get_db),
-):
-    return db.query(Lead).all()
+def list_leads(db: Session = Depends(get_db)):
+    return db.scalars(
+        select(Lead).order_by(Lead.id)
+    ).all()
