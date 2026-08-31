@@ -1,7 +1,14 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from app.database import Base, SessionLocal, engine
+from app.models import Lead
+
 
 app = FastAPI(title="Fenato Business Automation API")
+
+Base.metadata.create_all(bind=engine)
 
 
 class LeadCreate(BaseModel):
@@ -11,7 +18,13 @@ class LeadCreate(BaseModel):
     interest: str | None = None
 
 
-leads = []
+def get_db():
+    db = SessionLocal()
+
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 @app.get("/")
@@ -20,18 +33,27 @@ def root():
 
 
 @app.post("/leads")
-def create_lead(lead: LeadCreate):
-    new_lead = {
-        "id": len(leads) + 1,
-        **lead.model_dump(),
-        "status": "new",
-    }
+def create_lead(
+    lead: LeadCreate,
+    db: Session = Depends(get_db),
+):
+    new_lead = Lead(
+        name=lead.name,
+        phone=lead.phone,
+        source=lead.source,
+        interest=lead.interest,
+        status="new",
+    )
 
-    leads.append(new_lead)
+    db.add(new_lead)
+    db.commit()
+    db.refresh(new_lead)
 
     return new_lead
 
 
 @app.get("/leads")
-def list_leads():
-    return leads
+def list_leads(
+    db: Session = Depends(get_db),
+):
+    return db.query(Lead).all()
