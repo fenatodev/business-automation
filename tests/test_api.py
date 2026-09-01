@@ -1,3 +1,6 @@
+from app.services.agent import AgentServiceError
+
+
 def create_company(client, name="Acme", slug="acme"):
     response = client.post(
         "/companies",
@@ -227,3 +230,77 @@ def test_agent_reply_persists_customer_and_agent_messages(client, monkeypatch):
     assert messages[0]["content"] == "Ola"
     assert messages[1]["sender_type"] == "agent"
     assert messages[1]["content"] == "Resposta do agente"
+
+
+def test_agent_reply_keeps_customer_message_when_agent_service_fails(
+    client,
+    monkeypatch,
+):
+    company = create_company(client)
+    lead = create_lead(client, company["id"])
+    conversation = create_conversation(
+        client,
+        company_id=company["id"],
+        lead_id=lead["id"],
+    )
+
+    def fake_generate_agent_reply(message, history):
+        raise AgentServiceError("Ollama unavailable")
+
+    monkeypatch.setattr(
+        "app.main.generate_agent_reply",
+        fake_generate_agent_reply,
+    )
+
+    response = client.post(
+        f"/conversations/{conversation['id']}/agent-reply",
+        json={"content": "Ola"},
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Agent service unavailable"}
+
+    messages_response = client.get(f"/conversations/{conversation['id']}/messages")
+
+    assert messages_response.status_code == 200
+    messages = messages_response.json()
+    assert len(messages) == 1
+    assert messages[0]["sender_type"] == "customer"
+    assert messages[0]["content"] == "Ola"
+    assert not any(message["sender_type"] == "agent" for message in messages)
+
+
+def test_agent_reply_does_not_expose_internal_agent_error_details(
+    client,
+    monkeypatch,
+):
+    company = create_company(client)
+    lead = create_lead(client, company["id"])
+    conversation = create_conversation(
+        client,
+        company_id=company["id"],
+        lead_id=lead["id"],
+    )
+
+    def fake_generate_agent_reply(message, history):
+        raise AgentServiceError(
+            "Connection refused http://localhost:11434/api/chat qwen3:8b"
+        )
+
+    monkeypatch.setattr(
+        "app.main.generate_agent_reply",
+        fake_generate_agent_reply,
+    )
+
+    response = client.post(
+        f"/conversations/{conversation['id']}/agent-reply",
+        json={"content": "Ola"},
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Agent service unavailable"}
+
+    response_body = response.text
+    assert "Connection refused" not in response_body
+    assert "http://localhost:11434/api/chat" not in response_body
+    assert "qwen3:8b" not in response_body

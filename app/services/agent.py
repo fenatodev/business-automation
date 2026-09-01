@@ -3,6 +3,10 @@ import httpx
 from app.database import settings
 
 
+class AgentServiceError(RuntimeError):
+    pass
+
+
 def generate_agent_reply(
     message: str,
     history: list[dict],
@@ -47,18 +51,28 @@ def generate_agent_reply(
         }
     )
 
-    response = httpx.post(
-        f"{settings.ollama_url}/api/chat",
-        json={
-            "model": settings.ollama_model,
-            "messages": messages,
-            "stream": False,
-        },
-        timeout=120,
-    )
+    try:
+        response = httpx.post(
+            f"{settings.ollama_url}/api/chat",
+            json={
+                "model": settings.ollama_model,
+                "messages": messages,
+                "stream": False,
+            },
+            timeout=120,
+        )
 
-    response.raise_for_status()
+        response.raise_for_status()
+    except httpx.HTTPError as exc:
+        raise AgentServiceError("Ollama request failed") from exc
 
-    data = response.json()
+    try:
+        data = response.json()
+        content = data["message"]["content"]
+    except (ValueError, KeyError, TypeError) as exc:
+        raise AgentServiceError("Invalid Ollama response") from exc
 
-    return data["message"]["content"]
+    if not isinstance(content, str):
+        raise AgentServiceError("Invalid Ollama response")
+
+    return content

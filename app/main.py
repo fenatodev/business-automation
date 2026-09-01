@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.models import Company, Conversation, Customer, Lead, Message
-from app.services.agent import generate_agent_reply
+from app.services.agent import AgentServiceError, generate_agent_reply
 
 
 app = FastAPI(
@@ -132,18 +132,27 @@ def agent_reply(
         for item in history_messages
     ]
 
-    # Gera resposta usando Ollama/Qwen
-    response = generate_agent_reply(
-        message=data.content,
-        history=history,
-    )
-
-    # Salva mensagem recebida
+    # Salva mensagem recebida antes de chamar o Ollama
     customer_message = Message(
         conversation_id=conversation_id,
         sender_type="customer",
         content=data.content,
     )
+
+    db.add(customer_message)
+    db.commit()
+
+    # Gera resposta usando Ollama/Qwen
+    try:
+        response = generate_agent_reply(
+            message=data.content,
+            history=history,
+        )
+    except AgentServiceError:
+        raise HTTPException(
+            status_code=503,
+            detail="Agent service unavailable",
+        )
 
     # Salva resposta do agente
     agent_message = Message(
@@ -152,7 +161,6 @@ def agent_reply(
         content=response,
     )
 
-    db.add(customer_message)
     db.add(agent_message)
     db.commit()
 
