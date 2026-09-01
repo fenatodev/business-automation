@@ -10,6 +10,7 @@ __pycache__/
 # IDE
 .vscode/
 .idea/
+.ai/
 
 # OS
 .DS_Store
