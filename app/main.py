@@ -1,12 +1,18 @@
-from typing import Literal
-
 from fastapi import Depends, FastAPI, HTTPException
-from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.models import Company, Conversation, Customer, Lead, Message
+from app.schemas import (
+    AgentRequest,
+    CompanyCreate,
+    ConversationCreate,
+    CustomerCreate,
+    LeadCreate,
+    LeadUpdate,
+    MessageCreate,
+)
 from app.services.agent import AgentServiceError, generate_agent_reply
 
 
@@ -14,68 +20,6 @@ app = FastAPI(
     title="Fenato Business Automation API",
     version="0.1.0",
 )
-
-
-# =========================================================
-# SCHEMAS
-# =========================================================
-
-class LeadCreate(BaseModel):
-    company_id: int
-    name: str
-    phone: str
-    source: str
-    interest: str | None = None
-
-
-class AgentRequest(BaseModel):
-    content: str    
-
-
-class ConversationCreate(BaseModel):
-    company_id: int
-    channel: Literal[
-        "whatsapp",
-        "instagram",
-        "web",
-        "telegram",
-        "email",
-    ]
-    lead_id: int | None = None
-    customer_id: int | None = None
-
-
-class MessageCreate(BaseModel):
-    sender_type: Literal[
-        "customer",
-        "agent",
-        "human",
-        "system",
-    ]
-    content: str        
-
-
-class CustomerCreate(BaseModel):
-    company_id: int
-    name: str
-    phone: str
-    email: str | None = None    
-
-
-class LeadUpdate(BaseModel):
-    status: Literal[
-        "new",
-        "contacted",
-        "qualified",
-        "proposal",
-        "won",
-        "lost",
-    ]
-
-
-class CompanyCreate(BaseModel):
-    name: str
-    slug: str
 
 
 # =========================================================
