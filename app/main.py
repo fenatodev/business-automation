@@ -5,12 +5,11 @@ from sqlalchemy.orm import Session
 from app.dependencies import get_db
 from app.models import Company, Conversation, Customer, Lead, Message
 from app.routers.companies import router as companies_router
+from app.routers.leads import router as leads_router
 from app.schemas import (
     AgentRequest,
     ConversationCreate,
     CustomerCreate,
-    LeadCreate,
-    LeadUpdate,
     MessageCreate,
 )
 from app.services.agent import AgentServiceError, generate_agent_reply
@@ -22,6 +21,7 @@ app = FastAPI(
 )
 
 app.include_router(companies_router)
+app.include_router(leads_router)
 
 
 # =========================================================
@@ -299,107 +299,3 @@ def convert_lead_to_customer(
     db.refresh(customer)
 
     return customer
-
-
-# =========================================================
-# LEADS
-# =========================================================
-
-@app.post("/leads")
-def create_lead(
-    lead: LeadCreate,
-    db: Session = Depends(get_db),
-):
-    company = db.get(Company, lead.company_id)
-
-    if company is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Company not found",
-        )
-
-    new_lead = Lead(
-        company_id=lead.company_id,
-        name=lead.name,
-        phone=lead.phone,
-        source=lead.source,
-        interest=lead.interest,
-        status="new",
-    )
-
-    db.add(new_lead)
-    db.commit()
-    db.refresh(new_lead)
-
-    return new_lead
-
-
-@app.get("/leads")
-def list_leads(
-    db: Session = Depends(get_db),
-):
-    return db.scalars(
-        select(Lead).order_by(Lead.id)
-    ).all()
-
-
-@app.get("/leads/{lead_id}")
-def get_lead(
-    lead_id: int,
-    db: Session = Depends(get_db),
-):
-    lead = db.get(Lead, lead_id)
-
-    if lead is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Lead not found",
-        )
-
-    return lead
-
-
-@app.patch("/leads/{lead_id}")
-def update_lead(
-    lead_id: int,
-    data: LeadUpdate,
-    db: Session = Depends(get_db),
-):
-    lead = db.get(Lead, lead_id)
-
-    if lead is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Lead not found",
-        )
-
-    lead.status = data.status
-
-    db.commit()
-    db.refresh(lead)
-
-    return lead
-
-
-# =========================================================
-# COMPANY LEADS
-# =========================================================
-
-@app.get("/companies/{company_id}/leads")
-def list_company_leads(
-    company_id: int,
-    db: Session = Depends(get_db),
-):
-    company = db.get(Company, company_id)
-
-    if company is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Company not found",
-        )
-
-    return db.scalars(
-        select(Lead)
-        .where(Lead.company_id == company_id)
-        .order_by(Lead.id)
-    ).all()
