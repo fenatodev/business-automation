@@ -4,9 +4,9 @@ from sqlalchemy.orm import Session
 
 from app.dependencies import get_db
 from app.models import Company, Conversation, Customer, Lead, Message
+from app.routers.companies import router as companies_router
 from app.schemas import (
     AgentRequest,
-    CompanyCreate,
     ConversationCreate,
     CustomerCreate,
     LeadCreate,
@@ -20,6 +20,8 @@ app = FastAPI(
     title="Fenato Business Automation API",
     version="0.1.0",
 )
+
+app.include_router(companies_router)
 
 
 # =========================================================
@@ -221,42 +223,6 @@ def list_messages(
         select(Message)
         .where(Message.conversation_id == conversation_id)
         .order_by(Message.id)
-    ).all()
-
-
-@app.post("/companies")
-def create_company(
-    company: CompanyCreate,
-    db: Session = Depends(get_db),
-):
-    existing = db.scalar(
-        select(Company).where(Company.slug == company.slug)
-    )
-
-    if existing:
-        raise HTTPException(
-            status_code=409,
-            detail="Company slug already exists",
-        )
-
-    new_company = Company(
-        name=company.name,
-        slug=company.slug,
-    )
-
-    db.add(new_company)
-    db.commit()
-    db.refresh(new_company)
-
-    return new_company
-
-
-@app.get("/companies")
-def list_companies(
-    db: Session = Depends(get_db),
-):
-    return db.scalars(
-        select(Company).order_by(Company.id)
     ).all()
 
 
