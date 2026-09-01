@@ -19,6 +19,42 @@ def list_customers(
     ).all()
 
 
+@router.get("/customers/{customer_id}")
+def get_customer(
+    customer_id: int,
+    db: Session = Depends(get_db),
+):
+    customer = db.get(Customer, customer_id)
+
+    if customer is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Customer not found",
+        )
+
+    return customer
+
+
+@router.get("/companies/{company_id}/customers")
+def list_company_customers(
+    company_id: int,
+    db: Session = Depends(get_db),
+):
+    company = db.get(Company, company_id)
+
+    if company is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Company not found",
+        )
+
+    return db.scalars(
+        select(Customer)
+        .where(Customer.company_id == company_id)
+        .order_by(Customer.id)
+    ).all()
+
+
 @router.post("/customers")
 def create_customer(
     customer: CustomerCreate,

@@ -78,6 +78,42 @@ def agent_reply(
     }
 
 
+@router.get("/conversations/{conversation_id}")
+def get_conversation(
+    conversation_id: int,
+    db: Session = Depends(get_db),
+):
+    conversation = db.get(Conversation, conversation_id)
+
+    if conversation is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Conversation not found",
+        )
+
+    return conversation
+
+
+@router.get("/companies/{company_id}/conversations")
+def list_company_conversations(
+    company_id: int,
+    db: Session = Depends(get_db),
+):
+    company = db.get(Company, company_id)
+
+    if company is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Company not found",
+        )
+
+    return db.scalars(
+        select(Conversation)
+        .where(Conversation.company_id == company_id)
+        .order_by(Conversation.id)
+    ).all()
+
+
 @router.post("/conversations")
 def create_conversation(
     data: ConversationCreate,

@@ -125,6 +125,25 @@ def test_create_lead_with_missing_company_returns_404(client):
     assert response.json()["detail"] == "Company not found"
 
 
+def test_get_and_list_company_customers(client):
+    company = create_company(client, name="Company 1", slug="company-1")
+    other_company = create_company(client, name="Company 2", slug="company-2")
+    customer = create_customer(client, company["id"], name="Joao")
+    create_customer(client, other_company["id"], name="Ana")
+
+    get_response = client.get(f"/customers/{customer['id']}")
+
+    assert get_response.status_code == 200
+    assert get_response.json()["id"] == customer["id"]
+
+    list_response = client.get(f"/companies/{company['id']}/customers")
+
+    assert list_response.status_code == 200
+    customers = list_response.json()
+    assert len(customers) == 1
+    assert customers[0]["id"] == customer["id"]
+
+
 def test_create_conversation_rules(client):
     company = create_company(client, name="Company 1", slug="company-1")
     other_company = create_company(client, name="Company 2", slug="company-2")
@@ -189,6 +208,35 @@ def test_create_conversation_rules(client):
     assert data["lead_id"] == lead["id"]
     assert data["customer_id"] is None
     assert data["status"] == "open"
+
+
+def test_get_and_list_company_conversations(client):
+    company = create_company(client, name="Company 1", slug="company-1")
+    other_company = create_company(client, name="Company 2", slug="company-2")
+    lead = create_lead(client, company["id"], name="Maria")
+    other_lead = create_lead(client, other_company["id"], name="Ana")
+    conversation = create_conversation(
+        client,
+        company_id=company["id"],
+        lead_id=lead["id"],
+    )
+    create_conversation(
+        client,
+        company_id=other_company["id"],
+        lead_id=other_lead["id"],
+    )
+
+    get_response = client.get(f"/conversations/{conversation['id']}")
+
+    assert get_response.status_code == 200
+    assert get_response.json()["id"] == conversation["id"]
+
+    list_response = client.get(f"/companies/{company['id']}/conversations")
+
+    assert list_response.status_code == 200
+    conversations = list_response.json()
+    assert len(conversations) == 1
+    assert conversations[0]["id"] == conversation["id"]
 
 
 def test_agent_reply_persists_customer_and_agent_messages(client, monkeypatch):
