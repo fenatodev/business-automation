@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
-from app.models import Company, Customer, Lead
+from app.models import Company, Conversation, Customer, Lead, Message
 
 
 app = FastAPI(
@@ -25,6 +25,29 @@ class LeadCreate(BaseModel):
     phone: str
     source: str
     interest: str | None = None
+
+
+class ConversationCreate(BaseModel):
+    company_id: int
+    channel: Literal[
+        "whatsapp",
+        "instagram",
+        "web",
+        "telegram",
+        "email",
+    ]
+    lead_id: int | None = None
+    customer_id: int | None = None
+
+
+class MessageCreate(BaseModel):
+    sender_type: Literal[
+        "customer",
+        "agent",
+        "human",
+        "system",
+    ]
+    content: str        
 
 
 class CustomerCreate(BaseModel):
@@ -73,6 +96,130 @@ def root():
         "name": "Fenato Business Automation API",
         "status": "running",
     }
+
+
+@app.post("/conversations")
+def create_conversation(
+    data: ConversationCreate,
+    db: Session = Depends(get_db),
+):
+    company = db.get(Company, data.company_id)
+
+    if company is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Company not found",
+        )
+
+    if data.lead_id is None and data.customer_id is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Conversation must belong to a lead or customer",
+        )
+
+    if data.lead_id is not None and data.customer_id is not None:
+        raise HTTPException(
+            status_code=400,
+            detail="Conversation cannot belong to both lead and customer",
+        )
+
+    if data.lead_id is not None:
+        lead = db.get(Lead, data.lead_id)
+
+        if lead is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Lead not found",
+            )
+
+        if lead.company_id != data.company_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Lead does not belong to this company",
+            )
+
+    if data.customer_id is not None:
+        customer = db.get(Customer, data.customer_id)
+
+        if customer is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Customer not found",
+            )
+
+        if customer.company_id != data.company_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Customer does not belong to this company",
+            )
+
+    conversation = Conversation(
+        company_id=data.company_id,
+        lead_id=data.lead_id,
+        customer_id=data.customer_id,
+        channel=data.channel,
+        status="open",
+    )
+
+    db.add(conversation)
+    db.commit()
+    db.refresh(conversation)
+
+    return conversation
+
+
+@app.post("/conversations/{conversation_id}/messages")
+def create_message(
+    conversation_id: int,
+    data: MessageCreate,
+    db: Session = Depends(get_db),
+):
+    conversation = db.get(
+        Conversation,
+        conversation_id,
+    )
+
+    if conversation is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Conversation not found",
+        )
+
+    message = Message(
+        conversation_id=conversation_id,
+        sender_type=data.sender_type,
+        content=data.content,
+    )
+
+    db.add(message)
+    db.commit()
+    db.refresh(message)
+
+    return message
+
+
+@app.get("/conversations/{conversation_id}/messages")
+def list_messages(
+    conversation_id: int,
+    db: Session = Depends(get_db),
+):
+    conversation = db.get(
+        Conversation,
+        conversation_id,
+    )
+
+    if conversation is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Conversation not found",
+        )
+
+    return db.scalars(
+        select(Message)
+        .where(Message.conversation_id == conversation_id)
+        .order_by(Message.id)
+    ).all()
+
 
 @app.post("/companies")
 def create_company(

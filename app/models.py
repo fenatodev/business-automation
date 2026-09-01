@@ -98,3 +98,67 @@ class Customer(Base):
         onupdate=func.now(),
         nullable=False,
     )    
+
+
+class Conversation(Base):
+    __tablename__ = "conversations"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    company_id: Mapped[int] = mapped_column(
+        ForeignKey("companies.id"),
+        nullable=False,
+        index=True,
+    )
+
+    lead_id: Mapped[int | None] = mapped_column(
+        ForeignKey("leads.id"),
+        nullable=True,
+        index=True,
+    )
+
+    customer_id: Mapped[int | None] = mapped_column(
+        ForeignKey("customers.id"),
+        nullable=True,
+        index=True,
+    )
+
+    channel: Mapped[str] = mapped_column(String(30))
+
+    status: Mapped[str] = mapped_column(
+        String(30),
+        default="open",
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )    
+
+class Message(Base):
+    __tablename__ = "messages"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    conversation_id: Mapped[int] = mapped_column(
+        ForeignKey("conversations.id"),
+        nullable=False,
+        index=True,
+    )
+
+    sender_type: Mapped[str] = mapped_column(String(20))
+    content: Mapped[str] = mapped_column(String)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )    
