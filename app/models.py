@@ -59,3 +59,42 @@ class Company(Base):
         server_default=func.now(),
         nullable=False,
     )
+
+
+class Customer(Base):
+    __tablename__ = "customers"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    company_id: Mapped[int] = mapped_column(
+        ForeignKey("companies.id"),
+        nullable=False,
+        index=True,
+    )
+
+    lead_id: Mapped[int | None] = mapped_column(
+    ForeignKey("leads.id"),
+    nullable=True,
+    unique=True,
+    index=True,
+)
+
+    name: Mapped[str] = mapped_column(String(120))
+    phone: Mapped[str] = mapped_column(String(30))
+    email: Mapped[str | None] = mapped_column(
+        String(120),
+        nullable=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )    
