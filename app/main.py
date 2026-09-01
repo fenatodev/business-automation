@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.models import Company, Conversation, Customer, Lead, Message
+from app.services.agent import generate_agent_reply
 
 
 app = FastAPI(
@@ -25,6 +26,10 @@ class LeadCreate(BaseModel):
     phone: str
     source: str
     interest: str | None = None
+
+
+class AgentRequest(BaseModel):
+    content: str    
 
 
 class ConversationCreate(BaseModel):
@@ -95,6 +100,65 @@ def root():
     return {
         "name": "Fenato Business Automation API",
         "status": "running",
+    }
+
+
+@app.post("/conversations/{conversation_id}/agent-reply")
+def agent_reply(
+    conversation_id: int,
+    data: AgentRequest,
+    db: Session = Depends(get_db),
+):
+    conversation = db.get(Conversation, conversation_id)
+
+    if conversation is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Conversation not found",
+        )
+
+    # Recupera o histórico ANTES da nova mensagem
+    history_messages = db.scalars(
+        select(Message)
+        .where(Message.conversation_id == conversation_id)
+        .order_by(Message.id)
+    ).all()
+
+    history = [
+        {
+            "sender_type": item.sender_type,
+            "content": item.content,
+        }
+        for item in history_messages
+    ]
+
+    # Gera resposta usando Ollama/Qwen
+    response = generate_agent_reply(
+        message=data.content,
+        history=history,
+    )
+
+    # Salva mensagem recebida
+    customer_message = Message(
+        conversation_id=conversation_id,
+        sender_type="customer",
+        content=data.content,
+    )
+
+    # Salva resposta do agente
+    agent_message = Message(
+        conversation_id=conversation_id,
+        sender_type="agent",
+        content=response,
+    )
+
+    db.add(customer_message)
+    db.add(agent_message)
+    db.commit()
+
+    return {
+        "conversation_id": conversation_id,
+        "reply": response,
     }
 
 
