@@ -1,8 +1,6 @@
 import httpx
 
-
-OLLAMA_URL = "http://localhost:11434"
-OLLAMA_MODEL = "qwen:latest"
+from app.database import settings
 
 
 def generate_agent_reply(
@@ -50,9 +48,9 @@ def generate_agent_reply(
     )
 
     response = httpx.post(
-        f"{OLLAMA_URL}/api/chat",
+        f"{settings.ollama_url}/api/chat",
         json={
-            "model": OLLAMA_MODEL,
+            "model": settings.ollama_model,
             "messages": messages,
             "stream": False,
         },
