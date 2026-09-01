@@ -47,7 +47,7 @@ Atualmente existem 9 testes.
 
 - Fazer mudanças pequenas e focadas.
 - Não alterar comportamento fora do escopo solicitado.
-- Não fazer commit ou push sem autorização explícita.
+- Não fazer commit ou push sem autorização explícita, exceto checkpoints seguros conforme `GitHub progress checkpoints`.
 - Antes de grandes refatorações, analisar primeiro.
 
 ## Multi-tenancy, auth e exposição pública
@@ -123,9 +123,88 @@ RAG, automações e integrações entram depois da fundação de dados, seguran�
 - Inspecionar código real antes de assumir arquitetura.
 - Para mudanças maiores, propor plano antes de editar.
 - Preferir mudanças pequenas verificáveis.
-- Nunca auto-commit ou auto-push.
+- Nunca auto-commit ou auto-push, exceto checkpoints seguros conforme `GitHub progress checkpoints`.
 - Não alterar arquivos fora do escopo apenas para “melhorar” o projeto.
 - Se um teste revelar um problema de comportamento existente, explicar antes de mudar esse comportamento.
+
+## GitHub progress checkpoints
+
+The user permanently authorizes Pi to create Git commits and push them to
+GitHub as progress checkpoints under the rules below.
+
+### When to checkpoint
+
+Pi MUST create a checkpoint after every meaningful completed development task
+or milestone when:
+
+- the requested task is complete;
+- relevant tests pass;
+- compileall passes when applicable;
+- `git diff --check` passes;
+- no known broken behavior is being intentionally committed;
+- no Codex review required by AGENTS.md is still pending.
+
+For longer or risky work, Pi should also make sure a safe checkpoint exists
+BEFORE beginning the risky change.
+
+### Checkpoint procedure
+
+Before committing:
+
+1. inspect `git status`;
+2. inspect the relevant diff;
+3. run the required validation from AGENTS.md;
+4. confirm no secrets, `.env`, real client data, credentials, `.ai/`, temporary
+   files or unrelated changes are being included.
+
+Then:
+
+1. create a concise conventional-style commit describing the completed work;
+2. push the CURRENT working branch to `origin`;
+3. verify that the push succeeded;
+4. report the commit hash and branch to the user.
+
+Example:
+
+```bash
+git add <only relevant files>
+git commit -m "fix: preserve customer message on agent failure"
+git push origin <current-branch>
+```
+
+### Important restrictions
+
+- Never use `git add .` blindly when unrelated or unknown files exist.
+- Never commit secrets, credentials, `.env`, real customer data or `.ai/`.
+- Never force-push.
+- Never rewrite published history unless explicitly authorized.
+- Never automatically merge branches.
+- Never automatically push directly to `main` as part of a merge/release
+  operation unless that workflow was explicitly authorized.
+- Normal progress checkpoints should be pushed to the current development
+  branch.
+- Do not create checkpoint commits when tests are failing unless the user
+  explicitly requests saving a known-broken experimental state.
+- Do not commit a Codex review file from `.ai/`.
+- If GitHub push fails, keep the local commit and clearly notify the user.
+- If there are unrelated user changes in the working tree, do not include them
+  in the checkpoint; ask if their ownership or relevance is ambiguous.
+
+### User interaction
+
+The user does NOT need to approve each normal progress checkpoint individually.
+
+Pi should simply report after a successful checkpoint:
+
+```text
+CHECKPOINT SAVED
+Branch: <branch>
+Commit: <hash> <message>
+GitHub push: successful
+```
+
+For merges, releases, destructive Git operations, force pushes, history
+rewrites or ambiguous changes, explicit user approval is still required.
 
 ## Agent workflow and escalation
 
