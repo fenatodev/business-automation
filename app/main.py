@@ -2,7 +2,7 @@ from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.database import SessionLocal
+from app.dependencies import get_db
 from app.models import Company, Conversation, Customer, Lead, Message
 from app.schemas import (
     AgentRequest,
@@ -20,19 +20,6 @@ app = FastAPI(
     title="Fenato Business Automation API",
     version="0.1.0",
 )
-
-
-# =========================================================
-# DATABASE
-# =========================================================
-
-def get_db():
-    db = SessionLocal()
-
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 # =========================================================
