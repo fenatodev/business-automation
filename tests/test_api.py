@@ -206,7 +206,7 @@ def test_agent_reply_persists_customer_and_agent_messages(client, monkeypatch):
         return "Resposta do agente"
 
     monkeypatch.setattr(
-        "app.main.generate_agent_reply",
+        "app.routers.conversations.generate_agent_reply",
         fake_generate_agent_reply,
     )
 
@@ -248,7 +248,7 @@ def test_agent_reply_keeps_customer_message_when_agent_service_fails(
         raise AgentServiceError("Ollama unavailable")
 
     monkeypatch.setattr(
-        "app.main.generate_agent_reply",
+        "app.routers.conversations.generate_agent_reply",
         fake_generate_agent_reply,
     )
 
@@ -288,7 +288,7 @@ def test_agent_reply_does_not_expose_internal_agent_error_details(
         )
 
     monkeypatch.setattr(
-        "app.main.generate_agent_reply",
+        "app.routers.conversations.generate_agent_reply",
         fake_generate_agent_reply,
     )
 
