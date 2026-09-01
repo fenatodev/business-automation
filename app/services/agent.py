@@ -3,6 +3,16 @@ import httpx
 from app.database import settings
 
 
+BASE_SYSTEM_PROMPT = (
+    "Você é um agente de atendimento comercial. "
+    "Responda em português brasileiro de forma objetiva, "
+    "profissional e natural. "
+    "Seu objetivo é entender a necessidade do cliente, "
+    "tirar dúvidas e qualificar o lead. "
+    "Não invente preços, serviços, prazos ou informações."
+)
+
+
 class AgentServiceError(RuntimeError):
     pass
 
@@ -10,19 +20,17 @@ class AgentServiceError(RuntimeError):
 def generate_agent_reply(
     message: str,
     history: list[dict],
+    instructions: str | None = None,
+    model: str | None = None,
 ) -> str:
+    system_prompt = BASE_SYSTEM_PROMPT
+    if instructions:
+        system_prompt = f"{system_prompt}\n\nInstruções da empresa:\n{instructions}"
 
     messages = [
         {
             "role": "system",
-            "content": (
-                "Você é um agente de atendimento comercial. "
-                "Responda em português brasileiro de forma objetiva, "
-                "profissional e natural. "
-                "Seu objetivo é entender a necessidade do cliente, "
-                "tirar dúvidas e qualificar o lead. "
-                "Não invente preços, serviços, prazos ou informações."
-            ),
+            "content": system_prompt,
         }
     ]
 
@@ -55,7 +63,7 @@ def generate_agent_reply(
         response = httpx.post(
             f"{settings.ollama_url}/api/chat",
             json={
-                "model": settings.ollama_model,
+                "model": model or settings.ollama_model,
                 "messages": messages,
                 "stream": False,
             },

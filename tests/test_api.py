@@ -2,7 +2,11 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 
 from app.models import Company, Conversation, Customer, Lead
-from app.services.agent import AgentServiceError
+from app.services.agent import (
+    BASE_SYSTEM_PROMPT,
+    AgentServiceError,
+    generate_agent_reply,
+)
 
 
 def create_company(client, name="Acme", slug="acme"):
@@ -90,6 +94,78 @@ def test_create_company_duplicate_slug_returns_409(client):
 
     assert response.status_code == 409
     assert response.json()["detail"] == "Company slug already exists"
+
+
+def test_company_agent_config_uses_global_model_by_default(client):
+    company = create_company(client)
+
+    response = client.get(f"/companies/{company['id']}/agent-config")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "company_id": company["id"],
+        "instructions": None,
+        "model": None,
+        "effective_model": "qwen3:8b",
+    }
+
+
+def test_update_company_agent_config_is_independent_per_company(client):
+    company = create_company(client, name="Company 1", slug="company-1")
+    other_company = create_company(client, name="Company 2", slug="company-2")
+
+    update_response = client.put(
+        f"/companies/{company['id']}/agent-config",
+        json={
+            "instructions": "  Priorize agendamentos.  ",
+            "model": "  custom-model  ",
+        },
+    )
+
+    assert update_response.status_code == 200
+    assert update_response.json() == {
+        "company_id": company["id"],
+        "instructions": "Priorize agendamentos.",
+        "model": "custom-model",
+        "effective_model": "custom-model",
+    }
+    assert client.get(f"/companies/{other_company['id']}/agent-config").json() == {
+        "company_id": other_company["id"],
+        "instructions": None,
+        "model": None,
+        "effective_model": "qwen3:8b",
+    }
+
+    reset_response = client.put(
+        f"/companies/{company['id']}/agent-config",
+        json={"instructions": None, "model": None},
+    )
+
+    assert reset_response.status_code == 200
+    assert reset_response.json()["effective_model"] == "qwen3:8b"
+
+
+def test_company_agent_config_rejects_invalid_values_and_missing_company(client):
+    company = create_company(client)
+
+    whitespace_response = client.put(
+        f"/companies/{company['id']}/agent-config",
+        json={"instructions": " ", "model": None},
+    )
+    assert whitespace_response.status_code == 422
+
+    long_model_response = client.put(
+        f"/companies/{company['id']}/agent-config",
+        json={"instructions": None, "model": "a" * 121},
+    )
+    assert long_model_response.status_code == 422
+
+    missing_company_response = client.put(
+        "/companies/999/agent-config",
+        json={"instructions": None, "model": None},
+    )
+    assert missing_company_response.status_code == 404
+    assert missing_company_response.json()["detail"] == "Company not found"
 
 
 def test_create_lead_with_existing_company(client):
@@ -309,6 +385,14 @@ def test_get_and_list_company_conversations(client):
 
 def test_agent_reply_persists_customer_and_agent_messages(client, monkeypatch):
     company = create_company(client)
+    config_response = client.put(
+        f"/companies/{company['id']}/agent-config",
+        json={
+            "instructions": "Priorize agendamentos.",
+            "model": "company-model",
+        },
+    )
+    assert config_response.status_code == 200
     lead = create_lead(client, company["id"])
     conversation = create_conversation(
         client,
@@ -316,9 +400,11 @@ def test_agent_reply_persists_customer_and_agent_messages(client, monkeypatch):
         lead_id=lead["id"],
     )
 
-    def fake_generate_agent_reply(message, history):
+    def fake_generate_agent_reply(message, history, instructions=None, model=None):
         assert message == "Ola"
         assert history == []
+        assert instructions == "Priorize agendamentos."
+        assert model == "company-model"
         return "Resposta do agente"
 
     monkeypatch.setattr(
@@ -360,7 +446,7 @@ def test_agent_reply_keeps_customer_message_when_agent_service_fails(
         lead_id=lead["id"],
     )
 
-    def fake_generate_agent_reply(message, history):
+    def fake_generate_agent_reply(message, history, instructions=None, model=None):
         raise AgentServiceError("Ollama unavailable")
 
     monkeypatch.setattr(
@@ -398,7 +484,7 @@ def test_agent_reply_does_not_expose_internal_agent_error_details(
         lead_id=lead["id"],
     )
 
-    def fake_generate_agent_reply(message, history):
+    def fake_generate_agent_reply(message, history, instructions=None, model=None):
         raise AgentServiceError(
             "Connection refused http://localhost:11434/api/chat qwen3:8b"
         )
@@ -420,3 +506,36 @@ def test_agent_reply_does_not_expose_internal_agent_error_details(
     assert "Connection refused" not in response_body
     assert "http://localhost:11434/api/chat" not in response_body
     assert "qwen3:8b" not in response_body
+
+
+def test_agent_service_uses_company_overrides(monkeypatch):
+    captured = {}
+
+    class FakeResponse:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"message": {"content": "Resposta"}}
+
+    def fake_post(url, json, timeout):
+        captured["url"] = url
+        captured["json"] = json
+        captured["timeout"] = timeout
+        return FakeResponse()
+
+    monkeypatch.setattr("app.services.agent.httpx.post", fake_post)
+
+    response = generate_agent_reply(
+        message="Olá",
+        history=[],
+        instructions="Priorize agendamentos.",
+        model="company-model",
+    )
+
+    assert response == "Resposta"
+    assert captured["url"] == "http://localhost:11434/api/chat"
+    assert captured["json"]["model"] == "company-model"
+    assert captured["json"]["messages"][0]["content"] == (
+        f"{BASE_SYSTEM_PROMPT}\n\nInstruções da empresa:\nPriorize agendamentos."
+    )

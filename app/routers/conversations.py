@@ -25,6 +25,14 @@ def agent_reply(
             detail="Conversation not found",
         )
 
+    company = db.get(Company, conversation.company_id)
+
+    if company is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Conversation company not found",
+        )
+
     # Recupera o histórico ANTES da nova mensagem
     history_messages = db.scalars(
         select(Message)
@@ -55,6 +63,8 @@ def agent_reply(
         response = generate_agent_reply(
             message=data.content,
             history=history,
+            instructions=company.agent_instructions,
+            model=company.agent_model,
         )
     except AgentServiceError:
         raise HTTPException(
