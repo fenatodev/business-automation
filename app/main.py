@@ -38,6 +38,11 @@ class LeadUpdate(BaseModel):
     ]
 
 
+class CompanyCreate(BaseModel):
+    name: str
+    slug: str
+
+
 # =========================================================
 # DATABASE
 # =========================================================
@@ -61,6 +66,41 @@ def root():
         "name": "Fenato Business Automation API",
         "status": "running",
     }
+
+@app.post("/companies")
+def create_company(
+    company: CompanyCreate,
+    db: Session = Depends(get_db),
+):
+    existing = db.scalar(
+        select(Company).where(Company.slug == company.slug)
+    )
+
+    if existing:
+        raise HTTPException(
+            status_code=409,
+            detail="Company slug already exists",
+        )
+
+    new_company = Company(
+        name=company.name,
+        slug=company.slug,
+    )
+
+    db.add(new_company)
+    db.commit()
+    db.refresh(new_company)
+
+    return new_company
+
+
+@app.get("/companies")
+def list_companies(
+    db: Session = Depends(get_db),
+):
+    return db.scalars(
+        select(Company).order_by(Company.id)
+    ).all()
 
 
 # =========================================================
