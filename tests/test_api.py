@@ -1,3 +1,7 @@
+import pytest
+from sqlalchemy.exc import IntegrityError
+
+from app.models import Company, Conversation, Customer, Lead
 from app.services.agent import AgentServiceError
 
 
@@ -208,6 +212,70 @@ def test_create_conversation_rules(client):
     assert data["lead_id"] == lead["id"]
     assert data["customer_id"] is None
     assert data["status"] == "open"
+
+
+def test_conversation_owner_database_constraint(db):
+    company = Company(name="Acme", slug="acme")
+    db.add(company)
+    db.flush()
+
+    lead = Lead(
+        company_id=company.id,
+        name="Maria",
+        phone="11999999999",
+        source="site",
+        interest="automacao",
+    )
+    customer = Customer(
+        company_id=company.id,
+        name="Joao",
+        phone="11888888888",
+        email="joao@example.com",
+    )
+    db.add_all([lead, customer])
+    db.commit()
+
+    db.add_all(
+        [
+            Conversation(
+                company_id=company.id,
+                lead_id=lead.id,
+                customer_id=None,
+                channel="whatsapp",
+            ),
+            Conversation(
+                company_id=company.id,
+                lead_id=None,
+                customer_id=customer.id,
+                channel="whatsapp",
+            ),
+        ]
+    )
+    db.commit()
+
+    db.add(
+        Conversation(
+            company_id=company.id,
+            lead_id=None,
+            customer_id=None,
+            channel="whatsapp",
+        )
+    )
+    with pytest.raises(IntegrityError):
+        db.flush()
+    db.rollback()
+
+    db.add(
+        Conversation(
+            company_id=company.id,
+            lead_id=lead.id,
+            customer_id=customer.id,
+            channel="whatsapp",
+        )
+    )
+    with pytest.raises(IntegrityError):
+        db.flush()
+    db.rollback()
 
 
 def test_get_and_list_company_conversations(client):

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -102,6 +102,13 @@ class Customer(Base):
 
 class Conversation(Base):
     __tablename__ = "conversations"
+    __table_args__ = (
+        CheckConstraint(
+            "(lead_id IS NOT NULL AND customer_id IS NULL) OR "
+            "(lead_id IS NULL AND customer_id IS NOT NULL)",
+            name="ck_conversations_exactly_one_owner",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
 

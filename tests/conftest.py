@@ -44,6 +44,16 @@ def reset_database():
 
 
 @pytest.fixture
+def db():
+    session = TestingSessionLocal()
+
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+@pytest.fixture
 def client():
     def override_get_db():
         db = TestingSessionLocal()

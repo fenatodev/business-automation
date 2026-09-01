@@ -30,9 +30,42 @@ done
 docker exec "$container_id" pg_isready -U alembic_validation -d alembic_validation >/dev/null
 port="$(docker port "$container_id" 5432/tcp | head -n 1 | sed 's/.*://')"
 database_url="postgresql+psycopg://alembic_validation:${password}@127.0.0.1:${port}/alembic_validation"
+existing_database_url="postgresql+psycopg://alembic_validation:${password}@127.0.0.1:${port}/alembic_existing_validation"
+invalid_database_url="postgresql+psycopg://alembic_validation:${password}@127.0.0.1:${port}/alembic_invalid_validation"
+previous_revision="963028cb1f76"
+head_revision="c14b8f9d2e3a"
 
-DATABASE_URL="$database_url" uv run alembic upgrade head
-DATABASE_URL="$database_url" uv run alembic current
-DATABASE_URL="$database_url" uv run alembic check
+run_alembic() {
+  DATABASE_URL="$1" uv run alembic "${@:2}"
+}
 
-echo "Alembic fresh-install validation passed."
+run_owner_validation() {
+  DATABASE_URL="$1" uv run python scripts/verify-conversation-owner-constraint.py "${@:2}"
+}
+
+run_alembic "$database_url" upgrade head
+run_alembic "$database_url" current | grep -F "${head_revision} (head)"
+run_alembic "$database_url" check
+run_owner_validation "$database_url" seed --channel fresh-validation
+run_owner_validation "$database_url" verify --channel fresh-validation
+
+docker exec "$container_id" createdb -U alembic_validation alembic_existing_validation
+run_alembic "$existing_database_url" upgrade "$previous_revision"
+run_owner_validation "$existing_database_url" seed --channel existing-validation
+run_alembic "$existing_database_url" upgrade head
+run_owner_validation "$existing_database_url" verify --channel existing-validation
+run_alembic "$existing_database_url" downgrade -1
+run_owner_validation "$existing_database_url" assert-absent
+run_alembic "$existing_database_url" upgrade head
+run_owner_validation "$existing_database_url" verify --channel existing-validation
+
+docker exec "$container_id" createdb -U alembic_validation alembic_invalid_validation
+run_alembic "$invalid_database_url" upgrade "$previous_revision"
+run_owner_validation "$invalid_database_url" seed-invalid
+if run_alembic "$invalid_database_url" upgrade head; then
+  echo "Expected upgrade with an invalid conversation owner to fail." >&2
+  exit 1
+fi
+run_alembic "$invalid_database_url" current | grep -F "${previous_revision}"
+
+echo "Alembic fresh, existing-install, and invalid-data validation passed."
