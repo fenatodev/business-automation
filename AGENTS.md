@@ -161,6 +161,17 @@ After the review, Pi remains the primary executor unless explicitly instructed o
 The human user should not need to decide routinely which agent to use;
 Pi is responsible for signaling when second review is appropriate.
 
+## Product context
+
+Before making product, roadmap or commercial assumptions, read:
+
+- `docs/PRODUCT.md`
+- `docs/ROADMAP.md`
+- `docs/DECISIONS.md`
+
+Do not invent answers for open product/commercial decisions.
+If implementation depends on an unresolved business decision, ask the user.
+
 ## Local Codex review handoff
 
 - When Pi requests "Codex review required", the review may be exchanged through:
