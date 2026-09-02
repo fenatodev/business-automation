@@ -1,9 +1,16 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.dependencies import get_db
-from app.models import Company, Conversation, Customer, Lead, Message
+from app.dependencies import (
+    AuthenticatedContext,
+    get_authenticated_context,
+    get_db,
+    require_matching_company,
+)
+from app.models import Conversation, Customer, Lead, Message
 from app.schemas import AgentRequest, ConversationCreate, MessageCreate
 from app.services.agent import AgentServiceError, generate_agent_reply
 
@@ -15,9 +22,18 @@ router = APIRouter()
 def agent_reply(
     conversation_id: int,
     data: AgentRequest,
+    context: Annotated[
+        AuthenticatedContext,
+        Depends(get_authenticated_context),
+    ],
     db: Session = Depends(get_db),
 ):
-    conversation = db.get(Conversation, conversation_id)
+    conversation = db.scalar(
+        select(Conversation).where(
+            Conversation.id == conversation_id,
+            Conversation.company_id == context.company.id,
+        )
+    )
 
     if conversation is None:
         raise HTTPException(
@@ -25,13 +41,7 @@ def agent_reply(
             detail="Conversation not found",
         )
 
-    company = db.get(Company, conversation.company_id)
-
-    if company is None:
-        raise HTTPException(
-            status_code=500,
-            detail="Conversation company not found",
-        )
+    company = context.company
 
     # Recupera o histórico ANTES da nova mensagem
     history_messages = db.scalars(
@@ -91,9 +101,18 @@ def agent_reply(
 @router.get("/conversations/{conversation_id}")
 def get_conversation(
     conversation_id: int,
+    context: Annotated[
+        AuthenticatedContext,
+        Depends(get_authenticated_context),
+    ],
     db: Session = Depends(get_db),
 ):
-    conversation = db.get(Conversation, conversation_id)
+    conversation = db.scalar(
+        select(Conversation).where(
+            Conversation.id == conversation_id,
+            Conversation.company_id == context.company.id,
+        )
+    )
 
     if conversation is None:
         raise HTTPException(
@@ -107,19 +126,17 @@ def get_conversation(
 @router.get("/companies/{company_id}/conversations")
 def list_company_conversations(
     company_id: int,
+    context: Annotated[
+        AuthenticatedContext,
+        Depends(get_authenticated_context),
+    ],
     db: Session = Depends(get_db),
 ):
-    company = db.get(Company, company_id)
-
-    if company is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Company not found",
-        )
+    require_matching_company(context, company_id)
 
     return db.scalars(
         select(Conversation)
-        .where(Conversation.company_id == company_id)
+        .where(Conversation.company_id == context.company.id)
         .order_by(Conversation.id)
     ).all()
 
@@ -127,14 +144,16 @@ def list_company_conversations(
 @router.post("/conversations")
 def create_conversation(
     data: ConversationCreate,
+    context: Annotated[
+        AuthenticatedContext,
+        Depends(get_authenticated_context),
+    ],
     db: Session = Depends(get_db),
 ):
-    company = db.get(Company, data.company_id)
-
-    if company is None:
+    if data.company_id != context.company.id:
         raise HTTPException(
-            status_code=404,
-            detail="Company not found",
+            status_code=400,
+            detail="company_id must match the authenticated company",
         )
 
     if data.lead_id is None and data.customer_id is None:
@@ -150,7 +169,12 @@ def create_conversation(
         )
 
     if data.lead_id is not None:
-        lead = db.get(Lead, data.lead_id)
+        lead = db.scalar(
+            select(Lead).where(
+                Lead.id == data.lead_id,
+                Lead.company_id == context.company.id,
+            )
+        )
 
         if lead is None:
             raise HTTPException(
@@ -158,14 +182,13 @@ def create_conversation(
                 detail="Lead not found",
             )
 
-        if lead.company_id != data.company_id:
-            raise HTTPException(
-                status_code=400,
-                detail="Lead does not belong to this company",
-            )
-
     if data.customer_id is not None:
-        customer = db.get(Customer, data.customer_id)
+        customer = db.scalar(
+            select(Customer).where(
+                Customer.id == data.customer_id,
+                Customer.company_id == context.company.id,
+            )
+        )
 
         if customer is None:
             raise HTTPException(
@@ -173,14 +196,8 @@ def create_conversation(
                 detail="Customer not found",
             )
 
-        if customer.company_id != data.company_id:
-            raise HTTPException(
-                status_code=400,
-                detail="Customer does not belong to this company",
-            )
-
     conversation = Conversation(
-        company_id=data.company_id,
+        company_id=context.company.id,
         lead_id=data.lead_id,
         customer_id=data.customer_id,
         channel=data.channel,
@@ -198,17 +215,29 @@ def create_conversation(
 def create_message(
     conversation_id: int,
     data: MessageCreate,
+    context: Annotated[
+        AuthenticatedContext,
+        Depends(get_authenticated_context),
+    ],
     db: Session = Depends(get_db),
 ):
-    conversation = db.get(
-        Conversation,
-        conversation_id,
+    conversation = db.scalar(
+        select(Conversation).where(
+            Conversation.id == conversation_id,
+            Conversation.company_id == context.company.id,
+        )
     )
 
     if conversation is None:
         raise HTTPException(
             status_code=404,
             detail="Conversation not found",
+        )
+
+    if data.sender_type != "human":
+        raise HTTPException(
+            status_code=403,
+            detail="sender_type is not allowed for authenticated users",
         )
 
     message = Message(
@@ -227,11 +256,17 @@ def create_message(
 @router.get("/conversations/{conversation_id}/messages")
 def list_messages(
     conversation_id: int,
+    context: Annotated[
+        AuthenticatedContext,
+        Depends(get_authenticated_context),
+    ],
     db: Session = Depends(get_db),
 ):
-    conversation = db.get(
-        Conversation,
-        conversation_id,
+    conversation = db.scalar(
+        select(Conversation).where(
+            Conversation.id == conversation_id,
+            Conversation.company_id == context.company.id,
+        )
     )
 
     if conversation is None:

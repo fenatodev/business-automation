@@ -1,10 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import settings
-from app.dependencies import get_db
-from app.models import Company
+from app.dependencies import (
+    AuthenticatedContext,
+    get_current_session,
+    get_db,
+    require_matching_company,
+    require_roles,
+)
+from app.models import AuthSession, Company, CompanyMembership, User
 from app.schemas import (
     CompanyAgentConfigResponse,
     CompanyAgentConfigUpdate,
@@ -19,36 +27,35 @@ router = APIRouter()
 @router.post("/companies", response_model=CompanyResponse)
 def create_company(
     company: CompanyCreate,
+    authenticated: Annotated[
+        tuple[User, AuthSession],
+        Depends(get_current_session),
+    ],
     db: Session = Depends(get_db),
 ):
-    existing = db.scalar(
-        select(Company).where(Company.slug == company.slug)
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Company creation is not available via the public API",
     )
-
-    if existing:
-        raise HTTPException(
-            status_code=409,
-            detail="Company slug already exists",
-        )
-
-    new_company = Company(
-        name=company.name,
-        slug=company.slug,
-    )
-
-    db.add(new_company)
-    db.commit()
-    db.refresh(new_company)
-
-    return new_company
 
 
 @router.get("/companies", response_model=list[CompanyResponse])
 def list_companies(
+    authenticated: Annotated[
+        tuple[User, AuthSession],
+        Depends(get_current_session),
+    ],
     db: Session = Depends(get_db),
 ):
+    user, _ = authenticated
     return db.scalars(
-        select(Company).order_by(Company.id)
+        select(Company)
+        .join(CompanyMembership, CompanyMembership.company_id == Company.id)
+        .where(
+            CompanyMembership.user_id == user.id,
+            CompanyMembership.is_active.is_(True),
+        )
+        .order_by(Company.id)
     ).all()
 
 
@@ -58,15 +65,14 @@ def list_companies(
 )
 def get_company_agent_config(
     company_id: int,
+    context: Annotated[
+        AuthenticatedContext,
+        Depends(require_roles("owner", "admin")),
+    ],
     db: Session = Depends(get_db),
 ):
-    company = db.get(Company, company_id)
-
-    if company is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Company not found",
-        )
+    require_matching_company(context, company_id)
+    company = context.company
 
     return CompanyAgentConfigResponse(
         company_id=company.id,
@@ -83,15 +89,14 @@ def get_company_agent_config(
 def update_company_agent_config(
     company_id: int,
     data: CompanyAgentConfigUpdate,
+    context: Annotated[
+        AuthenticatedContext,
+        Depends(require_roles("owner", "admin")),
+    ],
     db: Session = Depends(get_db),
 ):
-    company = db.get(Company, company_id)
-
-    if company is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Company not found",
-        )
+    require_matching_company(context, company_id)
+    company = context.company
 
     company.agent_instructions = data.instructions
     company.agent_model = data.model

@@ -1,9 +1,16 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.dependencies import get_db
-from app.models import Company, Customer, Lead
+from app.dependencies import (
+    AuthenticatedContext,
+    get_authenticated_context,
+    get_db,
+    require_matching_company,
+)
+from app.models import Customer, Lead
 from app.schemas import CustomerCreate
 
 
@@ -12,19 +19,34 @@ router = APIRouter()
 
 @router.get("/customers")
 def list_customers(
+    context: Annotated[
+        AuthenticatedContext,
+        Depends(get_authenticated_context),
+    ],
     db: Session = Depends(get_db),
 ):
     return db.scalars(
-        select(Customer).order_by(Customer.id)
+        select(Customer)
+        .where(Customer.company_id == context.company.id)
+        .order_by(Customer.id)
     ).all()
 
 
 @router.get("/customers/{customer_id}")
 def get_customer(
     customer_id: int,
+    context: Annotated[
+        AuthenticatedContext,
+        Depends(get_authenticated_context),
+    ],
     db: Session = Depends(get_db),
 ):
-    customer = db.get(Customer, customer_id)
+    customer = db.scalar(
+        select(Customer).where(
+            Customer.id == customer_id,
+            Customer.company_id == context.company.id,
+        )
+    )
 
     if customer is None:
         raise HTTPException(
@@ -38,19 +60,17 @@ def get_customer(
 @router.get("/companies/{company_id}/customers")
 def list_company_customers(
     company_id: int,
+    context: Annotated[
+        AuthenticatedContext,
+        Depends(get_authenticated_context),
+    ],
     db: Session = Depends(get_db),
 ):
-    company = db.get(Company, company_id)
-
-    if company is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Company not found",
-        )
+    require_matching_company(context, company_id)
 
     return db.scalars(
         select(Customer)
-        .where(Customer.company_id == company_id)
+        .where(Customer.company_id == context.company.id)
         .order_by(Customer.id)
     ).all()
 
@@ -58,18 +78,20 @@ def list_company_customers(
 @router.post("/customers")
 def create_customer(
     customer: CustomerCreate,
+    context: Annotated[
+        AuthenticatedContext,
+        Depends(get_authenticated_context),
+    ],
     db: Session = Depends(get_db),
 ):
-    company = db.get(Company, customer.company_id)
-
-    if company is None:
+    if customer.company_id != context.company.id:
         raise HTTPException(
-            status_code=404,
-            detail="Company not found",
+            status_code=400,
+            detail="company_id must match the authenticated company",
         )
 
     new_customer = Customer(
-        company_id=customer.company_id,
+        company_id=context.company.id,
         name=customer.name,
         phone=customer.phone,
         email=customer.email,
@@ -85,9 +107,18 @@ def create_customer(
 @router.post("/leads/{lead_id}/convert")
 def convert_lead_to_customer(
     lead_id: int,
+    context: Annotated[
+        AuthenticatedContext,
+        Depends(get_authenticated_context),
+    ],
     db: Session = Depends(get_db),
 ):
-    lead = db.get(Lead, lead_id)
+    lead = db.scalar(
+        select(Lead).where(
+            Lead.id == lead_id,
+            Lead.company_id == context.company.id,
+        )
+    )
 
     if lead is None:
         raise HTTPException(
@@ -96,7 +127,10 @@ def convert_lead_to_customer(
         )
 
     existing_customer = db.scalar(
-        select(Customer).where(Customer.lead_id == lead_id)
+        select(Customer).where(
+            Customer.lead_id == lead_id,
+            Customer.company_id == context.company.id,
+        )
     )
 
     if existing_customer:

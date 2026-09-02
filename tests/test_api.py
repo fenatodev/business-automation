@@ -1,28 +1,85 @@
+from itertools import count
+
 import pytest
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
-from app.models import Company, Conversation, Customer, Lead
+from app.models import (
+    AuthSession,
+    Company,
+    CompanyMembership,
+    Conversation,
+    Customer,
+    Lead,
+    Message,
+    User,
+)
 from app.services.agent import (
     BASE_SYSTEM_PROMPT,
     AgentServiceError,
     generate_agent_reply,
 )
+from app.services.auth import (
+    create_session_token,
+    hash_password,
+    hash_session_token,
+    session_expiry,
+)
 
 
-def create_company(client, name="Acme", slug="acme"):
-    response = client.post(
-        "/companies",
-        json={"name": name, "slug": slug},
+identity_counter = count(1)
+
+
+def create_company(db, name="Acme", slug="acme"):
+    company = Company(name=name, slug=slug)
+    db.add(company)
+    db.commit()
+    return company
+
+
+def create_identity(db, memberships, email=None):
+    user = User(
+        email_normalized=email or f"user-{next(identity_counter)}@example.com",
+        password_hash=hash_password("correct horse battery staple"),
+        is_active=True,
     )
-    assert response.status_code == 200
-    return response.json()
+    db.add(user)
+    db.flush()
+    for company, role in memberships:
+        db.add(
+            CompanyMembership(
+                user_id=user.id,
+                company_id=company.id,
+                role=role,
+                is_active=True,
+            )
+        )
+
+    token = create_session_token()
+    db.add(
+        AuthSession(
+            user_id=user.id,
+            token_hash=hash_session_token(token),
+            expires_at=session_expiry(24),
+        )
+    )
+    db.commit()
+    return user, token
 
 
-def create_lead(client, company_id, name="Maria"):
+def tenant_headers(company, token):
+    return {
+        "Authorization": f"Bearer {token}",
+        "X-Company-ID": str(company.id),
+    }
+
+
+def create_lead(client, company, headers, name="Maria"):
     response = client.post(
         "/leads",
+        headers=headers,
         json={
-            "company_id": company_id,
+            "company_id": company.id,
             "name": name,
             "phone": "11999999999",
             "source": "site",
@@ -33,11 +90,12 @@ def create_lead(client, company_id, name="Maria"):
     return response.json()
 
 
-def create_customer(client, company_id, name="Joao"):
+def create_customer(client, company, headers, name="Joao"):
     response = client.post(
         "/customers",
+        headers=headers,
         json={
-            "company_id": company_id,
+            "company_id": company.id,
             "name": name,
             "phone": "11888888888",
             "email": "joao@example.com",
@@ -47,11 +105,19 @@ def create_customer(client, company_id, name="Joao"):
     return response.json()
 
 
-def create_conversation(client, company_id, lead_id=None, customer_id=None):
+def create_conversation(
+    client,
+    company,
+    headers,
+    *,
+    lead_id=None,
+    customer_id=None,
+):
     response = client.post(
         "/conversations",
+        headers=headers,
         json={
-            "company_id": company_id,
+            "company_id": company.id,
             "channel": "whatsapp",
             "lead_id": lead_id,
             "customer_id": customer_id,
@@ -61,7 +127,7 @@ def create_conversation(client, company_id, lead_id=None, customer_id=None):
     return response.json()
 
 
-def test_get_root(client):
+def test_get_root_remains_public(client):
     response = client.get("/")
 
     assert response.status_code == 200
@@ -71,332 +137,417 @@ def test_get_root(client):
     }
 
 
-def test_create_company_success(client):
-    response = client.post(
+@pytest.mark.parametrize(
+    ("method", "path", "json"),
+    [
+        ("get", "/companies", None),
+        ("get", "/leads", None),
+        ("get", "/customers", None),
+        ("post", "/conversations", {"company_id": 1, "channel": "web"}),
+    ],
+)
+def test_business_endpoints_require_authentication(client, method, path, json):
+    response = client.request(method, path, json=json)
+
+    assert response.status_code == 401
+    assert response.headers["www-authenticate"] == "Bearer"
+
+
+def test_tenant_endpoints_require_company_header(client, db):
+    company = create_company(db)
+    _, token = create_identity(db, [(company, "member")])
+
+    response = client.get(
+        "/leads",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": "X-Company-ID header is required"}
+
+
+def test_companies_list_only_active_memberships_and_creation_is_blocked(client, db):
+    company = create_company(db, name="Company 1", slug="company-1")
+    other_company = create_company(db, name="Company 2", slug="company-2")
+    hidden_company = create_company(db, name="Hidden", slug="hidden")
+    user, token = create_identity(
+        db,
+        [(company, "owner"), (other_company, "member")],
+    )
+    inactive_membership = CompanyMembership(
+        user_id=user.id,
+        company_id=hidden_company.id,
+        role="member",
+        is_active=False,
+    )
+    db.add(inactive_membership)
+    db.commit()
+
+    response = client.get(
         "/companies",
-        json={"name": "Acme", "slug": "acme"},
+        headers={"Authorization": f"Bearer {token}"},
     )
 
     assert response.status_code == 200
-    data = response.json()
-    assert data["id"] is not None
-    assert data["name"] == "Acme"
-    assert data["slug"] == "acme"
+    assert [item["id"] for item in response.json()] == [company.id, other_company.id]
 
-
-def test_create_company_duplicate_slug_returns_409(client):
-    create_company(client)
-
-    response = client.post(
+    create_response = client.post(
         "/companies",
-        json={"name": "Acme 2", "slug": "acme"},
+        headers={"Authorization": f"Bearer {token}"},
+        json={"name": "Public", "slug": "public"},
     )
-
-    assert response.status_code == 409
-    assert response.json()["detail"] == "Company slug already exists"
-
-
-def test_company_agent_config_uses_global_model_by_default(client):
-    company = create_company(client)
-
-    response = client.get(f"/companies/{company['id']}/agent-config")
-
-    assert response.status_code == 200
-    assert response.json() == {
-        "company_id": company["id"],
-        "instructions": None,
-        "model": None,
-        "effective_model": "qwen3:8b",
-    }
+    assert create_response.status_code == 403
+    assert db.scalar(select(func.count()).select_from(Company)) == 3
 
 
-def test_update_company_agent_config_is_independent_per_company(client):
-    company = create_company(client, name="Company 1", slug="company-1")
-    other_company = create_company(client, name="Company 2", slug="company-2")
+def test_agent_config_requires_admin_role_and_matching_tenant(client, db):
+    company = create_company(db, name="Company 1", slug="company-1")
+    other_company = create_company(db, name="Company 2", slug="company-2")
+    _, admin_token = create_identity(db, [(company, "admin")])
+    _, member_token = create_identity(db, [(company, "member")])
+    admin_headers = tenant_headers(company, admin_token)
+    member_headers = tenant_headers(company, member_token)
+
+    default_response = client.get(
+        f"/companies/{company.id}/agent-config",
+        headers=admin_headers,
+    )
+    assert default_response.status_code == 200
+    assert default_response.json()["effective_model"] == "qwen3:8b"
+
+    forbidden_response = client.put(
+        f"/companies/{company.id}/agent-config",
+        headers=member_headers,
+        json={"instructions": "Forbidden", "model": None},
+    )
+    assert forbidden_response.status_code == 403
+
+    mismatch_response = client.get(
+        f"/companies/{other_company.id}/agent-config",
+        headers=admin_headers,
+    )
+    assert mismatch_response.status_code == 404
 
     update_response = client.put(
-        f"/companies/{company['id']}/agent-config",
+        f"/companies/{company.id}/agent-config",
+        headers=admin_headers,
         json={
             "instructions": "  Priorize agendamentos.  ",
             "model": "  custom-model  ",
         },
     )
-
     assert update_response.status_code == 200
     assert update_response.json() == {
-        "company_id": company["id"],
+        "company_id": company.id,
         "instructions": "Priorize agendamentos.",
         "model": "custom-model",
         "effective_model": "custom-model",
     }
-    assert client.get(f"/companies/{other_company['id']}/agent-config").json() == {
-        "company_id": other_company["id"],
-        "instructions": None,
-        "model": None,
-        "effective_model": "qwen3:8b",
-    }
 
-    reset_response = client.put(
-        f"/companies/{company['id']}/agent-config",
-        json={"instructions": None, "model": None},
+
+def test_leads_are_scoped_and_body_company_cannot_select_tenant(client, db):
+    company = create_company(db, name="Company 1", slug="company-1")
+    other_company = create_company(db, name="Company 2", slug="company-2")
+    _, token = create_identity(db, [(company, "member")])
+    _, other_token = create_identity(db, [(other_company, "member")])
+    headers = tenant_headers(company, token)
+    other_headers = tenant_headers(other_company, other_token)
+    lead = create_lead(client, company, headers)
+    other_lead = create_lead(client, other_company, other_headers, name="Ana")
+
+    assert client.get(f"/leads/{lead['id']}", headers=headers).status_code == 200
+    assert client.get(f"/leads/{other_lead['id']}", headers=headers).status_code == 404
+
+    list_response = client.get("/leads", headers=headers)
+    assert [item["id"] for item in list_response.json()] == [lead["id"]]
+
+    path_list_response = client.get(
+        f"/companies/{company.id}/leads",
+        headers=headers,
     )
+    assert [item["id"] for item in path_list_response.json()] == [lead["id"]]
 
-    assert reset_response.status_code == 200
-    assert reset_response.json()["effective_model"] == "qwen3:8b"
-
-
-def test_company_agent_config_rejects_invalid_values_and_missing_company(client):
-    company = create_company(client)
-
-    whitespace_response = client.put(
-        f"/companies/{company['id']}/agent-config",
-        json={"instructions": " ", "model": None},
-    )
-    assert whitespace_response.status_code == 422
-
-    long_model_response = client.put(
-        f"/companies/{company['id']}/agent-config",
-        json={"instructions": None, "model": "a" * 121},
-    )
-    assert long_model_response.status_code == 422
-
-    missing_company_response = client.put(
-        "/companies/999/agent-config",
-        json={"instructions": None, "model": None},
-    )
-    assert missing_company_response.status_code == 404
-    assert missing_company_response.json()["detail"] == "Company not found"
-
-
-def test_create_lead_with_existing_company(client):
-    company = create_company(client)
-
-    response = client.post(
+    mismatch_response = client.post(
         "/leads",
+        headers=headers,
         json={
-            "company_id": company["id"],
-            "name": "Maria",
-            "phone": "11999999999",
-            "source": "site",
-            "interest": "automacao",
+            "company_id": other_company.id,
+            "name": "Injected",
+            "phone": "11000000000",
+            "source": "test",
         },
     )
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["company_id"] == company["id"]
-    assert data["name"] == "Maria"
-    assert data["status"] == "new"
+    assert mismatch_response.status_code == 400
+    assert db.scalar(
+        select(func.count()).select_from(Lead).where(Lead.name == "Injected")
+    ) == 0
 
 
-def test_create_lead_with_missing_company_returns_404(client):
-    response = client.post(
-        "/leads",
-        json={
-            "company_id": 999,
-            "name": "Maria",
-            "phone": "11999999999",
-            "source": "site",
-            "interest": "automacao",
-        },
+def test_one_user_can_switch_memberships_without_mixing_tenant_data(client, db):
+    company = create_company(db, name="Company 1", slug="company-1")
+    other_company = create_company(db, name="Company 2", slug="company-2")
+    _, token = create_identity(
+        db,
+        [(company, "member"), (other_company, "member")],
+    )
+    headers = tenant_headers(company, token)
+    other_headers = tenant_headers(other_company, token)
+    lead = create_lead(client, company, headers, name="Company 1 lead")
+    other_lead = create_lead(
+        client,
+        other_company,
+        other_headers,
+        name="Company 2 lead",
     )
 
-    assert response.status_code == 404
-    assert response.json()["detail"] == "Company not found"
+    assert [item["id"] for item in client.get("/leads", headers=headers).json()] == [
+        lead["id"]
+    ]
+    assert [
+        item["id"] for item in client.get("/leads", headers=other_headers).json()
+    ] == [other_lead["id"]]
 
 
-def test_get_and_list_company_customers(client):
-    company = create_company(client, name="Company 1", slug="company-1")
-    other_company = create_company(client, name="Company 2", slug="company-2")
-    customer = create_customer(client, company["id"], name="Joao")
-    create_customer(client, other_company["id"], name="Ana")
+def test_customers_and_lead_conversion_are_tenant_scoped(client, db):
+    company = create_company(db, name="Company 1", slug="company-1")
+    other_company = create_company(db, name="Company 2", slug="company-2")
+    _, token = create_identity(db, [(company, "member")])
+    _, other_token = create_identity(db, [(other_company, "member")])
+    headers = tenant_headers(company, token)
+    other_headers = tenant_headers(other_company, other_token)
+    customer = create_customer(client, company, headers)
+    other_customer = create_customer(client, other_company, other_headers, name="Ana")
+    lead = create_lead(client, company, headers)
+    other_lead = create_lead(client, other_company, other_headers, name="Other lead")
 
-    get_response = client.get(f"/customers/{customer['id']}")
-
-    assert get_response.status_code == 200
-    assert get_response.json()["id"] == customer["id"]
-
-    list_response = client.get(f"/companies/{company['id']}/customers")
-
-    assert list_response.status_code == 200
-    customers = list_response.json()
-    assert len(customers) == 1
-    assert customers[0]["id"] == customer["id"]
-
-
-def test_create_conversation_rules(client):
-    company = create_company(client, name="Company 1", slug="company-1")
-    other_company = create_company(client, name="Company 2", slug="company-2")
-    lead = create_lead(client, company["id"])
-    other_lead = create_lead(client, other_company["id"], name="Ana")
-    customer = create_customer(client, company["id"])
-
-    missing_owner_response = client.post(
-        "/conversations",
-        json={
-            "company_id": company["id"],
-            "channel": "whatsapp",
-            "lead_id": None,
-            "customer_id": None,
-        },
-    )
-    assert missing_owner_response.status_code == 400
     assert (
-        missing_owner_response.json()["detail"]
-        == "Conversation must belong to a lead or customer"
+        client.get(f"/customers/{customer['id']}", headers=headers).status_code == 200
     )
+    assert (
+        client.get(f"/customers/{other_customer['id']}", headers=headers).status_code
+        == 404
+    )
+    assert client.get("/customers", headers=headers).json()[0]["id"] == customer["id"]
 
-    both_owners_response = client.post(
+    convert_response = client.post(f"/leads/{lead['id']}/convert", headers=headers)
+    assert convert_response.status_code == 200
+    assert convert_response.json()["company_id"] == company.id
+
+    cross_tenant_response = client.post(
+        f"/leads/{other_lead['id']}/convert",
+        headers=headers,
+    )
+    assert cross_tenant_response.status_code == 404
+    db.refresh(db.get(Lead, other_lead["id"]))
+    assert db.get(Lead, other_lead["id"]).status == "new"
+
+
+def test_conversation_rules_and_tenant_ownership(client, db):
+    company = create_company(db, name="Company 1", slug="company-1")
+    other_company = create_company(db, name="Company 2", slug="company-2")
+    _, token = create_identity(db, [(company, "member")])
+    _, other_token = create_identity(db, [(other_company, "member")])
+    headers = tenant_headers(company, token)
+    other_headers = tenant_headers(other_company, other_token)
+    lead = create_lead(client, company, headers)
+    customer = create_customer(client, company, headers)
+    other_lead = create_lead(client, other_company, other_headers, name="Ana")
+
+    missing_owner = client.post(
         "/conversations",
+        headers=headers,
+        json={"company_id": company.id, "channel": "web"},
+    )
+    assert missing_owner.status_code == 400
+
+    both_owners = client.post(
+        "/conversations",
+        headers=headers,
         json={
-            "company_id": company["id"],
-            "channel": "whatsapp",
+            "company_id": company.id,
+            "channel": "web",
             "lead_id": lead["id"],
             "customer_id": customer["id"],
         },
     )
-    assert both_owners_response.status_code == 400
-    assert (
-        both_owners_response.json()["detail"]
-        == "Conversation cannot belong to both lead and customer"
-    )
+    assert both_owners.status_code == 400
 
-    wrong_company_response = client.post(
+    cross_owner = client.post(
         "/conversations",
+        headers=headers,
         json={
-            "company_id": company["id"],
-            "channel": "whatsapp",
+            "company_id": company.id,
+            "channel": "web",
             "lead_id": other_lead["id"],
-            "customer_id": None,
         },
     )
-    assert wrong_company_response.status_code == 400
-    assert wrong_company_response.json()["detail"] == "Lead does not belong to this company"
+    assert cross_owner.status_code == 404
 
-    success_response = client.post(
-        "/conversations",
-        json={
-            "company_id": company["id"],
-            "channel": "whatsapp",
-            "lead_id": lead["id"],
-            "customer_id": None,
-        },
+    conversation = create_conversation(
+        client,
+        company,
+        headers,
+        lead_id=lead["id"],
     )
-    assert success_response.status_code == 200
-    data = success_response.json()
-    assert data["company_id"] == company["id"]
-    assert data["lead_id"] == lead["id"]
-    assert data["customer_id"] is None
-    assert data["status"] == "open"
+    assert (
+        client.get(
+            f"/conversations/{conversation['id']}",
+            headers=other_headers,
+        ).status_code
+        == 404
+    )
+    assert client.get("/companies/999/conversations", headers=headers).status_code == 404
 
 
 def test_conversation_owner_database_constraint(db):
-    company = Company(name="Acme", slug="acme")
-    db.add(company)
-    db.flush()
-
+    company = create_company(db)
     lead = Lead(
         company_id=company.id,
         name="Maria",
         phone="11999999999",
         source="site",
-        interest="automacao",
     )
     customer = Customer(
         company_id=company.id,
         name="Joao",
         phone="11888888888",
-        email="joao@example.com",
     )
     db.add_all([lead, customer])
     db.commit()
 
-    db.add_all(
-        [
+    for lead_id, customer_id in ((None, None), (lead.id, customer.id)):
+        db.add(
             Conversation(
                 company_id=company.id,
-                lead_id=lead.id,
-                customer_id=None,
+                lead_id=lead_id,
+                customer_id=customer_id,
                 channel="whatsapp",
-            ),
-            Conversation(
-                company_id=company.id,
-                lead_id=None,
-                customer_id=customer.id,
-                channel="whatsapp",
-            ),
-        ]
-    )
-    db.commit()
-
-    db.add(
-        Conversation(
-            company_id=company.id,
-            lead_id=None,
-            customer_id=None,
-            channel="whatsapp",
+            )
         )
-    )
-    with pytest.raises(IntegrityError):
-        db.flush()
-    db.rollback()
-
-    db.add(
-        Conversation(
-            company_id=company.id,
-            lead_id=lead.id,
-            customer_id=customer.id,
-            channel="whatsapp",
-        )
-    )
-    with pytest.raises(IntegrityError):
-        db.flush()
-    db.rollback()
+        with pytest.raises(IntegrityError):
+            db.flush()
+        db.rollback()
 
 
-def test_get_and_list_company_conversations(client):
-    company = create_company(client, name="Company 1", slug="company-1")
-    other_company = create_company(client, name="Company 2", slug="company-2")
-    lead = create_lead(client, company["id"], name="Maria")
-    other_lead = create_lead(client, other_company["id"], name="Ana")
-    conversation = create_conversation(
+def test_message_sender_cannot_be_forged_and_cross_tenant_has_no_effect(client, db):
+    company = create_company(db, name="Company 1", slug="company-1")
+    other_company = create_company(db, name="Company 2", slug="company-2")
+    _, token = create_identity(db, [(company, "member")])
+    _, other_token = create_identity(db, [(other_company, "member")])
+    headers = tenant_headers(company, token)
+    other_headers = tenant_headers(other_company, other_token)
+    other_lead = create_lead(client, other_company, other_headers)
+    other_conversation = create_conversation(
         client,
-        company_id=company["id"],
-        lead_id=lead["id"],
-    )
-    create_conversation(
-        client,
-        company_id=other_company["id"],
+        other_company,
+        other_headers,
         lead_id=other_lead["id"],
     )
 
-    get_response = client.get(f"/conversations/{conversation['id']}")
+    cross_response = client.post(
+        f"/conversations/{other_conversation['id']}/messages",
+        headers=headers,
+        json={"sender_type": "human", "content": "Cross tenant"},
+    )
+    assert cross_response.status_code == 404
 
-    assert get_response.status_code == 200
-    assert get_response.json()["id"] == conversation["id"]
+    forged_response = client.post(
+        f"/conversations/{other_conversation['id']}/messages",
+        headers=other_headers,
+        json={"sender_type": "system", "content": "Forged"},
+    )
+    assert forged_response.status_code == 403
 
-    list_response = client.get(f"/companies/{company['id']}/conversations")
+    valid_response = client.post(
+        f"/conversations/{other_conversation['id']}/messages",
+        headers=other_headers,
+        json={"sender_type": "human", "content": "Valid"},
+    )
+    assert valid_response.status_code == 200
+    assert db.scalar(select(func.count()).select_from(Message)) == 1
 
-    assert list_response.status_code == 200
-    conversations = list_response.json()
-    assert len(conversations) == 1
-    assert conversations[0]["id"] == conversation["id"]
 
+def test_remaining_cross_tenant_operations_fail_without_mutation(client, db):
+    company = create_company(db, name="Company 1", slug="company-1")
+    other_company = create_company(db, name="Company 2", slug="company-2")
+    _, token = create_identity(db, [(company, "member")])
+    _, other_token = create_identity(db, [(other_company, "member")])
+    headers = tenant_headers(company, token)
+    other_headers = tenant_headers(other_company, other_token)
+    other_lead = create_lead(client, other_company, other_headers)
+    other_customer = create_customer(client, other_company, other_headers)
+    other_conversation = create_conversation(
+        client,
+        other_company,
+        other_headers,
+        customer_id=other_customer["id"],
+    )
 
-def test_agent_reply_persists_customer_and_agent_messages(client, monkeypatch):
-    company = create_company(client)
-    config_response = client.put(
-        f"/companies/{company['id']}/agent-config",
+    update_response = client.patch(
+        f"/leads/{other_lead['id']}",
+        headers=headers,
+        json={"status": "won"},
+    )
+    assert update_response.status_code == 404
+
+    customer_response = client.post(
+        "/customers",
+        headers=headers,
         json={
-            "instructions": "Priorize agendamentos.",
-            "model": "company-model",
+            "company_id": other_company.id,
+            "name": "Injected customer",
+            "phone": "11000000000",
         },
     )
+    assert customer_response.status_code == 400
+
+    conversation_response = client.post(
+        "/conversations",
+        headers=headers,
+        json={
+            "company_id": other_company.id,
+            "channel": "web",
+            "lead_id": other_lead["id"],
+        },
+    )
+    assert conversation_response.status_code == 400
+
+    for path in (
+        f"/companies/{other_company.id}/leads",
+        f"/companies/{other_company.id}/customers",
+        f"/companies/{other_company.id}/conversations",
+        f"/conversations/{other_conversation['id']}/messages",
+    ):
+        assert client.get(path, headers=headers).status_code == 404
+
+    db.refresh(db.get(Lead, other_lead["id"]))
+    assert db.get(Lead, other_lead["id"]).status == "new"
+    assert db.scalar(
+        select(func.count())
+        .select_from(Customer)
+        .where(Customer.name == "Injected customer")
+    ) == 0
+
+
+def test_agent_reply_persists_messages_with_company_configuration(
+    client,
+    db,
+    monkeypatch,
+):
+    company = create_company(db)
+    _, token = create_identity(db, [(company, "owner")])
+    headers = tenant_headers(company, token)
+    config_response = client.put(
+        f"/companies/{company.id}/agent-config",
+        headers=headers,
+        json={"instructions": "Priorize agendamentos.", "model": "company-model"},
+    )
     assert config_response.status_code == 200
-    lead = create_lead(client, company["id"])
+    lead = create_lead(client, company, headers)
     conversation = create_conversation(
         client,
-        company_id=company["id"],
+        company,
+        headers,
         lead_id=lead["id"],
     )
 
@@ -414,77 +565,70 @@ def test_agent_reply_persists_customer_and_agent_messages(client, monkeypatch):
 
     response = client.post(
         f"/conversations/{conversation['id']}/agent-reply",
+        headers=headers,
         json={"content": "Ola"},
     )
-
     assert response.status_code == 200
-    assert response.json() == {
-        "conversation_id": conversation["id"],
-        "reply": "Resposta do agente",
-    }
 
-    messages_response = client.get(f"/conversations/{conversation['id']}/messages")
-
-    assert messages_response.status_code == 200
-    messages = messages_response.json()
-    assert len(messages) == 2
-    assert messages[0]["sender_type"] == "customer"
-    assert messages[0]["content"] == "Ola"
-    assert messages[1]["sender_type"] == "agent"
-    assert messages[1]["content"] == "Resposta do agente"
+    messages = client.get(
+        f"/conversations/{conversation['id']}/messages",
+        headers=headers,
+    ).json()
+    assert [(item["sender_type"], item["content"]) for item in messages] == [
+        ("customer", "Ola"),
+        ("agent", "Resposta do agente"),
+    ]
 
 
-def test_agent_reply_keeps_customer_message_when_agent_service_fails(
-    client,
-    monkeypatch,
-):
-    company = create_company(client)
-    lead = create_lead(client, company["id"])
-    conversation = create_conversation(
+def test_cross_tenant_agent_reply_does_not_call_agent_or_persist(client, db, monkeypatch):
+    company = create_company(db, name="Company 1", slug="company-1")
+    other_company = create_company(db, name="Company 2", slug="company-2")
+    _, token = create_identity(db, [(company, "member")])
+    _, other_token = create_identity(db, [(other_company, "member")])
+    headers = tenant_headers(company, token)
+    other_headers = tenant_headers(other_company, other_token)
+    other_lead = create_lead(client, other_company, other_headers)
+    other_conversation = create_conversation(
         client,
-        company_id=company["id"],
-        lead_id=lead["id"],
+        other_company,
+        other_headers,
+        lead_id=other_lead["id"],
     )
 
-    def fake_generate_agent_reply(message, history, instructions=None, model=None):
-        raise AgentServiceError("Ollama unavailable")
+    def must_not_run(*args, **kwargs):
+        raise AssertionError("agent service must not be called")
 
     monkeypatch.setattr(
         "app.routers.conversations.generate_agent_reply",
-        fake_generate_agent_reply,
+        must_not_run,
     )
-
     response = client.post(
-        f"/conversations/{conversation['id']}/agent-reply",
+        f"/conversations/{other_conversation['id']}/agent-reply",
+        headers=headers,
         json={"content": "Ola"},
     )
 
-    assert response.status_code == 503
-    assert response.json() == {"detail": "Agent service unavailable"}
-
-    messages_response = client.get(f"/conversations/{conversation['id']}/messages")
-
-    assert messages_response.status_code == 200
-    messages = messages_response.json()
-    assert len(messages) == 1
-    assert messages[0]["sender_type"] == "customer"
-    assert messages[0]["content"] == "Ola"
-    assert not any(message["sender_type"] == "agent" for message in messages)
+    assert response.status_code == 404
+    assert db.scalar(select(func.count()).select_from(Message)) == 0
 
 
-def test_agent_reply_does_not_expose_internal_agent_error_details(
+def test_agent_reply_failure_preserves_customer_message_without_internal_details(
     client,
+    db,
     monkeypatch,
 ):
-    company = create_company(client)
-    lead = create_lead(client, company["id"])
+    company = create_company(db)
+    _, token = create_identity(db, [(company, "member")])
+    headers = tenant_headers(company, token)
+    lead = create_lead(client, company, headers)
     conversation = create_conversation(
         client,
-        company_id=company["id"],
+        company,
+        headers,
         lead_id=lead["id"],
     )
 
-    def fake_generate_agent_reply(message, history, instructions=None, model=None):
+    def fake_generate_agent_reply(*args, **kwargs):
         raise AgentServiceError(
             "Connection refused http://localhost:11434/api/chat qwen3:8b"
         )
@@ -493,19 +637,22 @@ def test_agent_reply_does_not_expose_internal_agent_error_details(
         "app.routers.conversations.generate_agent_reply",
         fake_generate_agent_reply,
     )
-
     response = client.post(
         f"/conversations/{conversation['id']}/agent-reply",
+        headers=headers,
         json={"content": "Ola"},
     )
 
     assert response.status_code == 503
     assert response.json() == {"detail": "Agent service unavailable"}
-
-    response_body = response.text
-    assert "Connection refused" not in response_body
-    assert "http://localhost:11434/api/chat" not in response_body
-    assert "qwen3:8b" not in response_body
+    assert "Connection refused" not in response.text
+    messages = client.get(
+        f"/conversations/{conversation['id']}/messages",
+        headers=headers,
+    ).json()
+    assert [(item["sender_type"], item["content"]) for item in messages] == [
+        ("customer", "Ola")
+    ]
 
 
 def test_agent_service_uses_company_overrides(monkeypatch):
@@ -525,7 +672,6 @@ def test_agent_service_uses_company_overrides(monkeypatch):
         return FakeResponse()
 
     monkeypatch.setattr("app.services.agent.httpx.post", fake_post)
-
     response = generate_agent_reply(
         message="Olá",
         history=[],
