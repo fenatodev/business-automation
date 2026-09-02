@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class LeadCreate(BaseModel):
@@ -104,3 +104,26 @@ class CompanyAgentConfigResponse(BaseModel):
     instructions: str | None
     model: str | None
     effective_model: str
+
+
+class AuthLoginRequest(BaseModel):
+    email: str = Field(min_length=1, max_length=320)
+    password: str = Field(min_length=1, max_length=1024)
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        value = value.strip().casefold()
+        if not value:
+            raise ValueError("Email cannot be empty")
+        return value
+
+
+class AuthTokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class CurrentUserResponse(BaseModel):
+    id: int
+    email: str
