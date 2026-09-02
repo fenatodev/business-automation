@@ -4,7 +4,9 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
+from app.dependencies import AuthenticatedContext
 from app.models import (
+    AccessAuditEvent,
     AuthSession,
     Company,
     CompanyMembership,
@@ -14,6 +16,7 @@ from app.models import (
     Message,
     User,
 )
+from app.routers.companies import deactivate_membership
 from app.services.agent import (
     BASE_SYSTEM_PROMPT,
     AgentServiceError,
@@ -198,6 +201,285 @@ def test_companies_list_only_active_memberships_and_creation_is_blocked(client, 
     )
     assert create_response.status_code == 403
     assert db.scalar(select(func.count()).select_from(Company)) == 3
+
+
+def test_membership_administration_is_owner_only_and_tenant_scoped(client, db):
+    company = create_company(db, name="Company 1", slug="company-1")
+    other_company = create_company(db, name="Company 2", slug="company-2")
+    owner, owner_token = create_identity(db, [(company, "owner")])
+    _, admin_token = create_identity(db, [(company, "admin")])
+    member, member_token = create_identity(db, [(company, "member")])
+    other_member, _ = create_identity(db, [(other_company, "member")])
+    db.add(
+        CompanyMembership(
+            user_id=owner.id,
+            company_id=other_company.id,
+            role="owner",
+            is_active=True,
+        )
+    )
+    inactive_user = User(
+        email_normalized="inactive-membership@example.com",
+        password_hash=hash_password("correct horse battery staple"),
+        is_active=True,
+    )
+    db.add(inactive_user)
+    db.flush()
+    db.add(
+        CompanyMembership(
+            user_id=inactive_user.id,
+            company_id=company.id,
+            role="member",
+            is_active=False,
+        )
+    )
+    db.commit()
+    owner_headers = tenant_headers(company, owner_token)
+
+    assert client.get(
+        f"/companies/{company.id}/memberships",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    ).status_code == 400
+    assert client.get(
+        f"/companies/{company.id}/memberships",
+        headers=tenant_headers(company, admin_token),
+    ).status_code == 403
+    assert client.get(
+        f"/companies/{company.id}/memberships",
+        headers=tenant_headers(company, member_token),
+    ).status_code == 403
+
+    memberships_response = client.get(
+        f"/companies/{company.id}/memberships",
+        headers=owner_headers,
+    )
+    assert memberships_response.status_code == 200
+    memberships = memberships_response.json()
+    assert [item["id"] for item in memberships] == sorted(item["id"] for item in memberships)
+    assert {item["id"] for item in memberships} == {
+        item.id for item in db.scalars(
+            select(CompanyMembership).where(CompanyMembership.company_id == company.id)
+        )
+    }
+    assert all("password_hash" not in item for item in memberships)
+    assert any(item["is_active"] is False for item in memberships)
+    assert all(item["user_id"] != other_member.id for item in memberships)
+
+    other_membership = db.scalar(
+        select(CompanyMembership).where(CompanyMembership.user_id == other_member.id)
+    )
+    cross_tenant_response = client.post(
+        f"/companies/{company.id}/memberships/{other_membership.id}/deactivate",
+        headers=owner_headers,
+    )
+    assert cross_tenant_response.status_code == 404
+    assert db.get(CompanyMembership, other_membership.id).is_active is True
+    assert db.scalar(select(func.count()).select_from(AccessAuditEvent)) == 0
+
+    member_membership = db.scalar(
+        select(CompanyMembership).where(CompanyMembership.user_id == member.id)
+    )
+    assert client.get(
+        f"/companies/{other_company.id}/memberships",
+        headers=owner_headers,
+    ).status_code == 404
+    assert member_membership is not None
+
+
+def test_membership_role_changes_are_audited_and_preserve_an_active_owner(client, db):
+    company = create_company(db)
+    owner, owner_token = create_identity(db, [(company, "owner")])
+    member, _ = create_identity(db, [(company, "member")])
+    second_owner, second_owner_token = create_identity(db, [(company, "owner")])
+    headers = tenant_headers(company, owner_token)
+    owner_membership = db.scalar(
+        select(CompanyMembership).where(CompanyMembership.user_id == owner.id)
+    )
+    member_membership = db.scalar(
+        select(CompanyMembership).where(CompanyMembership.user_id == member.id)
+    )
+    second_owner_membership = db.scalar(
+        select(CompanyMembership).where(CompanyMembership.user_id == second_owner.id)
+    )
+
+    invalid_response = client.patch(
+        f"/companies/{company.id}/memberships/{member_membership.id}/role",
+        headers=headers,
+        json={"role": "invalid"},
+    )
+    assert invalid_response.status_code == 422
+
+    update_response = client.patch(
+        f"/companies/{company.id}/memberships/{member_membership.id}/role",
+        headers=headers,
+        json={"role": "admin"},
+    )
+    assert update_response.status_code == 200
+    assert update_response.json()["role"] == "admin"
+    event = db.scalar(select(AccessAuditEvent))
+    assert (event.actor_user_id, event.target_membership_id, event.action) == (
+        owner.id,
+        member_membership.id,
+        "membership_role_changed",
+    )
+    assert (event.old_role, event.new_role) == ("member", "admin")
+    same_role_response = client.patch(
+        f"/companies/{company.id}/memberships/{member_membership.id}/role",
+        headers=headers,
+        json={"role": "admin"},
+    )
+    assert same_role_response.status_code == 200
+    assert db.scalar(select(func.count()).select_from(AccessAuditEvent)) == 1
+
+    assert client.patch(
+        f"/companies/{company.id}/memberships/{owner_membership.id}/role",
+        headers=headers,
+        json={"role": "admin"},
+    ).status_code == 200
+    blocked_response = client.post(
+        f"/companies/{company.id}/memberships/{second_owner_membership.id}/deactivate",
+        headers=tenant_headers(company, second_owner_token),
+    )
+    assert blocked_response.status_code == 409
+    assert db.get(CompanyMembership, second_owner_membership.id).is_active is True
+    assert db.scalar(select(func.count()).select_from(AccessAuditEvent)) == 2
+
+
+def test_membership_deactivation_and_reactivation_are_audited_and_immediate(client, db):
+    company = create_company(db)
+    _, owner_token = create_identity(db, [(company, "owner")])
+    member, member_token = create_identity(db, [(company, "member")])
+    headers = tenant_headers(company, owner_token)
+    member_headers = tenant_headers(company, member_token)
+    membership = db.scalar(
+        select(CompanyMembership).where(CompanyMembership.user_id == member.id)
+    )
+
+    deactivated = client.post(
+        f"/companies/{company.id}/memberships/{membership.id}/deactivate",
+        headers=headers,
+    )
+    assert deactivated.status_code == 200
+    assert deactivated.json()["is_active"] is False
+    assert client.get("/leads", headers=member_headers).status_code == 404
+    assert client.post(
+        f"/companies/{company.id}/memberships/{membership.id}/deactivate",
+        headers=headers,
+    ).status_code == 409
+
+    reactivated = client.post(
+        f"/companies/{company.id}/memberships/{membership.id}/reactivate",
+        headers=headers,
+    )
+    assert reactivated.status_code == 200
+    assert reactivated.json()["is_active"] is True
+    assert client.get("/leads", headers=member_headers).status_code == 200
+    assert client.post(
+        f"/companies/{company.id}/memberships/{membership.id}/reactivate",
+        headers=headers,
+    ).status_code == 409
+    events = db.scalars(select(AccessAuditEvent).order_by(AccessAuditEvent.id)).all()
+    assert [(event.action, event.old_is_active, event.new_is_active) for event in events] == [
+        ("membership_deactivated", True, False),
+        ("membership_reactivated", False, True),
+    ]
+
+
+def test_inactive_owner_does_not_count_toward_last_active_owner(client, db):
+    company = create_company(db)
+    active_owner, active_owner_token = create_identity(db, [(company, "owner")])
+    inactive_owner = User(
+        email_normalized="inactive-owner@example.com",
+        password_hash=hash_password("correct horse battery staple"),
+        is_active=True,
+    )
+    db.add(inactive_owner)
+    db.flush()
+    db.add(
+        CompanyMembership(
+            user_id=inactive_owner.id,
+            company_id=company.id,
+            role="owner",
+            is_active=False,
+        )
+    )
+    db.commit()
+    active_membership = db.scalar(
+        select(CompanyMembership).where(CompanyMembership.user_id == active_owner.id)
+    )
+
+    response = client.post(
+        f"/companies/{company.id}/memberships/{active_membership.id}/deactivate",
+        headers=tenant_headers(company, active_owner_token),
+    )
+
+    assert response.status_code == 409
+    assert db.get(CompanyMembership, active_membership.id).is_active is True
+    assert db.scalar(select(func.count()).select_from(AccessAuditEvent)) == 0
+
+
+def test_audit_persistence_failure_rolls_back_membership_change(db, monkeypatch):
+    company = create_company(db)
+    owner, _ = create_identity(db, [(company, "owner")])
+    member, _ = create_identity(db, [(company, "member")])
+    owner_membership = db.scalar(
+        select(CompanyMembership).where(CompanyMembership.user_id == owner.id)
+    )
+    member_membership = db.scalar(
+        select(CompanyMembership).where(CompanyMembership.user_id == member.id)
+    )
+    context = AuthenticatedContext(
+        user=owner,
+        session=None,  # type: ignore[arg-type]
+        company=company,
+        membership=owner_membership,
+    )
+    add = db.add
+
+    def add_invalid_audit_event(instance):
+        if isinstance(instance, AccessAuditEvent):
+            instance.action = "invalid"
+        add(instance)
+
+    monkeypatch.setattr(db, "add", add_invalid_audit_event)
+
+    with pytest.raises(IntegrityError):
+        deactivate_membership(db, context, company.id, member_membership.id)
+
+    assert db.get(CompanyMembership, member_membership.id).is_active is True
+    assert db.scalar(select(func.count()).select_from(AccessAuditEvent)) == 0
+
+
+def test_access_audit_event_enforces_known_actions_and_roles(db):
+    company = create_company(db)
+    actor, _ = create_identity(db, [(company, "owner")])
+    membership = db.scalar(
+        select(CompanyMembership).where(CompanyMembership.user_id == actor.id)
+    )
+
+    db.add(
+        AccessAuditEvent(
+            company_id=company.id,
+            actor_user_id=actor.id,
+            target_membership_id=membership.id,
+            action="invalid",
+        )
+    )
+    with pytest.raises(IntegrityError):
+        db.flush()
+    db.rollback()
+
+    db.add(
+        AccessAuditEvent(
+            company_id=company.id,
+            actor_user_id=actor.id,
+            target_membership_id=membership.id,
+            action="membership_role_changed",
+            old_role="invalid",
+        )
+    )
+    with pytest.raises(IntegrityError):
+        db.flush()
 
 
 def test_agent_config_requires_admin_role_and_matching_tenant(client, db):

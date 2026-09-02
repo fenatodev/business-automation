@@ -34,7 +34,7 @@ existing_database_url="postgresql+psycopg://alembic_validation:${password}@127.0
 invalid_database_url="postgresql+psycopg://alembic_validation:${password}@127.0.0.1:${port}/alembic_invalid_validation"
 owner_constraint_previous_revision="963028cb1f76"
 previous_revision="e8f2a9c1d5b7"
-head_revision="f2c7a6b8d9e0"
+head_revision="a91e6c2d4b7f"
 
 run_alembic() {
   DATABASE_URL="$1" uv run alembic "${@:2}"
@@ -52,6 +52,14 @@ run_auth_validation() {
   DATABASE_URL="$1" uv run python scripts/verify-authentication-foundation.py "${@:2}"
 }
 
+run_access_audit_validation() {
+  DATABASE_URL="$1" uv run python scripts/verify-access-audit-events.py "${@:2}"
+}
+
+run_access_audit_concurrency_validation() {
+  DATABASE_URL="$1" uv run python scripts/verify-access-audit-concurrency.py
+}
+
 run_alembic "$database_url" upgrade head
 run_alembic "$database_url" current | grep -F "${head_revision} (head)"
 run_alembic "$database_url" check
@@ -59,6 +67,8 @@ run_owner_validation "$database_url" seed --channel fresh-validation
 run_owner_validation "$database_url" verify --channel fresh-validation
 run_agent_config_validation "$database_url" verify
 run_auth_validation "$database_url" verify
+run_access_audit_validation "$database_url" verify
+run_access_audit_concurrency_validation "$database_url"
 
 docker exec "$container_id" createdb -U alembic_validation alembic_existing_validation
 run_alembic "$existing_database_url" upgrade "$previous_revision"
@@ -67,14 +77,19 @@ run_alembic "$existing_database_url" upgrade head
 run_owner_validation "$existing_database_url" verify --channel existing-validation
 run_agent_config_validation "$existing_database_url" verify
 run_auth_validation "$existing_database_url" verify
+run_access_audit_validation "$existing_database_url" verify
+run_access_audit_concurrency_validation "$existing_database_url"
 run_alembic "$existing_database_url" downgrade -1
-run_auth_validation "$existing_database_url" assert-absent
+run_access_audit_validation "$existing_database_url" assert-absent
+run_auth_validation "$existing_database_url" verify
 run_owner_validation "$existing_database_url" verify --channel existing-validation
 run_agent_config_validation "$existing_database_url" verify
 run_alembic "$existing_database_url" upgrade head
 run_owner_validation "$existing_database_url" verify --channel existing-validation
 run_agent_config_validation "$existing_database_url" verify
 run_auth_validation "$existing_database_url" verify
+run_access_audit_validation "$existing_database_url" verify
+run_access_audit_concurrency_validation "$existing_database_url"
 
 docker exec "$container_id" createdb -U alembic_validation alembic_invalid_validation
 run_alembic "$invalid_database_url" upgrade "$owner_constraint_previous_revision"

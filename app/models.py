@@ -141,6 +141,55 @@ class CompanyMembership(Base):
     )
 
 
+class AccessAuditEvent(Base):
+    __tablename__ = "access_audit_events"
+    __table_args__ = (
+        CheckConstraint(
+            "action IN ('membership_role_changed', 'membership_deactivated', "
+            "'membership_reactivated')",
+            name="ck_access_audit_events_action",
+        ),
+        CheckConstraint(
+            "old_role IS NULL OR old_role IN ('owner', 'admin', 'member')",
+            name="ck_access_audit_events_old_role",
+        ),
+        CheckConstraint(
+            "new_role IS NULL OR new_role IN ('owner', 'admin', 'member')",
+            name="ck_access_audit_events_new_role",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    company_id: Mapped[int] = mapped_column(
+        ForeignKey("companies.id", name="fk_access_audit_events_company_id_companies"),
+        nullable=False,
+        index=True,
+    )
+    actor_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", name="fk_access_audit_events_actor_user_id_users"),
+        nullable=False,
+        index=True,
+    )
+    target_membership_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "company_memberships.id",
+            name="fk_access_audit_events_target_membership_id_company_memberships",
+        ),
+        nullable=False,
+        index=True,
+    )
+    action: Mapped[str] = mapped_column(String(40), nullable=False)
+    old_role: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    new_role: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    old_is_active: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    new_is_active: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+
 class AuthSession(Base):
     __tablename__ = "auth_sessions"
     __table_args__ = (

@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -104,6 +105,20 @@ class CompanyAgentConfigResponse(BaseModel):
     instructions: str | None
     model: str | None
     effective_model: str
+
+
+class CompanyMembershipResponse(BaseModel):
+    id: int
+    user_id: int
+    email: str
+    role: Literal["owner", "admin", "member"]
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class CompanyMembershipRoleUpdate(BaseModel):
+    role: Literal["owner", "admin", "member"]
 
 
 class AuthLoginRequest(BaseModel):
