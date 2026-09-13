@@ -129,23 +129,24 @@ RAG, automações e integrações entram depois da fundação de dados, seguran�
 
 ## GitHub progress checkpoints
 
-The user permanently authorizes Pi to create Git commits and push them to
+The user permanently authorizes the active operational agent (including Pi,
+Codex, or a local Qwen/Ollama agent) to create Git commits and push them to
 GitHub as progress checkpoints under the rules below.
 
 ### When to checkpoint
 
-Pi MUST create a checkpoint after every meaningful completed development task
-or milestone when:
+The active operational agent MUST create a checkpoint after every meaningful
+completed development task or milestone when:
 
 - the requested task is complete;
 - relevant tests pass;
 - compileall passes when applicable;
 - `git diff --check` passes;
 - no known broken behavior is being intentionally committed;
-- no Codex review required by AGENTS.md is still pending.
+- no explicitly requested review is still pending.
 
-For longer or risky work, Pi should also make sure a safe checkpoint exists
-BEFORE beginning the risky change.
+For longer or risky work, the active operational agent should also make sure a
+safe checkpoint exists BEFORE beginning the risky change.
 
 ### Checkpoint procedure
 
@@ -194,7 +195,7 @@ git push origin <current-branch>
 
 The user does NOT need to approve each normal progress checkpoint individually.
 
-Pi should simply report after a successful checkpoint:
+The active operational agent should simply report after a successful checkpoint:
 
 ```text
 CHECKPOINT SAVED
@@ -208,37 +209,14 @@ rewrites or ambiguous changes, explicit user approval is still required.
 
 ## Agent workflow and escalation
 
-- Pi is the default operational agent for this repository.
-- Normal development discussion, implementation, testing and diff review happen through Pi.
-- Codex IDE is a second-review agent, not the default executor.
-- Do not have Pi and Codex edit the workspace simultaneously.
-
-Pi may implement directly when the task is small or medium, scoped and covered by existing tests.
-
-Pi MUST stop and request a Codex review before proceeding with high-risk changes involving:
-- authentication or authorization;
-- RBAC;
-- tenant isolation or multi-tenancy security;
-- database schema changes;
-- Alembic migrations;
-- destructive database operations;
-- security-sensitive behavior;
-- major architectural refactors;
-- important dependency changes;
-- production/deployment configuration;
-- a failing test whose proposed fix changes existing application behavior.
-
-Pi should also recommend Codex review before a significant merge or release.
-
-When escalation is required, Pi must explicitly say:
-"Codex review required"
-and briefly state what needs review.
-
-Codex should normally review the current code/diff without editing it.
-After the review, Pi remains the primary executor unless explicitly instructed otherwise.
-
-The human user should not need to decide routinely which agent to use;
-Pi is responsible for signaling when second review is appropriate.
+- The agent currently selected by the user is the operational agent and may analyze, implement, test, commit, and push safe progress checkpoints without approval from another AI agent.
+- Prefer a local Qwen/Ollama agent for routine inspection, implementation, tests, documentation, and checkpoint work when its tool use is reliable enough for the task.
+- Codex review is optional. Use it only when the user explicitly requests it or when the operational agent recommends it as useful; it is never a mandatory gate imposed by this repository.
+- A request or recommendation for review must not block unrelated safe progress.
+- Do not have multiple agents edit the same workspace simultaneously.
+- For authentication, authorization, RBAC, tenant isolation, migrations, security-sensitive behavior, major refactors, important dependencies, and production configuration, the operational agent must first inspect the real code, state a concise plan, make focused changes, and run proportionate tests. A separate Codex review is not required.
+- The operational agent may fix a failing test when the requested task clearly includes the behavior change. Explain material compatibility changes in the final report.
+- Human approval remains required only for merges, releases, destructive database operations against non-disposable data, force pushes, history rewrites, direct pushes to `main`, secret handling, or materially ambiguous changes.
 
 ## Product context
 
@@ -251,17 +229,17 @@ Before making product, roadmap or commercial assumptions, read:
 Do not invent answers for open product/commercial decisions.
 If implementation depends on an unresolved business decision, ask the user.
 
-## Local Codex review handoff
+## Optional local Codex review handoff
 
-- When Pi requests "Codex review required", the review may be exchanged through:
+- When the user or operational agent requests a Codex review, it may be exchanged through:
   `.ai/codex-review.md`
 - `.ai/` is local agent workspace and must never be committed.
 - Codex may write ONLY `.ai/codex-review.md` when explicitly asked for a review.
 - Writing this review file is not considered editing application code.
 - Codex must not modify source code during review unless explicitly authorized.
-- After Codex writes the review, Pi should read `.ai/codex-review.md`,
+- After Codex writes the review, the operational agent should read `.ai/codex-review.md`,
   summarize the findings to the user, and propose the next action.
-- Pi must not blindly apply Codex recommendations; inspect them against the
+- The operational agent must not blindly apply Codex recommendations; inspect them against the
   actual code and existing tests first.
 - A new Codex review should replace the previous contents of
   `.ai/codex-review.md` to avoid stale recommendations.
