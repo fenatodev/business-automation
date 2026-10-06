@@ -1,78 +1,112 @@
 # business-automation
 
-Plataforma reutilizável de automação de negócios, CRM e IA.
+**Reusable backend foundation for CRM, business automation, and AI-assisted operational workflows.**
 
-O projeto tem dois objetivos complementares:
+This repository is a practical backend engineering project built around real business-automation use cases. The current implementation focuses on a FastAPI API, relational domain modeling, tested business rules, and a bounded integration point for a local AI agent.
 
-1. estruturar e automatizar a operação da própria empresa como **Client 0**;
-2. transformar as capacidades validadas em serviços, integrações e produtos de automação reutilizáveis para outros clientes.
+## What is implemented
 
-## Papel do repositório
+- FastAPI application with company, lead, customer, conversation, and message flows;
+- SQLAlchemy models and PostgreSQL-oriented persistence;
+- Alembic migrations;
+- API-level business rules for ownership and cross-company consistency;
+- agent-reply flow with persisted conversation history;
+- failure handling that preserves user messages when the agent service is unavailable;
+- tests that verify expected behavior and prevent internal agent-service details from leaking through the API.
 
-Este é o **repositório canônico do produto**. O core deve permanecer horizontal e configurável por empresa, evitando forks por cliente ou regras específicas de nicho.
+## Engineering case study
 
-O código atual contém uma API FastAPI com entidades e fluxos básicos para:
+The useful part of this project is not the idea of "AI for business". It is the boundary work required to make automation reliable.
 
-- Company;
-- Lead;
-- Customer;
-- Conversation;
-- Message;
-- integração de agente local.
+| Engineering concern | Current approach |
+| --- | --- |
+| Domain modeling | Explicit Company, Lead, Customer, Conversation and Message entities. |
+| Tenant-aware data relationships | Company ownership is represented explicitly and cross-company misuse is rejected by API rules. |
+| API failure behavior | Missing resources and invalid ownership relationships return explicit client errors. |
+| AI integration failure | Customer input is preserved, failed agent output is not fabricated, and internal service details are not returned to clients. |
+| Regression protection | Pytest API tests cover happy paths, invalid relationships and agent-service failures. |
+| Product boundaries | ERP and automation engines remain external integrations instead of being reimplemented in the core. |
 
-A implementação existente é uma base de produto, não um contrato definitivo de arquitetura.
+### Example evaluation mindset
 
-## Relação com ERP e automação
+One tested failure path is deliberately more important than a demo-only happy path:
 
-O produto não pretende reimplementar um ERP completo.
+```text
+customer message
+→ persist input
+→ call agent service
+→ agent service fails
+→ return bounded 503
+→ preserve customer message
+→ do not persist fake agent output
+→ do not leak internal endpoint/model details
+```
 
-Para o dogfooding inicial:
+That pattern reflects the broader engineering approach used across my projects: **reproduce the failure, define the boundary, test the behavior, and avoid claiming guarantees that are not implemented.**
 
-- **ERPNext** é o principal sistema de back-office/ERP a integrar e validar;
-- **Dolibarr** permanece como alternativa de laboratório/benchmark;
-- **n8n** pode ser usado como motor auxiliar de integração e automação, sem virar o domínio central;
-- este repositório concentra o core reutilizável de CRM, IA, automações e adapters.
+## Stack
 
-O laboratório local de ERP e scripts é tratado como ambiente experimental. Componentes comprovadamente úteis podem ser promovidos para este repositório de forma explícita e revisada.
+- Python 3.12+
+- FastAPI
+- SQLAlchemy
+- PostgreSQL / psycopg
+- Alembic
+- Pydantic Settings
+- HTTPX
+- Pytest
+- uv
 
-## Segurança e dados
+## Architecture direction
 
-Este repositório é público. Portanto:
+The repository is intended to remain a reusable core rather than a monolithic ERP.
 
-- não armazenar dados reais de clientes;
-- não versionar `.env`, credenciais, tokens ou chaves;
-- não tratar `company_id` enviado pelo cliente como autorização;
-- autenticação, RBAC e isolamento real de tenant são obrigatórios antes de exposição pública;
-- configurações operacionais privadas devem ficar fora do core público.
+- **Core:** CRM entities, conversations, AI-assisted workflows, reusable business rules.
+- **ERP:** ERPNext is the primary back-office integration target; Dolibarr remains an alternative for evaluation.
+- **Automation:** n8n may coordinate integrations and workflows without becoming the domain authority.
+- **AI runtime:** local/replaceable agent integration behind an explicit service boundary.
 
-## Estado atual
+## Current limitations
 
-A base existente é aproveitável, mas ainda possui dívida técnica conhecida:
+This is an active engineering project, not a production-ready SaaS.
 
-- cadeia de migrations precisa ser validada desde banco vazio;
-- autenticação/RBAC ainda não estão implementados;
-- isolamento multi-tenant ainda não é uma fronteira de segurança;
-- a integração antiga com Ollama deve ser revisada antes de ser tratada como runtime definitivo;
-- o README anterior estava vazio e a organização do produto ainda não distinguia claramente core, adapters e laboratório.
+Known gaps include:
 
-## Direção imediata
+- authentication and RBAC are not complete;
+- multi-tenant isolation is not yet a security boundary;
+- migration history still needs clean-database validation;
+- the current local-agent integration should not be treated as the final runtime contract.
 
-A prioridade é validar a operação real da própria empresa sem transformar o core em um ERP monolítico:
+These limitations are kept explicit because roadmap intent is not implementation evidence.
 
-1. consolidar e testar a base atual;
-2. mapear o fluxo operacional da empresa;
-3. definir a fronteira entre core próprio e ERPNext;
-4. integrar o primeiro fluxo real ponta a ponta;
-5. medir o que é reutilizável;
-6. só então promover novas automações para produto.
+## Repository map
 
-Consulte também:
+```text
+app/            FastAPI application, models, routers and services
+migrations/     Alembic migration history
+tests/          API and failure-path regression tests
+docs/           product, roadmap, architecture and decision records
+src/            package entry point
+```
 
-- [Produto](docs/PRODUCT.md)
+## Development
+
+Install the project with your preferred `uv` workflow and run the test suite:
+
+```bash
+pytest
+```
+
+Review the supporting documents for current direction:
+
+- [Product](docs/PRODUCT.md)
 - [Roadmap](docs/ROADMAP.md)
-- [Decisões](docs/DECISIONS.md)
-- [Arquitetura e reconciliação](docs/ARCHITECTURE.md)
+- [Decisions](docs/DECISIONS.md)
+- [Architecture](docs/ARCHITECTURE.md)
 
-## Desenvolvimento
+## Security and data
 
-Regras operacionais e validações do repositório estão em [AGENTS.md](AGENTS.md).
+This repository is public.
+
+- do not commit customer data, credentials, tokens or private operational configuration;
+- do not treat a client-supplied `company_id` as authorization;
+- authenticated access, RBAC and real tenant isolation are required before public deployment.
