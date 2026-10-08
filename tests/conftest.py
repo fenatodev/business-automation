@@ -1,9 +1,39 @@
+import hashlib
+import json
 import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+ADMIN_TOKEN = "test-admin-token-not-a-real-secret"
+OPERATOR_A_TOKEN = "test-operator-a-token-not-a-real-secret"
+OPERATOR_B_TOKEN = "test-operator-b-token-not-a-real-secret"
+
+
+def token_hash(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
 os.environ["DATABASE_URL"] = "sqlite+pysqlite:///:memory:"
+os.environ["BA_ACCESS_IDENTITIES_JSON"] = json.dumps(
+    [
+        {
+            "token_sha256": token_hash(ADMIN_TOKEN),
+            "role": "admin",
+        },
+        {
+            "token_sha256": token_hash(OPERATOR_A_TOKEN),
+            "role": "operator",
+            "company_id": 1,
+        },
+        {
+            "token_sha256": token_hash(OPERATOR_B_TOKEN),
+            "role": "operator",
+            "company_id": 2,
+        },
+    ]
+)
 
 import pytest
 from fastapi.testclient import TestClient
@@ -59,3 +89,18 @@ def client():
         yield test_client
 
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def admin_headers():
+    return {"Authorization": f"Bearer {ADMIN_TOKEN}"}
+
+
+@pytest.fixture
+def operator_a_headers():
+    return {"Authorization": f"Bearer {OPERATOR_A_TOKEN}"}
+
+
+@pytest.fixture
+def operator_b_headers():
+    return {"Authorization": f"Bearer {OPERATOR_B_TOKEN}"}
