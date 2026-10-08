@@ -1,5 +1,18 @@
 # Decision Log
 
+## 2026-10-08 — WP-008: lifecycle de dados do Client 0
+
+Status: Accepted para F1 / piloto privado.
+
+Decision: aplicar minimização e lifecycle manual controlado antes do primeiro uso real do core. O core mantém apenas os dados necessários ao fluxo operacional sob sua autoridade; ERPNext/back-office permanece autoritativo para financeiro/fiscal; segredos não são dados de negócio; backup não cria retenção indefinida; exportação, correção e exclusão são procedimentos humanos no piloto e qualquer operação destrutiva sem mecanismo seguro exige tarefa própria.
+
+Rationale: a fundação técnica de F1 já demonstra migrations/recovery, isolamento, backup/restore, bind privado, revogação e logs mínimos. O lifecycle fecha o risco restante de transformar o piloto em retenção descontrolada ou duplicar fontes de verdade antes de existir demanda para automação de governança.
+
+Limits: esta é política operacional do piloto privado, não substitui avaliação jurídica/contábil, não define prazo fiscal universal, não autoriza coleta em massa, scraping, exposição pública ou categorias sensíveis.
+
+Reference: [Client 0 — ciclo de vida de dados](operations/data-lifecycle.md).
+
+
 ## 2026-10-08 — ADR 0003: acesso privado e isolamento por Company
 
 Status: Accepted para F1 / piloto privado.
