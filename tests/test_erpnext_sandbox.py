@@ -118,3 +118,18 @@ def test_prepare_is_private_and_never_overwrites(monkeypatch, tmp_path, capsys):
     assert values["ERP_SANDBOX_DB_ROOT_PASSWORD"] not in printed
     with pytest.raises(sandbox.SandboxError):
         sandbox.prepare(workdir)
+
+
+def test_start_commands_limit_compose_parallelism(monkeypatch, tmp_path):
+    observed = {}
+
+    def fake_run(command, *, check, env):
+        observed["command"] = command
+        observed["check"] = check
+        observed["parallel"] = env.get("COMPOSE_PARALLEL_LIMIT")
+
+    monkeypatch.setattr(sandbox.subprocess, "run", fake_run)
+    sandbox.run_compose(tmp_path, "up", "-d", "--quiet-pull")
+    assert observed["check"] is True
+    assert observed["parallel"] == "1"
+    assert observed["command"][-3:] == ["up", "-d", "--quiet-pull"]
