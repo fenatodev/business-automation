@@ -50,25 +50,57 @@ Nenhum outro arquivo.
 
 Criar `scripts/verify-postgres-backup-restore.sh`.
 
-### 1. Preflight
+### 1. Preflight antes do container
 
-Confirmar:
+Confirmar somente:
 
 - Docker disponível;
 - exatamente um head Alembic;
-- `pg_dump` e `pg_restore` disponíveis no container PostgreSQL 17;
-- diretório do repositório não recebe artefato de backup.
+- diretório do repositório não contém artefato de backup desta execução;
+- não existe container remanescente com prefixo `business-automation-backup-wp006-`.
 
-### 2. Container
+Se já existir container com esse prefixo, **parar e relatar**. Não removê-lo automaticamente, pois pode pertencer a outra execução.
 
-Subir um único PostgreSQL 17 descartável:
+Não criar container auxiliar para preflight.
 
-- nome único com prefixo WP-006;
-- bind `127.0.0.1::5432`;
-- admin/user/password efêmeros;
-- sem volume.
+### 2. Container único
 
-Aguardar `pg_isready`.
+Subir **exatamente um** PostgreSQL 17 descartável nesta execução:
+
+- nome único começando por `business-automation-backup-wp006-`;
+- usar o entrypoint/CMD padrão da imagem oficial `postgres:17`;
+- **não** sobrescrever o comando da imagem com `postgres`, `pg_ctl` ou outro processo;
+- bind exatamente no formato `127.0.0.1::5432`, deixando o Docker escolher a porta host;
+- admin/user/password efêmeros e exclusivos da execução;
+- sem volume;
+- nenhum container auxiliar, inclusive para diagnóstico.
+
+Aguardar readiness **no próprio container**, por exemplo:
+
+```bash
+docker exec "$CONTAINER_NAME" \
+  pg_isready -U "$DB_ADMIN" -d postgres
+```
+
+Não usar a porta host para o teste interno de readiness.
+
+Se o readiness falhar:
+
+1. inspecionar `docker logs "$CONTAINER_NAME"` do mesmo container;
+2. relatar a causa;
+3. encerrar a execução;
+4. deixar o trap remover somente esse container.
+
+Não criar outro container para investigar.
+
+Depois que o container estiver ready, confirmar **dentro dele**:
+
+```bash
+docker exec "$CONTAINER_NAME" pg_dump --version
+docker exec "$CONTAINER_NAME" pg_restore --version
+```
+
+Se algum binário não estiver disponível, parar conforme as stop conditions.
 
 ### 3. Banco fonte
 
@@ -98,11 +130,18 @@ Não desabilitar foreign keys/constraints.
 
 ### 5. Backup
 
-Criar backup lógico em formato custom do PostgreSQL:
+Criar backup lógico em formato custom do PostgreSQL usando o `pg_dump` **do mesmo container**.
 
-`pg_dump -Fc`.
+Fluxo esperado:
 
-O arquivo deve ficar em caminho temporário único, por exemplo `/tmp/business-automation-wp006-...`.
+```bash
+docker exec -e PGPASSWORD="$DB_PASSWORD" "$CONTAINER_NAME" \
+  pg_dump -U "$DB_ADMIN" -d "$SOURCE_DB" -Fc > "$BACKUP_FILE"
+```
+
+O arquivo deve ficar no host em caminho temporário único fora do repositório, por exemplo `/tmp/business-automation-wp006-...`.
+
+Não exigir `pg_dump` instalado no host.
 
 Validar:
 
@@ -114,9 +153,16 @@ Não imprimir conteúdo binário.
 
 ### 6. Restore
 
-Criar um segundo banco vazio no mesmo container.
+Criar um segundo banco vazio **no mesmo container**.
 
-Restaurar o backup usando `pg_restore`.
+Restaurar usando o `pg_restore` do mesmo container, alimentado pelo arquivo temporário do host, por exemplo:
+
+```bash
+docker exec -i -e PGPASSWORD="$DB_PASSWORD" "$CONTAINER_NAME" \
+  pg_restore -U "$DB_ADMIN" -d "$RESTORE_DB" < "$BACKUP_FILE"
+```
+
+Não exigir `pg_restore` instalado no host.
 
 Não executar migrations no banco restaurado antes do restore.
 
@@ -229,7 +275,8 @@ Acceptance:
 - testes existentes continuam verdes;
 - compileall passa;
 - diff check passa;
-- zero containers WP-006 remanescentes;
+- nenhum container da execução atual permanece;
+- nenhum container auxiliar foi criado;
 - nenhum dump ficou no repositório;
 - diff contém somente os dois arquivos autorizados.
 
@@ -239,7 +286,8 @@ Parar e relatar se:
 
 - Alembic não chegar ao head no banco fonte;
 - schema atual não permitir fixture coerente sem mudança de schema;
-- `pg_dump` ou `pg_restore` não estiver disponível no PostgreSQL 17;
+- `pg_dump` ou `pg_restore` não estiver disponível dentro do único container PostgreSQL 17;
+- já existir container remanescente com prefixo WP-006 antes da execução;
 - restore exigir migration extra;
 - surgir necessidade de volume persistente;
 - surgir necessidade de banco real;
