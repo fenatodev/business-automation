@@ -14,6 +14,20 @@ Direção vigente em 2026-10-07, conforme a [Architecture Baseline v1](architect
 
 “Agora” inclui decisões e procedimentos humanos; não exige implementar todas essas capacidades no repositório de uma vez.
 
+### Status atual da F1
+
+Em 2026-10-08, a F1 está **concluída para o piloto privado Client 0**, com evidência nos WPs 004–008:
+
+- migrations/recovery em PostgreSQL descartável;
+- autenticação e isolamento por Company;
+- backup/restore ensaiado;
+- startup loopback-only, revogação por restart e logs mínimos sem segredos;
+- lifecycle operacional de dados definido.
+
+Essa conclusão não equivale a produção pública. Permanecem proibidos por padrão: exposição pública, ingestão em massa, portal externo e ampliação de dados sensíveis sem gate próprio.
+
+O próximo avanço é F2: executar um ciclo Client 0 real e assistido, preservando fallback manual e as fontes de verdade definidas.
+
 ## Preparar agora, implementar conforme o fluxo exigir
 
 - Um contrato de handoff ERP com campos, ownership, idempotência, falhas e reconciliação explícitos.
@@ -36,7 +50,7 @@ Direção vigente em 2026-10-07, conforme a [Architecture Baseline v1](architect
 | Fase | Resultado esperado | Gate de saída |
 | --- | --- | --- |
 | F0 — recorte | Oferta, fluxo Client 0 e ownership definidos | Responsáveis, exceções e critérios de aceite claros |
-| F1 — fundação | Dados reproduzíveis, acesso seguro e recuperação | Testes, isolamento e restore demonstrados em ambientes adequados |
+| F1 — fundação | **Concluída para piloto privado Client 0**: dados reproduzíveis, acesso seguro, recuperação e lifecycle | Testes, isolamento, restore, revogação e política de lifecycle demonstrados; sem autorização de exposição pública |
 | F2 — operação assistida | Ciclo de oportunidade a recebimento e revisão de resultado | Fontes de verdade e evidências rastreáveis, com continuidade manual |
 | F3 — automação útil | Automatizar um gargalo comprovado | Falhas, duplicação, timeout e reconciliação testados; benefício medido |
 | F4 — primeiros clientes | Entrega repetível com o mesmo core | Sem fork, com isolamento, suporte e custo operacional conhecidos |
