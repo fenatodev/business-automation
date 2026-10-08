@@ -34,7 +34,7 @@ Também validar:
 git diff --check
 ```
 
-Atualmente existem 9 testes.
+Use sempre a contagem real retornada por `uv run pytest`; não mantenha contagem fixa de testes neste arquivo.
 
 ## Regras de segurança e dados
 
@@ -47,7 +47,7 @@ Atualmente existem 9 testes.
 
 - Fazer mudanças pequenas e focadas.
 - Não alterar comportamento fora do escopo solicitado.
-- Não fazer commit ou push sem autorização explícita, exceto checkpoints seguros conforme `GitHub progress checkpoints`.
+- Para work packages autorizados, usar o fluxo GitHub-first descrito abaixo; isso inclui commit e push da branch do WP sem nova confirmação.
 - Antes de grandes refatorações, analisar primeiro.
 
 ## Multi-tenancy, auth e exposição pública
@@ -123,9 +123,42 @@ RAG, automações e integrações entram depois da fundação de dados, seguran�
 - Inspecionar código real antes de assumir arquitetura.
 - Para mudanças maiores, propor plano antes de editar.
 - Preferir mudanças pequenas verificáveis.
-- Nunca auto-commit ou auto-push, exceto checkpoints seguros conforme `GitHub progress checkpoints`.
+- Em work packages autorizados, criar checkpoint e push da branch do WP conforme `GitHub-first handoff` e `GitHub progress checkpoints`.
 - Não alterar arquivos fora do escopo apenas para “melhorar” o projeto.
 - Se um teste revelar um problema de comportamento existente, explicar antes de mudar esse comportamento.
+
+## GitHub-first handoff
+
+Para reduzir dependência de acesso remoto ao computador, GitHub é o canal padrão de
+handoff, evidência e revisão entre Pi e ChatGPT.
+
+Para cada work package autorizado:
+
+1. trabalhar em uma branch própria no formato `wp/<id>-<descricao-curta>`;
+2. se a sessão começar em `main`, criar a branch antes da primeira alteração;
+3. executar somente um WP por sessão;
+4. não carregar nem executar automaticamente o WP seguinte;
+5. validar o trabalho conforme este AGENTS.md;
+6. criar commit apenas com arquivos pertencentes ao WP;
+7. fazer push somente da branch do WP para `origin`;
+8. encerrar após o push e informar branch + commit.
+
+O estado remoto da branch deve ser suficiente para revisão por GitHub. Não depender
+de copiar saída da CLI nem de acesso por Desktop Commander para o handoff normal.
+
+Se já existirem alterações locais do usuário ou de outro WP, não misturá-las.
+Interromper e relatar o conflito de escopo.
+
+### Restrições permanentes
+
+- Nunca fazer push direto em `main` durante execução de WP.
+- Nunca fazer merge automaticamente.
+- Nunca fazer force-push ou reescrever histórico publicado.
+- Nunca apagar branches remotas sem autorização explícita.
+- Nunca publicar/deployar como consequência de um WP sem autorização específica.
+- Merge em `main` exige autorização humana explícita e separada.
+- Um push de branch não implica aprovação, merge ou release.
+- Se o push falhar, preservar o commit local e relatar o erro.
 
 ## GitHub progress checkpoints
 
