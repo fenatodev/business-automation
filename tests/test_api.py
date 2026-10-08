@@ -897,6 +897,10 @@ def test_opportunity_tenant_scope(
         "/opportunities",
         headers=operator_a_headers,
     )
+    get_a = client.get(
+        f"/opportunities/{opportunity_a['id']}",
+        headers=operator_a_headers,
+    )
     get_b_as_a = client.get(
         f"/opportunities/{opportunity_b['id']}",
         headers=operator_a_headers,
@@ -916,6 +920,8 @@ def test_opportunity_tenant_scope(
     assert [item["id"] for item in list_a.json()] == [
         opportunity_a["id"]
     ]
+    assert get_a.status_code == 200
+    assert get_a.json()["id"] == opportunity_a["id"]
     assert get_b_as_a.status_code == 404
     assert patch_b_as_a.status_code == 404
 
