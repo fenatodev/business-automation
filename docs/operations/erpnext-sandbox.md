@@ -22,7 +22,8 @@ O script deste WP:
 - cria `~/.local/share/business-automation/erpnext-sandbox` com modo `0700`,
   incluindo `.env` privado `0600`, não versionado;
 - valida o Compose resolvido sem exibir senhas;
-- exige **6 GiB disponíveis de RAM** e **12 GiB livres** antes de iniciar;
+- exige **6 GiB disponíveis de RAM**, **12 GiB livres** e carga moderada no host antes de iniciar;
+- limita a concorrência do Docker Compose a **1**, evitando extrair diversas imagens pesadas em paralelo;
 - permite **parar sem excluir volumes**, nunca executa `down -v`.
 
 **Atenção:** senhas em environment de containers Docker são visíveis para
@@ -106,3 +107,18 @@ reconciliação e aprovação humana. **Não** criar adapter nem duplicar pipeli
 
 **Gate F2 permanece aberto**: software sintético não substitui venda,
 execução e recebimento real.
+
+## Registro operacional do WP-015 (2026-10-08)
+
+A preparação privada e a validação do Compose passaram; a suíte da aplicação
+passou em ambiente isolado. Uma tentativa de iniciar a demo mostrou custo
+inesperadamente alto de download/extração simultânea de camadas Docker e pico
+de carga no desktop. **A inicialização foi interrompida deliberadamente**
+antes de o site ERPNext estar pronto. Nenhuma instância funcional do ERPNext
+foi comprovada neste WP; não registrar `smoke` como PASS.
+
+O script foi reforçado para serializar downloads do Compose e bloquear nova
+inicialização sob carga elevada. Evitar reiniciar o download enquanto o host
+estiver pressionado ou a conclusão não for necessária para a próxima entrega.
+Voltar a testar somente em uma janela apropriada, com medição de recursos e
+encerramento seguro; volumes do sandbox permanecem isolados.
