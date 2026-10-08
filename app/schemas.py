@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import AwareDatetime, BaseModel, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 
 class LeadCreate(BaseModel):
@@ -81,3 +81,32 @@ class OpportunityTriageUpdate(BaseModel):
         "prepare_proposal",
     ]
     triage_note: str | None = None
+
+
+
+class ProposalBriefCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    offer_reference: str = Field(min_length=1, max_length=120)
+    diagnosis: str = Field(min_length=1)
+    scope: str = Field(min_length=1)
+    deliverables: str = Field(min_length=1)
+    acceptance_criteria: str = Field(min_length=1)
+    assumptions: str | None = None
+    risks: str | None = None
+
+
+class ProposalBriefUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    offer_reference: str = Field(min_length=1, max_length=120)
+    diagnosis: str = Field(min_length=1)
+    scope: str = Field(min_length=1)
+    deliverables: str = Field(min_length=1)
+    acceptance_criteria: str = Field(min_length=1)
+    assumptions: str | None = None
+    risks: str | None = None
+    status: Literal[
+        "draft",
+        "ready_for_review",
+    ]
