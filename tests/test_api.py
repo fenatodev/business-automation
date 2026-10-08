@@ -966,3 +966,301 @@ def test_opportunity_routes_require_operator(
     assert admin_list.status_code == 403
     assert admin_create.status_code == 403
     assert admin_patch.status_code == 403
+
+
+
+def prepare_opportunity_for_proposal(
+    client,
+    headers,
+    external_url="https://example.invalid/project/proposal",
+    title="Proposal candidate",
+):
+    opportunity = create_opportunity(
+        client,
+        headers,
+        external_url=external_url,
+        title=title,
+    )
+
+    response = client.patch(
+        f"/opportunities/{opportunity['id']}/triage",
+        headers=headers,
+        json={
+            "next_action": "prepare_proposal",
+            "triage_note": "Ready for internal proposal preparation.",
+        },
+    )
+    assert response.status_code == 200
+    return response.json()
+
+
+def proposal_brief_payload(**overrides):
+    payload = {
+        "offer_reference": "client0-automation-integration-v1",
+        "diagnosis": "Manual repetitive workflow.",
+        "scope": "Automate validation and handoff.",
+        "deliverables": "Implemented flow, tests and runbook.",
+        "acceptance_criteria": "End-to-end flow completes with evidence.",
+        "assumptions": "Required API access will be provided.",
+        "risks": "External provider may rate limit requests.",
+    }
+    payload.update(overrides)
+    return payload
+
+
+def test_proposal_brief_create_get_update_and_status_validation(
+    client,
+    admin_headers,
+    operator_a_headers,
+):
+    create_company(client, admin_headers)
+    opportunity = prepare_opportunity_for_proposal(
+        client,
+        operator_a_headers,
+    )
+
+    create_response = client.post(
+        f"/opportunities/{opportunity['id']}/proposal-brief",
+        headers=operator_a_headers,
+        json=proposal_brief_payload(),
+    )
+    assert create_response.status_code == 200
+
+    brief = create_response.json()
+    assert brief["opportunity_id"] == opportunity["id"]
+    assert brief["status"] == "draft"
+    assert brief["offer_reference"] == "client0-automation-integration-v1"
+
+    get_response = client.get(
+        f"/opportunities/{opportunity['id']}/proposal-brief",
+        headers=operator_a_headers,
+    )
+    assert get_response.status_code == 200
+    assert get_response.json()["id"] == brief["id"]
+
+    update_payload = proposal_brief_payload(
+        diagnosis="Revised diagnosis.",
+        scope="Revised scope.",
+        deliverables="Revised deliverables.",
+        acceptance_criteria="Revised acceptance criteria.",
+        assumptions=None,
+        risks="Revised risk.",
+    )
+    update_payload["status"] = "ready_for_review"
+
+    update_response = client.patch(
+        f"/opportunities/{opportunity['id']}/proposal-brief",
+        headers=operator_a_headers,
+        json=update_payload,
+    )
+    assert update_response.status_code == 200
+    assert update_response.json()["status"] == "ready_for_review"
+    assert update_response.json()["diagnosis"] == "Revised diagnosis."
+
+    invalid_status = dict(update_payload)
+    invalid_status["status"] = "approved"
+
+    invalid_response = client.patch(
+        f"/opportunities/{opportunity['id']}/proposal-brief",
+        headers=operator_a_headers,
+        json=invalid_status,
+    )
+    assert invalid_response.status_code == 422
+
+
+def test_proposal_brief_requires_prepare_proposal(
+    client,
+    admin_headers,
+    operator_a_headers,
+):
+    create_company(client, admin_headers)
+
+    for index, state in enumerate(
+        ["pending", "ignore", "follow"],
+        start=1,
+    ):
+        opportunity = create_opportunity(
+            client,
+            operator_a_headers,
+            external_url=f"https://example.invalid/project/not-ready-{index}",
+            title=f"Not ready {index}",
+        )
+
+        if state != "pending":
+            triage = client.patch(
+                f"/opportunities/{opportunity['id']}/triage",
+                headers=operator_a_headers,
+                json={
+                    "next_action": state,
+                    "triage_note": "Not ready for proposal.",
+                },
+            )
+            assert triage.status_code == 200
+
+        response = client.post(
+            f"/opportunities/{opportunity['id']}/proposal-brief",
+            headers=operator_a_headers,
+            json=proposal_brief_payload(),
+        )
+        assert response.status_code == 409
+        assert response.json() == {
+            "detail": "Opportunity is not ready for proposal preparation"
+        }
+
+
+def test_proposal_brief_duplicate_and_forbidden_extra_fields(
+    client,
+    admin_headers,
+    operator_a_headers,
+):
+    create_company(client, admin_headers)
+
+    opportunity = prepare_opportunity_for_proposal(
+        client,
+        operator_a_headers,
+        external_url="https://example.invalid/project/brief-duplicate",
+    )
+
+    first = client.post(
+        f"/opportunities/{opportunity['id']}/proposal-brief",
+        headers=operator_a_headers,
+        json=proposal_brief_payload(),
+    )
+    assert first.status_code == 200
+
+    duplicate = client.post(
+        f"/opportunities/{opportunity['id']}/proposal-brief",
+        headers=operator_a_headers,
+        json=proposal_brief_payload(),
+    )
+    assert duplicate.status_code == 409
+    assert duplicate.json() == {
+        "detail": "Proposal brief already exists"
+    }
+
+    company_extra_opportunity = prepare_opportunity_for_proposal(
+        client,
+        operator_a_headers,
+        external_url="https://example.invalid/project/company-extra",
+    )
+    company_extra = proposal_brief_payload(company_id=999)
+
+    company_extra_response = client.post(
+        (
+            f"/opportunities/{company_extra_opportunity['id']}"
+            "/proposal-brief"
+        ),
+        headers=operator_a_headers,
+        json=company_extra,
+    )
+    assert company_extra_response.status_code == 422
+
+    price_extra_opportunity = prepare_opportunity_for_proposal(
+        client,
+        operator_a_headers,
+        external_url="https://example.invalid/project/price-extra",
+    )
+    price_extra = proposal_brief_payload(price="R$ 10.000")
+
+    price_extra_response = client.post(
+        f"/opportunities/{price_extra_opportunity['id']}/proposal-brief",
+        headers=operator_a_headers,
+        json=price_extra,
+    )
+    assert price_extra_response.status_code == 422
+
+
+def test_proposal_brief_cross_tenant_is_hidden(
+    client,
+    admin_headers,
+    operator_a_headers,
+    operator_b_headers,
+):
+    create_company(
+        client,
+        admin_headers,
+        name="Company A",
+        slug="company-a",
+    )
+    create_company(
+        client,
+        admin_headers,
+        name="Company B",
+        slug="company-b",
+    )
+
+    opportunity_b = prepare_opportunity_for_proposal(
+        client,
+        operator_b_headers,
+        external_url="https://example.invalid/project/company-b-brief",
+        title="Company B opportunity",
+    )
+
+    create_as_a = client.post(
+        f"/opportunities/{opportunity_b['id']}/proposal-brief",
+        headers=operator_a_headers,
+        json=proposal_brief_payload(),
+    )
+    assert create_as_a.status_code == 404
+    assert create_as_a.json() == {"detail": "Opportunity not found"}
+
+    create_as_b = client.post(
+        f"/opportunities/{opportunity_b['id']}/proposal-brief",
+        headers=operator_b_headers,
+        json=proposal_brief_payload(),
+    )
+    assert create_as_b.status_code == 200
+
+    get_as_a = client.get(
+        f"/opportunities/{opportunity_b['id']}/proposal-brief",
+        headers=operator_a_headers,
+    )
+    assert get_as_a.status_code == 404
+
+    update_payload = proposal_brief_payload()
+    update_payload["status"] = "ready_for_review"
+    patch_as_a = client.patch(
+        f"/opportunities/{opportunity_b['id']}/proposal-brief",
+        headers=operator_a_headers,
+        json=update_payload,
+    )
+    assert patch_as_a.status_code == 404
+
+
+def test_proposal_brief_routes_require_operator(
+    client,
+    admin_headers,
+    operator_a_headers,
+):
+    create_company(client, admin_headers)
+    opportunity = prepare_opportunity_for_proposal(
+        client,
+        operator_a_headers,
+        external_url="https://example.invalid/project/operator-only-brief",
+    )
+
+    path = f"/opportunities/{opportunity['id']}/proposal-brief"
+
+    unauthenticated = client.get(path)
+    admin_create = client.post(
+        path,
+        headers=admin_headers,
+        json=proposal_brief_payload(),
+    )
+    admin_get = client.get(
+        path,
+        headers=admin_headers,
+    )
+
+    update_payload = proposal_brief_payload()
+    update_payload["status"] = "draft"
+    admin_patch = client.patch(
+        path,
+        headers=admin_headers,
+        json=update_payload,
+    )
+
+    assert unauthenticated.status_code == 401
+    assert admin_create.status_code == 403
+    assert admin_get.status_code == 403
+    assert admin_patch.status_code == 403
