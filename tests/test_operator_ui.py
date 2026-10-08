@@ -52,6 +52,8 @@ def test_operator_assets_are_fixed_read_only_and_private_cache(client):
     assert 'credentials: "omit"' in script.text
     assert 'redirect: "error"' in script.text
     assert ".textContent" in script.text
+    assert "if (epoch !== sessionEpoch)" in script.text
+    assert 'window.addEventListener("pagehide"' in script.text
     assert 'new Date().toISOString()' in script.text
     assert 'source: "99freelas"' in script.text
     assert '/proposal-brief' in script.text
