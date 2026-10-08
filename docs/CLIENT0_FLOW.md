@@ -117,6 +117,20 @@ recebimento sempre vem do sistema financeiro autoritativo.
 - **restricoes conhecidas**: desconhecidas ate implementacao
 - **possibilidade futura de integracao**: dependente de adapter especifico
 
+## Primeiro Foco Operacional
+
+Decisão de 2026-10-08 para o primeiro ciclo Client 0:
+
+- **fonte inicial:** 99Freelas, com descoberta e avaliação manual;
+- **oferta inicial:** implantação de fluxo de automação/integração, podendo incluir APIs, CRM e IA quando fizerem parte do problema;
+- **entrada mínima:** URL da oportunidade, título, descrição, orçamento quando informado, prazo, stack/requisitos e horário da captura;
+- **triagem:** aderência técnica, clareza do problema, esforço provável, risco, prazo, potencial recorrente e chance de virar case reutilizável;
+- **próxima ação:** decidir `ignorar`, `acompanhar` ou `preparar proposta`;
+- **envio de proposta:** sempre com revisão humana; nenhuma submissão automática nesta fase;
+- **automação da fonte:** somente depois de validar utilidade e mecanismo permitido pelos termos da plataforma.
+
+Essa escolha é operacional, não exclusividade. Workana, Upwork, Freelancer, LinkedIn, indicação e site próprio permanecem fontes candidatas e podem ser promovidas quando houver demanda ou evidência melhor.
+
 ---
 
 ## Modelo Operacional por Etapa

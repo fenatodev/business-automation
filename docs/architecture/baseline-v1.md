@@ -1,14 +1,14 @@
 # Architecture Baseline v1
 
 Data: 2026-10-07. Base inspecionada: `main`, commit `84ea22e`.
-Status: proposta arquitetural para orientar decisões e implementação incremental.
-Não representa features implementadas, aprovação de decisões comerciais ou autorização para deploy/migrations.
+Status: referência arquitetural oficial adotada pelo WP-001 em 2026-10-07.
+Não representa features implementadas nem autorização para deploy/migrations; decisões comerciais continuam sujeitas aos gates correspondentes.
 
 ## 1. Objetivo e leitura
 
 Operar uma empresa de automação digital: encontrar demanda, vender um escopo executável, entregar, cobrar, sustentar o resultado e demonstrar valor. A própria empresa é o Client 0. A receita inicial vem de serviços e ofertas repetíveis; construir SaaS não é pré-condição para vender.
 
-O destino recomendado é um **monólito modular**, apoiado por sistemas maduros de back-office e adapters substituíveis. ERPNext é o candidato principal de back-office, ainda sem instalação ou integração comprovada neste checkout. O antigo laboratório e bridges não constituem dependências existentes. IoT/home automation está fora do escopo.
+O destino recomendado é um **monólito modular**, apoiado por sistemas maduros de back-office e adapters substituíveis. ERPNext é o back-office padrão inicial, ainda sem instalação ou integração comprovada neste checkout. O antigo laboratório e bridges não constituem dependências existentes. IoT/home automation está fora do escopo.
 
 Convenções de horizonte usadas em todo o conjunto:
 

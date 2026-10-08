@@ -1,5 +1,11 @@
 # Decision Log
 
+## 2026-10-08 — ADR 0001: data ownership do Client 0
+
+Status: Accepted.
+
+O [ADR 0001](architecture/adr/0001-data-ownership.md) define o ownership do primeiro ciclo Client 0: CRM/qualificação/conversas e estado técnico no core; documentos comerciais formais, preço final e financeiro no ERPNext; aprovações sensíveis permanecem humanas. O primeiro handoff recomendado é criar/assegurar a contraparte de back-office sem duplicar o pipeline no ERP.
+
 ## 2026-10-07 — WP-001: direção arquitetural vigente
 
 Status: Accepted.
