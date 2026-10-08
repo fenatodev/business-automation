@@ -22,6 +22,12 @@ Ao final devem existir:
 - health/auth/tenant validados;
 - segredo bruto armazenado somente fora do repo com permissão 0600.
 
+## Arquivo operacional autorizado
+
+- novo `scripts/bootstrap-client0-runtime.sh`;
+- o script não contém segredo, apenas gera segredos localmente em runtime;
+- nenhuma outra alteração de código/configuração versionada é autorizada neste WP.
+
 ## Regras de segurança
 
 - Não apagar nem reutilizar volume/container existente sem identificar ownership.
@@ -115,6 +121,14 @@ Após validação:
 - .env permanece local;
 - secret file permanece local;
 - Uvicorn pode permanecer rodando somente nesta sessão; não prometer persistência após reboot.
+
+## Execução
+
+O bootstrap deve ser executado pelo script versionado:
+
+`bash scripts/bootstrap-client0-runtime.sh`
+
+A chamada de execução não deve transportar token, password ou DATABASE_URL.
 
 ## Acceptance
 
