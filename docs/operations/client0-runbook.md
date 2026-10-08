@@ -88,3 +88,51 @@ Nunca registrar em Git, exemplos públicos ou logs de diagnóstico:
 - dados reais de clientes.
 
 Ao compartilhar evidência operacional, preferir IDs sintéticos, nomes genéricos e mensagens sem conteúdo real.
+
+
+## Health e logs mínimos
+
+Para o piloto privado, a evidência operacional mínima é:
+
+- `GET /` respondendo como health check;
+- eventos de startup/shutdown do Uvicorn;
+- access log com método/path e status HTTP;
+- horário fornecido pelo ambiente/coletor quando disponível.
+
+Não há logging estruturado, tracing distribuído ou plataforma de observabilidade definida neste estágio.
+
+Logs de operação e diagnóstico não devem incluir:
+
+- body de requisição/resposta;
+- header `Authorization`;
+- Bearer token ou seu hash;
+- password;
+- DATABASE_URL completa;
+- JSON completo de identidades;
+- dados reais copiados apenas para depuração.
+
+O harness `scripts/verify-private-startup.sh` verifica o comportamento mínimo com credenciais e banco sintéticos.
+
+## Revogação de acesso
+
+No F1, a revogação segue o ADR 0003:
+
+1. remover o hash da identidade revogada da configuração secreta;
+2. reiniciar ou recarregar o processo autorizado;
+3. confirmar que o token antigo recebe `401`;
+4. confirmar que uma identidade autorizada remanescente continua funcionando;
+5. registrar somente o resultado e o horário, nunca o token/hash.
+
+Revogação dinâmica sem restart continua fora de escopo.
+
+## Parada segura
+
+Antes de mudança operacional sensível:
+
+1. identificar o PID/processo e o listener corretos;
+2. parar somente a instância da API pretendida;
+3. evitar comandos amplos como `pkill uvicorn` quando houver outras instâncias;
+4. confirmar que o listener privado desapareceu;
+5. preservar logs necessários para diagnóstico antes de removê-los conforme a política aplicável.
+
+Parar a API não autoriza apagar banco, container, backup ou evidência de outro ambiente.
