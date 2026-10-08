@@ -167,7 +167,7 @@ Interromper e relatar o conflito de escopo.
 - Nunca fazer force-push ou reescrever histórico publicado.
 - Nunca apagar branches remotas sem autorização explícita.
 - Nunca publicar/deployar como consequência de um WP sem autorização específica.
-- Merge em `main` exige autorização humana explícita e separada.
+- Para WPs normais e escopados, o usuário autoriza ChatGPT a fazer merge em `main` após revisão bem-sucedida, sem nova confirmação. Release, deploy, operação destrutiva ou mudança ambígua continuam exigindo autorização específica.
 - Um push de branch não implica aprovação, merge ou release.
 - Se o push falhar, preservar o commit local e relatar o erro.
 
@@ -247,8 +247,7 @@ Commit: <hash> <message>
 GitHub push: successful
 ```
 
-For merges, releases, destructive Git operations, force pushes, history
-rewrites or ambiguous changes, explicit user approval is still required.
+Normal WP merges reviewed by ChatGPT are pre-authorized by the user. Releases, deploys, destructive Git operations, force pushes, history rewrites or ambiguous changes still require explicit user approval.
 
 ## Agent workflow and escalation
 
@@ -272,7 +271,7 @@ Mudanças de alto risco exigem segunda revisão antes da execução/aplicação 
 - production/deployment configuration;
 - correção de teste que altere comportamento existente da aplicação.
 
-Quando a dependência local for inevitável, Pi deve produzir evidência pela branch remota e parar. ChatGPT revisa pelo GitHub antes do próximo pacote ou merge. Merge/release continuam dependendo das regras de autorização deste arquivo.
+Quando a dependência local for inevitável, Pi deve produzir evidência pela branch remota e parar. ChatGPT revisa pelo GitHub antes do próximo pacote. Se o WP estiver correto, o merge normal está pré-autorizado; release/deploy e operações sensíveis continuam dependendo de autorização específica.
 
 ## Product context
 
