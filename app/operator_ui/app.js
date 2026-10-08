@@ -295,6 +295,7 @@
   });
 
   $("disconnect-button").addEventListener("click", () => disconnect());
+  window.addEventListener("pagehide", () => disconnect("Sessão encerrada."));
 
   $("refresh-button").addEventListener("click", () => {
     withButton($("refresh-button"), async () => {
