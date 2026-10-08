@@ -1,5 +1,11 @@
 # Decision Log
 
+## 2026-10-08 — ADR 0002: recuperação da cadeia Alembic
+
+Status: Accepted.
+
+O [ADR 0002](architecture/adr/0002-migration-recovery.md) define que a cadeia atual deve ser validada e reparada somente em PostgreSQL descartável. A estratégia candidata insere um bootstrap de `leads` antes da baseline histórica, preservando revisions posteriores e validando separadamente banco vazio e fixture legacy. A branch histórica de migration review serve apenas como referência; não é autorizada para merge em bloco.
+
 ## 2026-10-08 — ADR 0001: data ownership do Client 0
 
 Status: Accepted.
