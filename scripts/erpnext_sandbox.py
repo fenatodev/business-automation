@@ -210,13 +210,19 @@ def check_resources(path: Path) -> None:
                 break
     if mem_kib is None or mem_kib < 6 * 1024 * 1024:
         raise SandboxError("Menos de 6 GiB de RAM disponível; evitar sobrecarga")
+    cores = os.cpu_count() or 1
+    if os.getloadavg()[0] > cores * 0.8:
+        raise SandboxError("Host com carga elevada; não iniciar ERPNext agora")
     free_bytes = shutil.disk_usage(path).free
     if free_bytes < 12 * 1024 ** 3:
         raise SandboxError("Menos de 12 GiB livres; evitar instalação incompleta")
 
 
 def run_compose(path: Path, *args: str) -> None:
-    subprocess.run(compose_cmd(path, *args), check=True)
+    # Evita downloads/extracoes paralelos que sobrecarregam o desktop.
+    env = os.environ.copy()
+    env["COMPOSE_PARALLEL_LIMIT"] = "1"
+    subprocess.run(compose_cmd(path, *args), check=True, env=env)
 
 
 def smoke(path: Path) -> None:
@@ -244,7 +250,7 @@ def main() -> int:
         elif args.action == "start":
             validate(WORKSPACE)
             check_resources(WORKSPACE)
-            run_compose(WORKSPACE, "up", "-d")
+            run_compose(WORKSPACE, "up", "-d", "--quiet-pull")
             print("START_SUBMITTED: criação de site pode continuar em create-site")
         elif args.action == "status":
             validate(WORKSPACE)
