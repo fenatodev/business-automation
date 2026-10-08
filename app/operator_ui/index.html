@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Operação privada · Business Automation</title>
+  <link rel="stylesheet" href="/operator/styles.css">
+  <script src="/operator/app.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div>
+        <span class="eyebrow">BUSINESS AUTOMATION / CLIENT 0</span>
+        <h1>Operação comercial</h1>
+        <p>Captura, triagem e preparação interna de propostas.</p>
+      </div>
+      <div class="badge">PILOTO PRIVADO · LOOPBACK</div>
+    </header>
+
+    <div id="notice" class="notice" role="status" aria-live="polite">
+      Conecte uma identidade <strong>operator</strong> para começar. Nenhum dado será alterado ao conectar.
+    </div>
+
+    <section class="panel access-panel" aria-labelledby="access-title">
+      <div class="panel-heading">
+        <div>
+          <span class="section-index">ACESSO</span>
+          <h2 id="access-title">Identidade do operador</h2>
+        </div>
+        <span id="access-status" class="status-pill">Desconectado</span>
+      </div>
+      <form id="access-form">
+        <label for="operator-token">Token Bearer de operador</label>
+        <div class="inline-fields">
+          <input id="operator-token" type="password" name="operator_token" required
+                 autocomplete="off" autocapitalize="off" spellcheck="false"
+                 placeholder="Insira o token privado" aria-describedby="token-help">
+          <button id="connect-button" type="submit" class="primary">Conectar</button>
+          <button id="disconnect-button" type="button" hidden>Desconectar</button>
+        </div>
+        <p id="token-help" class="small">O token fica apenas na memória desta aba; não é salvo em cookies, URLs ou armazenamento local. Use somente neste computador.</p>
+      </form>
+    </section>
+
+    <main id="workspace" hidden>
+      <div class="layout">
+        <div class="column">
+          <section class="panel" aria-labelledby="capture-title">
+            <div class="panel-heading">
+              <div>
+                <span class="section-index">01 / ENTRADA</span>
+                <h2 id="capture-title">Registrar oportunidade</h2>
+              </div>
+              <span class="tag">Origem: 99Freelas</span>
+            </div>
+            <form id="capture-form">
+              <label for="capture-title-field">Título *</label>
+              <input id="capture-title-field" name="title" required maxlength="200"
+                     placeholder="Ex.: Integrar pedidos ao CRM">
+              <label for="capture-url">URL da oportunidade *</label>
+              <input id="capture-url" name="external_url" required maxlength="1000"
+                     type="url" placeholder="https://..." pattern="https://.*"
+                     autocomplete="off">
+              <label for="capture-description">Descrição *</label>
+              <textarea id="capture-description" name="description" required rows="4"></textarea>
+              <label for="capture-requirements">Requisitos / stack (opcional)</label>
+              <textarea id="capture-requirements" name="requirements" rows="2"></textarea>
+              <div class="two-col">
+                <div>
+                  <label for="capture-budget">Orçamento informado</label>
+                  <input id="capture-budget" name="budget" maxlength="120" placeholder="Não informado">
+                </div>
+                <div>
+                  <label for="capture-deadline">Prazo informado</label>
+                  <input id="capture-deadline" name="deadline" maxlength="120" placeholder="Não informado">
+                </div>
+              </div>
+              <p class="small">Data de captura registrada automaticamente. Sem envio de mensagem à plataforma.</p>
+              <button type="submit" class="primary">Registrar oportunidade</button>
+            </form>
+          </section>
+
+          <section class="panel" aria-labelledby="list-title">
+            <div class="panel-heading">
+              <div>
+                <span class="section-index">02 / CARTEIRA</span>
+                <h2 id="list-title">Oportunidades</h2>
+              </div>
+              <button id="refresh-button" type="button" class="secondary">Atualizar</button>
+            </div>
+            <p id="list-meta" class="small">Nenhuma consulta realizada.</p>
+            <div id="opportunity-list" class="opportunity-list" aria-label="Lista de oportunidades"></div>
+          </section>
+        </div>
+
+        <div class="column">
+          <section id="selection-panel" class="panel" aria-labelledby="triage-title" hidden>
+            <div class="panel-heading">
+              <div>
+                <span class="section-index">03 / DECISÃO HUMANA</span>
+                <h2 id="triage-title">Triagem</h2>
+              </div>
+              <span id="selected-id" class="tag"></span>
+            </div>
+            <h3 id="selected-title"></h3>
+            <p id="selected-description" class="readout"></p>
+            <dl class="metadata">
+              <dt>Origem</dt><dd id="selected-url" class="break-word"></dd>
+              <dt>Orçamento</dt><dd id="selected-budget"></dd>
+              <dt>Prazo</dt><dd id="selected-deadline"></dd>
+              <dt>Requisitos</dt><dd id="selected-requirements" class="break-word"></dd>
+            </dl>
+            <form id="triage-form">
+              <label for="next-action">Próxima ação *</label>
+              <select id="next-action" name="next_action">
+                <option value="pending">Pendente</option>
+                <option value="follow">Acompanhar</option>
+                <option value="ignore">Ignorar</option>
+                <option value="prepare_proposal">Preparar proposta</option>
+              </select>
+              <label for="triage-note">Justificativa</label>
+              <textarea id="triage-note" name="triage_note" rows="3"
+                        placeholder="Critérios, riscos, dúvidas e próxima ação"></textarea>
+              <button type="submit" class="primary">Salvar triagem</button>
+            </form>
+          </section>
+
+          <section id="brief-panel" class="panel" aria-labelledby="brief-title" hidden>
+            <div class="panel-heading">
+              <div>
+                <span class="section-index">04 / PREPARAÇÃO INTERNA</span>
+                <h2 id="brief-title">ProposalBrief</h2>
+              </div>
+              <span id="brief-status" class="status-pill">Sem brief</span>
+            </div>
+            <p id="brief-guide" class="small">Somente oportunidades em <strong>Preparar proposta</strong> podem receber um brief.</p>
+            <form id="brief-form" hidden>
+              <label for="brief-offer">Referência da oferta *</label>
+              <input id="brief-offer" name="offer_reference" required maxlength="120"
+                     placeholder="Ex.: integracao-api-v1">
+              <label for="brief-diagnosis">Diagnóstico *</label>
+              <textarea id="brief-diagnosis" name="diagnosis" required rows="3"></textarea>
+              <label for="brief-scope">Escopo *</label>
+              <textarea id="brief-scope" name="scope" required rows="3"></textarea>
+              <label for="brief-deliverables">Entregáveis *</label>
+              <textarea id="brief-deliverables" name="deliverables" required rows="3"></textarea>
+              <label for="brief-acceptance">Critérios de aceite *</label>
+              <textarea id="brief-acceptance" name="acceptance_criteria" required rows="3"></textarea>
+              <label for="brief-assumptions">Premissas</label>
+              <textarea id="brief-assumptions" name="assumptions" rows="2"></textarea>
+              <label for="brief-risks">Riscos</label>
+              <textarea id="brief-risks" name="risks" rows="2"></textarea>
+              <div id="brief-review-control" hidden>
+                <label for="brief-state">Estado do documento</label>
+                <select id="brief-state" name="status">
+                  <option value="draft">Rascunho</option>
+                  <option value="ready_for_review">Pronto para revisão</option>
+                </select>
+              </div>
+              <button id="save-brief-button" type="submit" class="primary">Criar rascunho</button>
+              <p class="guardrail">“Pronto para revisão” não significa aprovado. Escopo, preço e envio dependem de autorização humana e do back-office.</p>
+            </form>
+          </section>
+
+          <section id="empty-panel" class="panel empty-panel" aria-label="Nenhuma oportunidade selecionada">
+            <span class="section-index">PRÓXIMO PASSO</span>
+            <h2>Selecione uma oportunidade</h2>
+            <p>Registre uma nova oportunidade ou escolha uma existente para classificar e preparar um brief.</p>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <footer>Operação interna · dados e permissões pertencem à API · sem envio automático de propostas</footer>
+  </div>
+</body>
+</html>
