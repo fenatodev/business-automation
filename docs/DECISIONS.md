@@ -1,5 +1,16 @@
 # Decision Log
 
+## 2026-10-08 — ADR 0003: acesso privado e isolamento por Company
+
+Status: Accepted para F1 / piloto privado.
+
+Decision: usar Bearer API keys opacas configuradas fora do Git, identificadas na aplicação somente por SHA-256, com papéis mínimos `admin` e `operator`. `operator` é vinculado server-side a exatamente uma Company; `company_id` de payload/path nunca é autorização. Admin administra Companies e não ganha acesso implícito a dados tenant.
+
+Rationale: fecha a API anônima e permite provar isolamento cross-tenant sem antecipar OAuth/OIDC/JWT, usuários persistidos ou IAM de SaaS antes de existir necessidade real.
+
+Reference: [ADR 0003](architecture/adr/0003-access-and-tenancy.md).
+
+
 ## 2026-10-08 — ADR 0002: recuperação da cadeia Alembic
 
 Status: Accepted.
