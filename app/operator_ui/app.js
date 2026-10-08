@@ -65,6 +65,15 @@
     $("brief-form").hidden = true;
     $("empty-panel").hidden = false;
     $("brief-form").reset();
+    $("triage-form").reset();
+    for (const id of (
+      ["selected-id", "selected-title", "selected-description", "selected-url",
+        "selected-budget", "selected-deadline", "selected-requirements"]
+    )) {
+      $(id).textContent = "";
+    }
+    $("brief-guide").textContent = "";
+    $("brief-status").textContent = "Sem brief";
   }
 
   function disconnect(message = "Acesso desconectado.") {
