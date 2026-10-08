@@ -54,6 +54,8 @@ def test_operator_assets_are_fixed_read_only_and_private_cache(client):
     assert ".textContent" in script.text
     assert "if (epoch !== sessionEpoch)" in script.text
     assert 'window.addEventListener("pagehide"' in script.text
+    assert '$("triage-form").reset()' in script.text
+    assert '$(id).textContent = ""' in script.text
     assert 'new Date().toISOString()' in script.text
     assert 'source: "99freelas"' in script.text
     assert '/proposal-brief' in script.text
