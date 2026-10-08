@@ -1,9 +1,11 @@
 # WP-003 — Harness PostgreSQL descartável para caracterizar Alembic
 
 Status: pronto para execução local  
-Base de preparação: `main@1fc65d78` (confirmar `origin/main` antes de editar)  
-Executor: Pi/Qwen local  
+Base: `origin/main` atual no início da execução  
+Executor: qualquer agente local autorizado capaz de usar arquivos, Git, shell e Docker  
 Motivo para execução local: requer Docker/PostgreSQL real descartável e execução de comandos/testes.
+
+Esta spec é **autossuficiente**. Não é necessário carregar `AGENTS.md`, histórico de chat ou WPs anteriores para executá-la.
 
 ## Objetivo observável
 
@@ -25,14 +27,15 @@ Existe uma branch histórica com um bootstrap candidato, mas **não usar/cherry-
 
 ## Preflight Git seguro
 
-1. `git fetch origin`.
-2. Ler `AGENTS.md` de `origin/main`.
-3. Ler esta spec de `origin/main`.
-4. Não executar `git clean`, `reset --hard` ou apagar arquivos não rastreados.
-5. Se houver mudança rastreada do usuário que impeça criar uma branch limpa, parar e relatar.
-6. Criar a branch `wp/003-alembic-postgres-harness` a partir de `origin/main`.
+1. Executar `git fetch origin main`.
+2. Confirmar que o workspace atual está na branch `wp/003-alembic-postgres-harness`.
+3. Confirmar que `HEAD` corresponde ao `origin/main` atual antes da primeira alteração.
+4. Confirmar que `git status --short` está limpo.
+5. Se a branch/worktree já estiver corretamente preparada, **não recriá-la e não trocar de workspace**.
+6. Não executar `git clean`, `reset --hard` nem apagar arquivos não rastreados.
+7. Se branch, base ou working tree divergirem do esperado, parar e relatar em vez de tentar consertar automaticamente.
 
-Um diretório local `specs/` não rastreado não deve ser apagado. Se houver conflito de path que impeça checkout, parar sem sobrescrever.
+Não ler nem carregar WPs anteriores. Esta spec contém todo o contexto necessário para a tarefa.
 
 ## Pode alterar
 
@@ -166,3 +169,11 @@ Quando todos os critérios passarem:
 7. encerrar.
 
 ChatGPT fará a revisão pelo GitHub. Não é necessário copiar saída da CLI para o usuário.
+
+## Regra de economia de contexto
+
+- Leia somente esta spec e os arquivos estritamente necessários para implementar o harness.
+- Não faça inventário amplo do repositório.
+- Não leia `AGENTS.md` nesta execução.
+- Não tente diagnosticar/corrigir a migration além do necessário para reconhecer a falha esperada.
+- Se a implementação puder ser feita com um script curto e direto, prefira isso a criar testes auxiliares ou infraestrutura adicional.
