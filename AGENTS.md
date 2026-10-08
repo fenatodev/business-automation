@@ -17,7 +17,7 @@ Python 3.12, FastAPI, SQLAlchemy, PostgreSQL, Alembic, Docker, uv, pytest e Olla
 - Dependências FastAPI ficam em `app/dependencies.py`.
 - Routers ficam em `app/routers/`.
 - Integração de IA fica em `app/services/agent.py`.
-- Routers atuais: `companies`, `leads`, `customers` e `conversations`.
+- Routers atuais: `companies`, `leads`, `customers`, `conversations` e `opportunities`.
 
 ## Validação obrigatória
 
@@ -52,8 +52,10 @@ Use sempre a contagem real retornada por `uv run pytest`; não mantenha contagem
 
 ## Multi-tenancy, auth e exposição pública
 
-- Preservar multi-tenancy como requisito futuro importante.
-- Auth/RBAC e isolamento de tenant serão obrigatórios antes de exposição pública.
+- Company é a raiz de tenant e o isolamento existente deve ser preservado.
+- Auth Bearer mínima e isolamento tenant estão implementados para o piloto privado.
+- `company_id` fornecido pelo cliente nunca substitui o tenant derivado da identidade autenticada.
+- A API continua não autorizada para exposição pública; qualquer ampliação exige gate próprio.
 
 ## Serviço de agente/Ollama
 
@@ -71,35 +73,42 @@ Use sempre a contagem real retornada por `uv run pytest`; não mantenha contagem
 As entidades principais são:
 
 - Company
+- Opportunity
+- ProposalBrief
 - Lead
 - Customer
 - Conversation
 - Message
 
 Company é a raiz lógica do tenant.
-Leads, customers e conversations pertencem a uma company.
+Opportunity pertence diretamente a uma Company.
+ProposalBrief herda o tenant exclusivamente da Opportunity.
+Leads, customers e conversations pertencem a uma Company.
 
 ## Estratégia de testes
 
 - A suíte normal usa SQLite em memória com StaticPool.
 - PRAGMA foreign_keys=ON deve permanecer habilitado nos testes.
 - Base.metadata.create_all/drop_all é usado apenas nesse banco isolado.
-- Essa suíte NÃO valida compatibilidade completa com PostgreSQL nem migrations.
-- Futuramente deve existir uma suíte separada com PostgreSQL descartável para validar Alembic e o schema real.
+- Essa suíte NÃO substitui a validação PostgreSQL/Alembic.
+- O repositório já possui harness separado com PostgreSQL descartável para validar Alembic e schema real.
+- Mudança de migration/schema deve executar esse harness e receber segunda revisão.
 - Não codifique o número atual de testes como regra permanente; o número pode crescer. Sempre execute `uv run pytest` e use o resultado atual.
 
 ## Dívida técnica conhecida
 
-- A cadeia atual de migrations precisa ser revisada para garantir que um PostgreSQL totalmente vazio consiga executar `alembic upgrade head`.
-- A baseline do Alembic foi criada depois de parte do schema inicial existir, portanto não assumir que migrations atuais recriam todo o banco do zero.
-- Não tente reparar migrations sem uma tarefa explícita e sem banco PostgreSQL descartável para validação.
+- A cadeia Alembic atual já foi recuperada e validada em PostgreSQL descartável; preservar um único head.
+- Não alterar migrations históricas fora de tarefa explícita.
+- Toda nova migration/schema continua high-risk e exige PostgreSQL descartável + segunda revisão.
 - A regra Conversation possuir lead_id OU customer_id, mas não ambos, atualmente depende da aplicação e deverá futuramente ter proteção adequada no banco.
 
 ## Segurança
 
-- A API ainda não possui autenticação/RBAC/isolamento completo de tenant.
-- Não considerar a API segura para exposição pública enquanto isso não existir.
-- `company_id` fornecido pelo cliente não deve futuramente ser tratado como autorização; tenant deverá vir do contexto autenticado.
+- A API possui autenticação Bearer mínima e isolamento tenant para o piloto privado.
+- Admin não recebe acesso implícito a dados tenant.
+- Tenant vem do contexto autenticado; `company_id` enviado pelo cliente nunca concede autoridade.
+- Cross-tenant por ID deve permanecer oculto conforme os contratos existentes.
+- A API continua não autorizada para exposição pública.
 - Nunca introduzir dados reais de clientes em testes ou exemplos públicos.
 
 ## Agent reply
