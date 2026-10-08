@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import AwareDatetime, BaseModel, Field
 
 
 class LeadCreate(BaseModel):
@@ -59,3 +59,25 @@ class LeadUpdate(BaseModel):
 class CompanyCreate(BaseModel):
     name: str
     slug: str
+
+
+
+class OpportunityCreate(BaseModel):
+    source: Literal["99freelas"]
+    external_url: str = Field(min_length=1, max_length=1000)
+    title: str = Field(min_length=1, max_length=200)
+    description: str = Field(min_length=1)
+    budget: str | None = Field(default=None, max_length=120)
+    deadline: str | None = Field(default=None, max_length=120)
+    requirements: str | None = None
+    captured_at: AwareDatetime
+
+
+class OpportunityTriageUpdate(BaseModel):
+    next_action: Literal[
+        "pending",
+        "ignore",
+        "follow",
+        "prepare_proposal",
+    ]
+    triage_note: str | None = None
