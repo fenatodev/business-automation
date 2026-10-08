@@ -1,6 +1,6 @@
 # WP-010 — Proposal Brief interno para revisão humana
 
-Status: pronto para implementação  
+Status: concluído  
 Fase: F2 — primeiro ciclo Client 0 assistido  
 Base: `origin/main` atual no início da execução
 
@@ -295,3 +295,31 @@ Commit sugerido:
 `feat: add internal proposal brief`
 
 Não mergear localmente.
+
+
+## Resultado
+
+Concluído em 2026-10-08.
+
+- branch: `wp/010-proposal-brief`;
+- PR: #38;
+- merge commit: `6a26700f856b60b6c4310684a0af8c2bb8e80b38`;
+- `ProposalBrief` interno criado 1:1 com `Opportunity`;
+- tenant herdado exclusivamente da Opportunity;
+- criação permitida somente em `prepare_proposal`;
+- status limitado a `draft|ready_for_review`;
+- payload usa `extra="forbid"`;
+- nenhum campo de preço, moeda, imposto, pagamento, aprovação, envio ou ERP foi adicionado;
+- admin continua sem acesso implícito;
+- cross-tenant POST/GET/PATCH retorna 404 pela Opportunity;
+- migration linear adicionada após `c1f8b4d2a7e9`;
+- `uv run pytest`: 25 passed;
+- compileall passou;
+- Alembic head único: `d7a4c6e91b20`;
+- harness PostgreSQL passou:
+  - `FRESH_DATABASE_UPGRADE_OK`;
+  - `LEGACY_BASELINE_UPGRADE_OK`;
+  - `AMBIGUOUS_COMPANY_MAPPING_REJECTED`;
+  - `ALEMBIC_RECOVERY_VERIFIED`;
+- cleanup sem containers remanescentes;
+- segunda revisão independente: sem blockers e `OK_TO_MERGE: yes`.
