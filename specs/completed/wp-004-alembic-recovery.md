@@ -1,6 +1,6 @@
 # WP-004 — Reparar cadeia Alembic para banco vazio e baseline legacy
 
-Status: pronto para execução local  
+Status: concluído  
 Base: `origin/main` atual no início da execução  
 Executor: agente local autorizado com Git, shell e Docker; Continue Agent é o executor preferido atual  
 Motivo para execução local: altera migrations e precisa validar PostgreSQL 17 real descartável em dois cenários.
@@ -332,3 +332,20 @@ ChatGPT fará review pelo GitHub.
 - não fazer inventário amplo do repo;
 - não pesquisar auth/tenant;
 - não ler a branch histórica além da migration bootstrap se realmente necessário.
+
+
+## Resultado
+
+Concluído em 2026-10-08.
+
+- branch: `wp/004-alembic-recovery`;
+- commit: `53aa396`;
+- PR: #18;
+- merge commit: `bf138892212436c7f3945f62eb3c6ce3ef99414b`;
+- cadeia Alembic com um único head;
+- banco PostgreSQL 17 vazio executa `upgrade head` e `alembic check`;
+- fixture legacy marcada na baseline preserva o lead, recebe timestamps e Company válida;
+- caso ambíguo com múltiplas Companies é rejeitado explicitamente e faz rollback;
+- 11 testes passaram;
+- compileall e diff check passaram;
+- nenhum container WP-004 permaneceu após a validação.
