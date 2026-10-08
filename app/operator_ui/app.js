@@ -5,6 +5,7 @@
   const $ = (id) => document.getElementById(id);
 
   let bearer = null;
+  let sessionEpoch = 0;
   let opportunities = [];
   let selectedId = null;
   let activeBrief = null;
@@ -67,6 +68,7 @@
   }
 
   function disconnect(message = "Acesso desconectado.") {
+    sessionEpoch += 1;
     bearer = null;
     opportunities = [];
     clearSelection();
@@ -90,6 +92,7 @@
     if (!/^\/(opportunities)(\/\d+(\/triage|\/proposal-brief)?)?$/.test(path)) {
       throw new Error("Rota não permitida nesta interface.");
     }
+    const epoch = sessionEpoch;
     const headers = { Authorization: "Bearer " + bearer };
     if (options.body !== undefined) {
       headers["Content-Type"] = "application/json";
@@ -103,6 +106,9 @@
       redirect: "error",
       referrerPolicy: "no-referrer",
     });
+    if (epoch !== sessionEpoch) {
+      throw new Error("Sessão anterior encerrada.");
+    }
     if (response.status === 401) {
       disconnect("Credencial inválida ou revogada. Conecte novamente.");
       throw new ApiFailure(401);
@@ -272,6 +278,7 @@
         notify("Informe um token de operador.", true);
         return;
       }
+      sessionEpoch += 1;
       bearer = secret;
       try {
         await refreshList(null);
