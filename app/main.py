@@ -6,6 +6,7 @@ from app.routers.conversations import router as conversations_router
 from app.routers.customers import router as customers_router
 from app.routers.leads import router as leads_router
 from app.routers.opportunities import router as opportunities_router
+from app.routers.operator_ui import router as operator_ui_router
 
 
 app = FastAPI(
@@ -18,6 +19,7 @@ app.include_router(conversations_router)
 app.include_router(customers_router)
 app.include_router(leads_router)
 app.include_router(opportunities_router)
+app.include_router(operator_ui_router)
 
 
 # =========================================================
