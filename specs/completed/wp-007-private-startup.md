@@ -1,6 +1,6 @@
 # WP-007 — Startup privado, revogação e observabilidade mínima
 
-Status: pronto para validação local  
+Status: concluído  
 Base: `origin/main` atual no início da execução  
 Executor local preferido: Continue Agent  
 Motivo local: precisa iniciar PostgreSQL e API reais em recursos descartáveis, verificar sockets e inspecionar logs locais.
@@ -318,3 +318,28 @@ Push somente da branch.
 Não mergear localmente.
 
 Parar após validação/push.
+
+
+## Resultado
+
+Concluído em 2026-10-08.
+
+- branch: `wp/007-private-startup`;
+- PR: #29;
+- merge commit: `3838ddf4c9d239a038548f232528fa7634ee46c9`;
+- bind da API confirmado em `127.0.0.1`;
+- health público e proteção das rotas de domínio validados;
+- operator válido funcionou antes da revogação;
+- mesmo token retornou 401 após remoção da identidade e restart;
+- admin remanescente continuou autorizado;
+- logs mínimos de startup/access foram observados;
+- verificação de ausência de token, hash, password e DATABASE_URL completa nos logs passou;
+- markers:
+  - `PRIVATE_BIND_VERIFIED`;
+  - `PRIVATE_AUTH_VERIFIED`;
+  - `ACCESS_REVOCATION_VERIFIED`;
+  - `MINIMAL_LOGGING_VERIFIED`;
+  - `PRIVATE_STARTUP_VERIFIED`;
+- `uv run pytest`: 16 passed;
+- compileall e diff check passaram;
+- nenhum container, Uvicorn ou arquivo temporário WP-007 permaneceu.
