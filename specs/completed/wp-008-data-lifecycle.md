@@ -1,6 +1,6 @@
 # WP-008 — Data lifecycle do Client 0
 
-Status: pronto para implementação documental  
+Status: concluído  
 Base: `origin/main` atual no início da execução  
 Executor: GitHub/ChatGPT  
 Motivo: decisão operacional/documental; não exige runtime local.
@@ -236,3 +236,20 @@ Commit sugerido:
 `docs: define Client 0 data lifecycle`
 
 Merge somente após revisão remota.
+
+
+## Resultado
+
+Concluído em 2026-10-08.
+
+- branch: `wp/008-data-lifecycle`;
+- PR: #32;
+- merge commit: `e8458b4f117393fbb2eabe346dfce844d493aa7f`;
+- criado `docs/operations/data-lifecycle.md`;
+- classificação, minimização, ownership, retenção por gatilho operacional, correção, exportação, exclusão/anonymização, backups e incidentes documentados;
+- nenhum prazo jurídico/fiscal universal foi inventado;
+- ERPNext/back-office permanece autoritativo para financeiro/fiscal;
+- runbook passou a referenciar lifecycle antes de dados reais e após restore antigo;
+- DECISIONS registra a política do piloto privado;
+- ROADMAP marca F1 concluída somente para piloto privado Client 0;
+- nenhuma alteração de código, migration, dependência ou schema.
