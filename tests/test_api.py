@@ -712,3 +712,27 @@ def test_agent_error_does_not_expose_internal_details(
     assert "Connection refused" not in response.text
     assert "http://localhost:11434/api/chat" not in response.text
     assert "qwen3:8b" not in response.text
+
+
+def test_invalid_access_config_does_not_expose_internal_details(
+    client,
+    monkeypatch,
+):
+    from app.database import settings
+
+    monkeypatch.setattr(
+        settings,
+        "access_identities_json",
+        "{not-valid-json",
+    )
+
+    response = client.get(
+        "/leads",
+        headers={"Authorization": "Bearer synthetic-test-token"},
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Service unavailable"}
+    assert "config" not in response.text.lower()
+    assert "token" not in response.text.lower()
+    assert "hash" not in response.text.lower()

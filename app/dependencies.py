@@ -37,11 +37,11 @@ def get_current_identity(
 
     try:
         identity = authenticate_bearer_token(credentials.credentials)
-    except AccessConfigurationError as exc:
+    except AccessConfigurationError:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Access configuration invalid",
-        ) from exc
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Service unavailable",
+        )
 
     if identity is None:
         raise _unauthorized()
