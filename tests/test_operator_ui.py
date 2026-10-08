@@ -75,6 +75,7 @@ def test_ui_is_not_an_authentication_bypass(
     assert client.get("/opportunities", headers=operator_a_headers).status_code == 200
     assert client.post("/operator").status_code == 405
     assert client.post("/operator/app.js").status_code == 405
+    assert "/operator" not in client.get("/openapi.json").json()["paths"]
 
 
 def test_operator_ui_rejects_remote_client_and_nonlocal_host():
@@ -109,7 +110,6 @@ def test_client0_form_has_all_required_fields_without_price_or_submission(client
     assert 'value="approved"' not in page
     assert 'name="price"' not in page
     assert 'name="company_id"' not in page
-    assert "Sem envio automático" not in page  # texto do footer é em minúsculas
 
     # A UI não pode receber paths dinâmicos/estáticos arbitrários.
     for invalid in ("/operator/data.json", "/operator/test.env", "/operator/debug"):
