@@ -9,8 +9,11 @@ PORT=""
 FAILED_REASON=""
 EXPECTED_FAILURE=false
 
-# Gera senha única para este teste
-DB_PASSWORD="alembic_test_pass_$(date +%s)_$$"
+# Gera identificadores/credencial únicos para este teste
+RUN_ID="$(date +%s)_$"
+DB_USER="alembic_test_user_${RUN_ID}"
+DB_NAME="alembic_test_db_${RUN_ID}"
+DB_PASSWORD="alembic_test_pass_${RUN_ID}"
 
 cleanup() {
     if [ -n "$CONTAINER_NAME" ] && docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
@@ -53,9 +56,8 @@ if [ $WAITED -ge $MAX_WAIT ]; then
 fi
 
 # Cria usuário e banco dentro do container
-docker exec "$CONTAINER_NAME" psql -U postgres -c "CREATE USER alembic_test_user WITH PASSWORD '$DB_PASSWORD';" >/dev/null 2>&1
-docker exec "$CONTAINER_NAME" psql -U postgres -c "CREATE DATABASE alembic_test_db OWNER alembic_test_user;" >/dev/null 2>&1
-docker exec "$CONTAINER_NAME" psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE alembic_test_db TO alembic_test_user;" >/dev/null 2>&1
+docker exec "$CONTAINER_NAME" psql -U postgres -c "CREATE USER \"$DB_USER\" WITH PASSWORD '$DB_PASSWORD';" >/dev/null 2>&1
+docker exec "$CONTAINER_NAME" psql -U postgres -c "CREATE DATABASE \"$DB_NAME\" OWNER \"$DB_USER\";" >/dev/null 2>&1
 
 # Extrai porta do container
 PORT=$(docker port "$CONTAINER_NAME" 5432 | cut -d: -f2)
@@ -65,20 +67,14 @@ if [ -z "$PORT" ]; then
 fi
 
 # Constrói DATABASE_URL exclusivamente do container
-DATABASE_URL="postgresql://alembic_test_user:${DB_PASSWORD}@127.0.0.1:${PORT}/alembic_test_db"
+DATABASE_URL="postgresql+psycopg://${DB_USER}:${DB_PASSWORD}@127.0.0.1:${PORT}/${DB_NAME}"
 
 # Executa alembic upgrade head com DATABASE_URL como variável de ambiente
-echo "Executando: alembic upgrade head com DATABASE_URL=$DATABASE_URL"
+echo "Executando: alembic upgrade head contra PostgreSQL descartável em 127.0.0.1:${PORT}"
 echo "----------------------------------------"
 
-# Passa DATABASE_URL como variável de ambiente para substituir a do .env
-export DATABASE_URL="$DATABASE_URL"
-
-# Instala psycopg2 para PostgreSQL
-echo "Instalando psycopg2..."
-uv pip install psycopg2-binary >/dev/null 2>&1
-
-OUTPUT=$(uv run alembic upgrade head 2>&1)
+# Passa DATABASE_URL apenas para este processo; não imprime a credencial.
+OUTPUT=$(DATABASE_URL="$DATABASE_URL" uv run alembic upgrade head 2>&1)
 EXIT_CODE=$?
 
 echo "----------------------------------------"
