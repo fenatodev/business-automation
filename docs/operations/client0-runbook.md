@@ -136,3 +136,20 @@ Antes de mudança operacional sensível:
 5. preservar logs necessários para diagnóstico antes de removê-los conforme a política aplicável.
 
 Parar a API não autoriza apagar banco, container, backup ou evidência de outro ambiente.
+
+
+## Dados reais e lifecycle
+
+Antes de inserir dado real no core, aplicar `docs/operations/data-lifecycle.md`.
+
+Em particular:
+
+- coletar somente o necessário para o fluxo Client 0;
+- manter financeiro/fiscal no ERPNext/back-office autoritativo;
+- não persistir segredos como dado de negócio;
+- revisar dados encerrados para minimização em vez de retenção indefinida;
+- antes de exportar, corrigir ou excluir, confirmar a fonte autoritativa e o escopo;
+- se exclusão exigir SQL destrutivo ou operação sem ferramenta segura, parar e abrir procedimento específico;
+- depois de restaurar backup antigo, reaplicar exclusões/restrições conhecidas antes de promover o banco restaurado para operação.
+
+A conclusão da F1 permite somente piloto privado Client 0. Não autoriza exposição pública ou ingestão em massa.
