@@ -1,6 +1,6 @@
 # WP-003 — Harness PostgreSQL descartável para caracterizar Alembic
 
-Status: pronto para execução local  
+Status: concluído  
 Base: `origin/main` atual no início da execução  
 Executor: qualquer agente local autorizado capaz de usar arquivos, Git, shell e Docker  
 Motivo para execução local: requer Docker/PostgreSQL real descartável e execução de comandos/testes.
@@ -177,3 +177,18 @@ ChatGPT fará a revisão pelo GitHub. Não é necessário copiar saída da CLI p
 - Não leia `AGENTS.md` nesta execução.
 - Não tente diagnosticar/corrigir a migration além do necessário para reconhecer a falha esperada.
 - Se a implementação puder ser feita com um script curto e direto, prefira isso a criar testes auxiliares ou infraestrutura adicional.
+
+
+## Resultado
+
+Concluído em 2026-10-08.
+
+- branch executada: `wp/003-alembic-postgres-harness`;
+- PR: #16;
+- merge commit: `3633fd958abeec9b46f8fae685c86f7e8f801390`;
+- harness final: `scripts/verify-alembic-postgres.sh`;
+- PostgreSQL 17 descartável e isolado;
+- falha original confirmada: `relation "leads" does not exist`;
+- 11 testes passaram;
+- compileall e diff check passaram;
+- nenhuma migration foi alterada neste WP.
