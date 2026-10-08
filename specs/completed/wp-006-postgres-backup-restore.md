@@ -1,6 +1,6 @@
 # WP-006 — Backup/restore PostgreSQL descartável e runbook Client 0
 
-Status: pronto para execução local  
+Status: concluído  
 Base: `origin/main` atual no início da execução  
 Executor preferido: Continue Agent local  
 Motivo para execução local: exige Docker/PostgreSQL real descartável e validação de backup/restore.
@@ -357,3 +357,26 @@ Push somente da branch do WP.
 Não mergear.
 
 Após push, parar e informar branch + commit.
+
+
+## Resultado
+
+Concluído em 2026-10-08.
+
+- branch: `wp/006-postgres-backup-restore`;
+- PR: #26;
+- merge commit: `6d5a0b9bc52c8dc226c0d807c25991a48a79c9ab`;
+- harness executado com um único PostgreSQL 17 descartável;
+- backup lógico em formato custom criado e restaurado em segundo banco vazio;
+- revisão Alembic restaurada correspondeu ao head;
+- fixture sintética preservou dados e relacionamentos;
+- markers:
+  - `POSTGRES_BACKUP_CREATED_OK`;
+  - `POSTGRES_RESTORE_OK`;
+  - `POSTGRES_RESTORE_DATA_VERIFIED`;
+  - `BACKUP_RESTORE_VERIFIED`;
+- `uv run pytest`: 16 passed;
+- compileall e diff check passaram;
+- nenhum container WP-006 permaneceu;
+- nenhum dump ficou no repositório;
+- diff limitado aos dois arquivos autorizados.
