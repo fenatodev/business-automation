@@ -225,3 +225,54 @@ class Opportunity(Base):
         onupdate=func.now(),
         nullable=False,
     )
+
+
+
+class ProposalBrief(Base):
+    __tablename__ = "proposal_briefs"
+    __table_args__ = (
+        UniqueConstraint(
+            "opportunity_id",
+            name="uq_proposal_briefs_opportunity_id",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    opportunity_id: Mapped[int] = mapped_column(
+        ForeignKey("opportunities.id"),
+        nullable=False,
+    )
+
+    offer_reference: Mapped[str] = mapped_column(String(120))
+    diagnosis: Mapped[str] = mapped_column(Text)
+    scope: Mapped[str] = mapped_column(Text)
+    deliverables: Mapped[str] = mapped_column(Text)
+    acceptance_criteria: Mapped[str] = mapped_column(Text)
+    assumptions: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+    risks: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+    status: Mapped[str] = mapped_column(
+        String(30),
+        default="draft",
+        server_default="draft",
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
