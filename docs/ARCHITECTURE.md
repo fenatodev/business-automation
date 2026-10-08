@@ -1,134 +1,38 @@
-# Architecture and repository reconciliation
+# Arquitetura vigente
 
-## Status
+## Referência oficial
 
-Accepted direction for the current project phase.
+A [Architecture Baseline v1](architecture/baseline-v1.md) é a referência arquitetural oficial do `business-automation`, adotada em 2026-10-07 pelo WP-001. Este documento é o ponto de entrada para essa direção.
 
-## Canonical repository
+O cabeçalho de proposta da baseline registra seu estado na elaboração. A adoção está formalizada em [DECISIONS.md](DECISIONS.md); não significa que suas capacidades futuras estejam implementadas nem resolve decisões comerciais que continuam abertas. ERPNext passa de candidato a **back-office padrão inicial**, ainda sujeito à validação de implantação e dos contratos de integração.
 
-`fenatodev/business-automation` remains the canonical product repository.
+## Direção vigente
 
-The existing implementation is not being discarded. Its domain model, API structure, tests and product decisions are useful foundations. Components may be refactored or replaced when evidence justifies it, but the repository history remains the product history.
+- **Client 0 é a operação da própria empresa:** captar e qualificar oportunidades, vender, entregar projetos, cobrar, prestar suporte e medir resultados.
+- **Monólito modular inicialmente:** preservar o core horizontal e evoluir em pacotes pequenos, sem microserviços ou infraestrutura especulativa.
+- **Core:** CRM, qualificação, conversas, regras reutilizáveis, coordenação de automações, configuração por empresa e contratos de integração.
+- **ERPNext:** back-office padrão inicial para funções maduras, como documentos comerciais, financeiro, cobrança e gestão convencional de projetos e suporte, conforme aderência validada. Evitar duplicação e definir um dono por dado.
+- **Cobrança de serviços agora:** parte do ciclo operacional, podendo começar com processo humano no back-office. Billing de SaaS, assinaturas self-service e cobrança por uso ficam para depois.
+- **Automações:** n8n ou Activepieces são motores auxiliares opcionais; regras de domínio ficam no core ou no sistema autoritativo explícito.
+- **IA:** assistência com aprovação humana quando necessária, desacoplada de modelo/provider; indisponibilidade não deve impedir a operação manual.
+- **Segurança e operação:** acesso controlado, integridade, backups e recuperação antes do uso operacional da API; autenticação, autorização e isolamento comprovados antes da exposição pública.
 
-## Separation of responsibilities
+Company permanece a raiz lógica do tenant. Clientes que compram serviços da empresa são Customers do Client 0; uma venda não cria automaticamente outro tenant. Instalações segregadas do mesmo código são compatíveis com evitar forks por cliente.
 
-### Product core
+A implementação atual permanece aproveitável. Esta adoção documental não instala ERP, cria integrações ou altera código, schema, migrations ou infraestrutura.
 
-Owned by this repository.
+## Documentos de apoio
 
-Responsibilities:
+- [Baseline completa](architecture/baseline-v1.md): fronteiras, ownership, operação, riscos e dívida técnica.
+- [Prioridades e roadmap detalhado](architecture/delivery-plan-v1.md): capacidades e gates de evolução.
+- [Work packages](architecture/work-packages-v1.md): preparação de sessões autossuficientes para Pi/Qwen.
+- [Roadmap vigente](ROADMAP.md): síntese de agora, preparação e adiamentos.
+- [Decisões](DECISIONS.md): adoção e histórico de substituições.
 
-- Company as the logical tenant root;
-- leads, customers, conversations and messages;
-- reusable business-automation rules;
-- AI/agent orchestration interfaces;
-- integration contracts and adapters;
-- reusable configuration primitives;
-- product-facing API;
-- tests and deterministic domain validation.
+## Histórico preservado
 
-The core must not become tied to a single customer, industry, ERP, channel, LLM or automation engine.
+A reconciliação arquitetural de `17b1626`, presente em `main@84ea22e`, foi substituída por esta direção em 2026-10-07. Seu conteúdo original permanece no histórico Git.
 
-### ERP / back-office
+Foram retiradas da direção vigente as premissas de laboratório local e bridges antigos existentes, a prioridade de inventariá-los e o benchmark permanente com Dolibarr. Nenhum desses componentes é pré-requisito para o trabalho atual. A separação entre core, ERP, automação e configuração privada foi mantida.
 
-External domain system integrated through adapters.
-
-Initial dogfooding target:
-
-- ERPNext as the primary back-office/ERP candidate.
-
-ERP responsibilities may include accounting, sales documents, inventory, fiscal/business records and other mature ERP functions that should not be rebuilt casually inside the product core.
-
-The product core must not duplicate ERP responsibilities unless there is a demonstrated product requirement.
-
-### Dolibarr
-
-Dolibarr remains useful as a secondary evaluation and compatibility reference. It is not a second production system of record by default.
-
-Running two overlapping ERPs in production without a specific requirement would introduce unnecessary synchronization and ownership ambiguity.
-
-### n8n
-
-n8n may act as an automation/integration engine.
-
-It is not the source of truth for product domain rules. Business invariants belong in the application/domain layer or in explicitly owned systems of record.
-
-### Local business-automation lab
-
-The existing local lab is an experimental environment for:
-
-- ERPNext setup and lifecycle scripts;
-- Dolibarr comparison;
-- seed/test flows;
-- reproducibility experiments;
-- integration discovery.
-
-The lab is not automatically part of the product repository.
-
-Promotion rule:
-
-> A lab artifact enters the canonical repository only after its purpose, ownership, security boundary and validation path are clear.
-
-Vendored third-party repositories and generated runtime state should not be copied into the product repository.
-
-## Client 0
-
-The user's own company is the first production-oriented validation environment.
-
-Client 0 exists to validate:
-
-- lead capture;
-- qualification;
-- CRM flow;
-- customer/conversation history;
-- AI-assisted service;
-- business automations;
-- ERP integration;
-- operational reporting;
-- repeatable onboarding and configuration.
-
-Client-0-specific secrets and real business data must stay outside the public repository.
-
-Reusable behavior should be represented as configuration or generalized product capability rather than hardcoded company logic.
-
-## Productization path
-
-The project should evolve in this order:
-
-1. **Dogfood** — solve the internal operation with explicit boundaries.
-2. **Stabilize** — tests, migrations, security model and observability.
-3. **Extract reusable capability** — configuration, adapters and workflows.
-4. **Validate externally** — deploy the same core for a real external client.
-5. **Package** — repeatable templates, installers, managed service or product modules.
-6. **SaaS only if justified** — self-service tenancy, billing and broader platform concerns come later.
-
-## Immediate technical priorities
-
-1. Establish a clean local checkout of the canonical repository.
-2. Inventory the current local ERP lab without mutating it.
-3. Validate the existing API test suite and migration chain.
-4. Define the minimum Client-0 business process before adding features.
-5. Define ERPNext ownership boundaries and the first adapter contract.
-6. Keep authentication/RBAC/tenant isolation ahead of any public multi-tenant deployment.
-7. Replace or refactor the old Ollama-specific integration only when the desired runtime interface is explicit.
-
-## Non-goals for this reconciliation
-
-This step does not:
-
-- migrate ERP data;
-- delete the old API;
-- merge the ERP lab into the product;
-- choose billing or pricing;
-- expose the API publicly;
-- implement multi-tenancy security;
-- introduce a second production ERP;
-- make n8n part of the application core.
-
-## Decision rule
-
-When deciding whether a capability belongs in the product core, ask:
-
-> Would this still be useful and correctly owned if the next client used a different ERP, channel, LLM and industry?
-
-If not, it probably belongs in configuration, an adapter, deployment-specific infrastructure or the lab rather than the core.
+Referências anteriores em documentos ainda não reconciliados, inclusive `CLIENT0_FLOW.md`, não restabelecem essas premissas. Para direção arquitetural, prevalecem a baseline e as decisões de adoção registradas no WP-001.
