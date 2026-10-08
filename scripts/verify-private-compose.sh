@@ -4,6 +4,7 @@
 
 set -u
 set -o pipefail
+umask 077
 
 RUN_ID="$(date +%s)-$$"
 PROJECT_NAME="business-automation-wp011-${RUN_ID}"
