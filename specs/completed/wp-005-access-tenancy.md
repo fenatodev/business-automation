@@ -1,6 +1,6 @@
 # WP-005 — Acesso privado e isolamento por Company
 
-Status: pronto para implementação revisada  
+Status: concluído  
 Base: `origin/main` após conclusão do WP-004  
 Referência obrigatória: `docs/architecture/adr/0003-access-and-tenancy.md`
 
@@ -166,3 +166,26 @@ Parar e relatar se:
 `feat: enforce private access and tenant isolation`
 
 Push apenas da branch do WP. Não mergear sem revisão de segurança.
+
+
+## Resultado
+
+Concluído em 2026-10-08.
+
+- branch: `wp/005-access-tenancy`;
+- commits: `163f00f`, `6d15719`;
+- PR: #21;
+- merge commit: `ec8694f9c33e4b6273901fdbc8f8e910ab8de56f`;
+- `GET /` permanece público;
+- todas as rotas de domínio exigem autenticação;
+- admin administra Companies e não ganha tenant implícito;
+- operator é vinculado server-side a uma Company;
+- listagens e buscas por ID são tenant-scoped;
+- Message e agent-reply validam Company via Conversation;
+- cross-tenant por ID retorna 404; mismatch explícito de Company retorna 403;
+- configuração inválida de acesso retorna 503 genérico sem expor detalhes;
+- nenhuma migration ou dependência de auth foi adicionada;
+- 16 testes passaram;
+- compileall e diff check passaram;
+- revisão independente pré-implementação não encontrou blockers;
+- findings pós-implementação foram triados: limitações de chave estática/rate limiting/replay permanecem restritas ao piloto privado e não autorizam exposição pública.
