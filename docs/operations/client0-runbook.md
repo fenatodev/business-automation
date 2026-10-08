@@ -153,3 +153,48 @@ Em particular:
 - depois de restaurar backup antigo, reaplicar exclusões/restrições conhecidas antes de promover o banco restaurado para operação.
 
 A conclusão da F1 permite somente piloto privado Client 0. Não autoriza exposição pública ou ingestão em massa.
+
+
+## Runtime local persistente do piloto
+
+O PostgreSQL canônico do piloto local usa `docker-compose.yml` com volume persistente e bind somente em loopback. A API continua fora do Compose neste estágio.
+
+Preparação inicial:
+
+1. copiar `.env.example` para `.env` local; o arquivo real não é versionado;
+2. gerar uma senha forte localmente, por exemplo com `openssl rand -hex 32`;
+3. preencher `POSTGRES_PASSWORD`;
+4. preencher `DATABASE_URL` com o mesmo database/user/password/porta do PostgreSQL local;
+5. configurar `BA_ACCESS_IDENTITIES_JSON` com hashes das identidades privadas necessárias antes de inserir dados reais;
+6. confirmar que nenhuma credencial real foi adicionada ao Git.
+
+Startup do banco:
+
+```bash
+docker compose up -d postgres
+docker compose ps
+```
+
+O serviço PostgreSQL deve ficar healthy e publicado somente em `127.0.0.1:<POSTGRES_PORT>`.
+
+Antes de operar:
+
+1. confirmar explicitamente que `DATABASE_URL` aponta para esse banco do piloto;
+2. executar `uv run alembic upgrade head`;
+3. confirmar `uv run alembic current`;
+4. iniciar a API em `127.0.0.1`, conforme a seção de startup privado;
+5. confirmar `GET /`, autenticação e identidade operator correta.
+
+O volume `postgres_data` é persistente. O shutdown normal preserva dados:
+
+```bash
+docker compose stop postgres
+```
+
+ou pode encerrar o serviço sem remover o volume.
+
+**Não usar `docker compose down -v` como shutdown normal.** A opção `-v` remove o volume e é uma operação destrutiva. Qualquer remoção de volume do piloto exige identificação explícita do ambiente, backup verificado e autorização para a operação destrutiva.
+
+O harness `scripts/verify-private-compose.sh` usa um project name sintético próprio e pode executar `down -v` somente nesse ambiente descartável de validação.
+
+A API, ERPNext, Ollama, reverse proxy e TLS não fazem parte deste Compose neste WP.
