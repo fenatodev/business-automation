@@ -14,6 +14,8 @@ Este é o **repositório canônico do produto**. O core deve permanecer horizont
 O código atual contém uma API FastAPI com entidades e fluxos básicos para:
 
 - Company;
+- Opportunity e triagem;
+- ProposalBrief interno;
 - Lead;
 - Customer;
 - Conversation;
@@ -50,13 +52,23 @@ Este repositório é público. Portanto:
 
 ## Estado atual
 
-A base existente é aproveitável, mas ainda possui dívida técnica conhecida:
+A fundação para o piloto privado Client 0 já possui:
 
-- cadeia de migrations precisa ser validada desde banco vazio;
-- autenticação/RBAC ainda não estão implementados;
-- isolamento multi-tenant ainda não é uma fronteira de segurança;
-- a integração atual com Ollama deve ser revisada antes de ser tratada como runtime definitivo;
-- ERPNext e motores de automação ainda não estão integrados à API.
+- cadeia Alembic validada em PostgreSQL descartável, incluindo recovery;
+- autenticação Bearer mínima e isolamento tenant por Company;
+- backup/restore ensaiado;
+- startup loopback-only, revogação por restart e logs mínimos;
+- lifecycle operacional de dados;
+- captura manual de Opportunity e ProposalBrief interno para preparação comercial.
+
+A API continua **não autorizada para exposição pública**. O runtime privado deve usar configuração local fora do Git, e o PostgreSQL canônico do piloto deve permanecer em loopback.
+
+Ainda permanecem fora da integração atual:
+
+- ERPNext;
+- motores de automação;
+- runtime definitivo de IA;
+- envio automatizado de propostas ou outros efeitos externos.
 
 ## Direção imediata
 
