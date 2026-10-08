@@ -117,6 +117,17 @@ A API deve evoluir sem acoplar regras a um único cliente ou nicho.
 Configuração de agente específica por Company será uma capacidade futura.
 RAG, automações e integrações entram depois da fundação de dados, segurança e isolamento de tenant.
 
+## Prioridade de execução
+
+A ordem padrão de execução é:
+
+1. **ChatGPT/GitHub primeiro** para tudo que puder ser resolvido apenas com o repositório remoto: análise, arquitetura, documentação, revisão, criação/edição de arquivos, branches, commits, PRs e merges autorizados.
+2. **Pi/local somente quando houver dependência local real**, como executar testes/comandos, acessar runtime/serviços locais, hardware, arquivos não versionados, ambiente privado, containers ou outra evidência que não esteja disponível pelo GitHub.
+3. Não criar work package para Pi apenas para delegar trabalho que pode ser concluído integralmente pelo GitHub.
+4. Quando Pi for necessário, ChatGPT prepara um WP pequeno e autossuficiente; Pi executa localmente e faz handoff pela branch remota conforme as regras abaixo.
+
+O objetivo é minimizar tool calls remotas e trabalho local sem perder rastreabilidade, testes ou gates de segurança.
+
 ## Workflow dos agentes
 
 - Ler AGENTS.md antes de mudanças.
@@ -241,17 +252,17 @@ rewrites or ambiguous changes, explicit user approval is still required.
 
 ## Agent workflow and escalation
 
-- Pi is the default operational agent for this repository.
-- Normal development discussion, implementation, testing and diff review happen through Pi.
-- Codex IDE is a second-review agent, not the default executor.
-- Do not have Pi and Codex edit the workspace simultaneously.
+- ChatGPT/GitHub é o executor padrão para trabalho que não dependa do ambiente local.
+- Pi é o executor local para tarefas que realmente exigem comandos, testes, runtime, hardware, arquivos locais ou serviços privados.
+- Codex/Astra pode ser usado para arquitetura ou segunda revisão de mudanças de maior risco/complexidade.
+- Não permitir que dois agentes editem simultaneamente o mesmo workspace/branch.
 
-Pi may implement directly when the task is small or medium, scoped and covered by existing tests.
+Quando uma tarefa precisar de Pi, ela deve chegar como um WP pequeno, autocontido e limitado ao necessário. Pi não deve inventar arquitetura adjacente nem puxar automaticamente o próximo WP.
 
-Pi MUST stop and request a Codex review before proceeding with high-risk changes involving:
-- authentication or authorization;
+Mudanças de alto risco exigem segunda revisão antes da execução/aplicação quando envolverem:
+- authentication ou authorization;
 - RBAC;
-- tenant isolation or multi-tenancy security;
+- tenant isolation ou multi-tenancy security;
 - database schema changes;
 - Alembic migrations;
 - destructive database operations;
@@ -259,19 +270,9 @@ Pi MUST stop and request a Codex review before proceeding with high-risk changes
 - major architectural refactors;
 - important dependency changes;
 - production/deployment configuration;
-- a failing test whose proposed fix changes existing application behavior.
+- correção de teste que altere comportamento existente da aplicação.
 
-Pi should also recommend Codex review before a significant merge or release.
-
-When escalation is required, Pi must explicitly say:
-"Codex review required"
-and briefly state what needs review.
-
-Codex should normally review the current code/diff without editing it.
-After the review, Pi remains the primary executor unless explicitly instructed otherwise.
-
-The human user should not need to decide routinely which agent to use;
-Pi is responsible for signaling when second review is appropriate.
+Quando a dependência local for inevitável, Pi deve produzir evidência pela branch remota e parar. ChatGPT revisa pelo GitHub antes do próximo pacote ou merge. Merge/release continuam dependendo das regras de autorização deste arquivo.
 
 ## Product context
 
