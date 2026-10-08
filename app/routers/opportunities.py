@@ -5,8 +5,13 @@ from sqlalchemy.orm import Session
 
 from app.auth import AccessIdentity
 from app.dependencies import get_db, require_operator
-from app.models import Company, Opportunity
-from app.schemas import OpportunityCreate, OpportunityTriageUpdate
+from app.models import Company, Opportunity, ProposalBrief
+from app.schemas import (
+    OpportunityCreate,
+    OpportunityTriageUpdate,
+    ProposalBriefCreate,
+    ProposalBriefUpdate,
+)
 
 
 router = APIRouter()
@@ -155,3 +160,144 @@ def triage_opportunity(
     db.refresh(opportunity)
 
     return opportunity
+
+
+
+def _get_proposal_brief(
+    db: Session,
+    opportunity_id: int,
+) -> ProposalBrief:
+    brief = db.scalar(
+        select(ProposalBrief).where(
+            ProposalBrief.opportunity_id == opportunity_id,
+        )
+    )
+
+    if brief is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Proposal brief not found",
+        )
+
+    return brief
+
+
+def _proposal_brief_exists(
+    db: Session,
+    opportunity_id: int,
+) -> bool:
+    return (
+        db.scalar(
+            select(ProposalBrief.id).where(
+                ProposalBrief.opportunity_id == opportunity_id,
+            )
+        )
+        is not None
+    )
+
+
+@router.post("/opportunities/{opportunity_id}/proposal-brief")
+def create_proposal_brief(
+    opportunity_id: int,
+    data: ProposalBriefCreate,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    opportunity = _get_tenant_opportunity(
+        db,
+        opportunity_id,
+        identity.company_id,
+    )
+
+    if opportunity.next_action != "prepare_proposal":
+        raise HTTPException(
+            status_code=409,
+            detail="Opportunity is not ready for proposal preparation",
+        )
+
+    if _proposal_brief_exists(db, opportunity.id):
+        raise HTTPException(
+            status_code=409,
+            detail="Proposal brief already exists",
+        )
+
+    brief = ProposalBrief(
+        opportunity_id=opportunity.id,
+        offer_reference=data.offer_reference,
+        diagnosis=data.diagnosis,
+        scope=data.scope,
+        deliverables=data.deliverables,
+        acceptance_criteria=data.acceptance_criteria,
+        assumptions=data.assumptions,
+        risks=data.risks,
+        status="draft",
+    )
+
+    db.add(brief)
+
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+
+        if _proposal_brief_exists(db, opportunity.id):
+            raise HTTPException(
+                status_code=409,
+                detail="Proposal brief already exists",
+            )
+
+        raise
+
+    db.refresh(brief)
+    return brief
+
+
+@router.get("/opportunities/{opportunity_id}/proposal-brief")
+def get_proposal_brief(
+    opportunity_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    opportunity = _get_tenant_opportunity(
+        db,
+        opportunity_id,
+        identity.company_id,
+    )
+
+    return _get_proposal_brief(
+        db,
+        opportunity.id,
+    )
+
+
+@router.patch("/opportunities/{opportunity_id}/proposal-brief")
+def update_proposal_brief(
+    opportunity_id: int,
+    data: ProposalBriefUpdate,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    opportunity = _get_tenant_opportunity(
+        db,
+        opportunity_id,
+        identity.company_id,
+    )
+
+    brief = _get_proposal_brief(
+        db,
+        opportunity.id,
+    )
+
+    brief.offer_reference = data.offer_reference
+    brief.diagnosis = data.diagnosis
+    brief.scope = data.scope
+    brief.deliverables = data.deliverables
+    brief.acceptance_criteria = data.acceptance_criteria
+    brief.assumptions = data.assumptions
+    brief.risks = data.risks
+    brief.status = data.status
+
+    db.commit()
+    db.refresh(brief)
+
+    return brief
