@@ -114,17 +114,59 @@ DATABASE_URL=<efêmera> uv run alembic upgrade head
 
 Confirmar `alembic current` no head.
 
-### 4. Fixture sintética
+### 4. Fixture sintética — usar exatamente o schema atual
 
-Inserir diretamente no PostgreSQL, sem ORM e sem API externa, uma fixture mínima coerente contendo:
+Não inferir nomes de tabela/coluna a partir de domínio, modelos antigos ou memória. O contrato para este WP é o schema Alembic atual em `main`.
 
-- 1 Company;
-- 1 Lead da Company;
-- 1 Customer da mesma Company vinculado ao Lead quando o schema permitir;
-- 1 Conversation da mesma Company vinculada ao Customer ou Lead conforme o schema;
-- 2 Messages na Conversation.
+Usar **exatamente** estas tabelas e colunas relevantes:
 
-Usar valores claramente sintéticos.
+- `companies(id INTEGER, name VARCHAR(120), slug VARCHAR(80), created_at ...)`;
+- `leads(id INTEGER, company_id INTEGER, name VARCHAR(120), phone VARCHAR(30), source VARCHAR(50), interest VARCHAR(255) NULL, status VARCHAR(30), created_at ..., updated_at ...)`;
+- `customers(id INTEGER, company_id INTEGER, lead_id INTEGER NULL UNIQUE, name VARCHAR(120), phone VARCHAR(30), email VARCHAR(120) NULL, created_at ..., updated_at ...)`;
+- `conversations(id INTEGER, company_id INTEGER, lead_id INTEGER NULL, customer_id INTEGER NULL, channel VARCHAR(30), status VARCHAR(30), created_at ..., updated_at ...)`;
+- `messages(id INTEGER, conversation_id INTEGER, sender_type VARCHAR(20), content TEXT/VARCHAR, created_at ...)`.
+
+Todos os IDs usados na fixture são **inteiros**, não strings.
+
+Fixture obrigatória:
+
+- Company:
+  - `id = 101`
+  - `name = 'WP006 Synthetic Company'`
+  - `slug = 'wp006-synthetic-company'`
+- Lead:
+  - `id = 201`
+  - `company_id = 101`
+  - `name = 'WP006 Synthetic Lead'`
+  - `phone = '11000000000'`
+  - `source = 'wp006-test'`
+  - `interest = 'backup-restore'`
+  - `status = 'new'`
+- Customer:
+  - `id = 301`
+  - `company_id = 101`
+  - `lead_id = 201`
+  - `name = 'WP006 Synthetic Customer'`
+  - `phone = '11000000001'`
+  - `email = 'wp006@example.invalid'`
+- Conversation:
+  - `id = 401`
+  - `company_id = 101`
+  - `lead_id = NULL`
+  - `customer_id = 301`
+  - `channel = 'web'`
+  - `status = 'open'`
+- Messages:
+  - `id = 501`, `conversation_id = 401`, `sender_type = 'customer'`, `content = 'WP006 synthetic customer message'`
+  - `id = 502`, `conversation_id = 401`, `sender_type = 'agent'`, `content = 'WP006 synthetic agent message'`
+
+Deixar timestamps para os defaults do banco quando possível.
+
+Inserir diretamente no PostgreSQL, sem ORM e sem API externa.
+
+Não usar tabelas singulares como `company`, `lead`, `customer`, `conversation` ou `message`.
+
+Não adicionar colunas inexistentes como `subject`, `is_from_customer`, `messages.company_id`, `messages.customer_id` ou `messages.lead_id`.
 
 Não desabilitar foreign keys/constraints.
 
@@ -138,6 +180,8 @@ Fluxo esperado:
 docker exec -e PGPASSWORD="$DB_PASSWORD" "$CONTAINER_NAME" \
   pg_dump -U "$DB_ADMIN" -d "$SOURCE_DB" -Fc > "$BACKUP_FILE"
 ```
+
+Não usar `--verbose` redirecionando stdout e stderr juntos para o arquivo de backup. O dump custom deve receber **somente stdout binário**. Se quiser capturar diagnóstico, redirecionar stderr separadamente para variável/arquivo temporário de texto fora do repo.
 
 O arquivo deve ficar no host em caminho temporário único fora do repositório, por exemplo `/tmp/business-automation-wp006-...`.
 
@@ -155,12 +199,14 @@ Não imprimir conteúdo binário.
 
 Criar um segundo banco vazio **no mesmo container**.
 
-Restaurar usando o `pg_restore` do mesmo container, alimentado pelo arquivo temporário do host, por exemplo:
+Restaurar usando o `pg_restore` do mesmo container, alimentado pelo arquivo temporário do host pela entrada padrão, por exemplo:
 
 ```bash
 docker exec -i -e PGPASSWORD="$DB_PASSWORD" "$CONTAINER_NAME" \
   pg_restore -U "$DB_ADMIN" -d "$RESTORE_DB" < "$BACKUP_FILE"
 ```
+
+Não passar `"$BACKUP_FILE"` como caminho para `pg_restore` dentro do container; esse caminho existe no host, não dentro do container.
 
 Não exigir `pg_restore` instalado no host.
 
@@ -176,10 +222,11 @@ No banco restaurado, verificar:
 - exatamente 1 Customer;
 - exatamente 1 Conversation;
 - exatamente 2 Messages;
-- `company_id` permanece coerente em Lead/Customer/Conversation;
-- Customer/Lead linkage, se existente na fixture, foi preservado;
-- Messages apontam para a Conversation correta;
-- dados textuais sintéticos esperados foram preservados.
+- `leads.company_id = customers.company_id = conversations.company_id = 101`;
+- `customers.lead_id = 201`;
+- `conversations.customer_id = 301` e `conversations.lead_id IS NULL`;
+- as duas rows de `messages` têm `conversation_id = 401`;
+- conteúdos, nomes, slug, telefone, source, interest, status e email da fixture obrigatória foram preservados.
 
 Emitir:
 
