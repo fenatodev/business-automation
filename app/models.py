@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, func
+from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -162,3 +162,66 @@ class Message(Base):
         server_default=func.now(),
         nullable=False,
     )    
+
+
+class Opportunity(Base):
+    __tablename__ = "opportunities"
+    __table_args__ = (
+        UniqueConstraint(
+            "company_id",
+            "external_url",
+            name="uq_opportunities_company_external_url",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    company_id: Mapped[int] = mapped_column(
+        ForeignKey("companies.id"),
+        nullable=False,
+        index=True,
+    )
+
+    source: Mapped[str] = mapped_column(String(50))
+    external_url: Mapped[str] = mapped_column(String(1000))
+    title: Mapped[str] = mapped_column(String(200))
+    description: Mapped[str] = mapped_column(Text)
+    budget: Mapped[str | None] = mapped_column(
+        String(120),
+        nullable=True,
+    )
+    deadline: Mapped[str | None] = mapped_column(
+        String(120),
+        nullable=True,
+    )
+    requirements: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+    captured_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    next_action: Mapped[str] = mapped_column(
+        String(30),
+        default="pending",
+        server_default="pending",
+        nullable=False,
+    )
+    triage_note: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
