@@ -1,6 +1,6 @@
 # WP-011 — Runtime privado canônico do Client 0
 
-Status: pronto para implementação  
+Status: concluído  
 Fase: F2 — operação assistida / preparação do piloto real  
 Base: `origin/main` atual no início da execução
 
@@ -236,3 +236,26 @@ Commit sugerido:
 `ops: harden private pilot runtime config`
 
 Não mergear localmente.
+
+
+## Resultado
+
+Concluído em 2026-10-08.
+
+- branch: `wp/011-private-pilot-runtime`;
+- PR: #41;
+- merge commit: `0d1981fc6837c32f0711b40b9e6f2fca53f91e56`;
+- PostgreSQL Compose passou a publicar somente em `127.0.0.1`;
+- `POSTGRES_PASSWORD` tornou-se obrigatório, sem default fraco;
+- `.env.example` passou a ser fail-closed e sem segredo utilizável;
+- volume persistente do piloto foi preservado;
+- healthcheck PostgreSQL adicionado;
+- harness Compose sintético e isolado validou config, bind, readiness e cleanup;
+- runbook documenta startup/shutdown persistente e proíbe `down -v` como rotina normal;
+- README/AGENTS foram reconciliados com auth, tenant isolation e Alembic já validados;
+- `bash -n`: OK;
+- harness Compose: todos os cinco markers presentes;
+- `uv run pytest`: 25 passed;
+- compileall e diff check passaram;
+- nenhum container, volume, network ou arquivo temporário WP-011 permaneceu;
+- segunda revisão independente: sem blockers e `OK_TO_MERGE: yes`.
