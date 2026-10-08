@@ -13,7 +13,6 @@ from pathlib import Path
 import re
 import secrets
 import shutil
-import socket
 import stat
 import subprocess
 import sys
