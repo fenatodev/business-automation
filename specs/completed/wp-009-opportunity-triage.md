@@ -1,6 +1,6 @@
 # WP-009 — Opportunity capture e triagem mínima
 
-Status: pronto para implementação  
+Status: concluído  
 Fase: F2 — primeiro ciclo Client 0 assistido  
 Base: `origin/main` atual no início da execução
 
@@ -247,3 +247,30 @@ Commit sugerido:
 `feat: add tenant scoped opportunity triage`
 
 Não mergear localmente.
+
+
+## Resultado
+
+Concluído em 2026-10-08.
+
+- branch: `wp/009-opportunity-triage`;
+- PR: #35;
+- merge commit: `eeb8a9f470d64c2194c4cf0b89dda5097246221f`;
+- nova entidade `Opportunity` tenant-scoped implementada;
+- `Opportunity` permanece separada de `Lead`;
+- captura manual limitada a `source = 99freelas`;
+- `company_id` deriva exclusivamente da identidade operator;
+- duplicate URL é restrito por `UNIQUE(company_id, external_url)`;
+- GET/PATCH cross-tenant retornam 404;
+- admin não ganha acesso implícito;
+- migration linear adicionada após o head anterior;
+- `uv run pytest`: 20 passed;
+- compileall passou;
+- Alembic head único: `c1f8b4d2a7e9`;
+- harness PostgreSQL passou:
+  - `FRESH_DATABASE_UPGRADE_OK`;
+  - `LEGACY_BASELINE_UPGRADE_OK`;
+  - `AMBIGUOUS_COMPANY_MAPPING_REJECTED`;
+  - `ALEMBIC_RECOVERY_VERIFIED`;
+- cleanup sem containers remanescentes;
+- segunda revisão independente: sem blockers e `OK_TO_MERGE: yes`.
