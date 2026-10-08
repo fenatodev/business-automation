@@ -736,3 +736,227 @@ def test_invalid_access_config_does_not_expose_internal_details(
     assert "config" not in response.text.lower()
     assert "token" not in response.text.lower()
     assert "hash" not in response.text.lower()
+
+
+
+def create_opportunity(
+    client,
+    headers,
+    external_url="https://example.invalid/project/123",
+    title="Automacao de processo",
+):
+    response = client.post(
+        "/opportunities",
+        headers=headers,
+        json={
+            "source": "99freelas",
+            "external_url": external_url,
+            "title": title,
+            "description": "Descricao sintetica",
+            "budget": "R$ 1.000 - R$ 2.000",
+            "deadline": "7 dias",
+            "requirements": "Python, API",
+            "captured_at": "2026-10-08T12:00:00-03:00",
+        },
+    )
+    assert response.status_code == 200
+    return response.json()
+
+
+def test_opportunity_capture_triage_and_source_validation(
+    client,
+    admin_headers,
+    operator_a_headers,
+):
+    company = create_company(client, admin_headers)
+
+    opportunity = create_opportunity(
+        client,
+        operator_a_headers,
+    )
+
+    assert opportunity["company_id"] == company["id"]
+    assert opportunity["source"] == "99freelas"
+    assert opportunity["next_action"] == "pending"
+    assert opportunity["triage_note"] is None
+
+    invalid_source = client.post(
+        "/opportunities",
+        headers=operator_a_headers,
+        json={
+            "source": "other-source",
+            "external_url": "https://example.invalid/project/456",
+            "title": "Outra oportunidade",
+            "description": "Descricao",
+            "captured_at": "2026-10-08T12:00:00-03:00",
+        },
+    )
+    assert invalid_source.status_code == 422
+
+    triage = client.patch(
+        f"/opportunities/{opportunity['id']}/triage",
+        headers=operator_a_headers,
+        json={
+            "next_action": "prepare_proposal",
+            "triage_note": "Bom fit tecnico; revisar escopo e prazo.",
+        },
+    )
+    assert triage.status_code == 200
+    assert triage.json()["next_action"] == "prepare_proposal"
+    assert (
+        triage.json()["triage_note"]
+        == "Bom fit tecnico; revisar escopo e prazo."
+    )
+
+
+def test_opportunity_duplicate_is_scoped_per_company(
+    client,
+    admin_headers,
+    operator_a_headers,
+    operator_b_headers,
+):
+    create_company(
+        client,
+        admin_headers,
+        name="Company A",
+        slug="company-a",
+    )
+    create_company(
+        client,
+        admin_headers,
+        name="Company B",
+        slug="company-b",
+    )
+
+    url = "https://example.invalid/project/shared"
+
+    first_a = create_opportunity(
+        client,
+        operator_a_headers,
+        external_url=url,
+        title="A",
+    )
+    first_b = create_opportunity(
+        client,
+        operator_b_headers,
+        external_url=url,
+        title="B",
+    )
+    duplicate_a = client.post(
+        "/opportunities",
+        headers=operator_a_headers,
+        json={
+            "source": "99freelas",
+            "external_url": url,
+            "title": "Duplicada",
+            "description": "Descricao",
+            "captured_at": "2026-10-08T12:00:00-03:00",
+        },
+    )
+
+    assert first_a["company_id"] != first_b["company_id"]
+    assert duplicate_a.status_code == 409
+    assert duplicate_a.json() == {
+        "detail": "Opportunity already captured"
+    }
+
+
+def test_opportunity_tenant_scope(
+    client,
+    admin_headers,
+    operator_a_headers,
+    operator_b_headers,
+):
+    company_a = create_company(
+        client,
+        admin_headers,
+        name="Company A",
+        slug="company-a",
+    )
+    company_b = create_company(
+        client,
+        admin_headers,
+        name="Company B",
+        slug="company-b",
+    )
+
+    opportunity_a = create_opportunity(
+        client,
+        operator_a_headers,
+        external_url="https://example.invalid/project/a",
+        title="A",
+    )
+    opportunity_b = create_opportunity(
+        client,
+        operator_b_headers,
+        external_url="https://example.invalid/project/b",
+        title="B",
+    )
+
+    list_a = client.get(
+        "/opportunities",
+        headers=operator_a_headers,
+    )
+    get_b_as_a = client.get(
+        f"/opportunities/{opportunity_b['id']}",
+        headers=operator_a_headers,
+    )
+    patch_b_as_a = client.patch(
+        f"/opportunities/{opportunity_b['id']}/triage",
+        headers=operator_a_headers,
+        json={
+            "next_action": "ignore",
+            "triage_note": "Cross tenant must not work.",
+        },
+    )
+
+    assert opportunity_a["company_id"] == company_a["id"]
+    assert opportunity_b["company_id"] == company_b["id"]
+    assert list_a.status_code == 200
+    assert [item["id"] for item in list_a.json()] == [
+        opportunity_a["id"]
+    ]
+    assert get_b_as_a.status_code == 404
+    assert patch_b_as_a.status_code == 404
+
+
+def test_opportunity_routes_require_operator(
+    client,
+    admin_headers,
+    operator_a_headers,
+):
+    create_company(client, admin_headers)
+    opportunity = create_opportunity(
+        client,
+        operator_a_headers,
+    )
+
+    unauthenticated = client.get("/opportunities")
+    admin_list = client.get(
+        "/opportunities",
+        headers=admin_headers,
+    )
+    admin_create = client.post(
+        "/opportunities",
+        headers=admin_headers,
+        json={
+            "source": "99freelas",
+            "external_url": "https://example.invalid/project/admin",
+            "title": "Admin must not create",
+            "description": "Descricao",
+            "captured_at": "2026-10-08T12:00:00-03:00",
+        },
+    )
+    admin_patch = client.patch(
+        f"/opportunities/{opportunity['id']}/triage",
+        headers=admin_headers,
+        json={
+            "next_action": "follow",
+            "triage_note": None,
+        },
+    )
+
+    assert unauthenticated.status_code == 401
+    assert admin_list.status_code == 403
+    assert admin_create.status_code == 403
+    assert admin_patch.status_code == 403
