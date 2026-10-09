@@ -99,19 +99,14 @@ ou usar o ZIP plaintext como um backup de produção.**
    foi aprovado como destino de backup. Não compartilhar a unidade com
    hospedagem pública sem isolamento e análise adicionais.
 
-**Decisão recomendada para o próximo passo:** validar uma solução
-madura de cópia protegida em hardware local e seu restore isolado,
-e só então declarar `real_backup_restore_verified=true` por evidência.
-Até lá, preservar a documentação/estruturas preparadas mas **não
-coletar contratos/anexos sensíveis** por esse fluxo.
+**WP-030:** [Restic escolhido e ensaio criptografado validável no CI](client0-restic-recovery.md), com senha temporária e recuperação isolada de três arquivos inventados. **Isso ainda não cria repositório ou cópia real do usuário.** O próximo gate é escolher destino fisicamente independente, proteger a chave e realizar **backup real e restore local isolado com autorização específica**, antes de declarar `real_backup_restore_verified=true`. Até lá, não coletar contratos/anexos sensíveis por esse fluxo.
 
 ## Limitações declaradas
 
 - A verificação de SHA-256 acusa corrupção acidental, mas uma pessoa
   mal-intencionada com acesso ao ZIP pode adulterar o arquivo e o
   manifest em conjunto.
-- Os testes não provam integridade de um backup criptografado nem
-  capacidade de boot do MXQ4K.
+- O WP-028 não prova integridade de backup criptografado; o WP-030 adiciona ensaio com o **Restic real**, mas não valida chave, mídia, restore ou capacidade de boot do MXQ4K na operação.
 - ZIP temporário de teste é plaintext e **não** deve sair da pasta
   descartável; caso o processo falhe e a limpeza não ocorra, usar
   somente o ambiente CI descartável previsto.
