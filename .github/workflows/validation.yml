@@ -93,6 +93,43 @@ jobs:
           print("WP025_RELEASE_CANDIDATE=PASS assets=4 deploy=false")
           PY
 
+      - name: Prepare portable static candidate (NO HOST, NO DEPLOY)
+        run: |
+          uv run python -m site_release.prepare --target portable-static --output "$RUNNER_TEMP/ba-static-portable" > "$RUNNER_TEMP/ba-static-portable.json"
+          uv run python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"])
+          data = json.loads((root / "ba-static-portable.json").read_text())
+          files = root / "ba-static-portable"
+          assert data["kind"] == "site_release_candidate"
+          assert data["target"] == "portable-static"
+          assert data["site_asset_count"] == 3
+          assert data["headers_metadata_bundled"] is False
+          assert data["http_headers_verified"] is False
+          assert data["publication_authorized"] is False
+          assert data["deploy_performed"] is False
+          expected = {"index.html", "styles.css", "favicon.svg"}
+          assert {p.name for p in files.iterdir()} == expected
+          assert {item["name"] for item in data["assets"]} == expected
+          for item in data["assets"]:
+              blob = (files / item["name"]).read_bytes()
+              assert item["bytes"] == len(blob)
+              assert item["sha256"] == hashlib.sha256(blob).hexdigest()
+          print("PORTABLE_SITE=PASS files=3 headers_verified=false deploy=false")
+          PY
+
+      - name: Retain portable site bundle for later hardware review
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: fenatodev-portable-static-${{ github.sha }}
+          path: ${{ runner.temp }}/ba-static-portable/
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Retain reviewed site files for MANUAL publication decision
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
