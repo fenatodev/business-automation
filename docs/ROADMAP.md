@@ -46,9 +46,11 @@ Na **F2**, executar recortes curtos, com um WP e validação por vez:
    aproveitando o WP-014. O **modelo documental** está preparado;
    armazenamento local agora conta com o
    [WP-027 — bootstrap privado vazio](operations/client0-private-workspace.md)
-   para verificação sintética. **Backup/restore real, fallback e ERPNext
-   ainda dependem de validação**. Não confundir referência com documento
-   financeiro emitido.
+   para verificação sintética, e o [WP-028 — ensaio de recuperação
+   isolada do índice](operations/client0-private-recovery.md) usa
+   **somente dados fictícios**. **Backup criptografado e restore real,
+   fallback financeiro e ERPNext dependem de validação.** Nenhuma
+   simulação é prova de documento comercial emitido.
 3. **Demonstração real de capacidade técnica:** um fluxo **sintético**
    executável, reproduzível e documentado, sem dados privados e sem
    apresentar demo como resultado de cliente contratado.
