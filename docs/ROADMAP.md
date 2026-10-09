@@ -40,10 +40,12 @@ Na **F2**, executar recortes curtos, com um WP e validação por vez:
 1. **O01 — oferta/diagnóstico versionados:** um fluxo de integração/automação
    por vez, com critérios de aceite, exclusões, custos e suporte a confirmar.
    Template em [oferta Client 0 v1](operations/client0-offer-v1.md).
-2. **O02 — operação de ponta a ponta e back-office:** confirmar onde serão
-   mantidos documentos aprovados, evidências, índice privado de referências e
-   recebíveis, aproveitando o ensaio do WP-014. ERPNext permanece padrão
-   inicial, **não comprovado funcional** até validação da instância.
+2. **O02 — operação de ponta a ponta e back-office:** adotar
+   [checklist de evidências G0–G10](operations/client0-backoffice-operations.md)
+   e [índice privado por caso](operations/templates/client0-case.template.md),
+   aproveitando o WP-014. O **modelo documental** está preparado;
+   armazenamento local/backup, back-office real e ERPNext **ainda dependem
+   de validação**. Não confundir referência com documento financeiro emitido.
 3. **Demonstração real de capacidade técnica:** um fluxo **sintético**
    executável, reproduzível e documentado, sem dados privados e sem
    apresentar demo como resultado de cliente contratado.
