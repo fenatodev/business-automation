@@ -160,6 +160,8 @@ def assess_scenario(scenario: Any) -> dict[str, Any]:
             if gate in completed:
                 if not partial_seen or outcome != "settled":
                     return stop("invalid_finance_reconciliation", gate)
+                # Exactly one separately evidenced partial -> settled correction.
+                partial_seen = False
             elif outcome == "settled":
                 # A directly settled, independently evidenced invoice is valid.
                 pass
