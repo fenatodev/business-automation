@@ -143,6 +143,15 @@ O **ChatGPT prepara, implementa e revisa no GitHub** o que não depende do
 computador. O **Continue com Qwen 3.5 9B** recebe apenas o **passo local mínimo
 já definido**, não a arquitetura inteira, e **não** inicia novo WP sozinho.
 
+**O GitHub é também o meio de entrega das specs ao Continue.** Manter o
+handoff integral em `specs/wp-NNN-*.md` versionado na branch correta,
+validado remotamente e, quando aplicável, integrado na `main`. No chat,
+enviar **apenas** referência do GitHub, SHA exato, ação local mínima e
+STOP. O Continue lê a spec no **clone temporário verificado**, não precisa
+que o usuário cole blocos longos nem pode confiar em um checkout antigo.
+Se faltar GitHub, o arquivo, a revisão ou o SHA não conferir => **STOP**
+e relatório de falha, nunca inventar sucesso nem implementar substituto.
+
 **Ao preparar uma ficha local:**
 1. Limitar a **uma tarefa, um checkout, um resultado observável**. Preferir
    até **3 comandos verificáveis**; se não couber, dividir antes do handoff.
