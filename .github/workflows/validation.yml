@@ -43,7 +43,7 @@ jobs:
         run: uv run pytest -q
 
       - name: Compile Python modules
-        run: .venv/bin/python -m compileall -q app tests examples marketing proof_social operations
+        run: .venv/bin/python -m compileall -q app tests examples marketing proof_social operations site_release
 
       - name: Synthetic F2 rehearsal is never a real approval
         run: |
@@ -66,6 +66,41 @@ jobs:
 
       - name: Static-site JavaScript syntax
         run: node --check app/operator_ui/app.js
+
+
+      - name: Prepare static site review bundle (NO DEPLOY)
+        run: |
+          uv run python -m site_release.prepare --output "$RUNNER_TEMP/ba-site-candidate" > "$RUNNER_TEMP/ba-site-manifest.json"
+          uv run python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          temp = Path(os.environ["RUNNER_TEMP"])
+          report = json.loads((temp / "ba-site-manifest.json").read_text())
+          directory = temp / "ba-site-candidate"
+          assert report["kind"] == "site_release_candidate"
+          assert report["site_asset_count"] == 4
+          assert report["publication_authorized"] is False
+          assert report["deploy_performed"] is False
+          expected = {"index.html", "styles.css", "favicon.svg", "_headers"}
+          assert {p.name for p in directory.iterdir()} == expected
+          assert {entry["name"] for entry in report["assets"]} == expected
+          for entry in report["assets"]:
+              data = (directory / entry["name"]).read_bytes()
+              assert entry["bytes"] == len(data)
+              assert entry["sha256"] == hashlib.sha256(data).hexdigest()
+          print("WP025_RELEASE_CANDIDATE=PASS assets=4 deploy=false")
+          PY
+
+      - name: Retain reviewed site files for MANUAL publication decision
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: fenatodev-site-candidate-${{ github.sha }}
+          path: ${{ runner.temp }}/ba-site-candidate/
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Proof-social template must remain blocked
         run: |

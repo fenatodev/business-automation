@@ -49,9 +49,11 @@ Na **F2**, executar recortes curtos, com um WP e validação por vez:
 3. **Demonstração real de capacidade técnica:** um fluxo **sintético**
    executável, reproduzível e documentado, sem dados privados e sem
    apresentar demo como resultado de cliente contratado.
-4. **Site-vitrine institucional mínimo:** estático, separado do core e
-   da UI interna; apresentar oferta, processo, demonstração verificável
-   e contato aprovado, **sem expor banco/API privada**.
+4. **Site-vitrine institucional mínimo:** WP-021 codificou a
+   vitrine estática, separada do core e da UI interna. O
+   [WP-025 — pacote e gates de publicação](operations/site-publication-readiness.md)
+   prepara **quatro assets auditáveis**, sem conta, domínio, deploy ou
+   autorização de contato. **Sem expor banco/API privada.**
 5. **Assistente de marketing inicial:** [WP-022 — rascunhos com Qwen local](operations/client0-marketing-drafts.md), baseados em fonte pública curada;
    revisão factual e autorização humana continuam obrigatórias. **Publicar
    é gate distinto**, não automático. Outros canais e imagens ficam para
