@@ -50,7 +50,7 @@ do core, banco real ou comportamento operacional.
 
 ## Critérios de aceite
 
-1. `python3 -m marketing.draft --preview` não chama modelo e mostra
+1. `uv run python -m marketing.draft --preview` não chama modelo e mostra
    somente fatos públicos curados.
 2. Um `httpx.MockTransport` confirma **uma** chamada ao endpoint
    loopback, JSON e saída com revisão obrigatória.
@@ -76,7 +76,7 @@ git fetch --quiet origin main:refs/remotes/origin/main
 git diff --check origin/main...HEAD
 uv run pytest -q
 .venv/bin/python -m compileall -q app tests examples marketing
-python3 -m marketing.draft --preview >/dev/null
+uv run python -m marketing.draft --preview >/dev/null
 test -z "$(git status --porcelain)"
 printf 'WP022_LOCAL=PASS\n'
 ```
