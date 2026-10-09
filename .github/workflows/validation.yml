@@ -51,7 +51,7 @@ jobs:
         run: uv run pytest -q
 
       - name: Compile Python modules
-        run: .venv/bin/python -m compileall -q app tests examples marketing proof_social operations site_release client0_workspace
+        run: .venv/bin/python -m compileall -q app tests examples marketing proof_social operations site_release client0_workspace scripts/ubuntu_readonly_preflight.py
 
       - name: Client0 private workspace synthetic drill (NO LIVE HOME)
         run: |
