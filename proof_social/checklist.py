@@ -45,12 +45,12 @@ def _day(value: Any) -> date | None:
 
 
 def _number(value: Any) -> bool:
-    return (
-        isinstance(value, (int, float))
-        and not isinstance(value, bool)
-        and math.isfinite(value)
-        and value >= 0
-    )
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return False
+    try:
+        return math.isfinite(value) and value >= 0
+    except OverflowError:
+        return False
 
 
 def _add(blockers: list[str], issue: str) -> None:
