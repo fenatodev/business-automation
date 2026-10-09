@@ -57,7 +57,7 @@ class _HTMLAudit(HTMLParser):
     def handle_starttag(self, tag: str,
                         attrs: list[tuple[str, str | None]]) -> None:
         values = dict(attrs)
-        if tag in {"script", "form", "iframe", "object", "embed", "video",
+        if tag in {"script", "style", "form", "iframe", "object", "embed", "video",
                    "audio", "input", "base", "source", "picture"}:
             raise ReleaseError("unsafe_html_element")
         if any(key.startswith("on") or key == "style" for key in values):
@@ -106,7 +106,7 @@ class _HTMLAudit(HTMLParser):
                     or url.fragment or url.port is not None):
                 raise ReleaseError("external_link_unapproved")
             if url.hostname == "github.com":
-                if not url.path.startswith("/fenatodev"):
+                if not (url.path == "/fenatodev" or url.path.startswith("/fenatodev/")):
                     raise ReleaseError("external_link_unapproved")
             elif url.path != "/in/fenatodev/":
                 raise ReleaseError("external_link_unapproved")
@@ -185,6 +185,12 @@ def inspect_assets(*, site_root: Path = SITE_ROOT) -> dict[str, bytes]:
         raise ReleaseError("site_source_missing") from exc
     if present != set(ASSETS) | REPO_ONLY:
         raise ReleaseError("unexpected_or_missing_source_asset")
+    for name in present:
+        try:
+            if not stat.S_ISREG((site_root / name).lstat().st_mode):
+                raise ReleaseError("site_contains_non_regular_file")
+        except OSError as exc:
+            raise ReleaseError("site_source_asset_unreadable") from exc
 
     assets = {name: _read_regular(site_root / name, MAX_SIZE[name])
               for name in ASSETS}
