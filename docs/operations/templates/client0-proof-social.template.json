@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "case_ref": "c0-0000-000",
+  "classification": "unverified",
+  "withdrawal_requested": null,
+  "evidence": {
+    "commercial_acceptance_ref": "",
+    "technical_acceptance_ref": "",
+    "rights_review_ref": "",
+    "privacy_review_ref": "",
+    "editorial_review_ref": ""
+  },
+  "metric": {
+    "metric_id": "",
+    "unit": "",
+    "method_ref": "",
+    "comparability_review_ref": "",
+    "before": {
+      "kind": "unverified",
+      "value": null,
+      "source_ref": "",
+      "period_start": "",
+      "period_end": ""
+    },
+    "after": {
+      "kind": "unverified",
+      "value": null,
+      "source_ref": "",
+      "period_start": "",
+      "period_end": ""
+    }
+  },
+  "asset": {
+    "version_ref": "",
+    "sanitized_ref": "",
+    "sha256": "",
+    "channel": "linkedin",
+    "requested_uses": [
+      "metrics"
+    ]
+  },
+  "consents": []
+}
