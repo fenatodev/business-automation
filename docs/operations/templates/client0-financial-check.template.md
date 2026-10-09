@@ -2,6 +2,8 @@
 
 **Índice privado somente de referências; não é NFS-e, fatura,
 livro contábil, recibo, cobrança ou prova de pagamento.**
+**Fonte financeira autoritativa:** banco/provedor legítimo verificado
+pelo responsável; nenhum estado é declarado por este formulário.
 Estado inicial da conciliação: `unknown`.
 
 ## 1. Autoridade fiscal e documental — bloquear sem validação
