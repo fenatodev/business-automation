@@ -226,7 +226,7 @@ def _write_synthetic_snapshot(root: Path, archive: Path) -> dict:
 
 
 def _read_validated_snapshot(archive: Path) -> dict[str, bytes]:
-    """Treat every ZIP member as untrusted; never extractall()."""
+    """Treat ZIP members as untrusted; extract only validated listed entries."""
     try:
         blob = _read_file(archive) if archive.stat().st_size <= MAX_FILE else None
         # Archives can be larger than one individual source file.
