@@ -14,7 +14,7 @@ contato, publicação, faturamento ou coleta de dados de clientes.
 | D04 — contratos | Texto sobre escopo/limites, IP/licenças, prazo, suporte, proteção de dados, aceite e resolução de conflitos; conferir necessidade de revisão jurídica | Versão autorizada do documento e aprovador | **PENDENTE** |
 | D05 — plataforma | Para cada canal (ex.: 99Freelas), conferir regras de propostas, comunicação, taxas, custódia e pagamentos, **sem contornar termos** | Plataforma/canal permitido, referência das condições vigentes | **PENDENTE** |
 | D06 — back-office | Optar entre **fallback oficial/documental controlado** e ERPNext **já funcional**; definir emissor fiscal e fonte de conciliação bancária legítimos | Responsável G2/G3/G8/G9, fonte autoritativa e procedimento de falhas | **PENDENTE** |
-| D07 — proteção do índice | **Restic escolhido (WP-030)** e ensaio criptografado apenas no runner GitHub; falta destino independente, custódia de chave e **restore isolado real** | [Runbook de ativação posterior](client0-restic-recovery.md), evidência sanitizada do host real e confirmação de mídia | **PENDENTE** |
+| D07 — proteção do índice | **Restic escolhido (WP-030)** e [inventário read-only WP-031](client0-ubuntu-preflight.md) pronto para avaliação local; falta comprovar destino independente, chave custodiada e **restore real** | Metadados sanitizados do Ubuntu primeiro; depois aprovação específica de backup/recovery, sem coletar dados em Git | **PENDENTE** |
 | D08 — comunicação/site | Confirmar hospedagem MXQ4K **somente após** boot/segurança; HTTPS, headers, disponibilidade, identidade e copy revisados; autorizar versão exata do site | Destino, SHA, operador e ato de publicação. Cloudflare estático fica como fallback | **PENDENTE** |
 | D09 — prospecção | Aprovação explícita para retomar seleção de leads e submissão de propostas por canal, limites de gastos e critérios de parada | Autorização humana de canal/escopo; propostas seguem gate G4a individual | **NÃO AUTORIZADA** |
 
@@ -45,8 +45,11 @@ com aprovação e só depois buscar clientes.
 ## Ordem curta para concluir a preparação
 
 **Passo A — decisões D01–D07:** confirmar legalidade do serviço,
-preço/condições, fallback comercial, canal de pagamento e backup
-protegido. Uma vez resolvidos, não abrir novas features por hipótese.
+preço/condições, fallback comercial e canal de pagamento. Para o
+backup, executar primeiro [WP-031 read-only](client0-ubuntu-preflight.md)
+via OpenCode em clone descartável **somente após CI/merge**; não ativa
+Restic nem acessa dados privados. Depois validar mídia/chave e restore
+sob autorização específica. Não abrir novas features por hipótese.
 
 **Passo B — D08:** inventariar o MXQ4K com SD Armbian **sem regravar
 firmware**; confirmar Linux/atualizações/rede, servidor estático sem
