@@ -104,7 +104,7 @@ def _check_grants(record: dict, blockers: list[str], today: date) -> None:
     uses = asset.get("requested_uses")
     if not isinstance(digest, str) or not DIGEST.fullmatch(digest):
         _add(blockers, "public_asset_digest_invalid")
-    if channel not in CHANNELS:
+    if not isinstance(channel, str) or channel not in CHANNELS:
         _add(blockers, "publication_channel_unsupported")
     if not _reference(asset.get("sanitized_ref")) or not _reference(asset.get("version_ref")):
         _add(blockers, "public_asset_review_missing")
