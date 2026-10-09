@@ -76,7 +76,7 @@ def test_financial_template_requires_legitimate_issuer_and_bank_source() -> None
         "ID do recebível", "banc", "data",
     ):
         assert term.casefold() in content.casefold(), term
-    assert "não é NFS-e" in content.lower()
+    assert "não é nfs-e" in content.lower()
     assert "NÃO" in content
 
 
