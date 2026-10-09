@@ -32,6 +32,14 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v6
 
+      - name: Install Restic on disposable GitHub runner (NO USER HOST)
+        run: |
+          if ! command -v restic >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends restic
+          fi
+          restic version
+
       - name: Check changes for trailing whitespace
         if: github.event_name == 'pull_request'
         env:
@@ -82,6 +90,29 @@ jobs:
           assert report["production_backup_authorized"] is False
           assert report["external_action_taken"] is False
           print("WP028_SYNTHETIC_RECOVERY=PASS real_backup=false encrypted=false")
+          PY
+
+      - name: Restic encrypted Client0 index restore (SYNTHETIC ONLY)
+        run: |
+          uv run python -m client0_workspace.restic_drill --synthetic-drill > "$RUNNER_TEMP/ba-wp030.json"
+          uv run python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          record = json.loads((Path(os.environ["RUNNER_TEMP"]) / "ba-wp030.json").read_text())
+          assert record["kind"] == "client0_restic_encrypted_recovery_drill"
+          assert record["status"] == "pass"
+          assert record["backup_engine"] == "restic"
+          assert record["synthetic_file_count"] == record["verified_file_count"] == 3
+          for flag in ("repository_check_read_data", "wrong_password_rejected",
+                       "restore_byte_exact", "restore_isolated",
+                       "repository_encrypted_by_restic"):
+              assert record[flag] is True, flag
+          for flag in ("real_workspace_accessed", "real_backup_restore_verified",
+                       "production_repository_created", "key_recovery_proven",
+                       "external_action_taken", "publication_authorized"):
+              assert record[flag] is False, flag
+          print("WP030_RESTIC_ENCRYPTED=PASS synthetic=3 real_backup=false")
           PY
 
       - name: Synthetic F2 rehearsal is never a real approval
