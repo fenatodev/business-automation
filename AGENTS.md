@@ -137,6 +137,58 @@ A ordem padrão de execução é:
 
 O objetivo é minimizar tool calls remotas e trabalho local sem perder rastreabilidade, testes ou gates de segurança.
 
+## Contrato de handoff para Continue / Qwen 3.5 9B
+
+O **ChatGPT prepara, implementa e revisa no GitHub** o que não depende do
+computador. O **Continue com Qwen 3.5 9B** recebe apenas o **passo local mínimo
+já definido**, não a arquitetura inteira, e **não** inicia novo WP sozinho.
+
+**Ao preparar uma ficha local:**
+1. Limitar a **uma tarefa, um checkout, um resultado observável**. Preferir
+   até **3 comandos verificáveis**; se não couber, dividir antes do handoff.
+2. Incluir **branch exata, repositório GitHub completo, paths literais,
+   pré-condições, comandos prontos, saída esperada, proibições e STOP**.
+3. Não exigir que Qwen deduza diretórios, versões, URLs, stack, permissões
+   ou regras consultando histórico de chats; copiar só o contrato essencial.
+4. Se código e testes já foram escritos/revisados remotamente, Qwen apenas
+   **valida**, sem refatorar, corrigir ou implementar itens adjacentes.
+5. Não passar caminhos de projeto genéricos (ex.: `/workspace`,
+   `/home/pi`) sem evidência de que existem no host autorizado.
+
+**Preflight e Git imutável para validação local:**
+- **Nunca** executar `git stash`, `git restore`, `git clean`,
+  `rm`, `git checkout` ou `git reset` num checkout de usuário
+  para "limpar" os testes. Encontrou alteração inesperada? **STOP**.
+- Clonar em diretório temporário **novo**, usar URL **completa** do
+  repositório: `https://github.com/fenatodev/business-automation.git`.
+  `origin/wp/...` é **ref Git, nunca URL de `git clone`**.
+- Preferir clone normal (não raso) do **único branch do WP**; fazer
+  `git fetch origin main` se precisar do `merge-base`.
+  O checkout operacional, `.env`, Postgres, API e ERPNext ficam intocados.
+- Rodar só testes com fixtures sintéticas/isoladas. Não executar
+  migration real, Docker, deploy, Git merge ou push como efeito da validação.
+
+**Tratamento de erro / anti-loop (obrigatório):**
+- Inspecionar **código de saída real e stderr**, não confiar apenas no
+  indicador `tool succeeded` que informa somente que o comando foi
+  executado. Ex.: `fatal`/exit 128 é **falha**, mesmo com chamada aceita.
+- **Nunca repetir comando idêntico após falha.** Identificar causa e
+  permitir **no máximo uma tentativa corrigida**, com mudança explícita;
+  falhou novamente => **STOP**, sem investigação ilimitada.
+- Não apagar testes não versionados ou arquivos do usuário para fazer
+  `pytest` passar. Se o ambiente estiver contaminado, trocar para um
+  novo clone descartável **sem modificar o original**.
+- Não reexecutar uma operação com efeitos colaterais quando o resultado
+  é incerto. Verificar estado antes de qualquer reenvio/duplicação.
+- Se o passo depender de credencial, autorização adicional, caminho
+  desconhecido ou ação fora do escopo: **STOP** com motivo, não adivinhar.
+- Finalizar explicitamente com **PASS** ou **FAIL**, sem carregar
+  automaticamente a próxima tarefa.
+
+**Handoff curto e estável:** `WP`, `branch/commit`, `PASS|FAIL`,
+`testes (contagem real)`, `verificações`, `bloqueio (se houver)`.
+Sem segredos, logs integrais, dados reais nem explicações prolixas.
+
 ## Workflow dos agentes
 
 - Ler AGENTS.md antes de mudanças.
