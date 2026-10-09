@@ -1,9 +1,13 @@
 # WP-026 — Destino MXQ4K reservado para depois, sem tocar no aparelho
 
 **Estado:** site estático com pacote portátil pronto para validação em CI.
-**Hospedagem MXQ4K:** **adiada por decisão do responsável**. Não houve
-conexão, acesso, alteração, instalação, configuração de rede ou publicação
-no TV Box. A F2 continua aberta e a prospecção permanece pausada.
+**Hospedagem MXQ4K:** adiada até concluir a preparação operacional.
+O responsável informou (09/10/2026) que **já possui Armbian preparado
+em um cartão SD** para esse TV Box. Isso reduz o trabalho inicial de
+preparação de mídia, **mas o boot, a placa/SoC, segurança, rede e
+estabilidade ainda NÃO foram verificados**. Não houve conexão, acesso,
+alteração, configuração de rede ou publicação no aparelho por este projeto.
+A F2 continua aberta e a prospecção permanece pausada.
 
 ## A. Decisão de arquitetura agora
 
@@ -47,8 +51,9 @@ memória flash diferentes, com firmware/bootloader incompatíveis.
 **Não** escolher imagem de Armbian nem instrução de flash apenas pelo
 nome da carcaça.
 
-No **futuro**, em sessão específica autorizada, o primeiro WP do
-hardware será apenas **inventário read-only**, sem root, flash ou
+No **futuro**, em sessão específica autorizada, aproveitar o SD
+preparado, **sem presumir que Armbian já inicializa**. O primeiro WP do
+hardware será somente **inventário read-only**, sem root, flash ou
 exposição pública: modelo/placa, SoC real, RAM, armazenamento,
 tipo de flash, versão do Android ou Linux, capacidade de boot
 reversível, Ethernet, temperatura, fonte de alimentação e consumo.
