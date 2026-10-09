@@ -43,7 +43,25 @@ jobs:
         run: uv run pytest -q
 
       - name: Compile Python modules
-        run: .venv/bin/python -m compileall -q app tests examples marketing proof_social operations site_release
+        run: .venv/bin/python -m compileall -q app tests examples marketing proof_social operations site_release client0_workspace
+
+      - name: Client0 private workspace synthetic drill (NO LIVE HOME)
+        run: |
+          uv run python -m client0_workspace.workspace --synthetic-drill > "$RUNNER_TEMP/ba-wp027.json"
+          uv run python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          result = json.loads((Path(os.environ["RUNNER_TEMP"]) / "ba-wp027.json").read_text())
+          assert result["kind"] == "client0_synthetic_workspace_drill"
+          assert result["status"] == "pass"
+          assert result["bootstrap_idempotent"] is True
+          assert result["template_sha256_matches"] is True
+          assert result["real_workspace_accessed"] is False
+          assert result["backup_restore_verified"] is False
+          assert result["external_action_taken"] is False
+          print("WP027_PRIVATE_WORKSPACE=PASS synthetic_only=true backup_verified=false")
+          PY
 
       - name: Synthetic F2 rehearsal is never a real approval
         run: |
