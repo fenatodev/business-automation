@@ -1,7 +1,7 @@
 # WP-033 — estado operacional verificado após execução local
 
-**Data da conferência:** 2026-10-09.  
-**Estado:** **PARTIAL** — relatório sanitizado, revisto com leitura de metadados no Ubuntu via Desktop Commander, sem executar novamente o WP-033.  
+**Data da conferência:** 2026-10-09.
+**Estado:** **PARTIAL** — relatório sanitizado, revisto com leitura de metadados no Ubuntu via Desktop Commander, sem executar novamente o WP-033.
 **Natureza:** observação do **estado atual**, não reprodução do histórico da sessão anterior.
 
 ## Evidência verificável
