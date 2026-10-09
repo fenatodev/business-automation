@@ -4,9 +4,7 @@
 ativar proteção do Client 0 **no Ubuntu** com o Restic já validado por
 CI (WP-030), sem modificar dados do operador.
 
-**Execução:** código, testes e PR primeiro no GitHub; **OpenCode** é
-executor da leitura local *apenas depois do CI e merge da main*.
-Desktop Commander permanece desligado.
+**Execução:** ChatGPT prepara e valida tudo no GitHub; **Continue com Qwen3.5-9B** executa **somente** a inspeção local indispensável, após CI verde e merge na `main`. A especificação é entregue **pelo próprio GitHub**, não por um prompt copiado de várias páginas. Desktop Commander e OpenCode permanecem desligados.
 
 ## Limites de escopo
 
@@ -21,7 +19,7 @@ Arquivos autorizados:
   para ausência, modos, symlink, arquivos de cliente ignorados,
   mount simulado, argumentos não autorizados e output.
 - `docs/operations/client0-ubuntu-preflight.md`: interpretação de
-  resultado, gates de segurança e handoff pronto para OpenCode.
+  resultado, gates de segurança e handoff pronto para Continue.
 - `docs/operations/client0-launch-decisions.md`,
   `docs/operations/precontact-readiness.md`, `docs/ROADMAP.md`:
   indicar **inventário local pendente**, sem confundir CI com operação.
@@ -53,26 +51,58 @@ MXQ4K/SSH, portas/túneis/domínio/deploy, proposta ou prospecção.
    `publication_authorized=false` sempre.
 7. **Não rodar CLI local antes de CI/merge.**
 
-## Contrato OpenCode — um checkout descartável, um resultado
+## Handoff GitHub → Continue/Qwen — um checkout descartável, um resultado
 
-Depois do merge, ChatGPT informa SHA completo de `main`.
-Executar **uma vez**, com OpenCode, dentro de clone temporário novo.
-Somente os três comandos permitidos dentro de um script shell
-`set -e` são:
+**Fonte única:** `https://github.com/fenatodev/business-automation/blob/main/specs/wp-031-ubuntu-operational-preflight.md`.
+Não confiar em uma spec antiga aberta no VS Code: ler a versão do
+**clone temporário do GitHub** e confirmar que é o WP-031. A fonte é
+esta ficha; nenhuma informação do histórico da conversa é necessária.
 
-1. `git clone --quiet --single-branch --branch main
-   https://github.com/fenatodev/business-automation.git
-   <novo_tmp>/repo` (nunca checkout local existente).
-2. `git -C <novo_tmp>/repo rev-parse HEAD` e comparar o SHA aprovado;
-   divergência => **STOP**, não rodar Python.
-3. `python3 -B <novo_tmp>/repo/scripts/ubuntu_readonly_preflight.py --check`
-   (stdlib, sem `uv`, sem ferramentas externas de manutenção).
+**Prompt mínimo para o Continue (ChatGPT fornece SHA após merge):**
 
-Não consultar/ler diretórios privados além dos metadados que o
-script acessa. Não abrir .env, dados fiscais, credenciais, banco,
-serviços, cases ou `/mnt/backup` diretamente. Não dar acesso
-irreversível ou amplo ao agente; se um comando pedir confirmação
-de ação fora dos três, **STOP**.
+> Execute **somente** o WP-031 descrito no GitHub, arquivo
+> `specs/wp-031-ubuntu-operational-preflight.md`, commit
+> `<SHA_DA_MAIN_CONFIRMADO>`. Clone em `/tmp`, confira SHA e
+> existência do script e execute `--check` uma vez.
+> Não altere o projeto, instale software ou corrija bloqueios.
+> Devolva o JSON sanitizado e o status; depois **STOP**.
+
+**Passos operacionais permitidos**, uma vez:
+
+1. Criar **um único diretório temporário novo** com
+   `mktemp -d /tmp/ba-wp031-continue.XXXXXX`, então clonar
+   `https://github.com/fenatodev/business-automation.git` com
+   `git clone --quiet --single-branch --branch main <URL> <TEMP>/repo`.
+   **Não usar o checkout de trabalho existente.**
+2. Ler a **spec local ao clone temporário** e conferir
+   `git -C <TEMP>/repo rev-parse HEAD` = `<SHA_DA_MAIN_CONFIRMADO>`.
+   Conferir também `test -f <TEMP>/repo/scripts/ubuntu_readonly_preflight.py`.
+   Qualquer divergência ou ausência => **STOP**, não simular
+   saída e não procurar/corrigir outros caminhos.
+3. Executar exatamente uma vez:
+   `python3 -B <TEMP>/repo/scripts/ubuntu_readonly_preflight.py --check`.
+   O script foi validado no CI com Python stdlib; **não** rodar
+   `pytest`, `uv`, Restic, Docker ou outros comandos locais.
+
+O clone temporário é **a única escrita** autorizada. Não dar
+`git push`, `git clean`, `reset`, `checkout`, `stash`, executar
+`sudo`, instalar ou alterar permissões. Não consultar arquivos
+privados além dos metadados que o script já inspeciona; jamais
+abrir `.env`, dados fiscais, credenciais, serviços, arquivos
+`cases/` ou `/mnt/backup` diretamente. Não acessar MXQ4K,
+rede local, roteador ou DNS; o clone GitHub é a única conexão
+remota prevista.
+
+**Anti-loop:** falhou clone/SHA/script/comando => informar código de
+saída e motivo sanitizado, **sem repetir, refatorar, abrir outro
+WP ou declarar PASS**. Não inferir `restic=false` de uma
+falha em localizar o script. Em caso de terminal travado, interromper
+o trabalho e devolver bloqueio; não explorar ferramentas ou
+ambiente livremente.
+
+**Nota:** `status=review_required` no JSON é uma coleta válida, não
+significa que o backup ou a operação estejam prontos. O campo
+`blocked` sinaliza condição insegura; também não se corrige aqui.
 
 **Handoff sanitizado:** `WP031_LOCAL=PASS|BLOCKED`;
 `main_sha=<...>`; `workspace=<safe|missing|blocked>`;

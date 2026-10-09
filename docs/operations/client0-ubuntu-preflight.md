@@ -42,17 +42,24 @@ retention e procedimento de recuperação do PostgreSQL.
 motivo (symlink, permissão/owner inadequados). Não corrigir
 automaticamente nem rodar `chmod -R`.
 
-## Uso com OpenCode após CI verde
+## Handoff pelo GitHub para Continue/Qwen 3.5 9B
 
-O executor deve seguir literalmente
-[`specs/wp-031-ubuntu-operational-preflight.md`](../../specs/wp-031-ubuntu-operational-preflight.md)
-e usar **clone GitHub em diretório temporário**, nunca a árvore de trabalho
-local do projeto. Executar **somente** o script com `--check`;
-não fazer `uv run` e não invocar comandos de backup.
+**Continue é o executor local escolhido.** A spec completa, os limites
+e a sequência exata estão no próprio GitHub:
+[`specs/wp-031-ubuntu-operational-preflight.md`](../../specs/wp-031-ubuntu-operational-preflight.md).
 
-A escolha de **OpenCode** substitui o executor mencionado em
-documentações antigas do projeto para este handoff; não alterar
-configuração de agentes nem runtime como consequência disso.
+O ChatGPT confirma primeiro o commit final `main` e fornece somente um
+**prompt curto com a referência à spec e o SHA esperado**. O Continue
+clona o repositório em pasta temporária nova, lê a spec no clone,
+verifica a existência de
+`scripts/ubuntu_readonly_preflight.py` **e o SHA exato**, então
+executa **uma única vez** `python3 -B ... --check`.
+
+Não usar checkout antigo do VS Code, não fazer `uv run`, não abrir
+dados de clientes e não executar backup. Se o script não estiver
+no clone validado, parar e retornar o erro; **não inventar
+diagnóstico, instalar ou procurar implementações alternativas**.
+OpenCode e Desktop Commander não são necessários neste WP.
 
 O relatório pode informar flags de hardware e filesystem, mas
 **não identifica modelo do MXQ4K ou compatibilidade Armbian**.
