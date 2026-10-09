@@ -85,4 +85,15 @@ Para cada novo serviço **após retomada aprovada da prospecção**:
 
 **Única dependência do Ubuntu para esta etapa:** validar uma pasta **vazia** de referência privada (0700, com `umask 077`) e copiar o template localmente (0600), sem dados reais; confirmar que a pasta não é symlink e está fora do Git. Isso é um **preflight**, não armazenamento operacional recuperável até backup/restore ser aprovado. Testes Python/compileall são executados pelo Continue em checkout de testes ou branch limpa, sem tocar serviços ativos.
 
-**Não** iniciar ERPNext/Docker, não executar Alembic, não ler/tocar banco real, não reiniciar Uvicorn, não iniciar um WP subsequente. A F2 permanece aberta até ciclo comercial real até recebimento/resultado. O [plano pré-contato](precontact-readiness.md) continua a definir a ordem: próxima é **demo técnica sintética**, **após** a confirmação da viabilidade do fallback comercial e de sua guarda privada.
+**Atualização após WP-029:** o [kit comercial manual](client0-manual-commercial-pack.md)
+contém modelo de proposta, aceite comercial/técnico e checklist
+fiscal/financeiro, todos inicialmente marcados **RASCUNHO / NÃO ENVIAR**.
+O [quadro de decisões de lançamento](client0-launch-decisions.md)
+registra formalização tributária, preço/condições, emissor, canal e backup
+ainda **pendentes**. Nenhum documento desses comprova ERP funcional,
+autorização de envio, recebimento ou emissão fiscal.
+
+**Não** iniciar ERPNext/Docker, executar Alembic, ler o banco real,
+reiniciar Uvicorn ou ativar prospecção por consequência da
+documentação. A F2 permanece aberta até um ciclo comercial real com
+recebimento e revisão de resultado.
