@@ -188,6 +188,15 @@ def test_wrong_scope_expiry_or_missing_proof_blocks_consent(field: str, value: s
     assert "consent_missing_or_expired:metrics" in check(case)["blocking_codes"]
 
 
+def test_malformed_channel_and_huge_number_fail_closed_without_exception() -> None:
+    case = complete_synthetic_structure()
+    case["asset"]["channel"] = ["linkedin"]
+    case["metric"]["before"]["value"] = 10 ** 600
+    codes = check(case)["blocking_codes"]
+    assert "publication_channel_unsupported" in codes
+    assert "measurement_not_observed" in codes
+
+
 def test_public_asset_requires_immutable_version_and_review() -> None:
     case = complete_synthetic_structure()
     case["asset"]["sha256"] = "short"
