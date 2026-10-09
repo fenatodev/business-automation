@@ -1,6 +1,6 @@
 # FenatoDev — site institucional estático (WP-021)
 
-**Estado:** código de vitrine disponível para revisão local; **não publicado**.
+**Estado:** site codificado e [pacote WP-025](../docs/operations/site-publication-readiness.md) preparado para validação; **não publicado**.
 Esta pasta é um **artefato público independente** do core Business Automation
 e de seu PostgreSQL. O site não é um portal de clientes nem o operador `/operator`.
 
@@ -20,6 +20,7 @@ Arquivos publicados **separadamente**, caso haja aprovação:
 - `index.html`: oferta, processo, referências públicas e contato por links.
 - `styles.css`: layout responsivo, contraste, foco visível e redução de movimento.
 - `favicon.svg`: ícone local.
+- `_headers`: política HTTP de segurança **apenas para Cloudflare Pages**.
 
 Não há JavaScript, cookies definidos pelo código, fontes/CDNs externos,
 formulário, analytics, banco de dados nem requisições de API.
@@ -53,9 +54,11 @@ Antes de qualquer publicação:
 1. Revisar texto, identidade/marca, endereço público/domínio, canal de
    contato e termos aplicáveis; validar links e autorização para qualquer
    marca, logotipo, depoimento, screenshot ou métrica futura.
-2. Publicar **exclusivamente a pasta `site/`**, em hospedagem estática
-   separada, sem `app/`, `migrations/`, `.env`, volume, logs ou
-   dados privados. Manter a API `127.0.0.1:8788` sem exposição pública.
+2. Depois de **aprovação explícita**, publicar **somente os quatro assets
+   do artefato validado WP-025**, nunca a pasta `site/` diretamente.
+   O arquivo `site/README.md` é apenas documentação Git. Não incluir
+   `app/`, `migrations/`, `.env`, volume, logs ou dados privados.
+   Manter a API `127.0.0.1:8788` sem exposição pública.
 3. Usar HTTPS. Configurar cabeçalhos HTTP no host quando disponíveis:
    `Content-Security-Policy` coerente com o conteúdo sem script;
    `X-Content-Type-Options: nosniff`;
@@ -76,7 +79,7 @@ Antes de qualquer publicação:
 ```bash
 uv run pytest -q tests/test_site_static.py
 uv run pytest -q
-.venv/bin/python -m compileall -q app tests examples
+.venv/bin/python -m compileall -q app tests examples marketing proof_social operations site_release
 git diff --check
 ```
 
@@ -92,6 +95,7 @@ Publicação, escolha de domínio, DNS, custo de hosting, política de
 privacidade final e abertura de canal de contato são **ações distintas**,
 dependentes da autorização do responsável.
 
-**Próximo passo da fila F2:** assistente para **rascunhos de marketing**
-fundamentados no material público revisado. Sem publicação automática,
-captação de leads ou case inventado.
+**WP-022, WP-023 e WP-024 foram concluídos após este site inicial.**
+O WP-025 trata **somente do pacote de publicação e de seus gates**.
+Consultar a [matriz de prontidão](../docs/operations/precontact-readiness.md)
+antes de iniciar hospedagem, prospecção ou ação externa.
