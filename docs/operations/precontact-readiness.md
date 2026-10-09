@@ -15,7 +15,7 @@
 | Oferta F2 | `client0-integration-flow-v1`: template de **um** fluxo implantável e diagnóstico | Sem preços, prazos e condições inventados; ainda depende de aprovação humana |
 | ERPNext | Sandbox preparado, configuração testada; runtime/DocTypes/operabilidade **não demonstrados** | Não declarar integração, emissão de Quotation ou pagamento |
 | Assistente de IA | Serviço atual de conversa depende de Ollama; **não** é agente de marketing validado | Sem publicação, captura de rede social ou autonomia comercial autorizada |
-| Site público | **Não existe** no produto atual | Não associar site público ao servidor/porta privada do core |
+| Site institucional | **WP-021:** rascunho estático em [site/](../../site/README.md), validado tecnicamente; **não publicado** | Hospedagem, domínio, marca, contato e privacidade final dependem de aprovação; nunca expor a API privada |
 | Cases e avaliações | Há cenários sintéticos/testes; **não há case pago nem depoimento autorizado provado** | Mostrar demonstrações verificáveis como demos, nunca como cliente atendido |
 
 ## B. Sequência de preparo — não pular gates
@@ -28,7 +28,7 @@ Estes passos são uma **restrição de prontidão pré-contato do responsável**
 | 1 | F2/O01 — oferta e diagnóstico | Ficha versionada de implantação de **um fluxo**, checklist de perguntas, escopo, limites, aceite, suporte e custos a confirmar | **Template criado**; precificação comercial segue aberta | Não precificar nem prometer automações/canais não verificados |
 | 2 | F2/O02 — continuidade comercial/back-office | Checklist G0–G10, modelo de índice privado por serviço, aprovações e evidência financeira por referência | **Documentação WP-019 preparada**; diretório privado/backup e fallback real **a validar no Ubuntu**; ERPNext real **não validado** | Não criar ERP paralelo nem inferir documento financeiro emitido; nenhuma aprovação/valor/pagamento sem evidência |
 | 3 | F2 — demonstração de entrega | **Uma demo técnica executável e reproduzível** da oferta: cenário sintético, testes, README de execução, captura sanitizada opcional e limitações | **WP-020 validado:** [demo offline pedido → CRM fictício](../../examples/README.md) e testes; material visual/site ainda pendente | Demo não vira “case de cliente”, nem prova integração com provider real ou usa dados da oportunidade real |
-| 4 | F2 — vitrine institucional | Site público **estático e separado**, com apresentação, oferta, processo, demonstração verificável, referência GitHub, contato revisado e privacidade proporcional ao que for coletado | Pendente | Sem painel de cliente, banco público, API interna exposta, alegações sem prova ou publicação sem revisão |
+| 4 | F2 — vitrine institucional | Site **estático e separado**, com apresentação, oferta, processo, demonstração verificável, GitHub, links de contato e privacidade proporcional ao código | **WP-021 implementado e validado em Chrome e testes**; conteúdo final, publicação e hospedagem **pendentes** | Sem painel de cliente, banco público, API interna exposta, alegações sem prova ou publicação sem revisão |
 | 5 | F2 — assistência de marketing | Gerador/assistente **somente de rascunhos** usando fontes aprovadas: uma atualização técnica ou demo → legenda/post com revisão factual, tom e canal; fila privada de aprovação | Pendente | Zero publicação ou contato automático; sem material de terceiros ou alegações inventadas |
 | 6 | F2/O08 — preparo de prova social | Template privado de baseline antes/depois, origem de métricas, limitações, autorização específica para identidade/depoimento e status `publicável` separado | Pendente | Sem resultados mensurados **e** autorização de divulgação: nenhuma prova social de cliente publicada |
 | 7 | F2 — ensaio operacional de prontidão | Caminho completo com dados sintéticos: oportunidade → brief → decisão humana → documento/fallback → execução demo → evidência/aceite → referência financeira fictícia claramente identificada | Pendente | Não registrar “pago”, “enviado”, “aceito” ou “implantado em cliente” por simulação |
@@ -37,7 +37,7 @@ Estes passos são uma **restrição de prontidão pré-contato do responsável**
 
 ## C. Como será a vitrine — critérios antes de decidir stack/hosting
 
-O site futuro **não precisa ter login, CRM próprio, formulário público ou banco**. Uma primeira versão estática reduz custo, risco e manutenção. Stack, domínio, marca, DNS, hospedagem, identidade pública e política de contato serão escolhidos em pacote próprio, com comparação técnica e validação, **não assumidos** aqui.
+O site codificado no WP-021 **não precisa ter login, CRM próprio, formulário público ou banco**. Uma primeira versão estática reduz custo, risco e manutenção. Stack, domínio, marca, DNS, hospedagem, identidade pública e política de contato serão escolhidos em pacote próprio, com comparação técnica e validação, **não assumidos** aqui.
 
 Conteúdo mínimo de um MVP verificável:
 
