@@ -15,7 +15,7 @@
 | Oferta F2 | `client0-integration-flow-v1`: template de **um** fluxo implantável e diagnóstico | Sem preços, prazos e condições inventados; ainda depende de aprovação humana |
 | ERPNext | Sandbox preparado, configuração testada; runtime/DocTypes/operabilidade **não demonstrados** | Não declarar integração, emissão de Quotation ou pagamento |
 | Assistente de marketing | **WP-022:** geração local Qwen de rascunhos fundamentados em [fonte pública curada](client0-marketing-drafts.md); **um primeiro texto foi gerado e salvo para revisão** | Serviço de conversas do core é separado; não existe publicação, coleta de rede social ou aprovação automática |
-| Site institucional | **WP-021/025/026:** site estático testado e pacotes Cloudflare (4 arquivos) e [portátil (3 arquivos)](mxq4k-hosting-deferred.md) preparados; **não publicado** | TV Box MXQ4K e compatibilidade **não avaliados**; CI não configura hosting nem autoriza publicação |
+| Site institucional | **WP-021/025/026:** site estático testado e pacotes Cloudflare (4 arquivos) e [portátil (3 arquivos)](mxq4k-hosting-deferred.md) preparados; **não publicado** | Usuário já dispõe de Armbian em SD para MXQ4K, mas **boot e segurança não comprovados**; CI não configura hosting nem autoriza publicação |
 | Cases e avaliações | **WP-023:** modelo privado e checklist de evidências de case em [prova social](client0-proof-social.md); **não há case real nem depoimento autorizado** | Checker somente de leitura, teste/consentimento real pendentes; demos não são resultados comerciais |
 
 ## B. Sequência de preparo — não pular gates
@@ -26,7 +26,7 @@ Estes passos são uma **restrição de prontidão pré-contato do responsável**
 | --- | --- | --- | --- | --- |
 | 0 | F0/F1 — fundamento | Oferta-foco, ownership, API/banco/recovery e acesso privado | **F1 concluída no piloto privado**; regras F0 documentadas | Não ampliar exposição nem inserir dados reais no Git |
 | 1 | F2/O01 — oferta e diagnóstico | Ficha versionada de implantação de **um fluxo**, checklist de perguntas, escopo, limites, aceite, suporte e custos a confirmar | **Template criado**; precificação comercial segue aberta | Não precificar nem prometer automações/canais não verificados |
-| 2 | F2/O02 — continuidade comercial/back-office | Checklist G0–G10, modelo de índice privado por serviço, aprovações e evidência financeira por referência | **Documentação WP-019 preparada**; diretório privado/backup e fallback real **a validar no Ubuntu**; ERPNext real **não validado** | Não criar ERP paralelo nem inferir documento financeiro emitido; nenhuma aprovação/valor/pagamento sem evidência |
+| 2 | F2/O02 — continuidade comercial/back-office | Checklist G0–G10, índice privado por serviço e [bootstrap vazio WP-027](client0-private-workspace.md) com permissões verificáveis | **WP-027:** código de criação/inspeção privada preparado para testes sintéticos em CI. Execução no HOME real, backup/restore e fallback/ERPNext real **continuam não validados** | Não confundir pasta vazia com back-office operacional, backup, proposta ou documento financeiro; sem dados reais no Git |
 | 3 | F2 — demonstração de entrega | **Uma demo técnica executável e reproduzível** da oferta: cenário sintético, testes, README de execução, captura sanitizada opcional e limitações | **WP-020 validado:** [demo offline pedido → CRM fictício](../../examples/README.md) e testes; material visual/site ainda pendente | Demo não vira “case de cliente”, nem prova integração com provider real ou usa dados da oportunidade real |
 | 4 | F2 — vitrine institucional | Site estático [WP-021](../../site/README.md) com portfólio e [pacote candidato WP-025](site-publication-readiness.md) de quatro assets + headers | **Pacote tecnicamente preparado para CI**, sem conta/hosting/URL, identidade aprovada ou publicação; site continua offline | Não publicar sem autorização humana da versão/destino; banco e API privados permanecem isolados |
 | 5 | F2 — assistência de marketing | Gerador de **rascunhos LinkedIn** com fonte pública curada, prompts versionados, modelo local opcional, fila privada e revisão humana obrigatória | **WP-022 validado:** testes + uma geração real com Qwen 3.5 9B; JSON privado `pending_review` e não publicado. Calendário/imagens/outros canais ainda pendentes | Zero publicação ou contato automático; fonte/IDs não substituem revisão factual; sem alegações inventadas |
@@ -105,8 +105,17 @@ agora entrega opções Cloudflare e portátil, **sem deploy**. O
 Nenhuma instalação, firmware, rede, domínio ou API privada será alterada
 antes da autorização do responsável.
 
-**Após o ensaio:** priorizar bloqueios concretos de operação/comunicação
-e revisão humana da identidade e condições, em vez de adicionar CRM,
-marketing multicanal ou ERP próprio. Prospeção continua pausada
-até nova decisão do responsável; a F2 arquitetural continua exigindo
-**ciclo real até recebimento e revisão de resultado**.
+**WP-027:** implementar [preflight e bootstrap do índice privado](client0-private-workspace.md),
+testados somente de maneira **sintética** no CI. Isso não cria backups,
+não confere ERPNext e não autoriza operação financeira.
+
+**MXQ4K:** o responsável informou que Armbian já está em um SD preparado.
+A decisão vigente é continuar a operação Client 0 primeiro; boot,
+inventário e ativação pública do site ficam para momento apropriado.
+
+**Próximos bloqueios reais:** comprovar backup/restore protegido do
+índice privado e viabilizar documento comercial/financeiro autoritativo
+(ERPNext funcional ou fallback formal), com preços e condições
+**aprovados por humano**. Não criar CRM/ERP paralelo. Prospeção continua
+pausada até nova decisão do responsável. A F2 exige **ciclo real
+até recebimento e revisão de resultado** para encerramento formal.
