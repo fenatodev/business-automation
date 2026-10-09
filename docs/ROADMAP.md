@@ -53,7 +53,9 @@ Na **F2**, executar recortes curtos, com um WP e validação por vez:
    prepara propostas, aceites e verificação fiscal/financeira com
    autoridades humanas e fontes reais **quando habilitadas**.
    [WP-030 — Restic e recuperação criptografada em CI](operations/client0-restic-recovery.md)
-   escolhe ferramenta madura, mas **ainda não valida o backup no Ubuntu**.
+   escolhe ferramenta madura. [WP-031 — preflight read-only no Ubuntu](operations/client0-ubuntu-preflight.md)
+   prepara a verificação de metadados do índice privado, disponibilidade do
+   Restic e montagem do destino, **sem ainda executar backup real**.
    [Decisões abertas](operations/client0-launch-decisions.md):
    formalização comercial e fiscal, valores, emissor oficial,
    mídia/chave e restore real, marca/site e autorização de contato.
