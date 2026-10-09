@@ -153,6 +153,22 @@ def synthetic_drill(*, binary: str | None = None) -> dict[str, Any]:
             executable, repo, password_file, "check", "--read-data", "--no-cache",
             cwd=temp, environment=env,
         )
+        # The repository MUST reject an unrelated secret; never print
+        # restic's error message, which could contain local fixture paths.
+        bad_password_file = temp / "different-temporary-secret"
+        _private_write(
+            bad_password_file, (secrets.token_urlsafe(48) + "\n").encode()
+        )
+        try:
+            _invoke(
+                executable, repo, bad_password_file, "check", "--no-cache",
+                cwd=temp, environment=env,
+            )
+        except DrillError as exc:
+            if str(exc) != "restic_check_failed":
+                raise
+        else:
+            raise DrillError("wrong_password_accepted")
         snapshot_response = _invoke(
             executable, repo, password_file, "snapshots", "--json", "--no-cache",
             cwd=temp, environment=env,
@@ -194,7 +210,7 @@ def synthetic_drill(*, binary: str | None = None) -> dict[str, Any]:
             "restic_repo_checked_read_data": True,
             "isolated_restore_verified": True,
             "synthetic_encrypted_repository_verified": True,
-            "wrong_password_tested": False,
+            "wrong_password_tested": True,
             "temporary_secret_only": True,
             "real_workspace_accessed": False,
             "real_backup_restore_verified": False,
