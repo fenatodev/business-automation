@@ -15,7 +15,7 @@
 | Oferta F2 | `client0-integration-flow-v1`: template de **um** fluxo implantável e diagnóstico | Sem preços, prazos e condições inventados; ainda depende de aprovação humana |
 | ERPNext | Sandbox preparado, configuração testada; runtime/DocTypes/operabilidade **não demonstrados** | Não declarar integração, emissão de Quotation ou pagamento |
 | Assistente de marketing | **WP-022:** geração local Qwen de rascunhos fundamentados em [fonte pública curada](client0-marketing-drafts.md); **um primeiro texto foi gerado e salvo para revisão** | Serviço de conversas do core é separado; não existe publicação, coleta de rede social ou aprovação automática |
-| Site institucional | **WP-021 + WP-025:** site estático testado; [pacote de 4 assets e plano de hospedagem](site-publication-readiness.md) em revisão; **não publicado** | Arquivo `_headers` e CI não são deploy; marca, contato, privacidade do host e publicação precisam de aprovação |
+| Site institucional | **WP-021/025/026:** site estático testado e pacotes Cloudflare (4 arquivos) e [portátil (3 arquivos)](mxq4k-hosting-deferred.md) preparados; **não publicado** | TV Box MXQ4K e compatibilidade **não avaliados**; CI não configura hosting nem autoriza publicação |
 | Cases e avaliações | **WP-023:** modelo privado e checklist de evidências de case em [prova social](client0-proof-social.md); **não há case real nem depoimento autorizado** | Checker somente de leitura, teste/consentimento real pendentes; demos não são resultados comerciais |
 
 ## B. Sequência de preparo — não pular gates
@@ -99,9 +99,11 @@ validados por CI, mas **nenhum case real autorizado**.
 **WP-024:** o [ensaio sintético G0–G10](client0-precontact-rehearsal.md)
 foi aprovado por CI, mas não comprova proposta enviada, recebimento,
 ERP validado, backup do índice, site publicado ou serviço prestado.
-**WP-025:** a [pré-publicação do site](site-publication-readiness.md)
-prepara pacote estático revisável **sem fazer deploy**; teste verde não
-aprova marca, contato, provedor, domínio nem abertura pública.
+**WP-025/026:** a [pré-publicação do site](site-publication-readiness.md)
+agora entrega opções Cloudflare e portátil, **sem deploy**. O
+[MXQ4K foi reservado para avaliação futura](mxq4k-hosting-deferred.md).
+Nenhuma instalação, firmware, rede, domínio ou API privada será alterada
+antes da autorização do responsável.
 
 **Após o ensaio:** priorizar bloqueios concretos de operação/comunicação
 e revisão humana da identidade e condições, em vez de adicionar CRM,
