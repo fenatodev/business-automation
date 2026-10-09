@@ -63,6 +63,27 @@ jobs:
           print("WP027_PRIVATE_WORKSPACE=PASS synthetic_only=true backup_verified=false")
           PY
 
+      - name: Client0 isolated index recovery synthetic drill (NO REAL BACKUP)
+        run: |
+          uv run python -m client0_workspace.recovery --synthetic-drill > "$RUNNER_TEMP/ba-wp028.json"
+          uv run python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          report = json.loads((Path(os.environ["RUNNER_TEMP"]) / "ba-wp028.json").read_text())
+          assert report["kind"] == "client0_synthetic_index_recovery"
+          assert report["status"] == "pass"
+          assert report["snapshot_files"] == report["restored_files"] == 3
+          assert report["integrity_sha256_verified"] is True
+          assert report["restore_isolated"] is True
+          assert report["archive_encrypted"] is False
+          assert report["real_workspace_accessed"] is False
+          assert report["real_backup_restore_verified"] is False
+          assert report["production_backup_authorized"] is False
+          assert report["external_action_taken"] is False
+          print("WP028_SYNTHETIC_RECOVERY=PASS real_backup=false encrypted=false")
+          PY
+
       - name: Synthetic F2 rehearsal is never a real approval
         run: |
           uv run python -m operations.rehearsal --run > rehearsal-result.json
