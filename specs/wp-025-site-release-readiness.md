@@ -1,8 +1,8 @@
 # WP-025 — Site institucional: pacote seguro para publicação futura (F2)
 
-**Base:** `main@ca30f4b106fef2604bf9f7b9fecab353abaab031`  
-**Branch:** `wp/025-site-release-readiness`  
-**Execução:** ChatGPT/GitHub + CI; Continue/Qwen 3.5 9B somente se CI indisponível.  
+**Base:** `main@ca30f4b106fef2604bf9f7b9fecab353abaab031`
+**Branch:** `wp/025-site-release-readiness`
+**Execução:** ChatGPT/GitHub + CI; Continue/Qwen 3.5 9B somente se CI indisponível.
 **Aprovação para publicar:** **NÃO CONCEDIDA**.
 
 ## Objetivo único
