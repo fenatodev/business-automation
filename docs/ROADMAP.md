@@ -59,8 +59,12 @@ Na **F2**, executar recortes curtos, com um WP e validação por vez:
    definiu os gates de remediação. A conferência posterior
    [WP-033 — estado operacional](operations/wp-033-current-state-report.md)
    verificou Ubuntu 24.04.5/Noble, Restic 0.16.4 instalado, permissões privadas
-   e um **HDD SATA distinto** para backup (NTFS3). **Nenhum backup real,
-   custódia de chave ou restauração real foi executado; F2 continua aberta.**
+   e um **HDD SATA distinto** para backup (NTFS3).
+   [WP-034 — gates operacionais para NTFS3 e Restic](../specs/wp-034-restic-ntfs-recovery-gates.md)
+   define preflight, ensaio sintético na mídia, custódia de senha e
+   backup/restauração reais sob autorizações **separadas**.
+   **Nenhum backup real, custódia de chave ou restauração real foi
+   executado; F2 continua aberta.**
    [Decisões abertas](operations/client0-launch-decisions.md):
    formalização comercial e fiscal, valores, emissor oficial,
    mídia/chave e restore real, marca/site e autorização de contato.
