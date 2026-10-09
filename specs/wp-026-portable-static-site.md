@@ -1,8 +1,8 @@
 # WP-026 — Portable static release; hardware deferred
 
-**Base:** `main@6ecc762239b11e8ae8908cdcb44b049d2a4344bd`.  
-**Branch:** `wp/026-portable-static-site`.  
-**Fase:** F2 / complementa WP-025 sem lançar site.  
+**Base:** `main@6ecc762239b11e8ae8908cdcb44b049d2a4344bd`.
+**Branch:** `wp/026-portable-static-site`.
+**Fase:** F2 / complementa WP-025 sem lançar site.
 **Executor:** GitHub + Actions; **não ligar DC nem acionar Continue**.
 **MXQ4K:** reservado para verificação em etapa futura, sem flash/configuração.
 
