@@ -14,7 +14,7 @@
 | Pacote Restic via DPKG | **NÃO INSTALADO/INDISPONÍVEL** | Consulta `dpkg-query` não encontrou pacote instalado. **Não** fazer inferência sobre tentativa anterior de instalação. |
 | Destino de backup | **MONTADO** | `mountpoint` confirmou montagem no destino operacional previsto. |
 | Destino versus HOME | **FILESYSTEMS DIFERENTES** | Comparação de IDs de filesystem. WP-032 também indicara dois discos lógicos distintos. |
-| Independência física | **NÃO COMPROVADA** | Discos/partições/filsystems diferentes não provam mídias físicas independentes, políticas de retenção ou capacidade de restauração. |
+| Independência física | **NÃO COMPROVADA** | Discos/partições/filesystems diferentes não provam mídias físicas independentes, políticas de retenção ou capacidade de restauração. |
 | Backup e restauração reais no WP-033 | **NÃO VERIFICADOS** | Nenhum backup/restauração foi realizado nesta conferência. Não reivindicar recuperação ou backup de dados reais com base neste documento. |
 
 ## Resultado e bloqueios
