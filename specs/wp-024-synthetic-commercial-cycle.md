@@ -1,8 +1,8 @@
 # WP-024 — F2, ensaio sintético completo de ponta a ponta
 
-**Base:** `main@77bce6a023c7a6de3569e9a14d545f4a312ce6a0`  
-**Branch:** `wp/024-synthetic-commercial-cycle`  
-**Execução:** ChatGPT/GitHub + CI. **Continue/Qwen 3.5 9B não necessário** se CI verde.  
+**Base:** `main@77bce6a023c7a6de3569e9a14d545f4a312ce6a0`
+**Branch:** `wp/024-synthetic-commercial-cycle`
+**Execução:** ChatGPT/GitHub + CI. **Continue/Qwen 3.5 9B não necessário** se CI verde.
 **Objetivo único:** testar as regras operacionais de G0–G10 com um cenário
 totalmente inventado, identificando bloqueios reais **sem interagir com
 nenhuma fonte real** e sem fechar a F2.
