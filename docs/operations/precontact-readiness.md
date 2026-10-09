@@ -30,8 +30,8 @@ Estes passos são uma **restrição de prontidão pré-contato do responsável**
 | 3 | F2 — demonstração de entrega | **Uma demo técnica executável e reproduzível** da oferta: cenário sintético, testes, README de execução, captura sanitizada opcional e limitações | **WP-020 validado:** [demo offline pedido → CRM fictício](../../examples/README.md) e testes; material visual/site ainda pendente | Demo não vira “case de cliente”, nem prova integração com provider real ou usa dados da oportunidade real |
 | 4 | F2 — vitrine institucional | Site **estático e separado**, com apresentação, oferta, processo, demonstração verificável, GitHub, links de contato e privacidade proporcional ao código | **WP-021 implementado e validado em Chrome e testes**; conteúdo final, publicação e hospedagem **pendentes** | Sem painel de cliente, banco público, API interna exposta, alegações sem prova ou publicação sem revisão |
 | 5 | F2 — assistência de marketing | Gerador de **rascunhos LinkedIn** com fonte pública curada, prompts versionados, modelo local opcional, fila privada e revisão humana obrigatória | **WP-022 validado:** testes + uma geração real com Qwen 3.5 9B; JSON privado `pending_review` e não publicado. Calendário/imagens/outros canais ainda pendentes | Zero publicação ou contato automático; fonte/IDs não substituem revisão factual; sem alegações inventadas |
-| 6 | F2/O08 — preparo de prova social | [WP-023](client0-proof-social.md): modelo privado antes/depois, referências de evidência, revisão de direitos e consentimentos por uso/canal/versão, auditoria read-only | **Implementação pronta para validação local sintética**; sem case real, resultados medidos, aprovações ou material publicado | Mesmo `human_review_required` **não autoriza publicação**; consentimento, versão e revisão humana são gates separados |
-| 7 | F2 — ensaio operacional de prontidão | Caminho completo com dados sintéticos: oportunidade → brief → decisão humana → documento/fallback → execução demo → evidência/aceite → referência financeira fictícia claramente identificada | Pendente | Não registrar “pago”, “enviado”, “aceito” ou “implantado em cliente” por simulação |
+| 6 | F2/O08 — preparo de prova social | [WP-023](client0-proof-social.md): modelo privado antes/depois, referências de evidência, revisão de direitos e consentimentos por uso/canal/versão, auditoria read-only | **WP-023 validado pelo GitHub Actions e integrado**; sem case real, resultados medidos, aprovações ou material publicado | Mesmo `human_review_required` **não autoriza publicação**; consentimento, versão e revisão humana são gates separados |
+| 7 | F2 — ensaio operacional de prontidão | [WP-024](client0-precontact-rehearsal.md): validador **somente de regras sintéticas**, com G0–G10, aprovação/envio separados, evidências fictícias, cobrança parcial e reconciliação simulada | **Implementado; requer CI verde no commit do PR**. Não valida instância ERPNext, contrato, envio, pagamento ou cliente real | `simulation_result=simulated_sequence_complete` **não** significa `f2_exit_met`, venda, publicação ou autorização de contato |
 
 **Após os gates de prontidão:** o responsável pode decidir retomar prospecção/contatos reais. Isso **não significa F2 encerrada**: o gate arquitetural da F2 continua sendo o **ciclo comercial real** com aceites e recebimento verificável; só depois se mede o gargalo que merece automação na F3. Um site e um gerador de posts não substituem venda, entrega ou conciliação.
 
@@ -90,15 +90,20 @@ O procedimento G0–G10 e suas exceções estão em
 não demonstra ERPNext instalado, proposta formal emitida, dinheiro recebido,
 backup/restore do índice nem caso entregue.
 
-**Andamento atual da preparação:** WP-020 demonstrou um fluxo sintético,
-WP-021 entregou um site estático **não publicado** e WP-022 gerou um
-rascunho de marketing `pending_review` **não publicado**. WP-023 preparou
-os controles documentais de [medição e autorização de case](client0-proof-social.md);
-**testes locais do WP-023 ainda são necessários**, e **não** há prova social
-de cliente autorizada. A F2 permanece aberta.
+**Andamento da preparação pré-contato:** WP-020 tem demonstração técnica
+sintética, WP-021 tem site codificado **não publicado**, WP-022 tem um
+rascunho de marketing `pending_review` **não publicado**, e WP-023
+tem controles de [medição/consentimento](client0-proof-social.md)
+validados por CI, mas **nenhum case real autorizado**.
 
-**Gate seguinte após validar/integrar WP-023:** ensaio de prontidão
-**exclusivamente sintético** do fluxo comercial completo. Não fabricar
-aceites, documentos financeiros, vendas ou métricas reais. A prontidão
-pré-contato não substitui o gate arquitetural F2 de ciclo real com
-recebimento e revisão de resultado.
+**WP-024:** executar [ensaio sintético ponta a ponta](client0-precontact-rehearsal.md)
+sob CI para conferir G0–G10 e listar impedimentos comerciais não
+resolvidos. A simulação pode passar **sem** existir proposta enviada,
+recebimento, ERP validado, backup do índice, site publicado, atendimento
+de cliente ou métrica medida.
+
+**Após o ensaio:** priorizar bloqueios concretos de operação/comunicação
+e revisão humana da identidade e condições, em vez de adicionar CRM,
+marketing multicanal ou ERP próprio. Prospeção continua pausada
+até nova decisão do responsável; a F2 arquitetural continua exigindo
+**ciclo real até recebimento e revisão de resultado**.
