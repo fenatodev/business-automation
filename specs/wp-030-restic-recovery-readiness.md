@@ -1,7 +1,7 @@
 # WP-030 — Restic: backup criptografado e restore isolado sintéticos
 
-**Base:** `main@47984a6bc356f8b0f1df094e936b365b7ac4d45b`  
-**Branch:** `wp/030-restic-recovery-readiness`  
+**Base:** `main@47984a6bc356f8b0f1df094e936b365b7ac4d45b`
+**Branch:** `wp/030-restic-recovery-readiness`
 **F2/D07:** preparar *ferramenta real de backup criptografado*,
 sem copiar ou acessar qualquer dado real.
 
