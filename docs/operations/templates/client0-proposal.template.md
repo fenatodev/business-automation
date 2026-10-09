@@ -1,6 +1,7 @@
 # PROPOSTA COMERCIAL — RASCUNHO / NÃO ENVIAR
 
 **Modelo público sem dados de contratante, preço ou condições aprovadas.**
+**Estado comercial: PENDENTE de revisão, preço, enquadramento fiscal e autorização.**
 Copiar para ambiente privado somente após validar armazenamento, direitos,
 retenção e backup. Não enviar com colchetes, lacunas ou menções internas.
 
