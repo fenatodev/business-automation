@@ -21,7 +21,9 @@ from typing import Callable
 TOOLS = ("restic", "git", "uv", "opencode")
 
 
-def _state(path: Path, *, kind: str = "dir", private: bool = False) -> str:
+def _state(
+    path: Path, *, kind: str = "dir", private: bool = False, owned: bool = True
+) -> str:
     """Inode metadata only: never read filenames or contents."""
     try:
         info = path.lstat()
@@ -29,7 +31,7 @@ def _state(path: Path, *, kind: str = "dir", private: bool = False) -> str:
         return "missing"
     except OSError:
         return "blocked"
-    if (stat.S_ISLNK(info.st_mode) or info.st_uid != os.geteuid()
+    if (stat.S_ISLNK(info.st_mode) or (owned and info.st_uid != os.geteuid())
             or (kind == "dir" and not stat.S_ISDIR(info.st_mode))
             or (kind == "file" and not stat.S_ISREG(info.st_mode))):
         return "blocked"
@@ -87,10 +89,10 @@ def _mount_entry_present(path: Path, mountinfo: str) -> bool:
 
 def _backup_mount(home: Path, candidate: Path, mountinfo: str) -> dict[str, object]:
     # A symlinked parent or candidate is never followed.
-    if _state(candidate.parent) != "safe":
+    if _state(candidate.parent, owned=False) != "safe":
         state = "blocked"
     else:
-        state = _state(candidate)
+        state = _state(candidate, owned=False)
     mounted = state == "safe" and _mount_entry_present(candidate, mountinfo)
     distinct: bool | None = None
     if mounted and _state(home) == "safe":
