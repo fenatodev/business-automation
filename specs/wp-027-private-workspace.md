@@ -1,8 +1,8 @@
 # WP-027 — O02: private workspace preflight + blank-template bootstrap
 
-**Base:** `main@45744c9af42756c6239f7469761096dbb413b888`  
-**Branch:** `wp/027-private-client0-workspace`  
-**Executor:** ChatGPT/GitHub Actions; **DC permanece desligado**.  
+**Base:** `main@45744c9af42756c6239f7469761096dbb413b888`
+**Branch:** `wp/027-private-client0-workspace`
+**Executor:** ChatGPT/GitHub Actions; **DC permanece desligado**.
 **Dispositivo:** MXQ4K tem Armbian preparado em SD, informado pelo
 responsável, mas **boot ainda não verificado** e nenhum acesso permitido.
 
