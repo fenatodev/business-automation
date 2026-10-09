@@ -271,8 +271,8 @@ def prepare_release(
         for name, payload in source.items():
             flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW
             descriptor = os.open(dest / name, flags, 0o644)
-            with os.fdopen(descriptor, "wb") as target:
-                target.write(payload)
+            with os.fdopen(descriptor, "wb") as output_stream:
+                output_stream.write(payload)
     except OSError as exc:
         raise ReleaseError("release_output_creation_failed") from exc
 
