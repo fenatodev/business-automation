@@ -58,6 +58,15 @@ def test_restic_subcommand_output_is_bounded() -> None:
         )
 
 
+def test_restic_subcommand_stderr_excessive_is_rejected() -> None:
+    code = "import sys; sys.stderr.write('y' * 128001); sys.exit(0)"
+    with pytest.raises(ResticDrillError, match="restic_output_excessive"):
+        _run_restic(
+            [sys.executable, "-c", code],
+            env={"PATH": "/usr/bin:/bin"},
+        )
+
+
 @pytest.mark.skipif(shutil.which("restic") is None,
                     reason="external Restic binary not installed; CI installs it")
 def test_real_restic_encrypted_snapshot_and_isolated_restore() -> None:

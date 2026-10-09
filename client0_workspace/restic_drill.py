@@ -55,6 +55,8 @@ def _run_restic(command: list[str], *, env: dict[str, str]) -> str:
         raise ResticDrillError("restic_subcommand_failed")
     if len(finished.stdout) > 128_000:
         raise ResticDrillError("restic_output_excessive")
+    if len(finished.stderr) > 128_000:
+        raise ResticDrillError("restic_output_excessive")
     return finished.stdout
 
 
