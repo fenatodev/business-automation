@@ -28,6 +28,44 @@ Essa conclusão não equivale a produção pública. Permanecem proibidos por pa
 
 O próximo avanço é F2: executar um ciclo Client 0 real e assistido, preservando fallback manual e as fontes de verdade definidas.
 
+## Prontidão de apresentação antes de novos contatos (restrição Client 0)
+
+Por escolha do responsável em 2026-10-08, **pausar novas propostas e prospecção**
+enquanto é preparada uma estrutura verificável. Esta ordem **não substitui
+os gates F0–F5** e não transforma marketing em pré-requisito arquitetural
+universal para outros clientes.
+
+Na **F2**, executar recortes curtos, com um WP e validação por vez:
+
+1. **O01 — oferta/diagnóstico versionados:** um fluxo de integração/automação
+   por vez, com critérios de aceite, exclusões, custos e suporte a confirmar.
+   Template em [oferta Client 0 v1](operations/client0-offer-v1.md).
+2. **O02 — operação de ponta a ponta e back-office:** confirmar onde serão
+   mantidos documentos aprovados, evidências, índice privado de referências e
+   recebíveis, aproveitando o ensaio do WP-014. ERPNext permanece padrão
+   inicial, **não comprovado funcional** até validação da instância.
+3. **Demonstração real de capacidade técnica:** um fluxo **sintético**
+   executável, reproduzível e documentado, sem dados privados e sem
+   apresentar demo como resultado de cliente contratado.
+4. **Site-vitrine institucional mínimo:** estático, separado do core e
+   da UI interna; apresentar oferta, processo, demonstração verificável
+   e contato aprovado, **sem expor banco/API privada**.
+5. **Assistente de marketing inicial:** rascunhos baseados em materiais
+   autorizados e revisão humana. Publicar é gate distinto, não automático.
+6. **O08 — preparo de cases/prova social:** coletar metodologia de medição
+   antes/depois, evidências privadas e autorização específica de divulgação.
+   **Não inventar depoimentos, métricas, clientes ou resultados.**
+7. **Ensaio de prontidão:** simular com dados fictícios o processo completo,
+   preservando fallback manual e sem registrar sucesso comercial fictício.
+
+A [matriz de prontidão pré-contato](operations/precontact-readiness.md)
+explicita evidências, bloqueios e estado **pendente** de cada gate.
+
+A **saída real da F2 continua exigindo oportunidade até recebimento e
+revisão do resultado**, com fontes verificáveis. Concluir site, demo ou
+simulação prepara a abordagem, mas **não comprova venda/entrega**
+e não autoriza avançar automaticamente à F3.
+
 ## Preparar agora, implementar conforme o fluxo exigir
 
 - Um contrato de handoff ERP com campos, ownership, idempotência, falhas e reconciliação explícitos.
