@@ -26,7 +26,7 @@ Estes passos são uma **restrição de prontidão pré-contato do responsável**
 | --- | --- | --- | --- | --- |
 | 0 | F0/F1 — fundamento | Oferta-foco, ownership, API/banco/recovery e acesso privado | **F1 concluída no piloto privado**; regras F0 documentadas | Não ampliar exposição nem inserir dados reais no Git |
 | 1 | F2/O01 — oferta e diagnóstico | Ficha versionada de implantação de **um fluxo**, checklist de perguntas, escopo, limites, aceite, suporte e custos a confirmar | **Template criado**; precificação comercial segue aberta | Não precificar nem prometer automações/canais não verificados |
-| 2 | F2/O02 — continuidade comercial/back-office | Verificar onde ficam arquivo privado de propostas, aprovação, aceite, entrega e referência de recebíveis; simular procedimento com docs sintéticos; confirmar fallback manual | Ensaio de mesa já documentado; back-office real **não validado** | Não criar ERP paralelo nem inferir documento financeiro emitido |
+| 2 | F2/O02 — continuidade comercial/back-office | Checklist G0–G10, modelo de índice privado por serviço, aprovações e evidência financeira por referência | **Documentação WP-019 preparada**; diretório privado/backup e fallback real **a validar no Ubuntu**; ERPNext real **não validado** | Não criar ERP paralelo nem inferir documento financeiro emitido; nenhuma aprovação/valor/pagamento sem evidência |
 | 3 | F2 — demonstração de entrega | **Uma demo técnica executável e reproduzível** da oferta: cenário sintético, testes, README de execução, screenshots/vídeo sanitizados e limitações | Pendente | Demo não vira “case de cliente” nem usa dados da oportunidade real |
 | 4 | F2 — vitrine institucional | Site público **estático e separado**, com apresentação, oferta, processo, demonstração verificável, referência GitHub, contato revisado e privacidade proporcional ao que for coletado | Pendente | Sem painel de cliente, banco público, API interna exposta, alegações sem prova ou publicação sem revisão |
 | 5 | F2 — assistência de marketing | Gerador/assistente **somente de rascunhos** usando fontes aprovadas: uma atualização técnica ou demo → legenda/post com revisão factual, tom e canal; fila privada de aprovação | Pendente | Zero publicação ou contato automático; sem material de terceiros ou alegações inventadas |
@@ -83,4 +83,16 @@ Este documento organiza a fila, **não ativa a fila**: a cada WP, verificar depe
 
 Sem novos serviços, dependências, base de dados, alterações na API, migrations, ERP, deploy, mensagens, submissões ou publicações por consequência deste plano.
 
-**Próximo gate recomendado após O01:** completar a verificação do processo comercial/back-office e índice privado (`O02`, tomando o WP-014 como base), antes de construir demo/site e marketing. Se o responsável optar por site antes da validação ERP real, manter apenas vitrine estática honesta, sem alegar prontidão comercial completa.
+**O01 concluído como template, O02 preparado para validação privada.**
+O procedimento G0–G10 e suas exceções estão em
+[operação/back-office](client0-backoffice-operations.md) e o formulário de
+[índice por serviço](templates/client0-case.template.md). A documentação
+não demonstra ERPNext instalado, proposta formal emitida, dinheiro recebido,
+backup/restore do índice nem caso entregue.
+
+**Próximo gate após WP-019:** o Continue valida a branch e prepara **somente**
+a estrutura privada vazia e o modelo de registro com permissões seguras.
+O operador revisa política de backup e a autoridade documental do fallback.
+Com esse preflight, seguir para **uma demonstração técnica inteiramente
+sintética da oferta** (próximo WP), depois site-vitrine, assistência de
+rascunhos e preparo de prova social, preservando os bloqueios acima.
