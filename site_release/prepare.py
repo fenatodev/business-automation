@@ -1,8 +1,8 @@
 """Prepare the FenatoDev static site for human review, NEVER deploy.
 
-WP-025. Strict source allowlist, no network, no account credentials, no
-publication privileges. The output is a fresh artifact folder outside the
-checkout, suitable for manual Cloudflare Pages Direct Upload after approval.
+WP-025/026. Strict source allowlist, no network, no account credentials or
+publication privileges. Produces a fresh folder outside the checkout.
+The default Cloudflare variant has _headers; portable assets never do.
 """
 
 from __future__ import annotations
@@ -23,6 +23,8 @@ from urllib.parse import urlsplit
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SITE_ROOT = PROJECT_ROOT / "site"
 ASSETS = ("index.html", "styles.css", "favicon.svg", "_headers")
+PORTABLE_ASSETS = ("index.html", "styles.css", "favicon.svg")
+TARGETS = ("cloudflare-pages", "portable-static")
 REPO_ONLY = frozenset(("README.md",))
 MAX_SIZE = {"index.html": 128_000, "styles.css": 128_000,
             "favicon.svg": 32_000, "_headers": 16_000}
@@ -242,9 +244,17 @@ def inspect_assets(*, site_root: Path = SITE_ROOT) -> dict[str, bytes]:
     return assets
 
 
-def prepare_release(destination: Path, *, site_root: Path = SITE_ROOT) -> dict[str, Any]:
-    """Create a new directory outside the checkout; never overwrite or deploy."""
-    source = inspect_assets(site_root=site_root)
+def prepare_release(
+    destination: Path, *,
+    site_root: Path = SITE_ROOT,
+    target: str = "cloudflare-pages",
+) -> dict[str, Any]:
+    """Produce one isolated static bundle, never deploying any variant."""
+    if target not in TARGETS:
+        raise ReleaseError("unknown_release_target")
+    audited = inspect_assets(site_root=site_root)
+    names = ASSETS if target == "cloudflare-pages" else PORTABLE_ASSETS
+    source = {name: audited[name] for name in names}
     dest = destination.expanduser().absolute()
     try:
         resolved = dest.resolve(strict=False)
@@ -270,6 +280,9 @@ def prepare_release(destination: Path, *, site_root: Path = SITE_ROOT) -> dict[s
     return {
         "kind": "site_release_candidate",
         "status": "ready_for_human_review",
+        "target": target,
+        "headers_metadata_bundled": target == "cloudflare-pages",
+        "http_headers_verified": False,
         "site_asset_count": len(source),
         "assets": [
             {"name": name, "bytes": len(payload),
@@ -286,14 +299,15 @@ def prepare_release(destination: Path, *, site_root: Path = SITE_ROOT) -> dict[s
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Build four reviewed site assets; NEVER publish them."
+        description="Build reviewed static assets for a target; NEVER publish them."
     )
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--target", choices=TARGETS, default="cloudflare-pages")
     args = parser.parse_args(argv)
     try:
-        report = prepare_release(args.output)
+        report = prepare_release(args.output, target=args.target)
     except ReleaseError as exc:
-        print(f"WP025_RELEASE=FAIL reason={exc}", file=sys.stderr)
+        print(f"SITE_RELEASE=FAIL reason={exc}", file=sys.stderr)
         return 2
     print(json.dumps(report, sort_keys=True, ensure_ascii=False, indent=2))
     return 0
