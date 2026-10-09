@@ -48,9 +48,15 @@ Na **F2**, executar recortes curtos, com um WP e validação por vez:
    [WP-027 — bootstrap privado vazio](operations/client0-private-workspace.md)
    para verificação sintética, e o [WP-028 — ensaio de recuperação
    isolada do índice](operations/client0-private-recovery.md) usa
-   **somente dados fictícios**. **Backup criptografado e restore real,
-   fallback financeiro e ERPNext dependem de validação.** Nenhuma
-   simulação é prova de documento comercial emitido.
+   **somente dados fictícios**. O [WP-029 — kit comercial
+   manual e decisões de lançamento](operations/client0-manual-commercial-pack.md)
+   prepara propostas, aceites e verificação fiscal/financeira com
+   autoridades humanas e fontes reais **quando habilitadas**.
+   [Decisões ainda abertas](operations/client0-launch-decisions.md):
+   formalização fiscal, valores/condições, emissor oficial,
+   recuperação criptografada real, marca/site e autorização de contato.
+   **ERPNext permanece opcional até ser validado.** Nenhum template é
+   prova de documento emitido, serviço contratado ou pagamento.
 3. **Demonstração real de capacidade técnica:** um fluxo **sintético**
    executável, reproduzível e documentado, sem dados privados e sem
    apresentar demo como resultado de cliente contratado.
