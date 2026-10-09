@@ -159,7 +159,7 @@ def workspace_preflight(
             raise WorkspaceError("public_template_unavailable") from exc
         if (not template_bytes or len(template_bytes) > 64_000 or
                 b"MODELO PRIVADO" not in template_bytes or
-                b"NÃO CONCEDIDA" not in template_bytes):
+                "NÃO CONCEDIDA".encode("utf-8") not in template_bytes):
             raise WorkspaceError("public_template_invalid")
     made: list[str] = []
     try:
