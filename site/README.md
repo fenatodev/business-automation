@@ -22,6 +22,13 @@ Arquivos publicados **separadamente**, caso haja aprovação:
 - `favicon.svg`: ícone local.
 - `_headers`: política HTTP de segurança **apenas para Cloudflare Pages**.
 
+**WP-026:** o [pacote portátil](../docs/operations/mxq4k-hosting-deferred.md)
+contém **somente** `index.html`, `styles.css` e `favicon.svg`.
+O TV Box MXQ4K é um **candidato futuro ainda não avaliado**; nenhum
+webserver ou hardware foi configurado. Em hospedagem autogerida,
+os headers HTTP precisam ser implementados no servidor; nunca
+publicar `_headers` como documento estático.
+
 Não há JavaScript, cookies definidos pelo código, fontes/CDNs externos,
 formulário, analytics, banco de dados nem requisições de API.
 Links externos **só navegam após clique**. A CSP em `index.html` impede
