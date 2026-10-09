@@ -137,3 +137,23 @@ Referências oficiais:
 - [Restic: backup e sistemas de arquivos](https://restic.readthedocs.io/en/stable/040_backup.html).
 - [Restic: verificação de integridade (`--read-data`)](https://restic.readthedocs.io/en/stable/045_working_with_repos.html).
 - [Restic: restore em destino isolado](https://restic.readthedocs.io/en/stable/050_restore.html).
+
+## Atualização operacional — WP-034 (2026-10-09)
+
+O inventário WP-033 posterior confirmou Restic **instalado localmente**
+(0.16.4) e um HDD SATA de destino separado do SSD do Ubuntu, montado
+como **NTFS3**. A inspeção read-only adicional confirmou que o destino
+proposto para novo repositório ainda **não existe** e que o índice privado
+tem a estrutura básica e os modos esperados.
+
+O [WP-034 — gates de backup e recuperação reais](../../specs/wp-034-restic-ntfs-recovery-gates.md)
+define o teste sintético **na mídia NTFS3**, a custódia de senha com
+cópia fora do host e a prova de restauração do índice real em destino
+isolado. Essas operações **ainda não foram executadas**: nenhuma escrita
+no HDD, geração de chave ou acesso ao conteúdo privado foi autorizada
+por esta atualização documental. Se o teste NTFS3 falhar, considerar
+outra mídia/filesystem sem formatar ou reparticionar o disco existente.
+
+A separação de discos reduz o risco de falha isolada do SSD, mas **não**
+substitui backup off-site/desconectado. O gate de recuperação do
+PostgreSQL/ERPNext permanece independente.
