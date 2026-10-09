@@ -1,6 +1,6 @@
 # WP-032 — causa do bloqueio no Ubuntu (diagnóstico mínimo)
 
-**Base GitHub:** `abbf77e0ca5782c4833d3b5fc9362c846447ca38` (WP-031 já aprovado).  
+**Base GitHub:** `abbf77e0ca5782c4833d3b5fc9362c846447ca38` (WP-031 já aprovado).
 **Status:** implementação e CI apenas com fixtures sintéticas. **Ubuntu não foi alterado.**
 
 ## Evidência recebida
