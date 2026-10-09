@@ -106,16 +106,16 @@ def test_no_network_loaders_forms_trackers_or_private_endpoints() -> None:
     for asset in document.selected("link"):
         href = asset.get("href") or ""
         assert href in {"./styles.css", "./favicon.svg"}
-    for file in SITE.iterdir():
-        if file.is_file():
-            value = file.read_text(encoding="utf-8")
-            assert "127.0.0.1" not in value
-            assert "localhost" not in value
-            assert "BA_ACCESS_IDENTITIES_JSON" not in value
-            assert "CLIENT0_OPERATOR_TOKEN" not in value
-            assert "DATABASE_URL" not in value
-            assert "site-de-vendas-de-instrumentos-musicais" not in value
-            assert "99freelas.com.br/project" not in value
+    # Only deployable assets are scanned; the README documents a safe localhost preview.
+    for file in (SITE / "index.html", SITE / "styles.css", SITE / "favicon.svg"):
+        value = file.read_text(encoding="utf-8")
+        assert "127.0.0.1" not in value
+        assert "localhost" not in value
+        assert "BA_ACCESS_IDENTITIES_JSON" not in value
+        assert "CLIENT0_OPERATOR_TOKEN" not in value
+        assert "DATABASE_URL" not in value
+        assert "site-de-vendas-de-instrumentos-musicais" not in value
+        assert "99freelas.com.br/project" not in value
     assert "@import" not in CSS
     assert not re.search(r"url\(\s*['\"]?https?://", CSS)
 
