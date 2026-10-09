@@ -26,7 +26,7 @@ Estes passos são uma **restrição de prontidão pré-contato do responsável**
 | --- | --- | --- | --- | --- |
 | 0 | F0/F1 — fundamento | Oferta-foco, ownership, API/banco/recovery e acesso privado | **F1 concluída no piloto privado**; regras F0 documentadas | Não ampliar exposição nem inserir dados reais no Git |
 | 1 | F2/O01 — oferta e diagnóstico | Ficha versionada de implantação de **um fluxo**, checklist de perguntas, escopo, limites, aceite, suporte e custos a confirmar | **Template criado**; precificação comercial segue aberta | Não precificar nem prometer automações/canais não verificados |
-| 2 | F2/O02 — continuidade comercial/back-office | G0–G10, índice privado [WP-027](client0-private-workspace.md) e [ensaio de restore isolado WP-028](client0-private-recovery.md) | **Simulações verificáveis no CI**, sem uso do HOME real. **Backup criptografado, restore operacional, fallback financeiro e ERPNext real continuam pendentes** | ZIP sintético plaintext e SHA-256 não equivalem a backup protegido, aceite ou documento financeiro; nenhum dado real no Git |
+| 2 | F2/O02 — continuidade comercial/back-office | G0–G10, índice privado WP-027, restore sintético WP-028 e [kit comercial manual WP-029](client0-manual-commercial-pack.md) com modelos de proposta, aceite e conciliação | **Templates prontos para CI**, mas identidade fiscal, valores, emissão habilitada e backup/restore operacional seguem **pendentes**; ERPNext não comprovado | Rascunhos não autorizam envio, nota fiscal ou baixa financeira; modelos nunca têm clientes reais no Git |
 | 3 | F2 — demonstração de entrega | **Uma demo técnica executável e reproduzível** da oferta: cenário sintético, testes, README de execução, captura sanitizada opcional e limitações | **WP-020 validado:** [demo offline pedido → CRM fictício](../../examples/README.md) e testes; material visual/site ainda pendente | Demo não vira “case de cliente”, nem prova integração com provider real ou usa dados da oportunidade real |
 | 4 | F2 — vitrine institucional | Site estático [WP-021](../../site/README.md) com portfólio e [pacote candidato WP-025](site-publication-readiness.md) de quatro assets + headers | **Pacote tecnicamente preparado para CI**, sem conta/hosting/URL, identidade aprovada ou publicação; site continua offline | Não publicar sem autorização humana da versão/destino; banco e API privados permanecem isolados |
 | 5 | F2 — assistência de marketing | Gerador de **rascunhos LinkedIn** com fonte pública curada, prompts versionados, modelo local opcional, fila privada e revisão humana obrigatória | **WP-022 validado:** testes + uma geração real com Qwen 3.5 9B; JSON privado `pending_review` e não publicado. Calendário/imagens/outros canais ainda pendentes | Zero publicação ou contato automático; fonte/IDs não substituem revisão factual; sem alegações inventadas |
@@ -116,9 +116,16 @@ custódia de chaves ou recuperação de documentos comerciais reais.
 A decisão vigente é continuar a operação Client 0 primeiro; boot,
 inventário e ativação pública do site ficam para momento apropriado.
 
-**Próximos bloqueios reais:** comprovar backup/restore protegido do
-índice privado e viabilizar documento comercial/financeiro autoritativo
-(ERPNext funcional ou fallback formal), com preços e condições
-**aprovados por humano**. Não criar CRM/ERP paralelo. Prospeção continua
-pausada até nova decisão do responsável. A F2 exige **ciclo real
-até recebimento e revisão de resultado** para encerramento formal.
+**WP-029:** [kit de proposta, aceite e conciliação manual](client0-manual-commercial-pack.md)
+preparado em rascunho; nenhum documento emitido/enviado. A
+[lista finita de decisões de lançamento](client0-launch-decisions.md)
+evita transformar decisões fiscais/financeiras humanas em novos módulos.
+
+**Próximos bloqueios reais:** confirmar natureza fiscal do prestador,
+preço/condições/aceite, emissor habilitado, regras de plataformas e
+**backup criptografado com restore local isolado**. O MXQ4K com Armbian
+em SD será avaliado depois, conforme decisão do responsável. Não
+criar CRM/ERP paralelo nem considerar template uma operação financeira.
+
+**Contato e site público continuam sem aprovação.** A F2 exige **ciclo
+real até recebimento e revisão de resultado** para encerramento formal.
