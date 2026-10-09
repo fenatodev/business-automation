@@ -1,8 +1,11 @@
 # WP-025 — Prontidão de publicação do site FenatoDev (sem deploy)
 
-**Status:** pacote estático candidato à revisão, preparado automaticamente no
+**Status:** pacote estático candidato à revisão, preparado no
 GitHub Actions. **Não há site publicado, domínio contratado, conta de
 hospedagem configurada ou autorização de lançamento.**
+**WP-026:** por decisão do responsável, a hospedagem futura poderá ser
+um [TV Box MXQ4K ainda não avaliado](mxq4k-hosting-deferred.md).
+A opção gerenciada Cloudflare fica como **fallback**, não obrigação.
 
 ## 1. Escolha técnica inicial: Cloudflare Pages Direct Upload
 
@@ -80,6 +83,31 @@ Isto **não** cria site, ativação do GitHub Pages, deploy Cloudflare,
 DNS ou URL pública. O repositório Git já é público, mas isso é distinto
 de servir os arquivos como site institucional.
 
+### Variante portátil para um servidor estático futuro (WP-026)
+
+Além do pacote de quatro arquivos específico para Cloudflare, há um
+segundo target gerado pelo mesmo empacotador:
+
+```bash
+uv run python -m site_release.prepare \
+  --target portable-static --output /tmp/site-portatil-novo
+```
+
+Ele contém **exatamente três arquivos**: `index.html`,
+`styles.css` e `favicon.svg`; `_headers` é intencionalmente
+excluído. O arquivo Cloudflare `_headers` **não ativa políticas
+HTTP em servidores genéricos** e pode ser servido como arquivo comum.
+O webserver efetivo deverá configurar e comprovar CSP e demais
+headers separadamente, depois de uma escolha e autorização humanas.
+O GitHub Actions guarda `fenatodev-portable-static-<sha>` por sete dias
+no `main`; não há deploy nem servidor automaticamente configurado.
+
+**MXQ4K permanece em espera.** Modelo/SoC real, flash, compatibilidade
+Linux, alimentação, disponibilidade e exposição segura devem ser
+avaliados em sessão futura; não criar firmware, configuração de
+roteador ou serviço agora. Consultar
+[restrições do hosting adiado](mxq4k-hosting-deferred.md).
+
 ## 3. Headers e privacidade: verificar resposta do hosting
 
 O arquivo `site/_headers` declara:
@@ -142,7 +170,7 @@ houver URL final aprovada. DNS/HTTPS/HSTS dependem do destino efetivo.
 
 ## 5. Resultado e sequência da F2
 
-**WP-025 prepara a publicação, mas não a executa.** Conclusão por CI
+**WP-025/026 preparam publicação portável, mas não a executam.** Conclusão por CI
 não remove os bloqueios humanos da tabela acima nem fecha F2.
 Continuam pendentes validação do back-office real, prova de restore do
 índice privado e ciclo de oportunidade → recebimento com cliente real.

@@ -52,8 +52,10 @@ Na **F2**, executar recortes curtos, com um WP e validação por vez:
 4. **Site-vitrine institucional mínimo:** WP-021 codificou a
    vitrine estática, separada do core e da UI interna. O
    [WP-025 — pacote e gates de publicação](operations/site-publication-readiness.md)
-   prepara **quatro assets auditáveis**, sem conta, domínio, deploy ou
-   autorização de contato. **Sem expor banco/API privada.**
+   prepara quatro assets para Cloudflare e o
+   [WP-026 disponibiliza três arquivos portáteis](operations/mxq4k-hosting-deferred.md)
+   para servidor estático futuro. **TV Box MXQ4K adiado**, sem inventário,
+   conta, domínio, deploy, contato ou exposição do banco/API privada.
 5. **Assistente de marketing inicial:** [WP-022 — rascunhos com Qwen local](operations/client0-marketing-drafts.md), baseados em fonte pública curada;
    revisão factual e autorização humana continuam obrigatórias. **Publicar
    é gate distinto**, não automático. Outros canais e imagens ficam para
