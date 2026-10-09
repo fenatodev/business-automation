@@ -61,8 +61,10 @@ Na **F2**, executar recortes curtos, com um WP e validação por vez:
    modelo de case privado e checklist **somente de leitura**. Publicar
    exige autorização humana separada por uso, canal e versão. **Não
    inventar depoimentos, métricas, clientes ou resultados.**
-7. **Ensaio de prontidão:** simular com dados fictícios o processo completo,
-   preservando fallback manual e sem registrar sucesso comercial fictício.
+7. **Ensaio de prontidão:** [WP-024 — contrato sintético G0–G10](operations/client0-precontact-rehearsal.md)
+   com referências fictícias, versão de proposta e conciliação simulada.
+   **Teste verde não confirma proposta enviada, pagamento recebido,
+   validação do ERP nem prontidão comercial real.**
 
 A [matriz de prontidão pré-contato](operations/precontact-readiness.md)
 explicita evidências, bloqueios e estado **pendente** de cada gate.
