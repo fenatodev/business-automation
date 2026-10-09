@@ -20,15 +20,15 @@ Em **clone de teste** do projeto:
 
 ```bash
 # 1. Inspecionar fatos e o prompt; SEM requisição HTTP/LLM.
-python3 -m marketing.draft --preview
+uv run python -m marketing.draft --preview
 
 # 2. Gerar UM post de LinkedIn e exibir o JSON no terminal;
 #    faz UMA requisição ao modelo local, SEM salvar/publicar.
-python3 -m marketing.draft --generate
+uv run python -m marketing.draft --generate
 
 # 3. Opcional: gerar outro rascunho e guardar somente na fila privada.
 #    Requer a estrutura Client 0 segura de WP-019.
-python3 -m marketing.draft --generate --save-private
+uv run python -m marketing.draft --generate --save-private
 ```
 
 Se a porta local do modelo mudar, fornecer
