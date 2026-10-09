@@ -1,8 +1,8 @@
 # WP-019 / F2-O02 — Operação comercial, entrega e back-office Client 0
 
-**Estado:** procedimento e modelo prontos para validação; não é integração ERPNext nem prova de venda.  
-**Versão:** 1.0 — 2026-10-08.  
-**Escopo:** um único serviço por registro privado, do brief técnico ao recebimento, com exceções, evidências e fallback manual.  
+**Estado:** procedimento e modelo prontos para validação; não é integração ERPNext nem prova de venda.
+**Versão:** 1.0 — 2026-10-08.
+**Escopo:** um único serviço por registro privado, do brief técnico ao recebimento, com exceções, evidências e fallback manual.
 **Autoridades:** [ADR 0001](../architecture/adr/0001-data-ownership.md), [oferta v1](client0-offer-v1.md), [ensaio G1–G10](client0-commercial-tabletop.md), [F2](../ROADMAP.md).
 
 ## 1. Escolha mínima de armazenamento — sem um segundo CRM
