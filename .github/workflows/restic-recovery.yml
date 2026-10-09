@@ -1,0 +1,76 @@
+name: Restic — encrypted synthetic recovery only
+
+on:
+  pull_request:
+    paths:
+      - 'client0_workspace/restic_drill.py'
+      - 'tests/test_restic_drill.py'
+      - '.github/workflows/restic-recovery.yml'
+      - 'docs/operations/client0-protected-backup.md'
+      - 'specs/wp-030-restic-encrypted-recovery-drill.md'
+  push:
+    branches: [main]
+    paths:
+      - 'client0_workspace/restic_drill.py'
+      - 'tests/test_restic_drill.py'
+      - '.github/workflows/restic-recovery.yml'
+      - 'docs/operations/client0-protected-backup.md'
+      - 'specs/wp-030-restic-encrypted-recovery-drill.md'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: restic-synthetic-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  synthetic-encrypted-restore:
+    name: Ephemeral encrypted restore (no live data)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact commit without persisted token
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Use Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install official Ubuntu restic package on ephemeral runner only
+        run: |
+          sudo apt-get update -qq
+          sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends restic
+          restic version
+
+      - name: Run real restic encryption, check, wrong-key and restore drill
+        run: |
+          python -m client0_workspace.restic_drill --synthetic-drill > "$RUNNER_TEMP/wp030-restic-drill.json"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          record = json.loads((Path(os.environ["RUNNER_TEMP"]) / "wp030-restic-drill.json").read_text())
+          assert record["kind"] == "client0_restic_encrypted_recovery_drill"
+          assert record["status"] == "pass"
+          assert record["snapshot_count"] == 1
+          assert record["restored_files"] == 3
+          for key in ("restic_repo_checked_read_data", "isolated_restore_verified",
+                      "synthetic_encrypted_repository_verified",
+                      "wrong_password_tested", "temporary_secret_only"):
+              assert record[key] is True, key
+          for key in ("real_workspace_accessed", "real_backup_restore_verified",
+                      "offsite_backup_verified", "production_backup_authorized",
+                      "external_action_taken", "customer_data_collected",
+                      "site_published"):
+              assert record[key] is False, key
+          print("RESTIC_ENCRYPTED_DRILL=PASS synthetic_only=true offsite=false live=false")
+          PY
+
+      - name: Never upload private recovery files or secrets
+        run: |
+          # No upload-artifact, no backup remote and no persistent credentials.
+          test ! -e "$RUNNER_TEMP/wp030-restic-snapshot"
