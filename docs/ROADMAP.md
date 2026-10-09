@@ -56,9 +56,11 @@ Na **F2**, executar recortes curtos, com um WP e validação por vez:
    revisão factual e autorização humana continuam obrigatórias. **Publicar
    é gate distinto**, não automático. Outros canais e imagens ficam para
    avaliação posterior, sem antecipar a automação da F3.
-6. **O08 — preparo de cases/prova social:** coletar metodologia de medição
-   antes/depois, evidências privadas e autorização específica de divulgação.
-   **Não inventar depoimentos, métricas, clientes ou resultados.**
+6. **O08 — preparo de cases/prova social:** [WP-023 — evidências,
+   medição e consentimento](operations/client0-proof-social.md), com
+   modelo de case privado e checklist **somente de leitura**. Publicar
+   exige autorização humana separada por uso, canal e versão. **Não
+   inventar depoimentos, métricas, clientes ou resultados.**
 7. **Ensaio de prontidão:** simular com dados fictícios o processo completo,
    preservando fallback manual e sem registrar sucesso comercial fictício.
 

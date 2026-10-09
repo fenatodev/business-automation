@@ -1,0 +1,63 @@
+name: Validation — Python and privacy guards
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-tests:
+    name: Offline test suite
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact tested revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Check changes for trailing whitespace
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git diff --check "$BASE_SHA"...HEAD
+
+      - name: Test suite
+        run: uv run pytest -q
+
+      - name: Compile Python modules
+        run: .venv/bin/python -m compileall -q app tests examples marketing proof_social
+
+      - name: Static-site JavaScript syntax
+        run: node --check app/operator_ui/app.js
+
+      - name: Proof-social template must remain blocked
+        run: |
+          uv run python -m proof_social.checklist --template-check > proof-check.json
+          uv run python - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path("proof-check.json").read_text())
+          assert result["status"] == "blocked"
+          assert result["publication_authorized"] is False
+          assert result["external_action_taken"] is False
+          print("TEMPLATE_CHECK=PASS (publication remains blocked)")
+          PY
+          rm -f proof-check.json

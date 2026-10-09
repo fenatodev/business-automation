@@ -117,6 +117,12 @@ evidência e `as_of`; atualização fora de ordem exige nova consulta.
 | Permissão de divulgar depoimento/imagem | **NÃO CONCEDIDA** |
 | Identidade, abrangência e versão autorizadas | `[nenhuma]` |
 | Revisão humana para eventual publicação | `[pendente]` |
+| Índice auxiliar de prova social (WP-023) | `[proof-social.json no mesmo diretório ou ainda não criado]` |
+
+O [procedimento O08](../client0-proof-social.md) define medição,
+permissões específicas, revisão e auditoria somente de leitura. A
+existência do arquivo auxiliar ou um checklist preenchido **não**
+concede direito de publicar nem modifica os estados acima.
 
 **Sem autorização de divulgação específica, não publicar.** Não usar
 marcas, capturas, dados comerciais ou conversas privadas como prova social.
