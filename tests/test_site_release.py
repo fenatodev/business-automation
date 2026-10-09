@@ -141,7 +141,9 @@ def test_empty_or_non_utf8_asset_is_rejected(tmp_path: Path) -> None:
     with pytest.raises(ReleaseError):
         inspect_assets(site_root=root)
 
-    root = copy_site(tmp_path / "second")
+    other = tmp_path / "second"
+    other.mkdir()
+    root = copy_site(other)
     (root / "_headers").write_bytes(b"\xff\xfe\xff")
     with pytest.raises(ReleaseError, match="asset_not_utf8"):
         inspect_assets(site_root=root)
