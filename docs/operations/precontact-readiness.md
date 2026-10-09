@@ -1,0 +1,86 @@
+# Client 0 — prontidão antes de prospecção ativa
+
+**Status:** ordem de preparação adotada pelo operador, **não** checklist concluído nem replanejamento das fases.  
+**Data:** 2026-10-08.  
+**Referências:** `docs/ROADMAP.md` (F0–F5), `docs/architecture/delivery-plan-v1.md`, `docs/operations/client0-offer-v1.md`.  
+**Premissa do responsável:** finalizar uma estrutura demonstrável antes de contatar clientes, enviar novas propostas ou retomar prospecção. A oportunidade já armazenada permanece como dado privado; **não** exportar seus detalhes, identidade ou conteúdo para o Git, site ou marketing.
+
+## A. Situação técnica verificada, sem extrapolação
+
+| Item | Estado / evidência | Interpretação correta |
+| --- | --- | --- |
+| Banco do core | **Existe**: PostgreSQL privado com persistência e bind local | Não criar um segundo banco por causa do site. Banco presente não prova que o processo completo de venda funciona |
+| F1 — fundação | Concluída **para piloto privado**: auth/tenant, schema/migrations em descartável, backup/restore ensaiado, lifecycle | Não autoriza API pública |
+| Oportunidade/triagem | API e interface de operador locais, com fluxo de captura e `ProposalBrief` | `ready_for_review` não aprova proposta; `follow` não agenda ação |
+| Oferta F2 | `client0-integration-flow-v1`: template de **um** fluxo implantável e diagnóstico | Sem preços, prazos e condições inventados; ainda depende de aprovação humana |
+| ERPNext | Sandbox preparado, configuração testada; runtime/DocTypes/operabilidade **não demonstrados** | Não declarar integração, emissão de Quotation ou pagamento |
+| Assistente de IA | Serviço atual de conversa depende de Ollama; **não** é agente de marketing validado | Sem publicação, captura de rede social ou autonomia comercial autorizada |
+| Site público | **Não existe** no produto atual | Não associar site público ao servidor/porta privada do core |
+| Cases e avaliações | Há cenários sintéticos/testes; **não há case pago nem depoimento autorizado provado** | Mostrar demonstrações verificáveis como demos, nunca como cliente atendido |
+
+## B. Sequência de preparo — não pular gates
+
+Estes passos são uma **restrição de prontidão pré-contato do responsável**, distinta do gate formal de saída da F2. Nenhuma fase da arquitetura é renomeada ou dada como concluída por este checklist.
+
+| Ordem | Gate e fase | Entrega verificável | Estado no início deste plano | Regra de parada |
+| --- | --- | --- | --- | --- |
+| 0 | F0/F1 — fundamento | Oferta-foco, ownership, API/banco/recovery e acesso privado | **F1 concluída no piloto privado**; regras F0 documentadas | Não ampliar exposição nem inserir dados reais no Git |
+| 1 | F2/O01 — oferta e diagnóstico | Ficha versionada de implantação de **um fluxo**, checklist de perguntas, escopo, limites, aceite, suporte e custos a confirmar | **Template criado**; precificação comercial segue aberta | Não precificar nem prometer automações/canais não verificados |
+| 2 | F2/O02 — continuidade comercial/back-office | Verificar onde ficam arquivo privado de propostas, aprovação, aceite, entrega e referência de recebíveis; simular procedimento com docs sintéticos; confirmar fallback manual | Ensaio de mesa já documentado; back-office real **não validado** | Não criar ERP paralelo nem inferir documento financeiro emitido |
+| 3 | F2 — demonstração de entrega | **Uma demo técnica executável e reproduzível** da oferta: cenário sintético, testes, README de execução, screenshots/vídeo sanitizados e limitações | Pendente | Demo não vira “case de cliente” nem usa dados da oportunidade real |
+| 4 | F2 — vitrine institucional | Site público **estático e separado**, com apresentação, oferta, processo, demonstração verificável, referência GitHub, contato revisado e privacidade proporcional ao que for coletado | Pendente | Sem painel de cliente, banco público, API interna exposta, alegações sem prova ou publicação sem revisão |
+| 5 | F2 — assistência de marketing | Gerador/assistente **somente de rascunhos** usando fontes aprovadas: uma atualização técnica ou demo → legenda/post com revisão factual, tom e canal; fila privada de aprovação | Pendente | Zero publicação ou contato automático; sem material de terceiros ou alegações inventadas |
+| 6 | F2/O08 — preparo de prova social | Template privado de baseline antes/depois, origem de métricas, limitações, autorização específica para identidade/depoimento e status `publicável` separado | Pendente | Sem resultados mensurados **e** autorização de divulgação: nenhuma prova social de cliente publicada |
+| 7 | F2 — ensaio operacional de prontidão | Caminho completo com dados sintéticos: oportunidade → brief → decisão humana → documento/fallback → execução demo → evidência/aceite → referência financeira fictícia claramente identificada | Pendente | Não registrar “pago”, “enviado”, “aceito” ou “implantado em cliente” por simulação |
+
+**Após os gates de prontidão:** o responsável pode decidir retomar prospecção/contatos reais. Isso **não significa F2 encerrada**: o gate arquitetural da F2 continua sendo o **ciclo comercial real** com aceites e recebimento verificável; só depois se mede o gargalo que merece automação na F3. Um site e um gerador de posts não substituem venda, entrega ou conciliação.
+
+## C. Como será a vitrine — critérios antes de decidir stack/hosting
+
+O site futuro **não precisa ter login, CRM próprio, formulário público ou banco**. Uma primeira versão estática reduz custo, risco e manutenção. Stack, domínio, marca, DNS, hospedagem, identidade pública e política de contato serão escolhidos em pacote próprio, com comparação técnica e validação, **não assumidos** aqui.
+
+Conteúdo mínimo de um MVP verificável:
+
+1. **Quem oferece** — identidade profissional consistente com perfis públicos e serviços reais.
+2. **Que problema resolve** — `client0-integration-flow-v1`, com escopo e exclusões claros.
+3. **Como trabalha** — diagnóstico, proposta revisada, entrega testada, evidência, suporte conforme contrato.
+4. **Demonstração** — projeto sintético funcional, repositório e resultados reproduzíveis, com aviso explícito “demonstração, não cliente”.
+5. **Contato** — opção aprovada que não publique segredos ou dados pessoais além do necessário.
+6. **Privacidade** — informação coerente com dados realmente coletados; se não houver formulário ou tracking, não inventar backend ou política de coleta.
+7. **Prova social** — seção opcional **não exibida ou marcada “em preparação”** até haver consentimento e resultado verificável; não fabricar avaliações, logos ou números.
+
+Nunca compartilhar a página `http://127.0.0.1:8788/operator` como link de apresentação: ela é **UI interna privada**, não site da empresa. Hospedagem estática pública deve usar repositório/artefato separado ou build isolado que não carregue `.env`, tokens ou dados do core.
+
+## D. Assistente de posts: menor experimento permitido
+
+Primeiro pacote elegível **depois de existirem fontes públicas honestas**:
+
+- entrada: links aprovados de repositório/demo, mudanças técnicas públicas e oferta vigente;
+- saída: **rascunho** de post/caption e sugestões de imagem, com fonte associada e sinalização de afirmações não comprovadas;
+- revisão: humano confirma precisão, marca, terceiros, política do canal, links e autorização de publicação;
+- publicação: **fora do escopo inicial**; ação posterior e separada, sob aprovação explícita;
+- armazenamento: drafts privados; nenhum segredo, contato de cliente, conversa privada ou conteúdo de contrato em prompt público ou ferramenta externa sem autorização.
+
+Não começar com equipe de agentes, scraping, auto-post ou workflow multicanal. Avaliar primeiro se o rascunho economiza trabalho e se a revisão continua segura.
+
+## E. Evidência de caso e consentimento
+
+Para cada entrega real futura, guardar **fora do repositório público**:
+
+- fonte e método da linha de base (antes): volume, tempo, falha ou custo;
+- período e condições da medição posterior;
+- números observados versus estimativas claramente separados;
+- limites/ocorrências de erro e custo de operação;
+- documento/versão do escopo e autorização de quem tem legitimidade sobre os dados;
+- autorização **granular** para publicar nome/marca, fotos, números, depoimento e canal de divulgação, com possibilidade de revogação tratada;
+- versão sanitizada para publicar **apenas depois** de uma revisão humana.
+
+**Repositório com testes, demo e documentação demonstra capacidade técnica, mas não é prova de resultado comercial ou aprovação de cliente.**
+
+## F. Escopo e definição de encerramento deste plano
+
+Este documento organiza a fila, **não ativa a fila**: a cada WP, verificar dependências, implementar **um recorte** e validar; não iniciar o próximo automaticamente na mesma sessão.
+
+Sem novos serviços, dependências, base de dados, alterações na API, migrations, ERP, deploy, mensagens, submissões ou publicações por consequência deste plano.
+
+**Próximo gate recomendado após O01:** completar a verificação do processo comercial/back-office e índice privado (`O02`, tomando o WP-014 como base), antes de construir demo/site e marketing. Se o responsável optar por site antes da validação ERP real, manter apenas vitrine estática honesta, sem alegar prontidão comercial completa.
