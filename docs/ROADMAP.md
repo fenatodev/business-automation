@@ -44,8 +44,11 @@ Na **F2**, executar recortes curtos, com um WP e validação por vez:
    [checklist de evidências G0–G10](operations/client0-backoffice-operations.md)
    e [índice privado por caso](operations/templates/client0-case.template.md),
    aproveitando o WP-014. O **modelo documental** está preparado;
-   armazenamento local/backup, back-office real e ERPNext **ainda dependem
-   de validação**. Não confundir referência com documento financeiro emitido.
+   armazenamento local agora conta com o
+   [WP-027 — bootstrap privado vazio](operations/client0-private-workspace.md)
+   para verificação sintética. **Backup/restore real, fallback e ERPNext
+   ainda dependem de validação**. Não confundir referência com documento
+   financeiro emitido.
 3. **Demonstração real de capacidade técnica:** um fluxo **sintético**
    executável, reproduzível e documentado, sem dados privados e sem
    apresentar demo como resultado de cliente contratado.
@@ -54,8 +57,9 @@ Na **F2**, executar recortes curtos, com um WP e validação por vez:
    [WP-025 — pacote e gates de publicação](operations/site-publication-readiness.md)
    prepara quatro assets para Cloudflare e o
    [WP-026 disponibiliza três arquivos portáteis](operations/mxq4k-hosting-deferred.md)
-   para servidor estático futuro. **TV Box MXQ4K adiado**, sem inventário,
-   conta, domínio, deploy, contato ou exposição do banco/API privada.
+   para servidor estático futuro. **TV Box MXQ4K adiado**: o usuário
+   já tem Armbian preparado em SD, mas boot, inventário e segurança não
+   foram verificados; sem conta, domínio, deploy, contato ou exposição do banco/API privada.
 5. **Assistente de marketing inicial:** [WP-022 — rascunhos com Qwen local](operations/client0-marketing-drafts.md), baseados em fonte pública curada;
    revisão factual e autorização humana continuam obrigatórias. **Publicar
    é gate distinto**, não automático. Outros canais e imagens ficam para
