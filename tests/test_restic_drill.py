@@ -147,6 +147,7 @@ def test_actual_restic_encrypts_and_restores_only_synthetic_data() -> None:
     assert result["isolated_restore_verified"] is True
     assert result["synthetic_encrypted_repository_verified"] is True
     assert result["temporary_secret_only"] is True
+    assert result["wrong_password_tested"] is True
     for field in (
         "real_workspace_accessed", "real_backup_restore_verified",
         "offsite_backup_verified", "production_backup_authorized",
