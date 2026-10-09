@@ -2,8 +2,9 @@
 
 **Classificação:** simulação offline de contrato operacional, **não** transação
 com cliente, cobrança, aceite, entrega ou conciliação de dinheiro real.
-**Status:** candidato a validação no GitHub Actions. Nenhuma execução local,
-login, configuração de sistema ou publicação exigida.
+**Status:** simulador validado no GitHub Actions do PR #56 (suíte com 209 testes);
+nenhuma transação, execução local, login, configuração do Client 0 ou
+publicação exigida.
 
 ## 1. O que estamos de fato validando
 
