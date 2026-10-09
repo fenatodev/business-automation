@@ -52,9 +52,11 @@ Na **F2**, executar recortes curtos, com um WP e validação por vez:
    manual e decisões de lançamento](operations/client0-manual-commercial-pack.md)
    prepara propostas, aceites e verificação fiscal/financeira com
    autoridades humanas e fontes reais **quando habilitadas**.
-   [Decisões ainda abertas](operations/client0-launch-decisions.md):
-   formalização fiscal, valores/condições, emissor oficial,
-   recuperação criptografada real, marca/site e autorização de contato.
+   [WP-030 — Restic e recuperação criptografada em CI](operations/client0-restic-recovery.md)
+   escolhe ferramenta madura, mas **ainda não valida o backup no Ubuntu**.
+   [Decisões abertas](operations/client0-launch-decisions.md):
+   formalização comercial e fiscal, valores, emissor oficial,
+   mídia/chave e restore real, marca/site e autorização de contato.
    **ERPNext permanece opcional até ser validado.** Nenhum template é
    prova de documento emitido, serviço contratado ou pagamento.
 3. **Demonstração real de capacidade técnica:** um fluxo **sintético**
