@@ -14,7 +14,7 @@ contato, publicação, faturamento ou coleta de dados de clientes.
 | D04 — contratos | Texto sobre escopo/limites, IP/licenças, prazo, suporte, proteção de dados, aceite e resolução de conflitos; conferir necessidade de revisão jurídica | Versão autorizada do documento e aprovador | **PENDENTE** |
 | D05 — plataforma | Para cada canal (ex.: 99Freelas), conferir regras de propostas, comunicação, taxas, custódia e pagamentos, **sem contornar termos** | Plataforma/canal permitido, referência das condições vigentes | **PENDENTE** |
 | D06 — back-office | Optar entre **fallback oficial/documental controlado** e ERPNext **já funcional**; definir emissor fiscal e fonte de conciliação bancária legítimos | Responsável G2/G3/G8/G9, fonte autoritativa e procedimento de falhas | **PENDENTE** |
-| D07 — proteção do índice | Definir solução madura de backup **criptografado**, destino independente e recuperação isolada real; certificar chaves e retenção | Evidência de restore real com segurança (não o ensaio WP-028) | **PENDENTE** |
+| D07 — proteção do índice | **Restic escolhido (WP-030)** e ensaio criptografado apenas no runner GitHub; falta destino independente, custódia de chave e **restore isolado real** | [Runbook de ativação posterior](client0-restic-recovery.md), evidência sanitizada do host real e confirmação de mídia | **PENDENTE** |
 | D08 — comunicação/site | Confirmar hospedagem MXQ4K **somente após** boot/segurança; HTTPS, headers, disponibilidade, identidade e copy revisados; autorizar versão exata do site | Destino, SHA, operador e ato de publicação. Cloudflare estático fica como fallback | **PENDENTE** |
 | D09 — prospecção | Aprovação explícita para retomar seleção de leads e submissão de propostas por canal, limites de gastos e critérios de parada | Autorização humana de canal/escopo; propostas seguem gate G4a individual | **NÃO AUTORIZADA** |
 
@@ -40,8 +40,7 @@ com aprovação e só depois buscar clientes.
   para um primeiro contrato assistido.
 - Marketing pode usar rascunhos internos WP-022, sem publicação
   automática ou "cases" inventados.
-- O backup real não é demonstrado pelo teste ZIP de WP-028;
-  criptografia, custódia de chaves e ensaio local são a pendência.
+- WP-028 validou ZIP sintético plaintext; [WP-030](client0-restic-recovery.md) valida Restic criptografado com dados fictícios. **Backup real e recuperação local continuam pendentes**; a chave/destino precisam de decisão operacional.
 
 ## Ordem curta para concluir a preparação
 
