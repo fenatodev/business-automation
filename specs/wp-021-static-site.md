@@ -1,9 +1,9 @@
 # WP-021 — site-vitrine estático e seguro do Client 0
 
-**Fase:** F2 — preparo pré-contato, depois do WP-020.  
-**Base:** `main@c231e1fdb49a28c83818631c1eaf383cd4fc108b`.  
-**Branch:** `wp/021-institutional-static-site`.  
-**Executor de desenvolvimento:** ChatGPT via GitHub.  
+**Fase:** F2 — preparo pré-contato, depois do WP-020.
+**Base:** `main@c231e1fdb49a28c83818631c1eaf383cd4fc108b`.
+**Branch:** `wp/021-institutional-static-site`.
+**Executor de desenvolvimento:** ChatGPT via GitHub.
 **Continue/Qwen 3.5 9B:** **não implementa** este WP; usar apenas se
 for indispensável um teste local já delimitado. O responsável aprova
 separadamente qualquer publicação/hospedagem.
@@ -23,7 +23,7 @@ e `fenatodev/lai-harness`.
 ## Escopo fechado
 
 **Adicionar:** `site/index.html`, `site/styles.css`,
-`site/favicon.svg`, `site/README.md`, `tests/test_site_static.py`.  
+`site/favicon.svg`, `site/README.md`, `tests/test_site_static.py`.
 **Atualizar:** `docs/operations/precontact-readiness.md` com status
 de site codificado, revisão/publicação **ainda pendentes**.
 **Não tocar:** `app/`, `migrations/`, `docker-compose.yml`,
