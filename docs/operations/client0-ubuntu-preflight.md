@@ -66,6 +66,21 @@ O relatório pode informar flags de hardware e filesystem, mas
 As verificações do TV Box continuam reservadas para etapa posterior,
 após fechar o backup e aprovar a publicação.
 
+## WP-031 executado: bloqueio confirmado, causa ainda não verificada
+
+O relatório de execução recebido indica `business-automation=blocked`,
+`restic=false`, `/mnt/backup` montado e filesystem diferente.
+**Não sabemos a causa da rejeição de permissões nem se a mídia é
+fisicamente independente**. O relatório transmitiu `kind` com
+grafia diferente do código: exigir **stdout original** na próxima
+etapa, sem inferência do agente.
+
+**WP-032:** [causa e topologia read-only para Continue](../../specs/wp-032-ubuntu-blocker-cause.md).
+O novo diagnóstico somente lê os metadados da pasta bloqueada e
+consulta topologia via `lsblk`; não corrige, instala, faz backup ou
+restaura. Uma mudança de permissão no diretório compartilhado não
+deve ser feita antes da causa e dos usos serem conhecidos.
+
 ## Ordem seguinte, somente após resultado local
 
 1. Se estrutura privada não existir ou estiver insegura, analisar
