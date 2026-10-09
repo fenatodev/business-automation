@@ -1,9 +1,9 @@
 # WP-020 — Demonstração técnica sintética de um fluxo (F2)
 
-**Status:** código preparado no GitHub; validar antes de integrar.  
-**Base canônica:** `main@a3ce2178ee860c3a3f9f0c503048fbd3ee9e9552`.  
-**Branch:** `wp/020-synthetic-order-crm-demo`.  
-**Executor remoto:** ChatGPT + GitHub. **Executor local eventual:** Continue/Qwen 3.5 9B **apenas para validar**.  
+**Status:** código preparado no GitHub; validar antes de integrar.
+**Base canônica:** `main@a3ce2178ee860c3a3f9f0c503048fbd3ee9e9552`.
+**Branch:** `wp/020-synthetic-order-crm-demo`.
+**Executor remoto:** ChatGPT + GitHub. **Executor local eventual:** Continue/Qwen 3.5 9B **apenas para validar**.
 **Objetivo:** executar offline **um** fluxo de aviso de pedido fictício para CRM em memória, com validação, chave de deduplicação, conflito e tratamento de timeout ambíguo, para servir como demonstração técnica honesta no futuro site.
 
 ## 1. Contrato e fronteira
