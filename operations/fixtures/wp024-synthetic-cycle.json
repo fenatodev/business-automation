@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "kind": "synthetic_offline",
+  "scenario_ref": "SYN-F2-CYCLE-001",
+  "tenant_ref": "SYN-TENANT-001",
+  "opportunity_ref": "SYN-OPP-001",
+  "billing_trigger": "after_delivery",
+  "events": [
+    {
+      "gate": "G0",
+      "actor": "operator",
+      "evidence_ref": "SYN-LINK-001",
+      "version": "SYN-OPP-V1",
+      "outcome": "simulated"
+    },
+    {
+      "gate": "G1",
+      "actor": "technical",
+      "evidence_ref": "SYN-BRIEF-REVIEW-001",
+      "version": "SYN-BRIEF-V1",
+      "outcome": "simulated"
+    },
+    {
+      "gate": "G2",
+      "actor": "backoffice",
+      "evidence_ref": "SYN-PARTY-001",
+      "version": "SYN-PARTY-V1",
+      "outcome": "simulated"
+    },
+    {
+      "gate": "G3",
+      "actor": "backoffice",
+      "evidence_ref": "SYN-QUOTE-001",
+      "version": "SYN-QUOTE-V1",
+      "outcome": "simulated"
+    },
+    {
+      "gate": "G4a",
+      "actor": "commercial",
+      "evidence_ref": "SYN-QUOTE-APPROVAL-001",
+      "version": "SYN-QUOTE-V1",
+      "outcome": "simulated"
+    },
+    {
+      "gate": "G4b",
+      "actor": "commercial",
+      "evidence_ref": "SYN-QUOTE-SEND-001",
+      "version": "SYN-QUOTE-V1",
+      "outcome": "simulated"
+    },
+    {
+      "gate": "G5",
+      "actor": "commercial",
+      "evidence_ref": "SYN-CUSTOMER-ACCEPT-001",
+      "version": "SYN-QUOTE-V1",
+      "outcome": "simulated"
+    },
+    {
+      "gate": "G6",
+      "actor": "technical",
+      "evidence_ref": "SYN-DELIVERY-001",
+      "version": "SYN-DELIVERY-V1",
+      "outcome": "simulated"
+    },
+    {
+      "gate": "G7",
+      "actor": "technical",
+      "evidence_ref": "SYN-DELIVERY-ACCEPT-001",
+      "version": "SYN-DELIVERY-V1",
+      "outcome": "simulated"
+    },
+    {
+      "gate": "G8",
+      "actor": "finance",
+      "evidence_ref": "SYN-INVOICE-001",
+      "version": "SYN-INVOICE-V1",
+      "outcome": "simulated"
+    },
+    {
+      "gate": "G9",
+      "actor": "finance",
+      "evidence_ref": "SYN-BANK-PARTIAL-001",
+      "version": "SYN-INVOICE-V1",
+      "outcome": "partial"
+    },
+    {
+      "gate": "G9",
+      "actor": "finance",
+      "evidence_ref": "SYN-BANK-SETTLED-002",
+      "version": "SYN-INVOICE-V1",
+      "outcome": "settled"
+    },
+    {
+      "gate": "G10",
+      "actor": "support",
+      "evidence_ref": "SYN-SUPPORT-001",
+      "version": "SYN-SUPPORT-V1",
+      "outcome": "simulated"
+    }
+  ]
+}
