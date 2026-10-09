@@ -26,7 +26,7 @@ Estes passos são uma **restrição de prontidão pré-contato do responsável**
 | --- | --- | --- | --- | --- |
 | 0 | F0/F1 — fundamento | Oferta-foco, ownership, API/banco/recovery e acesso privado | **F1 concluída no piloto privado**; regras F0 documentadas | Não ampliar exposição nem inserir dados reais no Git |
 | 1 | F2/O01 — oferta e diagnóstico | Ficha versionada de implantação de **um fluxo**, checklist de perguntas, escopo, limites, aceite, suporte e custos a confirmar | **Template criado**; precificação comercial segue aberta | Não precificar nem prometer automações/canais não verificados |
-| 2 | F2/O02 — continuidade comercial/back-office | Checklist G0–G10, índice privado por serviço e [bootstrap vazio WP-027](client0-private-workspace.md) com permissões verificáveis | **WP-027:** código de criação/inspeção privada preparado para testes sintéticos em CI. Execução no HOME real, backup/restore e fallback/ERPNext real **continuam não validados** | Não confundir pasta vazia com back-office operacional, backup, proposta ou documento financeiro; sem dados reais no Git |
+| 2 | F2/O02 — continuidade comercial/back-office | G0–G10, índice privado [WP-027](client0-private-workspace.md) e [ensaio de restore isolado WP-028](client0-private-recovery.md) | **Simulações verificáveis no CI**, sem uso do HOME real. **Backup criptografado, restore operacional, fallback financeiro e ERPNext real continuam pendentes** | ZIP sintético plaintext e SHA-256 não equivalem a backup protegido, aceite ou documento financeiro; nenhum dado real no Git |
 | 3 | F2 — demonstração de entrega | **Uma demo técnica executável e reproduzível** da oferta: cenário sintético, testes, README de execução, captura sanitizada opcional e limitações | **WP-020 validado:** [demo offline pedido → CRM fictício](../../examples/README.md) e testes; material visual/site ainda pendente | Demo não vira “case de cliente”, nem prova integração com provider real ou usa dados da oportunidade real |
 | 4 | F2 — vitrine institucional | Site estático [WP-021](../../site/README.md) com portfólio e [pacote candidato WP-025](site-publication-readiness.md) de quatro assets + headers | **Pacote tecnicamente preparado para CI**, sem conta/hosting/URL, identidade aprovada ou publicação; site continua offline | Não publicar sem autorização humana da versão/destino; banco e API privados permanecem isolados |
 | 5 | F2 — assistência de marketing | Gerador de **rascunhos LinkedIn** com fonte pública curada, prompts versionados, modelo local opcional, fila privada e revisão humana obrigatória | **WP-022 validado:** testes + uma geração real com Qwen 3.5 9B; JSON privado `pending_review` e não publicado. Calendário/imagens/outros canais ainda pendentes | Zero publicação ou contato automático; fonte/IDs não substituem revisão factual; sem alegações inventadas |
@@ -105,9 +105,12 @@ agora entrega opções Cloudflare e portátil, **sem deploy**. O
 Nenhuma instalação, firmware, rede, domínio ou API privada será alterada
 antes da autorização do responsável.
 
-**WP-027:** implementar [preflight e bootstrap do índice privado](client0-private-workspace.md),
-testados somente de maneira **sintética** no CI. Isso não cria backups,
-não confere ERPNext e não autoriza operação financeira.
+**WP-027:** [preflight e bootstrap do índice privado](client0-private-workspace.md)
+testados com dados sintéticos no CI; não confirmam o HOME real.
+**WP-028:** [ensaio de recuperação do índice](client0-private-recovery.md)
+com ZIP temporário **não criptografado** e verificação SHA-256, usando
+somente três arquivos **inventados**. Isso não comprova backup real,
+custódia de chaves ou recuperação de documentos comerciais reais.
 
 **MXQ4K:** o responsável informou que Armbian já está em um SD preparado.
 A decisão vigente é continuar a operação Client 0 primeiro; boot,

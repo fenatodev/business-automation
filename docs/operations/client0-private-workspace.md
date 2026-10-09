@@ -91,8 +91,12 @@ Não coletar anexos contratuais sensíveis enquanto não existir estratégia
 de cópia protegida, retenção, controle de acesso, chave/recuperação,
 e **restore isolado demonstrado**. Também não confiar somente no
 backup da base PostgreSQL: o índice `cases/` está **fora do banco**.
-Próximo recorte deve definir e provar recuperação com material
-fictício antes de usar informações reais.
+O [WP-028 — ensaio sintético de recuperação](client0-private-recovery.md)
+define e testa cópia, integridade SHA-256 e restore **somente em ambiente
+temporário com dados fictícios**. Não cria cópia operacional real nem
+fornece criptografia; um backup protegido e o restore real ainda
+exigem escolha de ferramenta madura, custódia de chaves e gate
+operacional separado.
 
 A escolha do back-office segue [procedimento G0–G10](client0-backoffice-operations.md):
 ERPNext precisa de validação real, **ou** o operador deve formalizar
