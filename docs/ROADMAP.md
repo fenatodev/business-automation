@@ -52,8 +52,10 @@ Na **F2**, executar recortes curtos, com um WP e validação por vez:
 4. **Site-vitrine institucional mínimo:** estático, separado do core e
    da UI interna; apresentar oferta, processo, demonstração verificável
    e contato aprovado, **sem expor banco/API privada**.
-5. **Assistente de marketing inicial:** rascunhos baseados em materiais
-   autorizados e revisão humana. Publicar é gate distinto, não automático.
+5. **Assistente de marketing inicial:** [WP-022 — rascunhos com Qwen local](operations/client0-marketing-drafts.md), baseados em fonte pública curada;
+   revisão factual e autorização humana continuam obrigatórias. **Publicar
+   é gate distinto**, não automático. Outros canais e imagens ficam para
+   avaliação posterior, sem antecipar a automação da F3.
 6. **O08 — preparo de cases/prova social:** coletar metodologia de medição
    antes/depois, evidências privadas e autorização específica de divulgação.
    **Não inventar depoimentos, métricas, clientes ou resultados.**
