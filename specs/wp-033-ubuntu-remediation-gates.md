@@ -75,10 +75,11 @@ identificado ou incerto, executar no terminal, com usuário atual e
 sem `sudo`:
 
 ```bash
+set -euo pipefail
 TARGET="$HOME/.local/share/business-automation"
-test ! -L "$TARGET" &&
-test -d "$TARGET" &&
-test "$(stat -c %u -- "$TARGET")" = "$(id -u)" &&
+test ! -L "$TARGET"
+test -d "$TARGET"
+test "$(stat -c %u -- "$TARGET")" = "$(id -u)"
 case "$(stat -c %a -- "$TARGET")" in
   775) chmod 0700 -- "$TARGET" ;;
   700) : ;;
