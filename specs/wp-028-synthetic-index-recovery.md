@@ -1,8 +1,8 @@
 # WP-028 — Client 0: ensaio isolado de recuperação do índice privado
 
-**Fase:** F2/O02, continuidade após WP-027.  
-**Base:** `main@32295ff387a0d790c1956e495976a5709265e089`.  
-**Branch:** `wp/028-synthetic-index-recovery`.  
+**Fase:** F2/O02, continuidade após WP-027.
+**Base:** `main@32295ff387a0d790c1956e495976a5709265e089`.
+**Branch:** `wp/028-synthetic-index-recovery`.
 **Executor:** GitHub-first + Actions; **não ligar DC nem Continue** se CI verde.
 
 ## Objetivo único
