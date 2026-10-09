@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "id": "synthetic-order-crm",
+      "title": "Demonstração técnica pública — pedido fictício → CRM simulado",
+      "url": "https://github.com/fenatodev/business-automation/tree/main/examples",
+      "classification": "public_synthetic",
+      "facts": [
+        {
+          "id": "demo_offline",
+          "text": "Há uma demonstração técnica reproduzível em Python que simula um pedido fictício sendo registrado em um CRM em memória, sem acesso a clientes ou sistemas externos."
+        },
+        {
+          "id": "demo_safety",
+          "text": "O código de demonstração inclui cenários de duplicação, conflito de identificadores, validação de entradas e tratamento de resultados incertos após timeouts."
+        },
+        {
+          "id": "demo_tests",
+          "text": "O repositório público contém testes automatizados do fluxo simulado e instruções para reproduzir o exemplo localmente."
+        },
+        {
+          "id": "demo_limit",
+          "text": "Essa demonstração é offline, usa somente dados fictícios e não comprova integração de produção, ganho financeiro ou resultado de cliente."
+        }
+      ]
+    }
+  ]
+}
