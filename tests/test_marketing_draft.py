@@ -56,7 +56,7 @@ def transport_that_replies(payload: dict | None = None, *, code: int = 200):
 
     def handler(request: httpx.Request) -> httpx.Response:
         calls.append(request)
-        return httpx.Response(code, json=payload or model_response())
+        return httpx.Response(code, json=model_response() if payload is None else payload)
 
     return httpx.MockTransport(handler), calls
 
