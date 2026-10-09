@@ -43,7 +43,26 @@ jobs:
         run: uv run pytest -q
 
       - name: Compile Python modules
-        run: .venv/bin/python -m compileall -q app tests examples marketing proof_social
+        run: .venv/bin/python -m compileall -q app tests examples marketing proof_social operations
+
+      - name: Synthetic F2 rehearsal is never a real approval
+        run: |
+          uv run python -m operations.rehearsal --run > rehearsal-result.json
+          uv run python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path("rehearsal-result.json").read_text())
+          assert data["kind"] == "synthetic_f2_operational_rehearsal"
+          assert data["simulation_result"] == "simulated_sequence_complete"
+          assert len(data["completed_simulated_gates"]) == 12
+          assert data["finance_projection"] == "simulated_settled"
+          assert len(data["known_live_gaps"]) >= 7
+          for flag in ("commercial_success", "f2_exit_met", "contact_authorized",
+                       "proposals_sent", "publication_authorized", "external_action_taken"):
+              assert data[flag] is False, flag
+          print("REHEARSAL_CONTRACT=PASS (external actions and F2 exit blocked)")
+          PY
+          rm -f rehearsal-result.json
 
       - name: Static-site JavaScript syntax
         run: node --check app/operator_ui/app.js
