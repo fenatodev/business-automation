@@ -5,8 +5,11 @@ do ERPNext. Uma camada autorizada deverá validar identidade, tenant, Customer
 e aprovação humana ANTES de invocar uma implementação remota futura.
 """
 
+import unicodedata
 from dataclasses import dataclass
 from typing import Literal, Protocol, runtime_checkable
+
+_VISIBILITY_BLOCKED_CATEGORIES = frozenset(("Cc", "Cf", "Zl", "Zp"))
 
 
 def _required_text(label: str, value: str, max_length: int) -> None:
@@ -15,7 +18,7 @@ def _required_text(label: str, value: str, max_length: int) -> None:
         or not value
         or value != value.strip()
         or len(value) > max_length
-        or any(ord(character) < 32 or ord(character) == 127 for character in value)
+        or any(unicodedata.category(character) in _VISIBILITY_BLOCKED_CATEGORIES for character in value)
     ):
         raise ValueError(f"{label} deve ser texto não vazio, sem controles, até {max_length} caracteres")
 

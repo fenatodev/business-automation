@@ -186,7 +186,13 @@ def test_unknown_one_tenant_does_not_block_other_tenant():
         {"connection_ref": " erp "},
         {"connection_ref": "erp\nother"},
         {"connection_ref": "x" * 121},
+        {"connection_ref": "erp\x85inst"},
+        {"connection_ref": "erp\u2028inst"},
+        {"connection_ref": "erp\u202Einst"},
     ],
+    ids=["company_id_zero", "company_id_bool", "customer_id_zero", "customer_id_neg",
+         "empty_ref", "whitespace_ref", "newline_ref", "too_long_ref",
+         "c1_nextline", "line_separator", "bidi_override"],
 )
 def test_key_rejects_invalid_identity(fields):
     base = {"company_id": 1, "connection_ref": "erpnext-instance-a", "customer_id": 10}
@@ -195,11 +201,46 @@ def test_key_rejects_invalid_identity(fields):
 
 
 @pytest.mark.parametrize(
-    "display_name", ["", "   ", " Name", "Bad\nName", "x" * 121]
+    "display_name", ["", "   ", " Name", "Bad\nName", "x" * 121, "Nom\x85e", "Nom\u2028e", "Nom\u202Ee"]
 )
 def test_payload_rejects_invalid_name(display_name):
     with pytest.raises(ValueError):
         make_request(display_name=display_name)
+
+
+@pytest.mark.parametrize(
+    "remote_id", ["", " \t ", "ID\x85A", "ID\u2028A", "ID\u202EA"]
+)
+def test_reference_rejects_invisible_remote_id(remote_id):
+    key = BusinessPartyKey(company_id=1, connection_ref="erpnext-instance-a", customer_id=10)
+    from app.services.business_party_port import BusinessPartyReference
+    with pytest.raises(ValueError):
+        BusinessPartyReference(key=key, remote_id=remote_id)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "São Paulo",
+        "Café com acento",
+        "Naïve résumé",
+        "Ça va très bien",
+        "Ação e operação",
+        "Müllerstraße",
+        "日本語テスト",
+        "Привет мир",
+        "مرحبا بالعالم",
+    ],
+    ids=["sao-paulo", "cafe-acento", "naive-resume", "ca-va", "acao-operacao",
+         "mullerstrasse", "japanese", "russian", "arabic"],
+)
+def test_accepts_legitimate_international_text(text):
+    key = BusinessPartyKey(company_id=1, connection_ref="erpnext-instance-a", customer_id=10)
+    request = BusinessPartyRequest(key=key, display_name=text)
+    assert request.display_name == text
+    from app.services.business_party_port import BusinessPartyReference
+    ref = BusinessPartyReference(key=key, remote_id=text)
+    assert ref.remote_id == text
 
 
 def test_fake_failure_programming_cannot_override_state():
