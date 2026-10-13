@@ -284,6 +284,58 @@ def test_arbitrary_large_private_file_is_rejected(tmp_path: Path) -> None:
         read_private_case(path, cases_root=root)
 
 
+def test_strict_date_format_rejects_iso_weekly() -> None:
+    """WP-037: ISO weekly dates like 2026-W39-4 must be rejected."""
+    case = complete_synthetic_structure()
+    case["metric"]["after"]["period_start"] = "2026-W39-4"
+    assert "measurement_period_invalid" in check(case)["blocking_codes"]
+
+
+def test_strict_date_format_accepts_valid_ymd() -> None:
+    """WP-037: Valid YYYY-MM-DD dates must still be accepted."""
+    case = complete_synthetic_structure()
+    case["metric"]["after"]["period_start"] = "2026-09-14"
+    case["metric"]["after"]["period_end"] = "2026-09-20"
+    codes = check(case)["blocking_codes"]
+    assert "measurement_period_invalid" not in codes
+
+
+def test_strict_date_format_rejects_impossible_date() -> None:
+    """WP-037: Calendar-impossible dates must be rejected."""
+    case = complete_synthetic_structure()
+    case["metric"]["after"]["period_start"] = "2026-02-30"
+    assert "measurement_period_invalid" in check(case)["blocking_codes"]
+
+
+def test_measurement_period_blocks_on_invalid_format() -> None:
+    """WP-037: Invalid date format in measurement period must block."""
+    case = complete_synthetic_structure()
+    case["metric"]["before"]["period_start"] = "2026-W39-4"
+    case["metric"]["before"]["period_end"] = "2026-W39-5"
+    codes = check(case)["blocking_codes"]
+    assert "measurement_period_invalid" in codes
+
+
+def test_consent_blocks_on_invalid_date_format() -> None:
+    """WP-037: Invalid date format in consent must block."""
+    case = complete_synthetic_structure()
+    case["consents"][0]["granted_at"] = "2026-W39-4"
+    assert "consent_missing_or_expired:metrics" in check(case)["blocking_codes"]
+
+
+def test_valid_record_still_requires_human_review() -> None:
+    """WP-037: Even a fully valid record must require human review."""
+    result = check(complete_synthetic_structure())
+    assert result["status"] == "human_review_required"
+    assert result["publication_authorized"] is False
+
+
+def test_no_result_authorizes_publication() -> None:
+    """WP-037: No checklist result may ever authorize publication."""
+    result = check(complete_synthetic_structure())
+    assert result["publication_authorized"] is False
+
+
 def test_template_cli_returns_blocked_sanitized_without_network() -> None:
     run = subprocess.run(
         [sys.executable, "-m", "proof_social.checklist", "--template-check"],

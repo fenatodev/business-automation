@@ -38,6 +38,8 @@ def _reference(value: Any) -> bool:
 def _day(value: Any) -> date | None:
     if not isinstance(value, str) or len(value) != 10:
         return None
+    if not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", value):
+        return None
     try:
         return date.fromisoformat(value)
     except ValueError:
