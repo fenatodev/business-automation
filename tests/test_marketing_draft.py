@@ -349,3 +349,38 @@ def test_approved_url_with_path_suffix_is_rejected(suffix: str) -> None:
     )
     with pytest.raises(DraftError, match="url_nao_aprovada_no_rascunho"):
         _validate_marketing_post(post)
+
+
+def test_duplicate_post_key_is_rejected() -> None:
+    """JSON com duas chaves 'post' no mesmo objeto deve ser rejeitado no parser."""
+    duplicate_json = (
+        '{"post": "Conteúdo inválido que deveria ser ignorado. '
+        'Demonstração offline em Python com dados fictícios. ", '
+        '"post": "Demonstração offline em Python com dados fictícios. '
+        "Veja " + SRC_URL + '", "used_fact_ids": ["demo_offline", "demo_limit"]}'
+    )
+    with pytest.raises(DraftError):
+        _validate_model_content(duplicate_json, load_source("synthetic-order-crm"))
+
+
+def test_duplicate_used_fact_ids_key_is_rejected() -> None:
+    """JSON com duas chaves 'used_fact_ids' deve ser rejeitado no parser."""
+    duplicate_json = (
+        '{"post": "Demonstração offline em Python com dados fictícios. '
+        "Veja " + SRC_URL + '", '
+        '"used_fact_ids": ["fake_id"], '
+        '"used_fact_ids": ["demo_offline", "demo_limit"]}'
+    )
+    with pytest.raises(DraftError):
+        _validate_model_content(duplicate_json, load_source("synthetic-order-crm"))
+
+
+def test_valid_unique_keys_still_passes() -> None:
+    """JSON válido com chaves únicas deve continuar sendo aceito."""
+    valid_json = json.dumps(
+        {"post": POST, "used_fact_ids": IDS},
+        ensure_ascii=False,
+    )
+    post, ids = _validate_model_content(valid_json, load_source("synthetic-order-crm"))
+    assert post == POST
+    assert ids == IDS
