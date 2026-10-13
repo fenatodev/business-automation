@@ -144,7 +144,7 @@ def _validate_model_content(content: object, source: dict) -> tuple[str, list[st
     known = {f["id"] for f in source["facts"]}
     if (
         not isinstance(post, str)
-        or not 50 <= len(post.strip()) <= 1200
+        or not 50 <= len(post.strip()) <= 900
         or not isinstance(used, list)
         or not used
         or any(not isinstance(item, str) for item in used)
@@ -183,9 +183,12 @@ def _validate_model_content(content: object, source: dict) -> tuple[str, list[st
         flags=re.IGNORECASE,
     ):
         raise DraftError("alegacao_comercial_nao_suportada")
-    for url in re.findall(r"https?://[^\s<>\"']+", post):
-        if url.rstrip(".,;:)") != source["url"]:
-            raise DraftError("url_nao_aprovada_no_rascunho")
+    found_urls = {
+        url.rstrip(".,;:)")
+        for url in re.findall(r"https?://[^\s<>\"']+", post, flags=re.IGNORECASE)
+    }
+    if found_urls != {source["url"]}:
+        raise DraftError("url_nao_aprovada_no_rascunho")
     return post, used
 
 

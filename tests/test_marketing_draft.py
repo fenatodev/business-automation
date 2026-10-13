@@ -269,3 +269,83 @@ def test_generate_flag_required_for_private_write() -> None:
     )
     assert run.returncode == 2
     assert "--save-private exige --generate" in run.stderr
+
+
+SRC_URL = load_source("synthetic-order-crm")["url"]
+URL_ID = "demo_offline"
+
+
+def _valid_post_of_length(length: int) -> str:
+    prefix = "Demonstração offline em Python com dados fictícios. "
+    padding = length - len(prefix) - 1 - len(SRC_URL)
+    assert padding >= 0
+    return prefix + ("x" * padding) + " " + SRC_URL
+
+
+def _validate_marketing_post(post: str) -> tuple[str, list[str]]:
+    response = json.dumps(
+        {"post": post, "used_fact_ids": [URL_ID, "demo_limit"]},
+        ensure_ascii=False,
+    )
+    return _validate_model_content(response, load_source("synthetic-order-crm"))
+
+
+def test_post_at_900_characters_is_accepted() -> None:
+    post = _valid_post_of_length(900)
+    assert len(post) == 900
+    validated, _ = _validate_marketing_post("  " + post + "\n")
+    assert validated == post
+
+
+def test_post_at_901_characters_is_rejected() -> None:
+    post = _valid_post_of_length(901)
+    assert len(post) == 901
+    with pytest.raises(DraftError, match="rascunho_ou_evidencias_invalidos"):
+        _validate_marketing_post(post)
+
+
+def test_missing_url_is_rejected() -> None:
+    post = "Demonstração offline em Python com dados fictícios. " + ("A" * 90)
+    with pytest.raises(DraftError, match="url_nao_aprovada_no_rascunho"):
+        _validate_marketing_post(post)
+
+
+def test_exact_url_is_accepted() -> None:
+    post = "Demonstração offline em Python com dados fictícios. Veja " + SRC_URL
+    validated, _ = _validate_marketing_post(post)
+    assert validated == post
+
+
+def test_similar_url_is_rejected() -> None:
+    post = (
+        "Demonstração offline em Python com dados fictícios. Veja "
+        "https://github.com/fenatodev/business-automation/wrong"
+    )
+    with pytest.raises(DraftError, match="url_nao_aprovada_no_rascunho"):
+        _validate_marketing_post(post)
+
+
+@pytest.mark.parametrize(
+    "other_url",
+    ["https://example.invalid/outro", "HTTPS://example.invalid/outro"],
+)
+def test_approved_url_plus_other_url_is_rejected(other_url: str) -> None:
+    post = (
+        "Demonstração offline em Python com dados fictícios. Veja "
+        + SRC_URL
+        + " e "
+        + other_url
+    )
+    with pytest.raises(DraftError, match="url_nao_aprovada_no_rascunho"):
+        _validate_marketing_post(post)
+
+
+@pytest.mark.parametrize("suffix", ["/src/main.py", "?redirect=evil", "#fragment"])
+def test_approved_url_with_path_suffix_is_rejected(suffix: str) -> None:
+    post = (
+        "Demonstração offline em Python com dados fictícios. Veja "
+        + SRC_URL
+        + suffix
+    )
+    with pytest.raises(DraftError, match="url_nao_aprovada_no_rascunho"):
+        _validate_marketing_post(post)
