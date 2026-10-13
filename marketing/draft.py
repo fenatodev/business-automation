@@ -129,11 +129,21 @@ def build_messages(source: dict) -> list[dict[str, str]]:
     ]
 
 
+def _reject_duplicate_keys(pairs: list[tuple[str, object]]) -> dict:
+    """Convert key-value pairs to dict, rejecting duplicate keys."""
+    seen: set[str] = set()
+    for key, value in pairs:
+        if key in seen:
+            raise ValueError(f"Duplicate JSON key: {key}")
+        seen.add(key)
+    return dict(pairs)
+
+
 def _validate_model_content(content: object, source: dict) -> tuple[str, list[str]]:
     if not isinstance(content, str) or len(content) > 16_000:
         raise DraftError("resposta_modelo_invalida")
     try:
-        parsed = json.loads(content)
+        parsed = json.loads(content, object_pairs_hook=_reject_duplicate_keys)
     except (ValueError, TypeError) as exc:
         raise DraftError("resposta_modelo_nao_json") from exc
     if not isinstance(parsed, dict) or set(parsed) != {"post", "used_fact_ids"}:
