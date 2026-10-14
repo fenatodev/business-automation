@@ -15,19 +15,10 @@ concurrency:
 jobs:
   try-once:
     # Disabled by default, and requires explicit action from the account owner.
-    if: ${{ vars.OCI_A1_ENABLED == 'true' }}
+    if: ${{ github.ref == 'refs/heads/main' && vars.OCI_A1_ENABLED == 'true' }}
+    environment: oci-a1-provisioning
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    env:
-      OCI_A1_TENANCY_OCID: ${{ secrets.OCI_A1_TENANCY_OCID }}
-      OCI_A1_USER_OCID: ${{ secrets.OCI_A1_USER_OCID }}
-      OCI_A1_API_FINGERPRINT: ${{ secrets.OCI_A1_API_FINGERPRINT }}
-      OCI_A1_API_PRIVATE_KEY: ${{ secrets.OCI_A1_API_PRIVATE_KEY }}
-      OCI_A1_COMPARTMENT_OCID: ${{ secrets.OCI_A1_COMPARTMENT_OCID }}
-      OCI_A1_AVAILABILITY_DOMAIN: ${{ secrets.OCI_A1_AVAILABILITY_DOMAIN }}
-      OCI_A1_SUBNET_OCID: ${{ secrets.OCI_A1_SUBNET_OCID }}
-      OCI_A1_IMAGE_OCID: ${{ secrets.OCI_A1_IMAGE_OCID }}
-      OCI_A1_SSH_PUBLIC_KEY: ${{ secrets.OCI_A1_SSH_PUBLIC_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -36,6 +27,16 @@ jobs:
       - name: Install Oracle official CLI
         run: python -m pip install --disable-pip-version-check 'oci-cli==3.95.0'
       - name: Prepare short-lived OCI config
+        env:
+        OCI_A1_TENANCY_OCID: ${{ secrets.OCI_A1_TENANCY_OCID }}
+        OCI_A1_USER_OCID: ${{ secrets.OCI_A1_USER_OCID }}
+        OCI_A1_API_FINGERPRINT: ${{ secrets.OCI_A1_API_FINGERPRINT }}
+        OCI_A1_API_PRIVATE_KEY: ${{ secrets.OCI_A1_API_PRIVATE_KEY }}
+        OCI_A1_COMPARTMENT_OCID: ${{ secrets.OCI_A1_COMPARTMENT_OCID }}
+        OCI_A1_AVAILABILITY_DOMAIN: ${{ secrets.OCI_A1_AVAILABILITY_DOMAIN }}
+        OCI_A1_SUBNET_OCID: ${{ secrets.OCI_A1_SUBNET_OCID }}
+        OCI_A1_IMAGE_OCID: ${{ secrets.OCI_A1_IMAGE_OCID }}
+        OCI_A1_SSH_PUBLIC_KEY: ${{ secrets.OCI_A1_SSH_PUBLIC_KEY }}
         shell: bash
         run: |
           umask 077
