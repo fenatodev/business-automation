@@ -74,6 +74,9 @@ def synthetic_sdk(*, a1_in_root=False, occupied_gb=0, deny_root=False):
         @staticmethod
         def CreateVnicDetails(**kwargs):
             return NS(**kwargs)
+        @staticmethod
+        def InstanceOptions(**kwargs):
+            return NS(**kwargs)
 
     sdk = NS(
         identity=NS(IdentityClient=lambda config: Identity()),
@@ -134,6 +137,7 @@ def test_launch_details_exact_fixed_free_tier_shape():
     assert details.create_vnic_details.subnet_id == VERIFIED["subnet_id"]
     assert details.create_vnic_details.assign_public_ip is True
     assert details.metadata == {"ssh_authorized_keys": PUB}
+    assert details.instance_options.are_legacy_imds_endpoints_disabled is True
     assert details.compartment_id == VERIFIED["compartment_id"]
 
 
