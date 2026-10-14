@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   try-once:
-    # Disabled by default, and requires explicit action from the account owner.
-    if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || vars.OCI_A1_ENABLED == 'true') }}
+    # Hourly launches disabled by default; manual dispatch is read-only.
+    if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && vars.OCI_A1_ENABLED == 'true')) }}
     environment: oci-a1-provisioning
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -102,13 +102,14 @@ jobs:
               raise SystemExit("OCI_API_KEY_FINGERPRINT_MISMATCH")
           print("OCI_API_SIGNING_CONFIG_VALID")
           PY
-      - name: Read-only inspection OR bounded launch
+      - name: Read-only tenancy audit OR one quota-guarded A1 attempt
         env:
           OCI_A1_TENANCY_OCID: ${{ secrets.OCI_A1_TENANCY_OCID }}
+          OCI_A1_ENABLED: ${{ vars.OCI_A1_ENABLED }}
+        shell: bash
         run: |
-          export OCI_A1_SSH_PUBLIC_KEY_PATH="$HOME/.oci/public_ssh.pub"
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            python ops/oracle/oci_sdk_probe.py
+            python ops/oracle/oci_sdk_launch.py
           else
-            python ops/oracle/a1_once.py --apply
+            python ops/oracle/oci_sdk_launch.py --apply
           fi
