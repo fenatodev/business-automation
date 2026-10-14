@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator
 
 
 class LeadCreate(BaseModel):
@@ -125,3 +125,13 @@ class CommercialIntakeEvaluateRequest(BaseModel):
     channel: str = Field(min_length=1, max_length=30)
     message: str = Field(min_length=1, max_length=4000)
     event_id: str = Field(min_length=1, max_length=100)
+
+    @field_validator("channel", "message", "event_id")
+    @classmethod
+    def nonempty_printable(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("commercial intake field cannot be blank")
+        if any(ord(char) < 32 or ord(char) == 127 for char in value):
+            raise ValueError("commercial intake field contains control characters")
+        return value
