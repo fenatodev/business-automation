@@ -3,7 +3,7 @@ name: OCI A1 Always Free capacity attempt
 on:
   schedule:
     - cron: '33 * * * *' # hourly UTC; GitHub may delay jobs
-  workflow_dispatch:
+  workflow_dispatch: # manual invocations are READ-ONLY inspection
 
 permissions:
   contents: read
@@ -15,7 +15,7 @@ concurrency:
 jobs:
   try-once:
     # Disabled by default, and requires explicit action from the account owner.
-    if: ${{ github.ref == 'refs/heads/main' && vars.OCI_A1_ENABLED == 'true' }}
+    if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || vars.OCI_A1_ENABLED == 'true') }}
     environment: oci-a1-provisioning
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -32,10 +32,6 @@ jobs:
           OCI_A1_USER_OCID: ${{ secrets.OCI_A1_USER_OCID }}
           OCI_A1_API_FINGERPRINT: ${{ secrets.OCI_A1_API_FINGERPRINT }}
           OCI_A1_API_PRIVATE_KEY: ${{ secrets.OCI_A1_API_PRIVATE_KEY }}
-          OCI_A1_COMPARTMENT_OCID: ${{ secrets.OCI_A1_COMPARTMENT_OCID }}
-          OCI_A1_AVAILABILITY_DOMAIN: ${{ secrets.OCI_A1_AVAILABILITY_DOMAIN }}
-          OCI_A1_SUBNET_OCID: ${{ secrets.OCI_A1_SUBNET_OCID }}
-          OCI_A1_IMAGE_OCID: ${{ secrets.OCI_A1_IMAGE_OCID }}
           OCI_A1_SSH_PUBLIC_KEY: ${{ secrets.OCI_A1_SSH_PUBLIC_KEY }}
         shell: bash
         run: |
@@ -45,9 +41,7 @@ jobs:
           from pathlib import Path
 
           required = ('OCI_A1_TENANCY_OCID', 'OCI_A1_USER_OCID', 'OCI_A1_API_FINGERPRINT',
-                      'OCI_A1_API_PRIVATE_KEY', 'OCI_A1_COMPARTMENT_OCID',
-                      'OCI_A1_AVAILABILITY_DOMAIN', 'OCI_A1_SUBNET_OCID',
-                      'OCI_A1_IMAGE_OCID', 'OCI_A1_SSH_PUBLIC_KEY')
+                      'OCI_A1_API_PRIVATE_KEY', 'OCI_A1_SSH_PUBLIC_KEY')
           missing = [name for name in required if not os.environ.get(name)]
           if missing:
               raise SystemExit('Missing required OCI GitHub secrets: ' + ', '.join(missing))
@@ -69,12 +63,13 @@ jobs:
           for path in (directory / 'api.pem', directory / 'public_ssh.pub', directory / 'config'):
               path.chmod(0o600)
           PY
-      - name: One bounded A1 launch attempt
+      - name: Read-only inspection OR bounded launch
         env:
-          OCI_A1_COMPARTMENT_OCID: ${{ secrets.OCI_A1_COMPARTMENT_OCID }}
-          OCI_A1_AVAILABILITY_DOMAIN: ${{ secrets.OCI_A1_AVAILABILITY_DOMAIN }}
-          OCI_A1_SUBNET_OCID: ${{ secrets.OCI_A1_SUBNET_OCID }}
-          OCI_A1_IMAGE_OCID: ${{ secrets.OCI_A1_IMAGE_OCID }}
+          OCI_A1_TENANCY_OCID: ${{ secrets.OCI_A1_TENANCY_OCID }}
         run: |
           export OCI_A1_SSH_PUBLIC_KEY_PATH="$HOME/.oci/public_ssh.pub"
-          python ops/oracle/a1_once.py --apply
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            python ops/oracle/a1_once.py --inspect
+          else
+            python ops/oracle/a1_once.py --apply
+          fi
