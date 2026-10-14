@@ -1,4 +1,5 @@
 import json
+import uuid
 from pathlib import Path
 
 
@@ -19,6 +20,14 @@ def test_workflow_is_inactive_and_import_only():
     workflow = _load()
     assert workflow["active"] is False
     assert workflow["name"].endswith("(INACTIVE)")
+
+
+def test_workflow_has_required_top_level_uuid_id():
+    workflow = _load()
+    workflow_id = workflow["id"]
+    parsed = uuid.UUID(workflow_id)
+    assert str(parsed) == workflow_id
+    assert parsed.version == 4
 
 
 def test_workflow_uses_only_expected_nodes():
