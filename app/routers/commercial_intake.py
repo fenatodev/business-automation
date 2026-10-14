@@ -5,19 +5,17 @@ internal-only endpoint.  It does NOT persist data, send messages, call n8n,
 or publish any webhook.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 
 from app.dependencies import get_intake_generator, require_operator
 from app.database import settings
 from app.schemas import CommercialIntakeEvaluateRequest
 from app.services.commercial_intake import (
-    CandidateReply,
     CommercialIntakeEvent,
     IntakeDecision,
 )
 from app.services.intake_candidate_generator import (
     CandidateGenerator,
-    CandidateGenerationError,
     evaluate_intake,
 )
 
@@ -48,39 +46,4 @@ def evaluate_commercial_intake(
         event_id=request.event_id,
     )
 
-    try:
-        decision = evaluate_intake(event, generator)
-    except CandidateGenerationError:
-        # evaluate_intake already handles this, but guard against any leak
-        decision = IntakeDecision(
-            event_id=request.event_id,
-            intent="unknown",
-            next_step="ask_clarification",
-            draft_reply=(
-                "No momento não conseguimos processar sua mensagem "
-                "automaticamente. Um especialista irá analisar e retornar "
-                "em breve."
-            ),
-            needs_human_review=True,
-            can_send=False,
-            flags=["provider_unavailable"],
-            simulation_only=True,
-        )
-    except Exception:
-        # Catch-all for unexpected errors — never leak internals
-        decision = IntakeDecision(
-            event_id=request.event_id,
-            intent="unknown",
-            next_step="ask_clarification",
-            draft_reply=(
-                "No momento não conseguimos processar sua mensagem "
-                "automaticamente. Um especialista irá analisar e retornar "
-                "em breve."
-            ),
-            needs_human_review=True,
-            can_send=False,
-            flags=["internal_error"],
-            simulation_only=True,
-        )
-
-    return decision
+    return evaluate_intake(event, generator)
