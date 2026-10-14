@@ -59,6 +59,8 @@ class CandidateReply(BaseModel):
 class IntakeDecision(BaseModel):
     """Structured, validated decision returned by the intake engine."""
 
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
     event_id: str
     intent: str = Field(default="unknown")
     next_step: str = Field(default="none")
