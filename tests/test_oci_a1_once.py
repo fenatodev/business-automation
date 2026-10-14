@@ -194,7 +194,7 @@ def test_discovery_iam_failure_stops(cfg, monkeypatch):
     monkeypatch.setattr(MODULE, "run_cli", lambda _: (1, "", "AuthorizationFailed"))
     env = {"OCI_A1_TENANCY_OCID": "ocid1.tenancy.oc1..fake",
            "OCI_A1_SSH_PUBLIC_KEY_PATH": cfg["OCI_A1_SSH_PUBLIC_KEY_PATH"]}
-    with pytest.raises(MODULE.PreflightError, match="IAM policy"):
+    with pytest.raises(MODULE.PreflightError, match="IAM_NOT_AUTHORIZED"):
         MODULE.discover_config(env)
 
 
