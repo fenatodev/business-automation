@@ -1,7 +1,7 @@
 # WP-035 — Núcleo de triagem comercial autônoma (ensaio offline)
 
-**Status:** ficha pronta para execução pelo **Junie**, sem implementação neste PR.  
-**Referência:** `fenatodev/business-automation` em `main` após integração desta ficha.  
+**Status:** ficha pronta para execução pelo **Junie**, sem implementação neste PR.
+**Referência:** `fenatodev/business-automation` em `main` após integração desta ficha.
 **Missão:** entregar um primeiro **fluxo executável** de entrada comercial
 (`mensagem sintética → sugestão da IA simulada → validação de política →
 decisão estruturada`). Serve como núcleo testável da futura automação com
