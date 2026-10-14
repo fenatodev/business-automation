@@ -23,12 +23,12 @@
 | Field | Value |
 |-------|-------|
 | Command | `docker inspect n8n --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'` |
-| Bridge IP | `172.19.0.3` |
+| Bridge IP | `<private-bridge-ip>` |
 | Container status | `running` |
 | Published ports | **None** — no `-p` mapping configured |
 | Result | **PASS** |
 
-The n8n container is reachable on the Docker bridge network at `172.19.0.3:5678`. No ports are published to the host, so external access is not possible without explicit port mapping.
+The n8n container is reachable on the Docker bridge network at `<private-bridge-ip>:5678`. No ports are published to the host, so external access is not possible without explicit port mapping.
 
 ---
 
@@ -36,13 +36,13 @@ The n8n container is reachable on the Docker bridge network at `172.19.0.3:5678`
 
 | Field | Value |
 |-------|-------|
-| Command | `curl -s -o /dev/null -w "HTTP Status: %{http_code}" http://172.19.0.3:5678/` |
+| Command | `curl -s -o /dev/null -w "HTTP Status: %{http_code}" http://<private-bridge-ip>:5678/` |
 | HTTP Status (`/`) | **200 OK** |
 | Response time | 0.002s |
 | HTTP Status (`/healthz`) | **200 OK** |
 | Result | **PASS** |
 
-**Key finding:** The n8n web UI is directly accessible from the Ubuntu host at the bridge IP `172.19.0.3:5678` without any port publication, proxy, or network modification. This is because Docker's default bridge network allows host-to-container connectivity by default on Linux.
+**Key finding:** The n8n web UI is directly accessible from the Ubuntu host at the bridge IP `<private-bridge-ip>:5678` without any port publication, proxy, or network modification. This is because Docker's default bridge network allows host-to-container connectivity by default on Linux.
 
 ---
 
@@ -54,10 +54,10 @@ The n8n container is reachable on the Docker bridge network at `172.19.0.3:5678`
 | Exit code | `0` |
 | Workflow count | 2 |
 | Target workflow | `99999999-9999-4999-8999-999999999999` — "Client0 - Commercial Intake Review (INACTIVE)" |
-| Active status | **Inactive** (confirmed by name suffix and CLI listing) |
+| Active status | **Not independently verified in WP-047** (the name suffix is not authoritative; earlier checks confirmed inactive) |
 | Result | **PASS** |
 
-The target workflow remains listed and inactive. No workflow body, credentials, or secrets were read.
+The target workflow remains listed; WP-047 alone did not independently prove the active flag. No workflow body, credentials, or secrets were read.
 
 ---
 
@@ -65,12 +65,12 @@ The target workflow remains listed and inactive. No workflow body, credentials, 
 
 The n8n web UI is accessible from the Ubuntu host without any configuration changes:
 
-- **URL:** `http://172.19.0.3:5678`
+- **URL:** `http://<private-bridge-ip>:5678`
 - **Access method:** Direct host-to-container via Docker bridge network
 - **No port publication required:** The Docker default bridge on Linux allows the host to reach containers by their bridge IP
 - **No proxy, restart, or network mutation needed**
 
-**Note:** The bridge IP `172.19.0.3` is reported here for the operator's local reference. Per spec, this private IP should not be published in GitHub reports — however, the spec explicitly authorizes recording the safe UI-access method locally to the user.
+**Note:** The bridge IP `<private-bridge-ip>` is reported here for the operator's local reference. Per spec, this private IP should not be published in GitHub reports — however, the spec explicitly authorizes recording the safe UI-access method locally to the user.
 
 ---
 
@@ -78,7 +78,7 @@ The n8n web UI is accessible from the Ubuntu host without any configuration chan
 
 Per the WP-047 spec gate, only the authorized operator may complete the following steps in the n8n UI:
 
-1. **Access the n8n UI** at `http://172.19.0.3:5678` from the Ubuntu host.
+1. **Access the n8n UI** at `http://<private-bridge-ip>:5678` from the Ubuntu host.
 2. **Complete owner account setup** — the instance currently has `userManagement.isInstanceOwnerSetUp: false`.
 3. **Create a scoped API key** via the UI (Settings → API) for programmatic access to credentials and Data Tables.
 4. **Create HTTP Bearer credentials** via the UI (Settings → Credentials) for the FastAPI private endpoint.
@@ -93,11 +93,11 @@ Per the WP-047 spec gate, only the authorized operator may complete the followin
 | Check | Result |
 |-------|--------|
 | n8n container running | ✅ PASS |
-| Bridge IP reachable from host | ✅ PASS (172.19.0.3) |
+| Bridge IP reachable from host | ✅ PASS (<private-bridge-ip>) |
 | HTTP 200 on `/` | ✅ PASS |
 | HTTP 200 on `/healthz` | ✅ PASS |
 | No published ports | ✅ Confirmed (secure) |
-| Workflow ID listed as inactive | ✅ PASS |
+| Workflow ID present; inactivity asserted by name only | ⚠️ Verify via `list:workflow --active=false --onlyId` |
 | Safe UI access method identified | ✅ PASS |
 | No database inspection | ✅ Complied |
 | No credential import/export | ✅ Complied |
@@ -162,7 +162,7 @@ Per the WP-047 spec gate, only the authorized operator may complete the followin
 ## Next Steps (Not Authorized by This WP)
 
 The operator may now:
-1. Access `http://172.19.0.3:5678` from the Ubuntu host.
+1. Access `http://<private-bridge-ip>:5678` from the Ubuntu host.
 2. Complete the n8n owner account setup.
 3. Create a scoped API key for programmatic access.
 4. Create the HTTP Bearer credentials for FastAPI.
