@@ -114,17 +114,20 @@ def get_intake_generator() -> TypingGenerator[CandidateGenerator, None, None]:
         if mode == "static":
             yield StaticCandidateGenerator()
         elif mode == "ollama":
-            if not _is_loopback_url(settings.ollama_url):
+            try:
+                if not _is_loopback_url(settings.ollama_url):
+                    raise ValueError("unsafe local model endpoint")
+                client = httpx.Client(follow_redirects=False)
+                generator = OllamaCandidateGenerator(
+                    client=client,
+                    model=settings.ollama_model,
+                    base_url=settings.ollama_url,
+                )
+            except (ValueError, TypeError):
                 raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail="Service unavailable",
-                )
-            client = httpx.Client(follow_redirects=False)
-            generator = OllamaCandidateGenerator(
-                client=client,
-                model=settings.ollama_model,
-                base_url=settings.ollama_url,
-            )
+                ) from None
             yield generator
         else:
             raise HTTPException(
