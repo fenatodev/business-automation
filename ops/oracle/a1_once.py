@@ -127,14 +127,104 @@ def execute(config: dict[str, str], *, apply: bool) -> str:
     return "CREATED: one A1 instance provisioned; verify in OCI Console and disable the workflow."
 
 
+def _list_data(command: list[str], label: str) -> list[dict]:
+    """Read OCI metadata, without leaking identities, credentials or API responses."""
+    status, stdout, _stderr = run_cli(command + ["--output", "json", "--no-retry"])
+    if status != 0:
+        raise PreflightError(f"Cannot discover {label}; check OCI IAM policy and service availability")
+    try:
+        items = json.loads(stdout)["data"]
+        if not isinstance(items, list) or not all(isinstance(item, dict) for item in items):
+            raise ValueError("expected list of objects")
+    except (KeyError, ValueError, TypeError) as exc:
+        raise PreflightError(f"Invalid response discovering {label}") from exc
+    return items
+
+
+def _unique(items: list[dict], key: str, value: str, label: str) -> dict:
+    matches = [item for item in items if item.get(key) == value
+               and item.get("lifecycle-state", "ACTIVE") not in ("DELETED", "TERMINATED")]
+    if len(matches) != 1:
+        raise PreflightError(f"Expected exactly one {label}; found {len(matches)}")
+    return matches[0]
+
+
+def discover_config(environ: dict[str, str]) -> dict[str, str]:
+    """Resolve OCIDs by exact resource names, read-only; fail on ambiguity."""
+    tenancy = required("OCI_A1_TENANCY_OCID", environ)
+    if not tenancy.startswith("ocid1.tenancy."):
+        raise PreflightError("Invalid tenancy OCID")
+
+    compartments = _list_data(cmd_base() + [
+        "iam", "compartment", "list", "--compartment-id", tenancy,
+        "--access-level", "ACCESSIBLE", "--all",
+    ], "project compartment")
+    compartment = _unique(compartments, "name", "business-automation", "project compartment")
+    compartment_id = compartment.get("id", "")
+    if not compartment_id.startswith("ocid1.compartment."):
+        raise PreflightError("Invalid discovered project compartment")
+    if compartment.get("compartment-id") != tenancy:
+        raise PreflightError("Project compartment is not a direct child of tenancy")
+
+    ads = _list_data(cmd_base() + [
+        "iam", "availability-domain", "list", "--compartment-id", tenancy,
+    ], "availability domain")
+    if len(ads) != 1 or not ads[0].get("name"):
+        raise PreflightError("Expected exactly one availability domain in Sao Paulo")
+    ad = ads[0]["name"]
+
+    subnets = _list_data(cmd_base() + [
+        "network", "subnet", "list", "--compartment-id", tenancy, "--all",
+    ], "public subnet")
+    subnet = _unique(subnets, "display-name", "public subnet-business-automation-vcn", "public subnet")
+    subnet_id = subnet.get("id", "")
+    if not subnet_id.startswith("ocid1.subnet.") or subnet.get("prohibit-public-ip-on-vnic") is not False:
+        raise PreflightError("Expected a verified public subnet; refusing private subnet")
+    if subnet.get("cidr-block") != "10.0.0.0/24":
+        raise PreflightError("Unexpected public subnet CIDR")
+
+    images = _list_data(cmd_base() + [
+        "compute", "image", "list", "--compartment-id", compartment_id,
+        "--operating-system", "Canonical Ubuntu", "--operating-system-version", "24.04",
+        "--shape", SHAPE, "--lifecycle-state", "AVAILABLE", "--all",
+    ], "Ubuntu 24.04 ARM image")
+    candidates = [i for i in images if i.get("id", "").startswith("ocid1.image.")
+                  and i.get("operating-system") == "Canonical Ubuntu"
+                  and i.get("operating-system-version") == "24.04"
+                  and "aarch64" in (i.get("display-name") or "").lower()]
+    if not candidates:
+        raise PreflightError("No verified Ubuntu 24.04 AArch64 platform image")
+    image_id = max(candidates, key=lambda i: i.get("time-created", ""))["id"]
+
+    resolved = dict(environ)
+    resolved.update({
+        "OCI_A1_COMPARTMENT_OCID": compartment_id,
+        "OCI_A1_AVAILABILITY_DOMAIN": ad,
+        "OCI_A1_SUBNET_OCID": subnet_id,
+        "OCI_A1_IMAGE_OCID": image_id,
+    })
+    return parse_config(resolved)
+
+
 def main(argv: list[str] | None = None, environ: dict[str, str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--apply", action="store_true", help="Launch at most one Always Free-sized VM")
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("--apply", action="store_true", help="Discover resources, then launch at most one VM")
+    modes.add_argument("--inspect", action="store_true", help="Read-only discovery and duplicate check")
     args = parser.parse_args(argv)
     environ = dict(os.environ if environ is None else environ)
     try:
-        config = parse_config(environ)
-        print(execute(config, apply=args.apply))
+        if not args.apply and not args.inspect:
+            print(f"DRY RUN: {SHAPE}, {OCPUS} OCPUs, {MEMORY_GB} GB RAM, "
+                  f"{BOOT_GB} GB disk in {REGION}; no API call.")
+            return 0
+        config = discover_config(environ)
+        if args.inspect:
+            check_existing(config)
+            print("INSPECT_OK: exact project compartment, public subnet and Ubuntu ARM64 image; "
+                  "no existing A1 in project compartment. No VM created.")
+        else:
+            print(execute(config, apply=True))
         return 0
     except PreflightError as exc:
         print(f"BLOCKED: {exc}", file=sys.stderr)
