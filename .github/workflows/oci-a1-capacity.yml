@@ -70,6 +70,11 @@ jobs:
               path.chmod(0o600)
           PY
       - name: One bounded A1 launch attempt
+        env:
+          OCI_A1_COMPARTMENT_OCID: ${{ secrets.OCI_A1_COMPARTMENT_OCID }}
+          OCI_A1_AVAILABILITY_DOMAIN: ${{ secrets.OCI_A1_AVAILABILITY_DOMAIN }}
+          OCI_A1_SUBNET_OCID: ${{ secrets.OCI_A1_SUBNET_OCID }}
+          OCI_A1_IMAGE_OCID: ${{ secrets.OCI_A1_IMAGE_OCID }}
         run: |
           export OCI_A1_SSH_PUBLIC_KEY_PATH="$HOME/.oci/public_ssh.pub"
           python ops/oracle/a1_once.py --apply
