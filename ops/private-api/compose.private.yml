@@ -1,0 +1,29 @@
+# Opt-in only. DO NOT start without separate approval.
+services:
+  ba-private-api:
+    build:
+      context: ../..
+      dockerfile: ops/private-api/Dockerfile
+    env_file:
+      - ${BA_PRIVATE_ENV_FILE:?BA_PRIVATE_ENV_FILE must point to a local-only secret env file}
+    environment:
+      BA_INTAKE_GENERATOR: static
+    networks:
+      n8n_private:
+        aliases:
+          - ba-intake-private
+    expose:
+      - "8000"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    user: "10001:10001"
+    restart: "no"
+networks:
+  n8n_private:
+    external: true
+    name: n8n_default
