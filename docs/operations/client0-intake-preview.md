@@ -63,7 +63,7 @@ O candidato de resposta (`CandidateReply`) é injetado via parâmetro — **não
 | `event_id` | `str` | Mesmo `event_id` da entrada. |
 | `intent` | `str` | Classificação grosseira: `automation_inquiry`, `web_inquiry`, `marketing_inquiry`, `pricing_inquiry`, `general_inquiry`. |
 | `next_step` | `str` | Ação sugerida: `ask_clarification`, `escalate_to_human`, `none`. |
-| `draft_reply` | `str` | Rascunho de resposta validado. Limite de 2000 chars. |
+| `draft_reply` | `str` | Rascunho seguro para revisão, com fallback quando candidato contém padrões suspeitos. **Não é garantia de veracidade**. Limite de 2000 chars. |
 | `needs_human_review` | `bool` | `true` quando há risco detectado. |
 | `can_send` | `bool` | **Sempre `false`** neste pacote. |
 | `flags` | `list[str]` | Riscos detectados: `possible_prompt_injection`, `asks_sensitive_data`, `financial_commitment_request`. |
@@ -73,11 +73,12 @@ O candidato de resposta (`CandidateReply`) é injetado via parâmetro — **não
 
 1. **Prompt injection**: padrões como "ignore suas regras", "jailbreak", "bypass", "role=admin" acionam `possible_prompt_injection` + `needs_human_review=true`.
 2. **Dados sensíveis**: menção a senhas, credenciais, CPF, tokens aciona `asks_sensitive_data`.
-3. **Compromisso financeiro**: menção a preço, prazo, ROI aciona `financial_commitment_request`.
+3. **Compromisso financeiro**: menção a preço, prazo, ROI aciona `financial_commitment_request`; candidatos com sinais de promessas, preço, acesso ou disponibilidade não verificada são descartados em favor de uma pergunta segura, com `unsafe_candidate` e revisão humana.
 4. **`can_send` sempre `false`**: nenhum envio ocorre neste pacote.
 5. **`simulation_only` sempre `true`**: marca todas as decisões como simulação.
-6. **Validação de entrada**: mensagens vazias, excessivamente longas, com caracteres de controle ou `event_id` vazio rejeitam com erro.
-7. **Idempotência**: mesma entrada produz mesma saída determinística.
+6. **Validação de entrada**: mensagens e identificadores vazios (inclusive só espaços), excesso de tamanho, caracteres de controle ou campos extras são rejeitados.
+7. **Determinismo (não idempotência persistente)**: a mesma entrada produz a mesma saída em memória, mas não existe deduplicação de envios/eventos em banco.
+8. **Invariantes do modelo**: `can_send` aceita somente `false` e `simulation_only` aceita somente `true`. A decisão não equivale a permissão para uso externo.
 
 ## O que NÃO está autorizado
 
@@ -102,6 +103,6 @@ O contrato atual (`CommercialIntakeEvent` → `IntakeDecision`) é reutilizável
 ## Limitações conhecidas
 
 - Classificação de intent é baseada em heurísticas de palavras-chave, não em modelo de ML.
-- Detecção de prompt injection usa regex — não é exaustiva.
+- Detecção de prompt injection e de promessas não verificadas utiliza heurísticas por regex — não é exaustiva, não prova segurança nem valida factualidade. Nunca usar rascunhos como mensagens aprovadas.
 - Deduplicação persistente entre eventos não existe nesta etapa.
 - `service_context` não é usado ativamente na decisão — será usado pelo wrapper LLM futuro.
