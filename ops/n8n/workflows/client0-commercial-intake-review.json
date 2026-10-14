@@ -78,7 +78,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://host.docker.internal:8000/internal/commercial-intake/evaluate",
+        "url": "http://ba-intake-private:8000/internal/commercial-intake/evaluate",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpBearerAuth",
         "sendBody": true,
