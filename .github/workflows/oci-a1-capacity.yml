@@ -1,9 +1,7 @@
 name: OCI A1 Always Free capacity attempt
 
 on:
-  schedule:
-    - cron: '33 * * * *' # hourly UTC; GitHub may delay jobs
-  workflow_dispatch: # manual invocations use the READ-ONLY OCI Python SDK
+  workflow_dispatch: # explicit read-only inspection only; no automatic provisioning
 
 permissions:
   contents: read
@@ -14,8 +12,8 @@ concurrency:
 
 jobs:
   try-once:
-    # Hourly launches disabled by default; manual dispatch is read-only.
-    if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && vars.OCI_A1_ENABLED == 'true')) }}
+    # Safety hold: creation requires a separate PR and fresh explicit financial approval.
+    if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' }}
     environment: oci-a1-provisioning
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -102,14 +100,9 @@ jobs:
               raise SystemExit("OCI_API_KEY_FINGERPRINT_MISMATCH")
           print("OCI_API_SIGNING_CONFIG_VALID")
           PY
-      - name: Read-only tenancy audit OR one quota-guarded A1 attempt
+      - name: Read-only tenancy audit (never provision)
         env:
           OCI_A1_TENANCY_OCID: ${{ secrets.OCI_A1_TENANCY_OCID }}
-          OCI_A1_ENABLED: ${{ vars.OCI_A1_ENABLED }}
         shell: bash
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            python ops/oracle/oci_sdk_launch.py
-          else
-            python ops/oracle/oci_sdk_launch.py --apply
-          fi
+          python ops/oracle/oci_sdk_launch.py
