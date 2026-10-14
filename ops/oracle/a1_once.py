@@ -63,19 +63,29 @@ def run_cli(args: list[str]) -> tuple[int, str, str]:
 
 
 def check_existing(config: dict[str, str]) -> None:
+    """Fail closed if OCI cannot prove the compartment's current VM inventory."""
     command = cmd_base() + [
         "compute", "instance", "list", "--compartment-id",
         config["OCI_A1_COMPARTMENT_OCID"], "--all", "--output", "json", "--no-retry",
     ]
-    status, out, _err = run_cli(command)
+    status, out, err = run_cli(command)
     if status:
-        raise PreflightError("Cannot verify existing instances; aborting before launch")
+        category = classify_oci_failure(out, err)
+        raise PreflightError(f"Cannot verify existing instances: {category}; refusing launch")
     try:
-        items = json.loads(out)["data"]
-        if not isinstance(items, list):
-            raise ValueError("invalid response")
-    except (KeyError, ValueError, TypeError) as exc:
-        raise PreflightError("Invalid instance-list JSON; aborting before launch") from exc
+        payload = json.loads(out)
+    except (ValueError, TypeError) as exc:
+        raise PreflightError("Invalid instance-list JSON: NOT_JSON; refusing launch") from exc
+    if not isinstance(payload, dict):
+        raise PreflightError("Invalid instance-list JSON: TOP_LEVEL_NOT_OBJECT; refusing launch")
+    if "data" not in payload:
+        raise PreflightError("Invalid instance-list JSON: DATA_KEY_ABSENT; refusing launch")
+    items = payload["data"]
+    if not isinstance(items, list):
+        category = "DATA_IS_NULL" if items is None else "DATA_NOT_LIST"
+        raise PreflightError(f"Invalid instance-list JSON: {category}; refusing launch")
+    if not all(isinstance(item, dict) for item in items):
+        raise PreflightError("Invalid instance-list JSON: ITEM_NOT_OBJECT; refusing launch")
     for instance in items:
         state = instance.get("lifecycle-state", "")
         if state != "TERMINATED" and (
