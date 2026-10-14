@@ -63,6 +63,45 @@ jobs:
           for path in (directory / 'api.pem', directory / 'public_ssh.pub', directory / 'config'):
               path.chmod(0o600)
           PY
+      - name: Validate OCI API signing configuration offline
+        shell: bash
+        run: |
+          python - <<'PY'
+          import configparser
+          import hashlib
+          import re
+          import subprocess
+          from pathlib import Path
+
+          config = configparser.ConfigParser()
+          config_path = Path.home() / ".oci" / "config"
+          if not config.read(config_path):
+              raise SystemExit("OCI_CONFIG_MISSING")
+          fields = config["DEFAULT"]
+          for key, pattern, code in (
+              ("tenancy", r"ocid1\\.tenancy\\.oc1\\..+", "OCI_TENANCY_OCID_INVALID"),
+              ("user", r"ocid1\\.user\\.oc1\\..+", "OCI_USER_OCID_INVALID"),
+              ("fingerprint", r"(?:[0-9a-fA-F]{2}:){15}[0-9a-fA-F]{2}", "OCI_FINGERPRINT_FORMAT_INVALID"),
+          ):
+              if not re.fullmatch(pattern, fields.get(key, "")):
+                  raise SystemExit(code)
+          keyfile = Path(fields.get("key_file", ""))
+          if not keyfile.is_file() or not keyfile.stat().st_size:
+              raise SystemExit("OCI_API_KEY_FILE_MISSING")
+          try:
+              public_der = subprocess.check_output(
+                  ["openssl", "pkey", "-in", str(keyfile), "-pubout", "-outform", "DER"],
+                  stderr=subprocess.DEVNULL,
+                  timeout=15,
+              )
+          except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+              raise SystemExit("OCI_API_PRIVATE_KEY_INVALID") from None
+          digest = hashlib.md5(public_der).hexdigest()
+          fingerprint = ":".join(digest[i:i + 2] for i in range(0, 32, 2))
+          if fingerprint.lower() != fields["fingerprint"].lower():
+              raise SystemExit("OCI_API_KEY_FINGERPRINT_MISMATCH")
+          print("OCI_API_SIGNING_CONFIG_VALID")
+          PY
       - name: Read-only inspection OR bounded launch
         env:
           OCI_A1_TENANCY_OCID: ${{ secrets.OCI_A1_TENANCY_OCID }}
