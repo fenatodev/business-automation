@@ -127,11 +127,34 @@ def execute(config: dict[str, str], *, apply: bool) -> str:
     return "CREATED: one A1 instance provisioned; verify in OCI Console and disable the workflow."
 
 
+def classify_oci_failure(stdout: str, stderr: str) -> str:
+    """Log only a bounded public error category, never request bodies or OCIDs."""
+    raw = (stderr or stdout).lower()
+    if "no such option" in raw or "no such command" in raw or "usage: oci " in raw:
+        return "CLI_USAGE"
+    if "invalidconfig" in raw or "could not find config" in raw or "config file" in raw:
+        return "CLI_CONFIG"
+    if "securitytokenexpired" in raw or "notauthenticated" in raw or "unauthorized" in raw:
+        return "AUTHENTICATION"
+    if "notauthorizedornotfound" in raw or "authorizationfailed" in raw or "not authorized" in raw:
+        return "IAM_NOT_AUTHORIZED"
+    if "invalidparameter" in raw or "invalid parameter" in raw:
+        return "INVALID_REQUEST"
+    if "limitexceeded" in raw or "too many requests" in raw:
+        return "RATE_LIMIT"
+    if "serviceunavailable" in raw or "internalerror" in raw:
+        return "SERVICE_UNAVAILABLE"
+    if "certificate verify failed" in raw or "ssLError" in raw.lower():
+        return "TLS_FAILURE"
+    return "UNCLASSIFIED"
+
+
 def _list_data(command: list[str], label: str) -> list[dict]:
     """Read OCI metadata, without leaking identities, credentials or API responses."""
-    status, stdout, _stderr = run_cli(command + ["--output", "json", "--no-retry"])
+    status, stdout, stderr = run_cli(command + ["--output", "json", "--no-retry"])
     if status != 0:
-        raise PreflightError(f"Cannot discover {label}; check OCI IAM policy and service availability")
+        error_class = classify_oci_failure(stdout, stderr)
+        raise PreflightError(f"Cannot discover {label}: {error_class}; inspect OCI credentials, policy and CLI invocation")
     try:
         items = json.loads(stdout)["data"]
         if not isinstance(items, list) or not all(isinstance(item, dict) for item in items):

@@ -194,5 +194,26 @@ def test_discovery_iam_failure_stops(cfg, monkeypatch):
     monkeypatch.setattr(MODULE, "run_cli", lambda _: (1, "", "AuthorizationFailed"))
     env = {"OCI_A1_TENANCY_OCID": "ocid1.tenancy.oc1..fake",
            "OCI_A1_SSH_PUBLIC_KEY_PATH": cfg["OCI_A1_SSH_PUBLIC_KEY_PATH"]}
-    with pytest.raises(MODULE.PreflightError, match="IAM policy"):
+    with pytest.raises(MODULE.PreflightError, match="IAM_NOT_AUTHORIZED"):
         MODULE.discover_config(env)
+
+
+
+@pytest.mark.parametrize(("message", "category"), [
+    ("Error: No such option: --region", "CLI_USAGE"),
+    ('{"code":"NotAuthorizedOrNotFound","message":"resource unknown"}', "IAM_NOT_AUTHORIZED"),
+    ('{"code":"InvalidParameter","message":"request rejected"}', "INVALID_REQUEST"),
+    ("Error: config file missing", "CLI_CONFIG"),
+    ("Unexpected service response", "UNCLASSIFIED"),
+])
+def test_error_classification_no_sensitive_content(message, category):
+    assert MODULE.classify_oci_failure("", message) == category
+
+
+def test_error_log_never_contains_secret_detail(monkeypatch):
+    raw = '{"code":"NotAuthorizedOrNotFound","message":"ocid1.secret.should.not.appear"}'
+    monkeypatch.setattr(MODULE, "run_cli", lambda _: (1, "", raw))
+    with pytest.raises(MODULE.PreflightError) as error:
+        MODULE._list_data(["oci", "iam", "compartment", "list"], "project compartment")
+    assert "IAM_NOT_AUTHORIZED" in str(error.value)
+    assert "ocid1.secret" not in str(error.value)
