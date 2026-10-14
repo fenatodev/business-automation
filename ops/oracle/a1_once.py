@@ -136,7 +136,7 @@ def classify_oci_failure(stdout: str, stderr: str) -> str:
         return "CLI_CONFIG"
     if "securitytokenexpired" in raw or "notauthenticated" in raw or "unauthorized" in raw:
         return "AUTHENTICATION"
-    if "notauthorizedornotfound" in raw or "not authorized" in raw:
+    if "notauthorizedornotfound" in raw or "authorizationfailed" in raw or "not authorized" in raw:
         return "IAM_NOT_AUTHORIZED"
     if "invalidparameter" in raw or "invalid parameter" in raw:
         return "INVALID_REQUEST"
