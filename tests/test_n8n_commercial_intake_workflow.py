@@ -76,7 +76,7 @@ def test_private_api_call_is_fixed_and_authenticated():
     node = next(node for node in workflow["nodes"] if node["name"] == "Evaluate Private Intake API")
     assert node["parameters"]["method"] == "POST"
     assert node["parameters"]["url"] == (
-        "http://host.docker.internal:8000/internal/commercial-intake/evaluate"
+        "http://ba-intake-private:8000/internal/commercial-intake/evaluate"
     )
     assert node["parameters"]["authentication"] == "genericCredentialType"
     assert node["parameters"]["genericAuthType"] == "httpBearerAuth"
