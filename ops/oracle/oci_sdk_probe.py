@@ -46,7 +46,7 @@ def check_public_subnet(subnet: Any) -> None:
         raise InspectionBlocked("NOT_A_VERIFIED_PUBLIC_SUBNET")
 
 
-def read_only_inspection(oci_module: Any, config: dict[str, str]) -> None:
+def read_only_inspection(oci_module: Any, config: dict[str, str]) -> dict[str, str]:
     if config.get("region") != REGION:
         raise InspectionBlocked("UNEXPECTED_REGION")
     tenancy = config.get("tenancy", "")
@@ -98,7 +98,18 @@ def read_only_inspection(oci_module: Any, config: dict[str, str]) -> None:
 
     instances = all_pages(compute.list_instances, compartment_id=project.id)
     check_instances(instances)
+    image = max(valid_images, key=lambda item: str(getattr(item, "time_created", "")))
+    if not getattr(image, "id", "").startswith("ocid1.image."):
+        raise InspectionBlocked("INVALID_IMAGE_OCID")
+    if not getattr(subnet, "id", "").startswith("ocid1.subnet."):
+        raise InspectionBlocked("INVALID_PUBLIC_SUBNET_OCID")
     print("SDK_INSPECT_OK: identity, compartment, AD, subnet, image and VM inventory verified. NO VM CREATED.")
+    return {
+        "compartment_id": project.id,
+        "availability_domain": ads[0].name,
+        "subnet_id": subnet.id,
+        "image_id": image.id,
+    }
 
 
 def main() -> int:

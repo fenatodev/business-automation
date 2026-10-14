@@ -23,11 +23,13 @@ def make_fake():
         compartment_id=tenancy, lifecycle_state="ACTIVE",
     )
     subnet = obj(
+        id="ocid1.subnet.oc1..synthetic",
         display_name="public subnet-business-automation-vcn",
         cidr_block="10.0.0.0/24", prohibit_public_ip_on_vnic=False,
         lifecycle_state="AVAILABLE",
     )
     image = obj(
+        id="ocid1.image.oc1..synthetic",
         display_name="Canonical-Ubuntu-24.04-aarch64-2026.10.01",
         operating_system="Canonical Ubuntu", operating_system_version="24.04",
         lifecycle_state="AVAILABLE",
@@ -72,7 +74,8 @@ def make_fake():
 def test_sdk_inspection_never_mutates(monkeypatch, capsys):
     fake, tenancy, calls, _instances, _subnet = make_fake()
     monkeypatch.setenv("OCI_A1_TENANCY_OCID", tenancy)
-    MODULE.read_only_inspection(fake, {"region": "sa-saopaulo-1", "tenancy": tenancy})
+    verified = MODULE.read_only_inspection(fake, {"region": "sa-saopaulo-1", "tenancy": tenancy})
+    assert verified["image_id"].startswith("ocid1.image.")
     assert calls == [
         "list_compartments", "list_availability_domains", "list_subnets",
         "list_images", "list_instances",
