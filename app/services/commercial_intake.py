@@ -130,8 +130,8 @@ def _detect_flags(message: str, candidate: str) -> list[str]:
 _UNVERIFIED_CLAIM_PATTERNS: list[str] = [
     r"r\$\s*\d|\b\d+[\s]*reais\b",
     r"\b(gr[aá]tis|gratuito|sem custo|desconto|pague|pagamento)\b",
-    r"\b(garantimos|garantido|com certeza|prometemos|aprovado)\b",
-    r"\b(dispon[ií]vel|estamos dispon[ií]veis|entregaremos|entregamos)\b",
+    r"\b(garantimos|garantid[ao]|com certeza|prometemos|aprovado)\b",
+    r"\b(dispon[ií]vel|disponibilidade|estamos dispon[ií]veis|entregaremos|entregamos)\b",
     r"\b(acesso total|acesso admin|chave api|senha|token)\b",
     r"\b(em\s+\d+\s+(dia|dias|hora|horas|semana|semanas))\b",
 ]
