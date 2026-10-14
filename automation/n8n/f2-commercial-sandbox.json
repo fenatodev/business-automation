@@ -1,0 +1,134 @@
+{
+  "name": "F2 SANDBOX — Autonomia comercial (somente dados fictícios, sem envios)",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        180
+      ],
+      "name": "Manual Sandbox Trigger",
+      "id": "manual-sandbox-trigger"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        200,
+        370
+      ],
+      "name": "Daily Simulation Trigger",
+      "id": "daily-simulation-trigger"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Apenas dados fictícios. Não ler CRM/WhatsApp e não acionar APIs externas.\nconst tenant = 'client0-demo';\nconst cases = [\n  {id:'Q001', company_id:tenant, kind:'quote', days_waiting:8, opt_in:true, opt_out:false, template_approved:true, within_service_window:false},\n  {id:'Q002', company_id:tenant, kind:'quote', days_waiting:10, opt_in:false, opt_out:false, template_approved:true, within_service_window:false},\n  {id:'Q003', company_id:tenant, kind:'quote', days_waiting:8, opt_in:true, opt_out:true, template_approved:true, within_service_window:false},\n  {id:'Q004', company_id:tenant, kind:'quote', days_waiting:1, opt_in:true, opt_out:false, template_approved:true, within_service_window:false},\n  {id:'L001', company_id:tenant, kind:'inbound_lead', days_waiting:0, opt_in:true, opt_out:false, template_approved:false, within_service_window:true},\n  {id:'L002', company_id:tenant, kind:'inbound_lead', days_waiting:0, opt_in:false, opt_out:false, template_approved:false, within_service_window:true},\n  {id:'Q005', company_id:tenant, kind:'quote', days_waiting:7, opt_in:true, opt_out:false, template_approved:false, within_service_window:false},\n  {id:'Q001', company_id:tenant, kind:'quote', days_waiting:8, opt_in:true, opt_out:false, template_approved:true, within_service_window:false},\n  {id:'Q006', company_id:'other-tenant', kind:'quote', days_waiting:9, opt_in:true, opt_out:false, template_approved:true, within_service_window:false}\n];\nreturn cases.map(x=>({json:x}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        260
+      ],
+      "name": "Fictitious Cases Only",
+      "id": "fictitious-cases-only"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Políticas determinísticas. NUNCA enviar ou gerar efeito externo.\nconst config = {company_id:'client0-demo', min_days_quote:3, simulation_only:true, max_actions:10};\nconst seen = new Set();\nconst decisions = $input.all().map(({json:record})=>{\n  const id = String(record.id ?? '');\n  const key = String(record.company_id ?? '')+':'+id+':'+String(record.kind ?? '');\n  let status='blocked_invalid', reason='invalid_record', draft=null;\n  if (!id || !['quote','inbound_lead'].includes(record.kind)) {\n    reason='invalid_record';\n  } else if (record.company_id!==config.company_id) {\n    status='blocked';reason='tenant_scope';\n  } else if (seen.has(key)) {\n    status='blocked';reason='duplicate_event';\n  } else if (record.opt_out===true) {\n    status='blocked';reason='opt_out';\n  } else if (record.opt_in!==true) {\n    status='blocked';reason='no_opt_in';\n  } else if (record.kind==='quote' && (!Number.isInteger(record.days_waiting) || record.days_waiting<config.min_days_quote)) {\n    status='deferred';reason='follow_up_not_due';\n  } else if (record.within_service_window!==true && record.template_approved!==true) {\n    status='blocked';reason='template_required';\n  } else if (record.kind==='quote') {\n    status='draft_ready';reason='quote_follow_up';\n    draft='Olá! Gostaríamos de saber se há alguma dúvida sobre o orçamento. Podemos ajudar?';\n  } else {\n    status='draft_ready';reason='inbound_qualification';\n    draft='Olá! Qual serviço você procura e para qual região?';\n  }\n  seen.add(key);\n  return {company_id:String(record.company_id ?? ''),fixture_id:id,kind:record.kind,status,reason,draft,dispatch:'disabled',simulation_only:true,idempotency_key:key};\n});\nconst eligible=decisions.filter(x=>x.status==='draft_ready');\nif (eligible.length>config.max_actions) throw Error('Simulation policy: quota exceeded');\nreturn decisions.map(x=>({json:x}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        730,
+        260
+      ],
+      "name": "Deterministic Commercial Policy",
+      "id": "deterministic-commercial-policy"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const rows=$input.all().map(x=>x.json);\nconst totals={};\nfor(const r of rows) totals[r.reason]=(totals[r.reason]||0)+1;\nif(rows.length!==9) throw Error('Synthetic fixture count changed');\nif(rows.some(r=>r.dispatch!=='disabled'||r.simulation_only!==true)) throw Error('Unsafe: dispatch enabled');\nif(rows.filter(r=>r.status==='draft_ready').length!==2) throw Error('Unexpected ready count');\nif(totals.tenant_scope!==1 || totals.opt_out!==1 || totals.no_opt_in!==2 || totals.duplicate_event!==1 || totals.template_required!==1 || totals.follow_up_not_due!==1) throw Error('Policy regression');\nreturn [{json:{\n  sandbox:true,\n  outbound_messages_sent:0,\n  tenants_processed:['client0-demo'],\n  assessed:rows.length,\n  drafts_prepared:2,\n  decisions:totals,\n  results:rows\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1010,
+        260
+      ],
+      "name": "Safety Assertion and Audit",
+      "id": "safety-assertion-and-audit"
+    }
+  ],
+  "connections": {
+    "Manual Sandbox Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fictitious Cases Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Simulation Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fictitious Cases Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fictitious Cases Only": {
+      "main": [
+        [
+          {
+            "node": "Deterministic Commercial Policy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deterministic Commercial Policy": {
+      "main": [
+        [
+          {
+            "node": "Safety Assertion and Audit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo"
+  },
+  "active": false,
+  "tags": [],
+  "pinData": {},
+  "id": "f2-commercial-demo",
+  "versionId": "861831ab-b4da-5f12-ac79-05a13076d26a"
+}
