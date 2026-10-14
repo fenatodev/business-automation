@@ -10,4 +10,4 @@ RUN uv sync --locked --no-dev --no-editable
 COPY app/ ./app/
 USER 10001:10001
 EXPOSE 8000
-CMD [".venv/bin/uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
+CMD [".venv/bin/uvicorn", "app.intake_only:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]

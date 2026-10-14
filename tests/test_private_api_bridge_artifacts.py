@@ -31,6 +31,8 @@ def test_image_has_no_migration_or_start_side_effects():
     assert "alembic upgrade" not in DOCKERFILE
     assert "n8n import" not in DOCKERFILE
     assert "--no-access-log" in DOCKERFILE
+    assert "app.intake_only:app" in DOCKERFILE
+    assert "app.main:app" not in DOCKERFILE
 
 
 def test_existing_workflow_stays_inactive():
