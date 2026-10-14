@@ -265,6 +265,8 @@ class OllamaCandidateGenerator:
         content = content.strip()
         if not content:
             raise CandidateGenerationError("Ollama returned empty content")
+        if len(content) > 2000:
+            raise CandidateGenerationError("Ollama content exceeds candidate limit")
 
         return CandidateReply(text=content)
 
