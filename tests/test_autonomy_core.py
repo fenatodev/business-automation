@@ -111,6 +111,10 @@ def test_idempotency_survives_reopening_database(sandbox, policy, quote):
     [
         ({"opted_out": True}, "blocked", "opt_out"),
         ({"consent_verified": False}, "blocked", "consent_not_verified"),
+        ({"consent_verified": "yes"}, "blocked", "invalid_boolean_flags"),
+        ({"opted_out": 0}, "blocked", "invalid_boolean_flags"),
+        ({"channel": "whatsapp", "approved_template": "true"},
+         "blocked", "invalid_boolean_flags"),
         ({"kind": "unexpected"}, "blocked", "unsupported_kind"),
         ({"channel": "sms"}, "blocked", "unauthorized_channel"),
         ({"days_since_quote": 1}, "deferred", "quote_followup_not_due"),
