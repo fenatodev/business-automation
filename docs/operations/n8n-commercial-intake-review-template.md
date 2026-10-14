@@ -44,10 +44,10 @@ A importação pode ser validada sem ativação. Execução real continua
 **bloqueada** até todos os itens abaixo serem resolvidos localmente:
 
 1. **Reachability API:** o template aponta provisoriamente para
-   `http://host.docker.internal:8000/internal/commercial-intake/evaluate`.
-   No Ubuntu/Linux, o container n8n pode não resolver/alcançar
-   `host.docker.internal`. Não adicionar host-gateway, publicar FastAPI
-   nem mudar rede antes de validar a situação real.
+   `http://ba-intake-private:8000/internal/commercial-intake/evaluate`.
+   WP-044 comprovou DNS e HTTP 401 para esse alias enquanto o container
+   privado estava temporariamente ativo. O container de teste foi removido;
+   execução real continua bloqueada até autorização própria.
 2. **Credential de entrada:** criar/bind de uma credencial n8n Header Auth
    chamada `business-automation-internal-ingress`.
 3. **Credential da API:** criar/bind de uma credencial n8n Bearer Auth
@@ -75,7 +75,7 @@ A importação pode ser validada sem ativação. Execução real continua
 
 ## Próxima validação local mínima
 
-A próxima ação no Ubuntu deve ser somente:
+Para uma nova versão do template, a próxima ação no Ubuntu pode ser apenas:
 
 - clonar a revisão exata;
 - copiar **este workflow** para `/tmp` do container;
