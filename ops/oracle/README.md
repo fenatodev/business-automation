@@ -59,7 +59,7 @@ Para o grupo técnico, caso a auditoria aponte falha de autorização,
 adicionar as seguintes regras *somente leitura* à policy existente:
 
 ```text
-Allow group 'Default'/'oci-a1-provisioners' to inspect instances in tenancy
+Allow group 'Default'/'oci-a1-provisioners' to read instances in tenancy
 Allow group 'Default'/'oci-a1-provisioners' to inspect volume-family in tenancy
 ```
 
