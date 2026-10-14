@@ -110,3 +110,18 @@ class ProposalBriefUpdate(BaseModel):
         "draft",
         "ready_for_review",
     ]
+
+
+class CommercialIntakeEvaluateRequest(BaseModel):
+    """Request body for the private commercial intake evaluate endpoint.
+
+    Only channel, message, and event_id are accepted.  All configuration
+    (service_context, provider, model, flags, can_send) comes from the
+    server side and must never be controlled by the caller.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    channel: str = Field(min_length=1, max_length=30)
+    message: str = Field(min_length=1, max_length=4000)
+    event_id: str = Field(min_length=1, max_length=100)
