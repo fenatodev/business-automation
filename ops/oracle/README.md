@@ -2,7 +2,7 @@
 
 **Estado: preparação, sem ativar nem criar VPS.** O workflow
 `.github/workflows/oci-a1-capacity.yml` só tenta criar uma instância quando a
-variável GitHub Actions `OCI_A1_ENABLED=true` for configurada explicitamente,
+variável de **repositório** GitHub Actions `OCI_A1_ENABLED=true` for configurada explicitamente,
 após revisão e autorização de implantação. Sem isso, o agendamento não executa
 nenhum provisionamento.
 
@@ -44,6 +44,20 @@ outros recursos ou se a conta passar a PAYG.
 - GitHub Actions de repositório público requerem revisão de segurança
   e do workflow na branch principal antes de receberem secrets.
 
+## Segredos isolados no GitHub Environment
+
+Criar em **Settings → Environments** o ambiente `oci-a1-provisioning`,
+selecionar **Deployment branches and tags → Selected branches and tags**,
+e adicionar **apenas** a branch `main` (tipo Branch, não Tag). Não marcar
+`Required reviewers`: a execução é horária e teria que receber aprovação
+a cada tentativa. Os segredos ficam em **Environment secrets**, nunca em
+`Repository secrets`. O job também exige `github.ref == 'refs/heads/main'`,
+usa `contents: read` e só injeta os segredos na etapa de criação do arquivo
+OCI de curta duração (não nas actions externas de checkout/setup).
+
+A variável não secreta `OCI_A1_ENABLED` fica em **Repository variables** e
+começa ausente/desativada. Não ativar até confirmar IAM, limites e código.
+
 ## Configuração futura — não realizada
 
 1. Confirmar no OCI que a conta terminou de ser ativada e que não há outras
@@ -52,8 +66,8 @@ outros recursos ou se a conta passar a PAYG.
 3. Consultar OCIDs reais do compartment, AD, VCN/subnet pública e imagem
    Ubuntu 24.04 ARM64. A rede já existente chama-se
    `business-automation-vcn`.
-4. Sob **GitHub → Settings → Secrets and variables → Actions**, cadastrar
-   somente secrets privados:
+4. Sob **GitHub → Settings → Environments → oci-a1-provisioning → Environment secrets**,
+   cadastrar somente secrets privados:
    `OCI_A1_TENANCY_OCID`, `OCI_A1_USER_OCID`,
    `OCI_A1_API_FINGERPRINT`, `OCI_A1_API_PRIVATE_KEY`,
    `OCI_A1_COMPARTMENT_OCID`, `OCI_A1_AVAILABILITY_DOMAIN`,
@@ -61,7 +75,7 @@ outros recursos ou se a conta passar a PAYG.
    `OCI_A1_SSH_PUBLIC_KEY` (somente conteúdo da chave pública .pub).
 5. Solicitar segunda revisão para a configuração de produção e aprovar
    explicitamente merge/ativação.
-6. Definir **Actions variable** `OCI_A1_ENABLED=true`. A tarefa tentará
+6. Definir **Actions repository variable** `OCI_A1_ENABLED=true`. A tarefa tentará
    uma vez por hora. Após `CREATED`, confirmar `RUNNING` no Console,
    desabilitar a variável e iniciar hardening manual.
 
