@@ -117,7 +117,7 @@ def test_audit_blocks_storage_over_free_limit():
 
 def test_audit_fails_closed_when_root_cannot_be_read():
     sdk, _, _ = synthetic_sdk(deny_root=True)
-    with pytest.raises(ValueError, match="IAM_DENIAL"):
+    with pytest.raises(PROBE.InspectionBlocked, match="ROOT_INSTANCES_READ_FAILED"):
         AUDIT.check_tenancy_usage(
             sdk, {"region": "sa-saopaulo-1", "tenancy": TENANCY}, VERIFIED["availability_domain"]
         )

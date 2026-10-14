@@ -22,10 +22,14 @@ class TenancyInventory:
     allocated_volume_gb: int
 
 
-def _all(oci_module: Any, method: Any, **kwargs: Any) -> list[Any]:
-    result = oci_module.pagination.list_call_get_all_results(method, **kwargs).data
+def _all(oci_module: Any, method: Any, *, stage: str, **kwargs: Any) -> list[Any]:
+    """Expose only a fixed read-stage identifier; never raw API errors or IDs."""
+    try:
+        result = oci_module.pagination.list_call_get_all_results(method, **kwargs).data
+    except Exception:
+        raise InspectionBlocked(f"TENANCY_{stage}_READ_FAILED") from None
     if not isinstance(result, list):
-        raise InspectionBlocked("TENANCY_INVENTORY_INVALID_RESPONSE")
+        raise InspectionBlocked(f"TENANCY_{stage}_RESPONSE_NOT_LIST")
     return result
 
 
@@ -44,7 +48,7 @@ def check_tenancy_usage(
     storage = oci_module.core.BlockstorageClient(config)
 
     compartments = _all(
-        oci_module, identity.list_compartments, compartment_id=tenancy_id,
+        oci_module, identity.list_compartments, stage="COMPARTMENTS", compartment_id=tenancy_id,
         compartment_id_in_subtree=True, access_level="ANY",
     )
     ids = [tenancy_id]
@@ -64,7 +68,9 @@ def check_tenancy_usage(
     total_gb = 0
     for compartment_id in ids:
         instances = _all(
-            oci_module, compute.list_instances, compartment_id=compartment_id,
+            oci_module, compute.list_instances,
+            stage="ROOT_INSTANCES" if compartment_id == tenancy_id else "CHILD_INSTANCES",
+            compartment_id=compartment_id,
         )
         for instance in instances:
             if getattr(instance, "lifecycle_state", None) != "TERMINATED":
@@ -72,8 +78,10 @@ def check_tenancy_usage(
                     existing_a1 += 1
         for method in (storage.list_boot_volumes, storage.list_volumes):
             volumes = _all(
-                oci_module, method, compartment_id=compartment_id,
-                availability_domain=availability_domain,
+                oci_module, method,
+                stage=("ROOT_" if compartment_id == tenancy_id else "CHILD_")
+                      + ("BOOT_VOLUME" if method.__name__ == "list_boot_volumes" else "BLOCK_VOLUME"),
+                compartment_id=compartment_id, availability_domain=availability_domain,
             )
             for volume in volumes:
                 if getattr(volume, "lifecycle_state", None) in ("TERMINATED", "DELETED"):
