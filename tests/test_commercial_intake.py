@@ -492,3 +492,11 @@ def test_safe_clarification_candidate_is_kept_as_draft():
     assert result.draft_reply == candidate
     assert result.needs_human_review is False
     assert result.can_send is False
+
+
+def test_decision_instance_cannot_be_mutated_after_validation():
+    decision = process_commercial_intake(_make_event())
+    with pytest.raises(ValidationError):
+        decision.can_send = True
+    with pytest.raises(ValidationError):
+        decision.simulation_only = False
