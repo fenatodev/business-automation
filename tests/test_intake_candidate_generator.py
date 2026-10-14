@@ -601,3 +601,85 @@ class TestInvariants:
         assert decision.event_id == decision2.event_id
         assert decision.can_send == decision2.can_send
         assert decision.simulation_only == decision2.simulation_only
+
+
+# ---------------------------------------------------------------------------
+# Review regressions: strict local transport and safe failure semantics
+# ---------------------------------------------------------------------------
+
+def test_https_loopback_url_rejected():
+    client = httpx.Client()
+    with pytest.raises(ValueError, match="plain HTTP"):
+        OllamaCandidateGenerator(client=client, base_url="https://127.0.0.1:11434")
+
+
+def test_base_url_with_path_rejected():
+    client = httpx.Client()
+    with pytest.raises(ValueError, match="must not contain a path"):
+        OllamaCandidateGenerator(client=client, base_url="http://127.0.0.1:11434/ollama")
+
+
+def test_generator_forces_redirects_off_even_if_injected_client_follows():
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        if len(requests) == 1:
+            return httpx.Response(302, headers={"location": "http://evil.example/api/chat"})
+        raise AssertionError("redirect was followed")
+
+    client = httpx.Client(
+        transport=httpx.MockTransport(handler),
+        follow_redirects=True,
+    )
+    gen = OllamaCandidateGenerator(client=client, base_url="http://127.0.0.1:11434")
+    with pytest.raises(CandidateGenerationError, match="HTTP 302"):
+        gen.generate(_make_event())
+    assert len(requests) == 1
+    assert requests[0].url.host == "127.0.0.1"
+
+
+def test_candidate_over_intake_limit_becomes_sanitized_generation_error():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return _ollama_response("x" * 2001)
+
+    gen = OllamaCandidateGenerator(
+        client=httpx.Client(
+            transport=httpx.MockTransport(handler),
+            follow_redirects=False,
+        ),
+        base_url="http://127.0.0.1:11434",
+    )
+    with pytest.raises(CandidateGenerationError, match="candidate limit"):
+        gen.generate(_make_event())
+
+
+def test_evaluate_intake_overlong_candidate_fails_closed():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return _ollama_response("x" * 2001)
+
+    gen = OllamaCandidateGenerator(
+        client=httpx.Client(
+            transport=httpx.MockTransport(handler),
+            follow_redirects=False,
+        ),
+        base_url="http://127.0.0.1:11434",
+    )
+    decision = evaluate_intake(_make_event(), gen)
+    assert decision.needs_human_review is True
+    assert "provider_unavailable" in decision.flags
+    assert decision.can_send is False
+    assert decision.simulation_only is True
+
+
+def test_failure_fallback_makes_no_delivery_or_timing_promise():
+    class BrokenGenerator:
+        def generate(self, event):
+            raise CandidateGenerationError()
+
+    decision = evaluate_intake(_make_event(), BrokenGenerator())
+    lower = decision.draft_reply.lower()
+    assert "retornar" not in lower
+    assert "em breve" not in lower
+    assert "especialista irá" not in lower
+    assert "revisão humana" in lower
