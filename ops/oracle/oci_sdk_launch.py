@@ -55,6 +55,9 @@ def make_launch_details(oci_module: Any, verified: dict[str, str], public_key: s
             subnet_id=verified["subnet_id"], assign_public_ip=True,
         ),
         metadata={"ssh_authorized_keys": public_key},
+        instance_options=models.InstanceOptions(
+            are_legacy_imds_endpoints_disabled=True,
+        ),
         freeform_tags={"project": PROJECT, "intended_tier": "always-free"},
     )
 
