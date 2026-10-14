@@ -1,6 +1,6 @@
 # WP-038 — Preflight local mínimo do n8n para workflow comercial interno
 
-**Status:** ficha de validação local para Junie.  
+**Status:** ficha de validação local para Junie.
 **Objetivo:** coletar somente evidência técnica indispensável do n8n instalado
 no Ubuntu para que o workflow seja preparado e revisado posteriormente
 **direto no GitHub**, sem adivinhar nodes/CLI/versões.
