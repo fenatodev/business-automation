@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from app.dependencies import get_db
+from app.routers.commercial_intake import router as commercial_intake_router
 from app.routers.companies import router as companies_router
 from app.routers.conversations import router as conversations_router
 from app.routers.customers import router as customers_router
@@ -14,6 +15,7 @@ app = FastAPI(
     version="0.1.0",
 )
 
+app.include_router(commercial_intake_router)
 app.include_router(companies_router)
 app.include_router(conversations_router)
 app.include_router(customers_router)

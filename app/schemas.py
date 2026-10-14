@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator
 
 
 class LeadCreate(BaseModel):
@@ -110,3 +110,28 @@ class ProposalBriefUpdate(BaseModel):
         "draft",
         "ready_for_review",
     ]
+
+
+class CommercialIntakeEvaluateRequest(BaseModel):
+    """Request body for the private commercial intake evaluate endpoint.
+
+    Only channel, message, and event_id are accepted.  All configuration
+    (service_context, provider, model, flags, can_send) comes from the
+    server side and must never be controlled by the caller.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    channel: str = Field(min_length=1, max_length=30)
+    message: str = Field(min_length=1, max_length=4000)
+    event_id: str = Field(min_length=1, max_length=100)
+
+    @field_validator("channel", "message", "event_id")
+    @classmethod
+    def nonempty_printable(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("commercial intake field cannot be blank")
+        if any(ord(char) < 32 or ord(char) == 127 for char in value):
+            raise ValueError("commercial intake field contains control characters")
+        return value

@@ -1,12 +1,22 @@
+from typing import Generator as TypingGenerator
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+import httpx
 
 from app.auth import (
     AccessConfigurationError,
     AccessIdentity,
     authenticate_bearer_token,
 )
-from app.database import SessionLocal
+from app.database import SessionLocal, settings
+from app.services.intake_candidate_generator import (
+    CandidateGenerator,
+    OllamaCandidateGenerator,
+    StaticCandidateGenerator,
+    _is_loopback_url,
+)
 
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -88,3 +98,42 @@ def require_operator_company(
 ) -> AccessIdentity:
     ensure_company_match(identity, company_id)
     return identity
+
+
+def get_intake_generator() -> TypingGenerator[CandidateGenerator, None, None]:
+    """Return the configured candidate generator for the intake endpoint.
+
+    * ``static`` — always safe, no network.
+    * ``ollama`` — requires loopback-only URL; returns 503 if misconfigured.
+
+    The HTTP client (when used) is closed after the request scope.
+    """
+    client: httpx.Client | None = None
+    try:
+        mode = settings.intake_generator
+        if mode == "static":
+            yield StaticCandidateGenerator()
+        elif mode == "ollama":
+            try:
+                if not _is_loopback_url(settings.ollama_url):
+                    raise ValueError("unsafe local model endpoint")
+                client = httpx.Client(follow_redirects=False)
+                generator = OllamaCandidateGenerator(
+                    client=client,
+                    model=settings.ollama_model,
+                    base_url=settings.ollama_url,
+                )
+            except (ValueError, TypeError):
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Service unavailable",
+                ) from None
+            yield generator
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Service unavailable",
+            )
+    finally:
+        if client is not None:
+            client.close()
