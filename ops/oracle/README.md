@@ -1,10 +1,13 @@
 # Oracle A1 — capacity retry sem ativação implícita
 
-**Estado: preparação, sem ativar nem criar VPS.** O workflow
-`.github/workflows/oci-a1-capacity.yml` só tenta criar uma instância quando a
-variável de **repositório** GitHub Actions `OCI_A1_ENABLED=true` for configurada explicitamente,
-após revisão e autorização de implantação. Sem isso, o agendamento não executa
-nenhum provisionamento.
+**Estado em 2026-10-14: automação horária ATIVA, mas criação ainda não
+confirmada.** O responsável autorizou explicitamente habilitar
+`OCI_A1_ENABLED=true` após a auditoria somente leitura de sucesso
+(`2 compartimentos / 0 GB / nenhuma A1`, execução GitHub Actions
+`38593381293`). O workflow
+`.github/workflows/oci-a1-capacity.yml` tenta uma única A1 fixa a cada
+hora, no minuto 33 UTC. O acionamento manual permanece somente leitura.
+O agendamento pode atrasar; nenhuma capacidade nem hora de criação é garantida.
 
 ## Motivação
 
@@ -73,10 +76,12 @@ fixados, token de idempotência diário e **sem repetição automática da API**
 na mesma execução. Em caso de resultado incerto, nenhuma segunda tentativa
 ocorre no job.
 
-**Não habilitar** enquanto não estiverem confirmados: (1) auditoria de root
-e todos os compartimentos, (2) controle de custos/conta e cotas hard no OCI,
-(3) permissões mínimas efetivas para criação, (4) segurança SSH/rede pública
-e (5) aprovação explícita do usuário para provisionamento.
+**Gates remanescentes após a ativação autorizada:** a auditoria de
+root/compartimentos foi validada, mas **não há evidência de quota rígida/
+orçamento no OCI nem inspeção efetiva de regras de ingresso SSH**.
+Priorizar revisão desses controles; desativar `OCI_A1_ENABLED` ao detectar
+qualquer custo potencial inesperado. A segurança da rede/SSH deve ser
+endurecida antes de publicar qualquer serviço no host.
 
 ## Segurança e modos de falha
 
@@ -94,8 +99,9 @@ e (5) aprovação explícita do usuário para provisionamento.
   privada SSH** da VM. Nenhuma delas deve ser versionada ou enviada pelo chat.
 - Use usuário OCI de automação com privilégios mínimos e chaves exclusivas.
   Não conceda autorização de API da conta administradora ao workflow.
-- A security list pública pode permitir SSH amplo; restrinja à origem
-  administrativa antes de ativar provisionamento automático.
+- A security list pública pode permitir SSH amplo; revisar e restringir
+  à origem administrativa antes de colocar a VM em uso, sem interromper
+  o acesso ao servidor. Nenhum serviço será exposto automaticamente.
 - GitHub Actions de repositório público requerem revisão de segurança
   e do workflow na branch principal antes de receberem secrets.
 
@@ -110,40 +116,41 @@ a cada tentativa. Os segredos ficam em **Environment secrets**, nunca em
 usa `contents: read` e só injeta os segredos na etapa de criação do arquivo
 OCI de curta duração (não nas actions externas de checkout/setup).
 
-A variável não secreta `OCI_A1_ENABLED` fica em **Repository variables** e
-começa ausente/desativada. Não ativar até confirmar IAM, limites e código.
+A variável não secreta `OCI_A1_ENABLED` fica em **Repository variables**.
+Após consentimento explícito em 2026-10-14 ela foi configurada como
+`true`. Reverter para `false` ou remover a variável interrompe
+novas tentativas agendadas (não encerra eventual VM existente).
 
-## Configuração futura — não realizada
+## Próximos passos operacionais
 
-1. Confirmar no OCI que a conta terminou de ser ativada e que não há outras
-   A1/volumes consumindo o limite gratuito.
-2. Criar usuário OCI de automação com menor privilégio e gerar API signing key.
-3. Consultar OCIDs reais do compartment, AD, VCN/subnet pública e imagem
-   Ubuntu 24.04 ARM64. A rede já existente chama-se
-   `business-automation-vcn`.
-4. Sob **GitHub → Settings → Environments → oci-a1-provisioning → Environment secrets**,
-   cadastrar somente **cinco segredos**:
-   `OCI_A1_TENANCY_OCID`, `OCI_A1_USER_OCID`,
-   `OCI_A1_API_FINGERPRINT`, `OCI_A1_API_PRIVATE_KEY`,
-   `OCI_A1_SSH_PUBLIC_KEY` (somente chave pública .pub).
-   O preenchimento desses cinco segredos foi confirmado. Os 4 OCIDs de recursos
-   são descobertos em cada execução sem armazenamento de segredos adicionais.
-5. Solicitar segunda revisão para a configuração de produção, executar
-   uma verificação manual `workflow_dispatch` somente leitura após o merge,
-   corrigir IAM se houver negação e aprovar explicitamente a ativação.
-6. Definir **Actions repository variable** `OCI_A1_ENABLED=true`. A tarefa tentará
-   uma vez por hora. Após `CREATED`, confirmar `RUNNING` no Console,
-   desabilitar a variável e iniciar hardening manual.
+1. Observar a execução horária em [Actions](https://github.com/fenatodev/business-automation/actions/workflows/oci-a1-capacity.yml).
+   A execução manual nunca cria VM; somente `schedule` aciona `--apply`.
+2. Se `NO_CAPACITY`, manter as tentativas e não alterar shape/região por
+   conveniência. Se `OCI_BLOCKED`, investigar a categoria e não ampliar
+   permissões IAM sem necessidade comprovada.
+3. Se `CREATED`, conferir a instância em `RUNNING` no OCI Console antes
+   de tratar o recurso como funcional. Desativar a variável após confirmação.
+4. Executar o [checklist de pós-provisionamento](https://github.com/fenatodev/business-automation/issues/94):
+   firewall, SSH somente por chave e origem controlada, atualizações,
+   acesso remoto seguro, custos/quotas e backups.
+5. `n8n` e a API privada permanecem fora da internet até revisão e
+   autorização de um deploy separado; nenhuma publicação automática de site.
+
+**Monitoramento adicional:** uma checagem horária de execução foi criada no
+ChatGPT para avisar sobre `CREATED` ou falha nova relevante, sem avisos
+repetidos de indisponibilidade de capacidade.
 
 ## Testes offline
 
 ```bash
-uv run pytest tests/test_oci_a1_once.py
-python -m compileall -q ops/oracle tests/test_oci_a1_once.py
+uv run pytest tests/test_oci_sdk_probe.py tests/test_oci_tenancy_guarded_launch.py
+python -m compileall -q ops/oracle
 ```
 
-O SDK de inspeção já consultou a conta real com sucesso. Nenhuma criação
-foi executada; a auditoria ampliada ainda requer validação.
+A auditoria completa do SDK consultou a conta real e passou sem mutações
+(GitHub Actions `38593381293`). As tentativas de criação **só começaram
+a ficar elegíveis no primeiro cron após a ativação**; verificar logs e
+console antes de afirmar que alguma VM foi criada.
 
 Documentação: [Always Free](https://docs.oracle.com/pt-br/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm),
 [CLI launch](https://docs.oracle.com/en-us/iaas/tools/oci-cli/latest/oci_cli_docs/cmdref/compute/instance/launch.html),
