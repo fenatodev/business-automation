@@ -104,6 +104,22 @@ def attempt(oci_module: Any, config: dict[str, str], public_key: str, *, apply: 
     return "CREATED: A1 2 OCPU / 12GB / 50GB in Sao Paulo; no further launch attempted."
 
 
+def existing_instance_status(error: InspectionBlocked) -> str | None:
+    """Report existing resources as a safe terminal state, not an hourly failure.
+
+    This does not assert that the instance is RUNNING, reachable or free.
+    """
+    category = str(error)
+    if category == "TENANCY_ALREADY_HAS_A1":
+        return "EXISTING_A1: an A1 exists in this tenancy; no new VM created. Verify state and costs in OCI."
+    if category == "EXISTING_A1_OR_MATCHING_INSTANCE":
+        return (
+            "EXISTING_INSTANCE: project has A1 or same-name instance; no VM created. "
+            "Verify shape, state and costs in OCI."
+        )
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apply", action="store_true", help="Make exactly one allowed launch API call")
@@ -120,8 +136,9 @@ def main(argv: list[str] | None = None) -> int:
         print(attempt(oci, config, public_key, apply=args.apply))
         return 0
     except InspectionBlocked as exc:
-        if args.apply and str(exc) == "TENANCY_ALREADY_HAS_A1":
-            print("EXISTING_A1: stopped; nothing created.")
+        status = existing_instance_status(exc)
+        if status:
+            print(status)
             return 0
         print(f"OCI_BLOCKED: {exc}", file=sys.stderr)
         return 2

@@ -201,3 +201,19 @@ def test_apply_never_launches_if_root_has_a1(monkeypatch):
 ])
 def test_capacity_error_only_known_capacity_errors(code, message, expect):
     assert LAUNCH.is_capacity_error(NS(code=code, message=message)) is expect
+
+
+@pytest.mark.parametrize(("message", "prefix"), [
+    ("TENANCY_ALREADY_HAS_A1", "EXISTING_A1:"),
+    ("EXISTING_A1_OR_MATCHING_INSTANCE", "EXISTING_INSTANCE:"),
+])
+def test_already_provisioned_resources_are_safe_terminal_state(message, prefix):
+    outcome = LAUNCH.existing_instance_status(PROBE.InspectionBlocked(message))
+    assert outcome.startswith(prefix)
+    assert "Verify" in outcome
+    assert "no new VM created" in outcome or "no VM created" in outcome
+
+
+def test_unrelated_oci_denial_is_never_treated_as_existing_vm():
+    error = PROBE.InspectionBlocked("TENANCY_ROOT_BOOT_VOLUME_READ_FAILED")
+    assert LAUNCH.existing_instance_status(error) is None
