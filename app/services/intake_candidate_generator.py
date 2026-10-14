@@ -184,21 +184,27 @@ class OllamaCandidateGenerator:
     ) -> None:
         # Reject URLs with credentials, query strings, or fragments FIRST
         parsed = httpx.URL(base_url)
+        if parsed.scheme != "http":
+            raise ValueError("Ollama base_url must use plain HTTP on loopback")
         if parsed.username or parsed.password:
             raise ValueError("Ollama base_url must not contain credentials")
         if parsed.query or parsed.fragment:
             raise ValueError("Ollama base_url must not contain query or fragment")
-
-        # Then check loopback
+        if parsed.path not in ("", "/"):
+            raise ValueError("Ollama base_url must not contain a path")
         if not _is_loopback_url(base_url):
-            raise ValueError(
-                f"Ollama base_url must be loopback-only, got: {base_url}"
-            )
+            raise ValueError("Ollama base_url must be loopback-only")
+        if not model.strip() or len(model) > 120:
+            raise ValueError("Ollama model must be a non-empty operator value")
+        if not system_prompt.strip() or len(system_prompt) > 4000:
+            raise ValueError("system_prompt must be a bounded operator value")
+        if timeout <= 0 or timeout > 120:
+            raise ValueError("timeout must be between 0 and 120 seconds")
 
         self._client = client
-        self._model = model
+        self._model = model.strip()
         self._base_url = base_url.rstrip("/")
-        self._system_prompt = system_prompt
+        self._system_prompt = system_prompt.strip()
         self._timeout = timeout
 
     def generate(self, event: CommercialIntakeEvent) -> CandidateReply:
@@ -221,6 +227,7 @@ class OllamaCandidateGenerator:
                     "stream": False,
                 },
                 timeout=self._timeout,
+                follow_redirects=False,
             )
         except httpx.TimeoutException:
             raise CandidateGenerationError("Ollama request timed out")
@@ -295,9 +302,8 @@ def evaluate_intake(
             intent=fallback.intent,
             next_step="ask_clarification",
             draft_reply=(
-                "No momento não conseguimos processar sua mensagem "
-                "automaticamente. Um especialista irá analisar e retornar "
-                "em breve."
+                "Não foi possível gerar um rascunho automático com segurança. "
+                "Esta solicitação requer revisão humana antes de qualquer resposta."
             ),
             needs_human_review=True,
             can_send=False,
