@@ -79,8 +79,8 @@ jobs:
               raise SystemExit("OCI_CONFIG_MISSING")
           fields = config["DEFAULT"]
           for key, pattern, code in (
-              ("tenancy", r"ocid1\\.tenancy\\.oc1\\..+", "OCI_TENANCY_OCID_INVALID"),
-              ("user", r"ocid1\\.user\\.oc1\\..+", "OCI_USER_OCID_INVALID"),
+              ("tenancy", r"ocid1\.tenancy\.oc1\..+", "OCI_TENANCY_OCID_INVALID"),
+              ("user", r"ocid1\.user\.oc1\..+", "OCI_USER_OCID_INVALID"),
               ("fingerprint", r"(?:[0-9a-fA-F]{2}:){15}[0-9a-fA-F]{2}", "OCI_FINGERPRINT_FORMAT_INVALID"),
           ):
               if not re.fullmatch(pattern, fields.get(key, "")):
