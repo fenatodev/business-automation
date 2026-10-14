@@ -217,3 +217,25 @@ def test_error_log_never_contains_secret_detail(monkeypatch):
         MODULE._list_data(["oci", "iam", "compartment", "list"], "project compartment")
     assert "IAM_NOT_AUTHORIZED" in str(error.value)
     assert "ocid1.secret" not in str(error.value)
+
+
+@pytest.mark.parametrize(("stdout", "expected"), [
+    ("not json", "NOT_JSON"),
+    ("[]", "TOP_LEVEL_NOT_OBJECT"),
+    ('{"items":[]}', "DATA_KEY_ABSENT"),
+    ('{"data":null}', "DATA_IS_NULL"),
+    ('{"data":{}}', "DATA_NOT_LIST"),
+    ('{"data":["unexpected"]}', "ITEM_NOT_OBJECT"),
+])
+def test_existing_inventory_schema_error_is_safe_and_fail_closed(cfg, monkeypatch, stdout, expected):
+    monkeypatch.setattr(MODULE, "run_cli", lambda _: (0, stdout, ""))
+    with pytest.raises(MODULE.PreflightError, match=expected):
+        MODULE.check_existing(cfg)
+
+
+def test_existing_inventory_error_is_categorized_without_raw_response(cfg, monkeypatch):
+    raw = '{"code":"NotAuthorizedOrNotFound","message":"ocid1.some.private.identifier"}'
+    monkeypatch.setattr(MODULE, "run_cli", lambda _: (1, "", raw))
+    with pytest.raises(MODULE.PreflightError, match="IAM_NOT_AUTHORIZED") as err:
+        MODULE.check_existing(cfg)
+    assert "ocid1.some" not in str(err.value)
