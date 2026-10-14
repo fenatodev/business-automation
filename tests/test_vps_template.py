@@ -119,3 +119,11 @@ def test_docker_compose_renders_without_exposing_db_or_runner(tmp_path):
     for service in ("postgres", "runners"):
         assert not rendered["services"][service].get("ports")
     assert all(not item.get("privileged") for item in rendered["services"].values())
+    assert set(rendered["services"]["postgres"]["networks"]) == {"data_private"}
+    assert set(rendered["services"]["n8n"]["networks"]) == {"data_private", "execution_private"}
+    assert set(rendered["services"]["runners"]["networks"]) == {"execution_private"}
+    runner = rendered["services"]["runners"]
+    assert runner["read_only"] is True
+    assert runner["cap_drop"] == ["ALL"]
+    assert runner["pids_limit"] == 128
+    assert any(item.startswith("/tmp:") for item in runner["tmpfs"])

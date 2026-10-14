@@ -18,7 +18,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - internal
+      - data_private
     security_opt:
       - no-new-privileges:true
 
@@ -55,7 +55,8 @@ services:
     volumes:
       - n8n_data:/home/node/.n8n
     networks:
-      - internal
+      - data_private
+      - execution_private
     security_opt:
       - no-new-privileges:true
 
@@ -69,12 +70,20 @@ services:
       N8N_RUNNERS_TASK_BROKER_URI: http://n8n:5679
       N8N_RUNNERS_AUTO_SHUTDOWN_TIMEOUT: "15"
     networks:
-      - internal
+      - execution_private
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=64m
+    cap_drop:
+      - ALL
+    pids_limit: 128
     security_opt:
       - no-new-privileges:true
 
 networks:
-  internal:
+  data_private:
+    driver: bridge
+  execution_private:
     driver: bridge
 
 volumes:

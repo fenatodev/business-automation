@@ -42,7 +42,7 @@ origem consentida → gateway/webhook autenticado (FUTURO, DESLIGADO)
                  adaptadores oficiais (FUTURO)
 ```
 
-**Implementado neste template:** n8n 2.40.7, runners e seu PostgreSQL privado. Sem portas de Postgres, sem ingresso público, editor n8n ligado **somente ao loopback da VPS**. A API FastAPI e seus dados terão banco e credenciais separados quando integrados. Não usar credenciais de administração do PostgreSQL n8n no domínio.
+**Implementado neste template:** n8n 2.40.7, runners e seu PostgreSQL privado. Sem portas de Postgres, sem ingresso público, editor n8n ligado **somente ao loopback da VPS**. O runner fica em uma rede Docker separada da rede PostgreSQL, com raiz de sistema de arquivos somente leitura, `/tmp` temporário, capabilities removidas e limite de processos. Isso reduz o alcance de código executado, mas **não substitui políticas de egress, AppArmor/seccomp e testes reais de isolamento**. A API FastAPI e seus dados terão banco e credenciais separados quando integrados. Não usar credenciais de administração do PostgreSQL n8n no domínio.
 
 **O core F2 em desenvolvimento** segue em branch separada; não oferecer atendimento real ou persistência entre clientes até revisão e migrações autorizadas. IA cloud paga só após teto de custo, orçamento, fallback e autorização explícitos; Qwen 9B permanece no PC como ferramenta de testes e não estará disponível 24 horas se o PC desligar.
 
@@ -68,7 +68,7 @@ docker compose --env-file .env -f compose.yaml config --quiet
 2. **Host:** Ubuntu LTS, SSH com chave, root login por senha proibido, firewall deny-by-default, atualização de segurança, relógio/NTP; arquitetura `aarch64` (Oracle) ou `x86_64`.
 3. **Privacidade:** instância n8n privada, SSH tunnel (`ssh -L 5678:127.0.0.1:5678 usuario@VPS`), segredos em `.env` modo 600, volumes separados, sem portas PostgreSQL públicas.
 4. **TLS público:** ingressos assinados e HTTPS separados para webhooks oficiais; não publicar editor n8n/fastapi por esta WP. `N8N_SECURE_COOKIE=false` é **somente para protótipo de acesso por túnel SSH**; ativar `true` com HTTPS antes da exposição de qualquer UI pública.
-5. **Repetibilidade:** validar `docker compose config --quiet`, versões de imagens (preferencialmente SHA digest após prova), teste de restart, retomada da fila, idempotência, isolamento por Company, retenção, política e kill switch.
+5. **Repetibilidade:** validar `docker compose config --quiet`, versões de imagens (preferencialmente SHA digest após prova), teste de restart, retomada da fila, idempotência, isolamento por Company, retenção, política e kill switch. Verificar que o runner continua funcional com raiz read-only e não alcança o PostgreSQL; validar também a compatibilidade ARM64 das três imagens antes de escolher Oracle A1. Não declarar essa validação concluída sem execução real.
 6. **Backup:** cópia criptografada **fora da VPS** de banco/volume n8n/chave; restaurar em host isolado antes de primeiro cliente. Sem backup reproduzível não há serviço pago.
 7. **Custos:** medir RAM, CPU, SSD/IOPS, saída de dados, mensagens oficiais e provedor LLM; alertar, pausar e escalar quando exceder limites.
 8. **Licença:** n8n Community permite agência criar/operar workflows para clientes **sem clientes editarem ou controlarem a lógica**, nem via agentes/CRUD expostos. n8n embutido como editor / SaaS customizável precisa de licença comercial: https://support.n8n.io/article/can-i-use-your-license-for-my-use-case
