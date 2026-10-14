@@ -3,7 +3,7 @@ name: OCI A1 Always Free capacity attempt
 on:
   schedule:
     - cron: '33 * * * *' # hourly UTC; GitHub may delay jobs
-  workflow_dispatch: # manual invocations are READ-ONLY inspection
+  workflow_dispatch: # manual invocations use the READ-ONLY OCI Python SDK
 
 permissions:
   contents: read
@@ -108,7 +108,7 @@ jobs:
         run: |
           export OCI_A1_SSH_PUBLIC_KEY_PATH="$HOME/.oci/public_ssh.pub"
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            python ops/oracle/a1_once.py --inspect
+            python ops/oracle/oci_sdk_probe.py
           else
             python ops/oracle/a1_once.py --apply
           fi
