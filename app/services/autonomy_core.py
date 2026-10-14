@@ -86,6 +86,8 @@ class Signal:
 def _validate(trusted_company_id: int, policy: CampaignPolicy, signal: Signal, now_ts: int):
     if type(trusted_company_id) is not int or trusted_company_id <= 0:
         raise ValueError("Trusted company ID required")
+    if type(policy.company_id) is not int or type(signal.company_id) is not int:
+        raise ValueError("Company scope mismatch")
     if policy.company_id != trusted_company_id or signal.company_id != trusted_company_id:
         raise ValueError("Company scope mismatch")
     if type(now_ts) is not int or now_ts < 0:
@@ -94,9 +96,13 @@ def _validate(trusted_company_id: int, policy: CampaignPolicy, signal: Signal, n
         not policy.version
         or len(policy.version) > 50
         or type(policy.expires_ts) is not int
+        or type(policy.min_quote_age_days) is not int
         or policy.min_quote_age_days < 0
+        or type(policy.max_drafts_per_case_week) is not int
         or policy.max_drafts_per_case_week < 1
-        or len(policy.channels) == 0
+        or not isinstance(policy.channels, tuple)
+        or not policy.channels
+        or any(not isinstance(c, str) or not c for c in policy.channels)
     ):
         raise ValueError("Invalid trusted policy")
     if (
@@ -121,15 +127,25 @@ def _decision(
     signal: Signal,
     now_ts: int,
 ) -> tuple[str, str]:
-    if not policy.enabled or now_ts >= policy.expires_ts:
+    if policy.enabled is not True or now_ts >= policy.expires_ts:
         return "blocked", "policy_inactive_or_expired"
+    if any(
+        type(flag) is not bool
+        for flag in (
+            signal.consent_verified,
+            signal.opted_out,
+            signal.within_session_window,
+            signal.approved_template,
+        )
+    ):
+        return "blocked", "invalid_boolean_flags"
     if signal.kind not in ("quote", "inbound_lead"):
         return "blocked", "unsupported_kind"
     if signal.channel not in policy.channels:
         return "blocked", "unauthorized_channel"
     if signal.opted_out:
         return "blocked", "opt_out"
-    if not signal.consent_verified:
+    if signal.consent_verified is not True:
         return "blocked", "consent_not_verified"
     if signal.channel == "whatsapp" and not (
         signal.within_session_window or signal.approved_template
@@ -254,20 +270,23 @@ def lease_due_simulation(
     """
     if trusted_company_id <= 0 or now_ts < 0 or lease_seconds <= 0 or max_attempts <= 0:
         raise ValueError("Invalid lease parameters")
-    candidates = db.scalars(
-        select(AutonomyJob)
-        .where(
-            AutonomyJob.company_id == trusted_company_id,
-            AutonomyJob.due_ts <= now_ts,
-            or_(
-                AutonomyJob.state == "pending",
-                (AutonomyJob.state == "leased") & (AutonomyJob.lease_until_ts <= now_ts),
-            ),
-        )
-        .order_by(AutonomyJob.due_ts, AutonomyJob.id)
-        .with_for_update(skip_locked=True)
-    ).all()
-    for job in candidates:
+    while True:
+        job = db.scalars(
+            select(AutonomyJob)
+            .where(
+                AutonomyJob.company_id == trusted_company_id,
+                AutonomyJob.due_ts <= now_ts,
+                or_(
+                    AutonomyJob.state == "pending",
+                    (AutonomyJob.state == "leased") & (AutonomyJob.lease_until_ts <= now_ts),
+                ),
+            )
+            .order_by(AutonomyJob.due_ts, AutonomyJob.id)
+            .limit(1)
+            .with_for_update(skip_locked=True)
+        ).first()
+        if job is None:
+            return None
         if job.attempts >= max_attempts:
             job.state = "failed"
             job.lease_token = None
@@ -280,8 +299,6 @@ def lease_due_simulation(
         job.attempts += 1
         db.commit()
         return job
-    return None
-
 
 def finish_simulation(
     db: Session, *, trusted_company_id: int, job_id: int, token: str, now_ts: int
