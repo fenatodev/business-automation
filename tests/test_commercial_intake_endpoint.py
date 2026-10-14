@@ -652,3 +652,99 @@ class TestNoDatabaseWrites:
             assert data["event_id"] == "evt-no-db"
         finally:
             app.dependency_overrides.clear()
+
+
+# ---------------------------------------------------------------------------
+# Review regressions: strict request/config validation and real server faults
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize(("field", "value"), [
+    ("channel", "   "),
+    ("message", "\t   "),
+    ("event_id", "   "),
+])
+def test_blank_request_fields_return_422(field, value, client, operator_headers, monkeypatch):
+    monkeypatch.setattr(
+        "app.dependencies.authenticate_bearer_token",
+        lambda t: MagicMock(role="operator", company_id=1),
+    )
+    payload = {
+        "channel": "web",
+        "message": "Preciso de automação.",
+        "event_id": "evt-valid",
+    }
+    payload[field] = value
+    response = client.post(
+        "/internal/commercial-intake/evaluate",
+        headers=operator_headers,
+        json=payload,
+    )
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize("unsafe_url", [
+    "https://127.0.0.1:11434",
+    "http://127.0.0.1:11434/ollama",
+])
+def test_unsafe_ollama_configuration_is_sanitized_503(unsafe_url, monkeypatch):
+    class FakeSettings:
+        intake_generator = "ollama"
+        ollama_url = unsafe_url
+        ollama_model = "qwen3:8b"
+        intake_service_context = "Contexto sintético."
+
+    monkeypatch.setattr("app.dependencies.settings", FakeSettings())
+    monkeypatch.setattr(
+        "app.dependencies.authenticate_bearer_token",
+        lambda t: MagicMock(role="operator", company_id=1),
+    )
+    with TestClient(app) as test_client:
+        response = test_client.post(
+            "/internal/commercial-intake/evaluate",
+            headers={"Authorization": "Bearer synthetic"},
+            json={
+                "channel": "web",
+                "message": "Preciso de automação.",
+                "event_id": "evt-config",
+            },
+        )
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Service unavailable"}
+    assert unsafe_url not in response.text
+
+
+def test_unexpected_programming_error_is_not_disguised_as_business_decision(monkeypatch):
+    marker = "SYNTHETIC_PROGRAMMING_BUG_DO_NOT_LEAK"
+
+    class BrokenGenerator:
+        def generate(self, event):
+            raise RuntimeError(marker)
+
+    def override_generator():
+        yield BrokenGenerator()
+
+    app.dependency_overrides[get_intake_generator] = override_generator
+    monkeypatch.setattr(
+        "app.dependencies.authenticate_bearer_token",
+        lambda t: MagicMock(role="operator", company_id=1),
+    )
+    try:
+        with TestClient(app, raise_server_exceptions=False) as test_client:
+            response = test_client.post(
+                "/internal/commercial-intake/evaluate",
+                headers={"Authorization": "Bearer synthetic"},
+                json={
+                    "channel": "web",
+                    "message": "Preciso de automação.",
+                    "event_id": "evt-bug",
+                },
+            )
+        assert response.status_code == 500
+        assert marker not in response.text
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_private_intake_route_is_not_in_openapi(client):
+    schema = client.get("/openapi.json").json()
+    assert "/internal/commercial-intake/evaluate" not in schema.get("paths", {})
