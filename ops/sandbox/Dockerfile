@@ -5,7 +5,7 @@
 #
 # 1. No Docker socket access
 # 2. No sudo privileges
-# 3. Non-root user (n8n-operator)
+# 3. Non-root user (n8n-operator) with /bin/sh shell (not nologin)
 # 4. Read-only filesystem (enforced in docker-compose.yml)
 # 5. No network host mode
 # 6. Minimal Python dependencies
@@ -15,16 +15,16 @@
 #
 # Usage (after approval):
 #   docker build -t n8n-executor-sandbox .
-#   docker-compose -f docker-compose.yml up -d
+#   docker compose -f ops/sandbox/docker-compose.yml up -d
 
 FROM python:3.12-slim
 
 # Do NOT install sudo, curl, or other privileged tools
 # Only install minimal dependencies for the executor
 
-# Create restricted user
+# Create restricted user with /bin/sh shell (not nologin — CMD needs a shell)
 RUN groupadd -r n8n-operator && \
-    useradd -r -g n8n-operator -d /home/n8n-operator -s /usr/sbin/nologin n8n-operator
+    useradd -r -g n8n-operator -d /home/n8n-operator -s /bin/sh n8n-operator
 
 # Set working directory
 WORKDIR /app
@@ -33,8 +33,12 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN pip install --no-cache-dir httpx
 
-# Copy application code
-COPY app/ app/
+# Copy application code — only the services needed by the executor
+COPY app/services/approval_gate.py app/services/
+COPY app/services/n8n_executor.py app/services/
+
+# Copy healthcheck script
+COPY ops/sandbox/healthcheck.py app/
 
 # Create journal directory with proper permissions
 RUN mkdir -p /var/log/n8n-executor && \
@@ -48,8 +52,11 @@ USER n8n-operator
 # - N8N_API_KEY: n8n API key
 # - APPROVAL_SECRET: HMAC secret for approval gate (MUST be set by human operator)
 
-# Health check (executor should respond to simple ping)
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import httpx; print('ok')" || exit 1
+# Health check: verify n8n API connectivity
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD python /app/healthcheck.py || exit 1
 
-CMD ["python", "-m", "app.services.n8n_executor"]
+# The executor runs as a long-lived polling loop waiting for approved operations.
+# In the sandbox, it reads operations from a queue file and executes them
+# after validating the HMAC-signed approval.
+CMD ["python", "/app/run_executor.py"]

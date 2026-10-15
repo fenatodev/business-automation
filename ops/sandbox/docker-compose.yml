@@ -8,19 +8,26 @@
 # 3. No Docker socket mount
 # 4. No n8n data directory mount
 # 5. No host network mode
-# 6. Dedicated network with only n8n as peer
+# 6. Connects to existing n8n_default network to reach n8n container
 # 7. Resource limits (CPU/memory)
 #
 # IMPORTANT: This configuration is PREPARED but NOT APPLIED.
 # Applying it requires explicit user approval (Gate B).
 #
+# Topology note: The sandbox connects to the existing `n8n_default` Docker
+# network so it can reach the n8n container by hostname. We do NOT declare
+# an n8n service here — that would modify the running stack. The n8n container
+# is managed by its own docker-compose at the infrastructure level.
+#
+# Network egress: Connecting to n8n_default does NOT guarantee egress isolation.
+# The n8n_default network may have internet access. True egress restriction
+# requires a custom network with explicit firewall rules (future work).
+#
 # Usage (after approval):
-#   docker-compose -f ops/sandbox/docker-compose.yml up -d
+#   docker compose -f ops/sandbox/docker-compose.yml up -d
 #
 # Rollback:
-#   docker-compose -f ops/sandbox/docker-compose.yml down
-
-version: "3.8"
+#   docker compose -f ops/sandbox/docker-compose.yml down
 
 services:
   n8n-executor:
@@ -30,9 +37,10 @@ services:
     container_name: n8n-executor-sandbox
     read_only: true
     user: "n8n-operator:n8n-operator"
-    network_mode: service:n8n
     networks:
-      - n8n-executor-net
+      n8n_default:
+        aliases:
+          - n8n-executor
     security_opt:
       - no-new-privileges:true
     tmpfs:
@@ -54,18 +62,19 @@ services:
           memory: 64M
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import httpx; print('ok')"]
+      test: ["CMD-SHELL", "python /app/healthcheck.py || exit 1"]
       interval: 30s
-      timeout: 5s
+      timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 15s
+    # Do NOT expose ports to host
+    # Do NOT mount Docker socket
+    # Do NOT mount n8n data directory
 
 volumes:
   n8n-executor-journal:
     driver: local
 
 networks:
-  n8n-executor-net:
-    driver: bridge
-    # Do NOT connect to host network
-    # Do NOT expose ports to host
+  n8n_default:
+    external: true

@@ -268,6 +268,8 @@ class TestApprovalExpiration:
 
     def test_short_expiry_works_then_expires(self):
         """An approval with very short expiry should work immediately but expire quickly."""
+        from app.services.approval_gate import ApprovalVerifier
+
         gate = ApprovalGate(secret="test-secret")
         payload = {"workflow_id": "test"}
         approval = gate.sign_approval(
@@ -282,9 +284,11 @@ class TestApprovalExpiration:
         # Wait for expiry
         time.sleep(0.15)
 
-        # Should fail after expiry
+        # Use a fresh verifier to test expiry (replay prevention would block
+        # the same verifier, but we want to test expiry specifically)
+        fresh_verifier = ApprovalVerifier(secret="test-secret")
         with pytest.raises(ApprovalExpiredError):
-            gate.validate(approval, payload)
+            fresh_verifier.validate(approval, payload)
 
 
 # ---------------------------------------------------------------------------

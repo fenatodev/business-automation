@@ -291,25 +291,48 @@ class ApprovalOperationMismatchError(Exception):
         )
 
 
-class ApprovalGate:
-    """Validates HMAC-signed approvals for n8n operations.
+class ApprovalReplayError(Exception):
+    """Raised when an approval has already been used (replay attack prevention)."""
 
-    This gate enforces that:
+    def __init__(self, operation: str, approval_id: str):
+        self.operation = operation
+        self.approval_id = approval_id
+        super().__init__(
+            f"Replay detected for {operation}: approval {approval_id} already used"
+        )
+
+
+class ApprovalVerifier:
+    """Verifies HMAC-signed approvals — cannot create them.
+
+    This class implements the VERIFY side of the sign/verify trust boundary.
+    It has NO method to sign approvals — only to validate them.
+
+    The ApprovalGate (below) provides both sign and verify for the human
+    operator side, where the HMAC secret is accessible. The ApprovalVerifier
+    is used by the executor sandbox, which should NOT be able to sign.
+
+    This separation ensures that even if the agent controls the executor
+    process, it cannot forge approvals — it can only verify ones that were
+    signed by the human operator with the HMAC secret.
+
+    This verifier enforces that:
     1. The approval signature is valid (HMAC-SHA256 with the secret)
     2. The approval has not expired
     3. The payload matches the approved hash
     4. The operation matches the approved operation
+    5. The approval has not been replayed (one-time use)
 
     The HMAC secret MUST come from outside the agent process.
     If the agent has access to the secret, the approval is meaningless.
 
     Usage:
-        gate = ApprovalGate(secret=os.environ["APPROVAL_SECRET"])
-        gate.validate(approval, payload)
+        verifier = ApprovalVerifier(secret=os.environ["APPROVAL_SECRET"])
+        verifier.validate(approval, payload)
     """
 
     def __init__(self, secret: str, journal: IntegrityJournal | None = None):
-        """Initialize the approval gate.
+        """Initialize the approval verifier.
 
         Args:
             secret: The HMAC secret — MUST NOT be accessible to the agent.
@@ -319,64 +342,7 @@ class ApprovalGate:
             raise ValueError("Approval secret must not be empty")
         self.secret = secret
         self.journal = journal or IntegrityJournal()
-
-    def sign_approval(
-        self,
-        operation: str,
-        payload: Any,
-        operator: str,
-        expires_in_seconds: float = 300.0,
-    ) -> SignedApproval:
-        """Create a signed approval for an operation.
-
-        This method should be called by the HUMAN OPERATOR, not the agent.
-        The agent should NOT have access to the secret used by this gate.
-
-        Args:
-            operation: The operation type value, e.g. "workflow:activate".
-            payload: The payload to be executed.
-            operator: The human operator identity.
-            expires_in_seconds: How long the approval is valid (default 5 min).
-
-        Returns:
-            A SignedApproval that can be passed to the executor.
-        """
-        payload_bytes = json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
-        payload_hash = hashlib.sha256(payload_bytes).hexdigest()
-
-        # Compute expires_at ONCE to ensure signature matches reconstruction
-        expires_at = time.time() + expires_in_seconds
-
-        message = json.dumps({
-            "operation": operation,
-            "payload_hash": payload_hash,
-            "operator": operator,
-            "expires_at": expires_at,
-        }, sort_keys=True, default=str)
-
-        signature = hmac.new(
-            self.secret.encode("utf-8"),
-            message.encode("utf-8"),
-            hashlib.sha256,
-        ).hexdigest()
-
-        approval = SignedApproval(
-            operation=operation,
-            payload_hash=payload_hash,
-            operator=operator,
-            expires_at=expires_at,
-            signature=signature,
-        )
-
-        self.journal.append(
-            operation=operation,
-            status="approval_created",
-            details=f"Approval created by {operator}",
-            operator=operator,
-            content_hash=payload_hash,
-        )
-
-        return approval
+        self._used_approvals: set[str] = set()
 
     def validate(self, approval: SignedApproval, payload: Any) -> bool:
         """Validate an HMAC-signed approval.
@@ -385,7 +351,7 @@ class ApprovalGate:
         1. The HMAC signature matches (proves the secret holder approved)
         2. The approval has not expired
         3. The payload hash matches the approved hash
-        4. The operation matches the approved operation
+        4. The approval has not been replayed
 
         Args:
             approval: The signed approval to validate.
@@ -398,8 +364,22 @@ class ApprovalGate:
             ApprovalSignatureError: If the HMAC signature is invalid.
             ApprovalExpiredError: If the approval has expired.
             ApprovalPayloadMismatchError: If the payload doesn't match.
-            ApprovalOperationMismatchError: If the operation doesn't match.
+            ApprovalReplayError: If the approval was already used.
         """
+        # 0. Check replay prevention
+        approval_id = f"{approval.operation}:{approval.payload_hash}:{approval.signature}"
+        if approval_id in self._used_approvals:
+            self.journal.append(
+                operation=approval.operation,
+                status="replay_detected",
+                details="Approval already used — possible replay attack",
+                operator=approval.operator,
+            )
+            raise ApprovalReplayError(
+                operation=approval.operation,
+                approval_id=approval_id,
+            )
+
         # 1. Verify HMAC signature
         expected_signature = hmac.new(
             self.secret.encode("utf-8"),
@@ -452,7 +432,10 @@ class ApprovalGate:
                 actual=actual_payload_hash,
             )
 
-        # 4. Log successful validation
+        # 4. Mark as used (replay prevention)
+        self._used_approvals.add(approval_id)
+
+        # 5. Log successful validation
         self.journal.append(
             operation=approval.operation,
             status="approval_validated",
@@ -488,3 +471,125 @@ class ApprovalGate:
                 requested=expected_operation,
             )
         return True
+
+
+class ApprovalSigner:
+    """Creates HMAC-signed approvals — used by the human operator only.
+
+    This class implements the SIGN side of the trust boundary. It should
+    ONLY be accessible to the human operator, not to the agent/executor.
+
+    In production, this runs in a separate process/container with access
+    to the HMAC secret. The signed approval is then passed to the executor
+    (via queue file, API, etc.) for verification and execution.
+
+    Usage:
+        signer = ApprovalSigner(secret=os.environ["APPROVAL_SECRET"])
+        approval = signer.sign_approval(
+            operation="workflow:activate",
+            payload={"workflow_id": "..."},
+            operator="human-admin",
+        )
+        # Pass approval to executor for verification
+    """
+
+    def __init__(self, secret: str, journal: IntegrityJournal | None = None):
+        """Initialize the approval signer.
+
+        Args:
+            secret: The HMAC secret — MUST NOT be accessible to the agent.
+            journal: Optional integrity journal for audit logging.
+        """
+        if not secret:
+            raise ValueError("Approval secret must not be empty")
+        self.secret = secret
+        self.journal = journal or IntegrityJournal()
+
+    def sign_approval(
+        self,
+        operation: str,
+        payload: Any,
+        operator: str,
+        expires_in_seconds: float = 300.0,
+    ) -> SignedApproval:
+        """Create a signed approval for an operation.
+
+        This method should be called by the HUMAN OPERATOR, not the agent.
+        The agent should NOT have access to the secret used by this signer.
+
+        Args:
+            operation: The operation type value, e.g. "workflow:activate".
+            payload: The payload to be executed.
+            operator: The human operator identity.
+            expires_in_seconds: How long the approval is valid (default 5 min).
+
+        Returns:
+            A SignedApproval that can be passed to the executor.
+        """
+        payload_bytes = json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
+        payload_hash = hashlib.sha256(payload_bytes).hexdigest()
+
+        # Compute expires_at ONCE to ensure signature matches reconstruction
+        expires_at = time.time() + expires_in_seconds
+
+        message = json.dumps({
+            "operation": operation,
+            "payload_hash": payload_hash,
+            "operator": operator,
+            "expires_at": expires_at,
+        }, sort_keys=True, default=str)
+
+        signature = hmac.new(
+            self.secret.encode("utf-8"),
+            message.encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()
+
+        approval = SignedApproval(
+            operation=operation,
+            payload_hash=payload_hash,
+            operator=operator,
+            expires_at=expires_at,
+            signature=signature,
+        )
+
+        self.journal.append(
+            operation=operation,
+            status="approval_created",
+            details=f"Approval created by {operator}",
+            operator=operator,
+            content_hash=payload_hash,
+        )
+
+        return approval
+
+
+# Keep ApprovalGate as an alias for backward compatibility in tests.
+# New code should use ApprovalVerifier (executor side) and ApprovalSigner (operator side).
+class ApprovalGate(ApprovalVerifier):
+    """ApprovalGate now extends ApprovalVerifier and adds sign_approval.
+
+    This class is kept for backward compatibility with existing tests.
+    For new code, prefer:
+    - ApprovalVerifier: executor side (verify only, cannot sign)
+    - ApprovalSigner: operator side (sign only)
+
+    The trust boundary is: ApprovalVerifier runs in the executor sandbox
+    with the HMAC secret, but has NO sign_approval method. The agent
+    cannot forge approvals because it cannot call sign_approval on the verifier.
+    """
+
+    def sign_approval(
+        self,
+        operation: str,
+        payload: Any,
+        operator: str,
+        expires_in_seconds: float = 300.0,
+    ) -> SignedApproval:
+        """Create a signed approval — kept for backward compatibility.
+
+        WARNING: This method should NOT be available in the executor sandbox.
+        Use ApprovalVerifier for the executor side.
+        """
+        signer = ApprovalSigner(secret=self.secret, journal=self.journal)
+        return signer.sign_approval(operation, payload, operator, expires_in_seconds)

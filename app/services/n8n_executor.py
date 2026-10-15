@@ -9,12 +9,28 @@ Key design decisions:
 2. HTTP 401/403 responses are treated as definitive blocks — no retry, no fallback.
 3. Database operations are prohibited — only HTTP API calls are allowed.
 4. Credential access is prohibited — only metadata operations are allowed.
-5. Workflow activation requires explicit approval with content hash.
+5. Write operations require HMAC-signed approval via ApprovalVerifier.
 6. All operations are logged to a journal for audit and reconciliation.
 
-The executor is designed to be used by agent scripts and operational tasks,
-not by the FastAPI application itself. It provides a safe interface for
-n8n interactions that cannot be bypassed by modifying prompts or configurations.
+The executor integrates with ApprovalVerifier from approval_gate.py to ensure
+that write operations cannot be executed without a valid HMAC-signed approval
+from the human operator. The agent cannot forge approvals because the HMAC
+secret is not accessible to the executor process.
+
+Usage:
+    config = ExecutorConfig(base_url="http://localhost:5678", api_key="...")
+    executor = N8nExecutor(config)
+    executor.set_approval_verifier(verifier)  # Inject HMAC verifier
+
+    # Read-only operation — no approval needed
+    workflows = executor.execute(OperationType.WORKFLOW_LIST)
+
+    # Write operation — requires HMAC-signed approval
+    executor.execute_with_queue({
+        "operation": "workflow:activate",
+        "payload": {"workflow_id": "..."},
+        "approval": { ... SignedApproval fields ... }
+    })
 """
 
 from __future__ import annotations
@@ -232,30 +248,33 @@ class N8nExecutor:
     This executor enforces the governance policy at runtime:
     1. Only allowlisted operations are permitted.
     2. HTTP 401/403 is a definitive block — no retry, no fallback.
-    3. Write operations require explicit approval with content hash.
+    3. Write operations require HMAC-signed approval via ApprovalVerifier.
     4. All operations are logged to a journal.
     5. Database direct access is prohibited.
+
+    The executor integrates with ApprovalVerifier to validate HMAC-signed
+    approvals. Without a verifier, write operations are rejected.
 
     Usage:
         config = ExecutorConfig(base_url="http://localhost:5678", api_key="...")
         executor = N8nExecutor(config)
+        executor.set_approval_verifier(verifier)  # Required for write ops
 
         # Read-only operation — no approval needed
         workflows = executor.execute(OperationType.WORKFLOW_LIST)
 
-        # Write operation — requires approval
-        approval = OperationApproval(
-            operation=OperationType.WORKFLOW_UPDATE,
-            content_hash=hashlib.sha256(json.dumps(payload).encode()).hexdigest(),
-            expires_at=time.time() + 300,
-            operator="human-operator"
-        )
-        executor.execute(OperationType.WORKFLOW_UPDATE, payload, approval)
+        # Write operation — requires HMAC-signed approval
+        executor.execute_with_queue({
+            "operation": "workflow:activate",
+            "payload": {"workflow_id": "..."},
+            "approval": { ... SignedApproval fields ... }
+        })
     """
 
     def __init__(self, config: ExecutorConfig):
         self.config = config
         self.journal: list[OperationJournalEntry] = []
+        self._verifier: Any = None  # ApprovalVerifier, injected at runtime
         self._client = httpx.Client(
             base_url=config.base_url,
             timeout=config.timeout,
@@ -263,6 +282,17 @@ class N8nExecutor:
         )
         if config.api_key:
             self._client.headers["X-N8N-API-KEY"] = config.api_key
+
+    def set_approval_verifier(self, verifier: Any) -> None:
+        """Inject the ApprovalVerifier for HMAC-signed approval validation.
+
+        This method must be called before executing write operations.
+        Without a verifier, write operations will be rejected.
+
+        Args:
+            verifier: An ApprovalVerifier instance from approval_gate.py.
+        """
+        self._verifier = verifier
 
     def close(self) -> None:
         """Close the HTTP client."""
@@ -485,3 +515,81 @@ class N8nExecutor:
     def get_journal(self) -> list[OperationJournalEntry]:
         """Return the operation journal for audit."""
         return list(self.journal)
+
+    def execute_with_queue(self, queue_data: dict[str, Any]) -> dict[str, Any]:
+        """Execute an operation from a queue file with HMAC approval verification.
+
+        This method is used by the sandbox container's polling loop (run_executor.py).
+        It reads a queue file containing an operation, payload, and SignedApproval,
+        validates the approval via ApprovalVerifier, and executes the operation.
+
+        Args:
+            queue_data: Dictionary with keys:
+                - operation: Operation type string (e.g., "workflow:activate")
+                - payload: The operation payload
+                - approval: SignedApproval fields (operation, payload_hash, operator,
+                  expires_at, signature)
+
+        Returns:
+            Dictionary with execution result.
+
+        Raises:
+            ProhibitedOperationError: If the operation is prohibited.
+            ApprovalRequiredError: If no verifier is configured.
+            Any ApprovalVerifier exception: If the approval is invalid.
+        """
+        operation_str = queue_data.get("operation", "")
+        payload = queue_data.get("payload")
+        approval_data = queue_data.get("approval")
+
+        # Resolve operation type
+        try:
+            operation = OperationType(operation_str)
+        except ValueError:
+            raise ProhibitedOperationError(
+                operation=operation_str,
+                reason="Unknown operation type",
+            )
+
+        # Check prohibited
+        if operation in PROHIBITED_OPERATIONS:
+            raise ProhibitedOperationError(
+                operation=operation_str,
+                reason="This operation is explicitly prohibited by governance policy",
+            )
+
+        # For approval-required operations, validate via HMAC verifier
+        if operation in APPROVAL_REQUIRED_OPERATIONS:
+            if self._verifier is None:
+                raise ApprovalRequiredError(
+                    operation=operation_str,
+                    content_hash=self._compute_content_hash(payload),
+                )
+
+            if approval_data is None:
+                raise ApprovalRequiredError(
+                    operation=operation_str,
+                    content_hash=self._compute_content_hash(payload),
+                )
+
+            # Reconstruct SignedApproval from queue data
+            from app.services.approval_gate import SignedApproval
+
+            approval = SignedApproval(
+                operation=approval_data["operation"],
+                payload_hash=approval_data["payload_hash"],
+                operator=approval_data["operator"],
+                expires_at=approval_data["expires_at"],
+                signature=approval_data["signature"],
+            )
+
+            # Validate via HMAC verifier — this enforces the trust boundary
+            self._verifier.validate(approval, payload)
+            self._verifier.validate_operation(approval, operation_str)
+
+        # Execute the HTTP operation
+        try:
+            result = self._execute_http(operation, payload)
+            return {"status": "ok", "result": result}
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
