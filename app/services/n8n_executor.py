@@ -342,13 +342,22 @@ class N8nExecutor:
         operation: OperationType,
         payload: Any = None,
         approval: OperationApproval | None = None,
+        signed_approval: Any = None,
     ) -> Any:
         """Execute an n8n operation with enforcement.
+
+        WARNING: The legacy approval parameter (OperationApproval with SHA-256)
+        is DEPRECATED and will be removed. Use signed_approval (SignedApproval)
+        with HMAC verification instead. When signed_approval is provided for
+        write operations, the ApprovalVerifier is used; when only the legacy
+        approval is provided, a deprecation warning is logged and the operation
+        is rejected if the verifier is configured.
 
         Args:
             operation: The operation type to execute.
             payload: Optional payload for the operation.
-            approval: Optional explicit approval for write operations.
+            approval: DEPRECATED — legacy OperationApproval. Use signed_approval instead.
+            signed_approval: HMAC-signed approval (SignedApproval from approval_gate.py).
 
         Returns:
             The operation result (parsed JSON or None).
@@ -356,8 +365,6 @@ class N8nExecutor:
         Raises:
             ProhibitedOperationError: If the operation is prohibited.
             ApprovalRequiredError: If approval is required but not provided.
-            ApprovalExpiredError: If the approval has expired.
-            ContentHashMismatchError: If the payload doesn't match the approval.
             AuthorizationBlockError: If HTTP 401/403 is encountered.
         """
         now = time.time()
@@ -378,7 +385,94 @@ class N8nExecutor:
 
         # 2. Check if approval is required
         if operation in APPROVAL_REQUIRED_OPERATIONS:
-            if approval is None:
+            # Prefer HMAC-signed approval over legacy SHA-256 approval
+            if signed_approval is not None:
+                # Use ApprovalVerifier for HMAC-signed approval
+                if self._verifier is None:
+                    entry = OperationJournalEntry(
+                        timestamp=now,
+                        operation=operation,
+                        status="denied",
+                        details="HMAC verifier not configured for signed approval",
+                    )
+                    self._journal(entry)
+                    raise ApprovalRequiredError(
+                        operation=operation.value,
+                        content_hash=self._compute_content_hash(payload),
+                    )
+                # Validate via HMAC verifier — this enforces the trust boundary
+                self._verifier.validate(signed_approval, payload)
+                self._verifier.validate_operation(signed_approval, operation.value)
+
+            elif approval is not None:
+                # Legacy SHA-256 approval path — DEPRECATED
+                # If verifier is configured, reject legacy approvals
+                if self._verifier is not None:
+                    entry = OperationJournalEntry(
+                        timestamp=now,
+                        operation=operation,
+                        status="denied",
+                        details="Legacy SHA-256 approval rejected — HMAC verifier requires SignedApproval",
+                        operator=approval.operator,
+                    )
+                    self._journal(entry)
+                    raise ApprovalRequiredError(
+                        operation=operation.value,
+                        content_hash=self._compute_content_hash(payload),
+                    )
+                # Fall back to legacy validation only when no verifier is configured
+                logger.warning(
+                    "DEPRECATED: Legacy OperationApproval used for %s — "
+                    "this path is vulnerable to forgery. Use SignedApproval instead.",
+                    operation.value,
+                )
+                if not approval.is_valid(now):
+                    entry = OperationJournalEntry(
+                        timestamp=now,
+                        operation=operation,
+                        status="expired_approval",
+                        details=f"Approval expired at {approval.expires_at}",
+                        operator=approval.operator,
+                    )
+                    self._journal(entry)
+                    raise ApprovalExpiredError(
+                        operation=operation.value,
+                        expired_at=approval.expires_at,
+                    )
+
+                if approval.operation != operation:
+                    entry = OperationJournalEntry(
+                        timestamp=now,
+                        operation=operation,
+                        status="denied",
+                        details=f"Approval for {approval.operation.value} does not match {operation.value}",
+                        operator=approval.operator,
+                    )
+                    self._journal(entry)
+                    raise ProhibitedOperationError(
+                        operation=operation.value,
+                        reason=f"Approval is for {approval.operation.value}, not {operation.value}",
+                    )
+
+                if payload is not None and not approval.matches_content(payload):
+                    actual_hash = self._compute_content_hash(payload)
+                    entry = OperationJournalEntry(
+                        timestamp=now,
+                        operation=operation,
+                        status="hash_mismatch",
+                        details=f"Expected {approval.content_hash}, got {actual_hash}",
+                        operator=approval.operator,
+                        content_hash=actual_hash,
+                    )
+                    self._journal(entry)
+                    raise ContentHashMismatchError(
+                        operation=operation.value,
+                        expected=approval.content_hash,
+                        actual=actual_hash,
+                    )
+
+            else:
+                # No approval at all
                 content_hash = self._compute_content_hash(payload)
                 entry = OperationJournalEntry(
                     timestamp=now,
@@ -393,61 +487,20 @@ class N8nExecutor:
                     content_hash=content_hash,
                 )
 
-            # Validate approval
-            if not approval.is_valid(now):
-                entry = OperationJournalEntry(
-                    timestamp=now,
-                    operation=operation,
-                    status="expired_approval",
-                    details=f"Approval expired at {approval.expires_at}",
-                    operator=approval.operator,
-                )
-                self._journal(entry)
-                raise ApprovalExpiredError(
-                    operation=operation.value,
-                    expired_at=approval.expires_at,
-                )
-
-            if approval.operation != operation:
-                entry = OperationJournalEntry(
-                    timestamp=now,
-                    operation=operation,
-                    status="denied",
-                    details=f"Approval for {approval.operation.value} does not match {operation.value}",
-                    operator=approval.operator,
-                )
-                self._journal(entry)
-                raise ProhibitedOperationError(
-                    operation=operation.value,
-                    reason=f"Approval is for {approval.operation.value}, not {operation.value}",
-                )
-
-            if payload is not None and not approval.matches_content(payload):
-                actual_hash = self._compute_content_hash(payload)
-                entry = OperationJournalEntry(
-                    timestamp=now,
-                    operation=operation,
-                    status="hash_mismatch",
-                    details=f"Expected {approval.content_hash}, got {actual_hash}",
-                    operator=approval.operator,
-                    content_hash=actual_hash,
-                )
-                self._journal(entry)
-                raise ContentHashMismatchError(
-                    operation=operation.value,
-                    expected=approval.content_hash,
-                    actual=actual_hash,
-                )
-
         # 3. Execute the operation via HTTP API
         try:
             result = self._execute_http(operation, payload)
+            operator = (
+                signed_approval.operator if signed_approval
+                else approval.operator if approval
+                else None
+            )
             entry = OperationJournalEntry(
                 timestamp=now,
                 operation=operation,
                 status="allowed",
                 details="Operation executed successfully",
-                operator=approval.operator if approval else None,
+                operator=operator,
                 content_hash=self._compute_content_hash(payload) if payload else None,
             )
             self._journal(entry)
@@ -458,12 +511,17 @@ class N8nExecutor:
             raise
 
         except Exception as e:
+            operator = (
+                signed_approval.operator if signed_approval
+                else approval.operator if approval
+                else None
+            )
             entry = OperationJournalEntry(
                 timestamp=now,
                 operation=operation,
                 status="denied",
                 details=f"Execution error: {str(e)}",
-                operator=approval.operator if approval else None,
+                operator=operator,
             )
             self._journal(entry)
             raise

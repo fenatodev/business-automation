@@ -321,10 +321,15 @@ class ApprovalVerifier:
     2. The approval has not expired
     3. The payload matches the approved hash
     4. The operation matches the approved operation
-    5. The approval has not been replayed (one-time use)
+    5. The approval has not been replayed (one-time use, durable across restarts)
 
     The HMAC secret MUST come from outside the agent process.
     If the agent has access to the secret, the approval is meaningless.
+
+    Durable approval consumption:
+    Used approval IDs are persisted to the journal file so that a restart
+    does NOT allow replay of an already-consumed approval. On initialization,
+    the verifier loads previously used approval IDs from the journal.
 
     Usage:
         verifier = ApprovalVerifier(secret=os.environ["APPROVAL_SECRET"])
@@ -336,13 +341,17 @@ class ApprovalVerifier:
 
         Args:
             secret: The HMAC secret — MUST NOT be accessible to the agent.
-            journal: Optional integrity journal for audit logging.
+            journal: Optional integrity journal for audit logging. If the
+                journal has a file path, used approvals are loaded from it
+                to prevent replay after restart.
         """
         if not secret:
             raise ValueError("Approval secret must not be empty")
         self.secret = secret
         self.journal = journal or IntegrityJournal()
         self._used_approvals: set[str] = set()
+        # Load previously used approvals from journal to prevent replay after restart
+        self._load_used_approvals()
 
     def validate(self, approval: SignedApproval, payload: Any) -> bool:
         """Validate an HMAC-signed approval.
@@ -432,10 +441,10 @@ class ApprovalVerifier:
                 actual=actual_payload_hash,
             )
 
-        # 4. Mark as used (replay prevention)
+        # 4. Mark as used (replay prevention) — atomically with journal persistence
         self._used_approvals.add(approval_id)
 
-        # 5. Log successful validation
+        # 5. Log successful validation with used approval ID for durable consumption
         self.journal.append(
             operation=approval.operation,
             status="approval_validated",
@@ -443,8 +452,29 @@ class ApprovalVerifier:
             operator=approval.operator,
             content_hash=actual_payload_hash,
         )
+        # Persist the used approval ID to the journal for durable consumption
+        if self.journal.path:
+            self.journal.append(
+                operation=approval.operation,
+                status="approval_consumed",
+                details=approval_id,
+                operator=approval.operator,
+            )
 
         return True
+
+    def _load_used_approvals(self) -> None:
+        """Load previously used approval IDs from the journal.
+
+        This ensures that a restart does NOT allow replay of an already-consumed
+        approval. The journal must have a file path for this to work.
+        """
+        if not self.journal.path:
+            return
+        for entry in self.journal.entries:
+            if entry.status == "approval_consumed":
+                # The details field contains the approval ID
+                self._used_approvals.add(entry.details)
 
     def validate_operation(self, approval: SignedApproval, expected_operation: str) -> bool:
         """Validate that the approval matches the requested operation.
