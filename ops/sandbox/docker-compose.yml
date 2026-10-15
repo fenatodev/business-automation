@@ -46,12 +46,13 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=64m
     volumes:
-      # Only the journal directory is writable
-      - n8n-executor-journal:/var/log/n8n-executor
+      # Journal and ledger directory is writable for persistence
+      - n8n-executor-data:/var/log/n8n-executor
     environment:
       N8N_BASE_URL: "http://n8n:5678"
       N8N_API_KEY: "${N8N_API_KEY:-}"
-      APPROVAL_SECRET: "${APPROVAL_SECRET:-}"
+      ED25519_PUBLIC_KEY: "${ED25519_PUBLIC_KEY:-}"
+      LEDGER_PATH: "/var/log/n8n-executor/ledger.db"
     deploy:
       resources:
         limits:
@@ -72,7 +73,7 @@ services:
     # Do NOT mount n8n data directory
 
 volumes:
-  n8n-executor-journal:
+  n8n-executor-data:
     driver: local
 
 networks:

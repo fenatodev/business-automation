@@ -208,111 +208,199 @@ class TestExecutorRequiresVerifier:
         executor.close()
 
     def test_write_op_requires_valid_approval(self):
-        """execute_with_queue should validate HMAC approval."""
+        """execute_with_queue should validate Ed25519 approval."""
         config = ExecutorConfig(base_url="http://localhost:5678")
         executor = N8nExecutor(config)
 
-        secret = "test-secret"
-        signer = ApprovalSigner(secret=secret)
-        verifier = ApprovalVerifier(secret=secret)
-        executor.set_approval_verifier(verifier)
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+        from cryptography.hazmat.primitives import serialization
 
-        payload = {"workflow_id": "test"}
-        approval = signer.sign_approval(
-            operation="workflow:activate",
-            payload=payload,
-            operator="human-admin",
+        private_key = Ed25519PrivateKey.generate()
+        private_pem = private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+        public_pem = private_key.public_key().public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
 
-        queue_data = {
-            "operation": "workflow:activate",
-            "payload": payload,
-            "approval": {
-                "operation": approval.operation,
-                "payload_hash": approval.payload_hash,
-                "operator": approval.operator,
-                "expires_at": approval.expires_at,
-                "signature": approval.signature,
-            },
-        }
+        from app.services.approval_gate import (
+            ApprovalLedger,
+            Ed25519Signer,
+            Ed25519Verifier,
+        )
+        import tempfile
 
-        # With mock HTTP, this should pass approval validation
-        with patch.object(executor, "_execute_http") as mock_http:
-            mock_http.return_value = {"status": "ok"}
-            result = executor.execute_with_queue(queue_data)
-            assert result["status"] == "ok"
+        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
+            ledger_path = f.name
+
+        try:
+            ledger = ApprovalLedger(path=ledger_path)
+            signer = Ed25519Signer(private_key_pem=private_pem)
+            verifier = Ed25519Verifier(public_key_pem=public_pem, ledger=ledger)
+            executor.set_approval_verifier(verifier)
+
+            payload = {"workflow_id": "test"}
+            approval = signer.sign(
+                operation="workflow:activate",
+                payload=payload,
+                operator="human-admin",
+            )
+
+            queue_data = {
+                "operation": "workflow:activate",
+                "payload": payload,
+                "approval": {
+                    "operation": approval.operation,
+                    "payload_hash": approval.payload_hash,
+                    "operator": approval.operator,
+                    "expires_at": approval.expires_at,
+                    "nonce": approval.nonce,
+                    "signature": approval.signature,
+                },
+            }
+
+            with patch.object(executor, "_execute_http") as mock_http:
+                mock_http.return_value = {"status": "ok"}
+                result = executor.execute_with_queue(queue_data)
+                assert result["status"] == "ok"
+        finally:
+            import os
+            os.unlink(ledger_path)
 
         executor.close()
 
     def test_expired_approval_rejected_by_executor(self):
-        """Executor should reject expired approvals."""
+        """Executor should reject expired Ed25519 approvals."""
         config = ExecutorConfig(base_url="http://localhost:5678")
         executor = N8nExecutor(config)
 
-        secret = "test-secret"
-        signer = ApprovalSigner(secret=secret)
-        verifier = ApprovalVerifier(secret=secret)
-        executor.set_approval_verifier(verifier)
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+        from cryptography.hazmat.primitives import serialization
 
-        payload = {"workflow_id": "test"}
-        approval = signer.sign_approval(
-            operation="workflow:activate",
-            payload=payload,
-            operator="human-admin",
-            expires_in_seconds=-1,  # Already expired
+        private_key = Ed25519PrivateKey.generate()
+        private_pem = private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+        public_pem = private_key.public_key().public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
 
-        queue_data = {
-            "operation": "workflow:activate",
-            "payload": payload,
-            "approval": {
-                "operation": approval.operation,
-                "payload_hash": approval.payload_hash,
-                "operator": approval.operator,
-                "expires_at": approval.expires_at,
-                "signature": approval.signature,
-            },
-        }
+        from app.services.approval_gate import (
+            ApprovalLedger,
+            Ed25519Signer,
+            Ed25519Verifier,
+        )
+        import tempfile
 
-        with patch.object(executor, "_execute_http"):
-            with pytest.raises(ApprovalExpiredError):
-                executor.execute_with_queue(queue_data)
+        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
+            ledger_path = f.name
+
+        try:
+            ledger = ApprovalLedger(path=ledger_path)
+            signer = Ed25519Signer(private_key_pem=private_pem)
+            verifier = Ed25519Verifier(public_key_pem=public_pem, ledger=ledger)
+            executor.set_approval_verifier(verifier)
+
+            payload = {"workflow_id": "test"}
+            approval = signer.sign(
+                operation="workflow:activate",
+                payload=payload,
+                operator="human-admin",
+                expires_in_seconds=-1,  # Already expired
+            )
+
+            queue_data = {
+                "operation": "workflow:activate",
+                "payload": payload,
+                "approval": {
+                    "operation": approval.operation,
+                    "payload_hash": approval.payload_hash,
+                    "operator": approval.operator,
+                    "expires_at": approval.expires_at,
+                    "nonce": approval.nonce,
+                    "signature": approval.signature,
+                },
+            }
+
+            with patch.object(executor, "_execute_http"):
+                with pytest.raises(ApprovalExpiredError):
+                    executor.execute_with_queue(queue_data)
+        finally:
+            import os
+            os.unlink(ledger_path)
 
         executor.close()
 
     def test_forged_approval_rejected_by_executor(self):
-        """Executor should reject approvals with forged signatures."""
+        """Executor should reject Ed25519 approvals with forged signatures."""
         config = ExecutorConfig(base_url="http://localhost:5678")
         executor = N8nExecutor(config)
 
-        secret = "real-secret"
-        wrong_secret = "wrong-secret"
-        signer = ApprovalSigner(secret=wrong_secret)  # Wrong secret
-        verifier = ApprovalVerifier(secret=secret)  # Real secret
-        executor.set_approval_verifier(verifier)
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+        from cryptography.hazmat.primitives import serialization
 
-        payload = {"workflow_id": "test"}
-        approval = signer.sign_approval(
-            operation="workflow:activate",
-            payload=payload,
-            operator="attacker",
+        # Real key pair for verifier
+        real_private = Ed25519PrivateKey.generate()
+        real_public_pem = real_private.public_key().public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+        # Fake key pair for attacker
+        fake_private = Ed25519PrivateKey.generate()
+        fake_pem = fake_private.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
         )
 
-        queue_data = {
-            "operation": "workflow:activate",
-            "payload": payload,
-            "approval": {
-                "operation": approval.operation,
-                "payload_hash": approval.payload_hash,
-                "operator": approval.operator,
-                "expires_at": approval.expires_at,
-                "signature": approval.signature,
-            },
-        }
+        from app.services.approval_gate import (
+            ApprovalLedger,
+            Ed25519Signer,
+            Ed25519Verifier,
+        )
+        import tempfile
 
-        with patch.object(executor, "_execute_http"):
-            with pytest.raises(ApprovalSignatureError):
-                executor.execute_with_queue(queue_data)
+        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
+            ledger_path = f.name
+
+        try:
+            ledger = ApprovalLedger(path=ledger_path)
+            fake_signer = Ed25519Signer(private_key_pem=fake_pem)
+            verifier = Ed25519Verifier(public_key_pem=real_public_pem, ledger=ledger)
+            executor.set_approval_verifier(verifier)
+
+            payload = {"workflow_id": "test"}
+            approval = fake_signer.sign(
+                operation="workflow:activate",
+                payload=payload,
+                operator="attacker",
+            )
+
+            queue_data = {
+                "operation": "workflow:activate",
+                "payload": payload,
+                "approval": {
+                    "operation": approval.operation,
+                    "payload_hash": approval.payload_hash,
+                    "operator": approval.operator,
+                    "expires_at": approval.expires_at,
+                    "nonce": approval.nonce,
+                    "signature": approval.signature,
+                },
+            }
+
+            with patch.object(executor, "_execute_http"):
+                with pytest.raises(ApprovalSignatureError):
+                    executor.execute_with_queue(queue_data)
+        finally:
+            import os
+            os.unlink(ledger_path)
 
         executor.close()
 

@@ -522,26 +522,30 @@ class N8nExecutor:
         return list(self.journal)
 
     def execute_with_queue(self, queue_data: dict[str, Any]) -> dict[str, Any]:
-        """Execute an operation from a queue file with HMAC approval verification.
+        """Execute an operation from a queue file with Ed25519 approval verification.
 
         This method is used by the sandbox container's polling loop (run_executor.py).
-        It reads a queue file containing an operation, payload, and SignedApproval,
-        validates the approval via ApprovalVerifier, and executes the operation.
+        It reads a queue file containing an operation, payload, and SignedApprovalEd25519,
+        validates the approval via Ed25519Verifier, and executes the operation.
+
+        The approval is validated BEFORE consumption: the Ed25519 signature is verified
+        first, then the approval is atomically consumed in the ledger. If validation
+        fails at any point, the approval is NOT consumed.
 
         Args:
             queue_data: Dictionary with keys:
                 - operation: Operation type string (e.g., "workflow:activate")
                 - payload: The operation payload
-                - approval: SignedApproval fields (operation, payload_hash, operator,
-                  expires_at, signature)
+                - approval: SignedApprovalEd25519 fields (operation, payload_hash,
+                  operator, expires_at, nonce, signature)
 
         Returns:
             Dictionary with execution result.
 
         Raises:
             ProhibitedOperationError: If the operation is prohibited.
-            ApprovalRequiredError: If no verifier is configured.
-            Any ApprovalVerifier exception: If the approval is invalid.
+            ApprovalRequiredError: If no verifier is configured or approval missing.
+            Any Ed25519Verifier exception: If the approval is invalid.
         """
         operation_str = queue_data.get("operation", "")
         payload = queue_data.get("payload")
@@ -563,7 +567,7 @@ class N8nExecutor:
                 reason="This operation is explicitly prohibited by governance policy",
             )
 
-        # For approval-required operations, validate via HMAC verifier
+        # For approval-required operations, validate via Ed25519 verifier
         if operation in APPROVAL_REQUIRED_OPERATIONS:
             if self._verifier is None:
                 raise ApprovalRequiredError(
@@ -577,20 +581,24 @@ class N8nExecutor:
                     content_hash=self._compute_content_hash(payload),
                 )
 
-            # Reconstruct SignedApproval from queue data
-            from app.services.approval_gate import SignedApproval
+            # Reconstruct SignedApprovalEd25519 from queue data
+            from app.services.approval_gate import SignedApprovalEd25519
 
-            approval = SignedApproval(
+            approval = SignedApprovalEd25519(
                 operation=approval_data["operation"],
                 payload_hash=approval_data["payload_hash"],
                 operator=approval_data["operator"],
                 expires_at=approval_data["expires_at"],
+                nonce=approval_data["nonce"],
                 signature=approval_data["signature"],
             )
 
-            # Validate via HMAC verifier — this enforces the trust boundary
-            self._verifier.validate(approval, payload)
+            # Validate operation BEFORE consuming the approval
             self._verifier.validate_operation(approval, operation_str)
+
+            # Validate Ed25519 signature and atomically consume in ledger
+            # If this fails, the approval is NOT consumed — safe to retry
+            self._verifier.validate(approval, payload)
 
         # Execute the HTTP operation
         try:

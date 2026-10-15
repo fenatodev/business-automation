@@ -31,7 +31,9 @@ WORKDIR /app
 
 # Copy and install dependencies
 COPY pyproject.toml uv.lock ./
-RUN pip install --no-cache-dir httpx
+# Install minimal dependencies with version control from lockfile
+# cryptography is required for Ed25519 asymmetric signature verification
+RUN pip install --no-cache-dir httpx cryptography==50.0.2
 
 # Copy __init__.py so that 'from app.services.xxx import ...' works inside the container
 COPY app/__init__.py app/
@@ -55,7 +57,8 @@ USER n8n-operator
 # Environment variables (set at runtime via docker-compose)
 # - N8N_BASE_URL: n8n API URL
 # - N8N_API_KEY: n8n API key
-# - APPROVAL_SECRET: HMAC secret for approval gate (MUST be set by human operator)
+# - ED25519_PUBLIC_KEY: Ed25519 public key PEM (NO private key in executor)
+# - LEDGER_PATH: Path to approval ledger SQLite database
 
 # Health check: verify n8n API connectivity
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
@@ -63,5 +66,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
 
 # The executor runs as a long-lived polling loop waiting for approved operations.
 # In the sandbox, it reads operations from a queue file and executes them
-# after validating the HMAC-signed approval.
+# after validating the Ed25519-signed approval (public key only, no private key).
 CMD ["python", "/app/run_executor.py"]

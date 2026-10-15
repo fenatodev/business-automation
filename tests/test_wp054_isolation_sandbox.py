@@ -580,10 +580,12 @@ class TestDockerComposeSyntax:
         content = compose_path.read_text()
         # Must NOT use list format with :? syntax
         assert "- N8N_API_KEY=${N8N_API_KEY:?" not in content
-        assert "- APPROVAL_SECRET=${APPROVAL_SECRET:?" not in content
+        # WP-056: APPROVAL_SECRET replaced by ED25519_PUBLIC_KEY
+        assert "- ED25519_PUBLIC_KEY=${ED25519_PUBLIC_KEY:?" not in content
         # Should use map format
         assert "N8N_API_KEY:" in content
-        assert "APPROVAL_SECRET:" in content
+        # WP-056: Ed25519 public key instead of HMAC secret
+        assert "ED25519_PUBLIC_KEY:" in content
 
     def test_compose_environment_uses_safe_defaults(self):
         """Environment variables should use safe defaults, not fail-fast syntax.
@@ -597,7 +599,8 @@ class TestDockerComposeSyntax:
         content = compose_path.read_text()
         # Should use :- (safe default) not :? (fail-fast)
         assert "${N8N_API_KEY:-}" in content or 'N8N_API_KEY: ""' in content
-        assert "${APPROVAL_SECRET:-}" in content or 'APPROVAL_SECRET: ""' in content
+        # WP-056: Ed25519 public key instead of HMAC secret
+        assert "${ED25519_PUBLIC_KEY:-}" in content or 'ED25519_PUBLIC_KEY: ""' in content
 
 
 class TestDockerfileCompleteness:
