@@ -37,21 +37,21 @@ services:
     container_name: junie-agent-sandbox
     read_only: true
     user: "junie-agent:junie-agent"
-    # Do NOT connect to any network by default for testing
-    # To enable network access, add:
-    # networks:
-    #   junie-agent-network:
-    #     aliases:
-    #       - junie-agent
+    # Explicitly disable all network access — do NOT create default bridge
+    network_mode: none
     security_opt:
       - no-new-privileges:true
     tmpfs:
       - /tmp:noexec,nosuid,size=64m
     volumes:
       # Workspace is writable for project files
+      # NOTE: This volume shadows the files copied in Dockerfile.
+      # For validation without volumes, use: docker run --rm <image>
       - junie-agent-workspace:/workspace
       # Logs and Junie config are writable
       - junie-agent-data:/var/log/junie-agent
+      # Persistent ledger for approval signatures (WP-056)
+      - junie-agent-ledger:/var/log/junie-agent/ledger
     environment:
       # Junie API key for authentication — MUST be injected at runtime
       JUNIE_API_KEY: "${JUNIE_API_KEY:-}"
@@ -90,11 +90,8 @@ volumes:
     driver: local
   junie-agent-data:
     driver: local
+  junie-agent-ledger:
+    driver: local
 
-# Network is defined but NOT used by default
-# To enable network access, uncomment the network reference in the service
-# and ensure it has the appropriate restrictions
-networks:
-  junie-agent-network:
-    driver: bridge
-    internal: true  # No internet access by default
+# No networks defined — service uses network_mode: none
+# Network access is explicitly disabled; no default bridge is created

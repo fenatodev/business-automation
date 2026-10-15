@@ -33,18 +33,24 @@
 
 FROM python:3.12-slim
 
-# Install minimal dependencies for Junie CLI
-# bubblewrap is required for Junie sandbox mode (srt)
-# socat is required for Unix socket forwarding
-# ripgrep is required for code search
+# Install minimal dependencies
+# Junie CLI is a Java application (JAR) installed via official curl script
+# It requires JRE but does NOT support --sandbox in release builds
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        bubblewrap \
-        socat \
-        ripgrep \
         git \
         curl && \
     rm -rf /var/lib/apt/lists/*
+
+# Install Junie CLI officially
+# The official installer downloads the shim + latest release version
+# NOTE: --sandbox flag is ONLY available in dev/nightly/experimental builds
+# Release builds (like the one installed here) do NOT support --sandbox
+RUN curl -fsSL https://junie.jetbrains.com/install.sh | bash && \
+    ln -s /root/.local/bin/junie /usr/local/bin/junie || true
+
+# Verify Junie CLI installation
+RUN junie --version || echo "WARNING: Junie CLI installation failed — container will report BLOKEADO"
 
 # Create non-root user without privileged groups
 # This user has NO docker, sudo, or lxd groups
@@ -69,12 +75,19 @@ COPY --chown=junie-agent:junie-agent ops/ ops/
 RUN pip install --no-cache-dir httpx cryptography==50.0.2
 
 # Copy Junie agent sandbox configuration
+# IMPORTANT: These files are copied BEFORE volume mounts in docker-compose.
+# The volume mounts will shadow them at runtime, but they exist in the image
+# for validation purposes (docker run without volumes).
 COPY --chown=junie-agent:junie-agent ops/agent-sandbox/sandbox.json /var/log/junie-agent/sandbox.json
 COPY --chown=junie-agent:junie-agent ops/agent-sandbox/launch-agent.sh /workspace/launch-agent.sh
 RUN chmod +x /workspace/launch-agent.sh
 
 # Copy healthcheck script
 COPY --chown=junie-agent:junie-agent ops/agent-sandbox/healthcheck.py /workspace/healthcheck.py
+
+# Copy __init__.py files for Python package imports
+COPY --chown=junie-agent:junie-agent ops/__init__.py ops/
+COPY --chown=junie-agent:junie-agent ops/agent-sandbox/__init__.py ops/agent-sandbox/
 
 # Switch to non-root user
 USER junie-agent

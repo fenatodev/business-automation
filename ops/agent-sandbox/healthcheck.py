@@ -44,8 +44,9 @@ def check_no_internal_network() -> bool:
 
     This check is informational — it doesn't block access,
     it only reports whether the container can reach internal hosts.
+    In network_mode: none, all connections should fail.
     """
-    # Try to reach localhost — should fail in --network none mode
+    # Try to reach localhost — should fail in network_mode: none
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(1)
@@ -56,6 +57,29 @@ def check_no_internal_network() -> bool:
     except Exception:
         # Connection failed — good for isolation
         return True
+
+
+def check_junie_cli_installed() -> bool:
+    """Verify Junie CLI is actually installed and executable.
+
+    This check fails the healthcheck if Junie CLI is not found,
+    preventing false-positive "isolation passed" results.
+    """
+    import shutil
+    return shutil.which("junie") is not None
+
+
+def check_no_plaintext_secrets() -> bool:
+    """Verify no plaintext secrets are persisted in the container.
+
+    This check ensures that git credential.helper store is not used
+    and no tokens are written to files in plaintext.
+    """
+    secret_paths = [
+        "/var/log/junie-agent/.git-credentials",
+        "/workspace/.git-credentials",
+    ]
+    return not any(os.path.exists(p) for p in secret_paths)
 
 
 def check_non_root_user() -> bool:
@@ -80,7 +104,17 @@ def check_read_only_filesystem() -> bool:
 
 
 def main() -> int:
-    """Run all health checks."""
+    """Run all health checks.
+
+    This healthcheck verifies ISOLATION CONFIGURATION, not runtime enforcement.
+    Passing checks mean the container is configured correctly, not that the
+    Junie agent process cannot be bypassed — that requires actual confinement.
+
+    Distinction:
+    - ISOLATION CONFIGURED: Container settings prevent access to host resources.
+    - ISOLATION ENFORCED: The agent process cannot bypass these settings.
+    - This healthcheck only validates the first level.
+    """
     checks = [
         ("Docker socket blocked", check_no_docker_socket),
         ("LXD socket blocked", check_no_lxd_socket),
@@ -89,6 +123,8 @@ def main() -> int:
         ("SSH agent not accessible", check_no_ssh_agent),
         ("Non-root user", check_non_root_user),
         ("Read-only filesystem", check_read_only_filesystem),
+        ("Junie CLI installed", check_junie_cli_installed),
+        ("No plaintext secrets", check_no_plaintext_secrets),
     ]
 
     failed = []
@@ -103,7 +139,7 @@ def main() -> int:
             print(f"✗ {name}: {e}")
             failed.append(name)
 
-    # Network check is informational
+    # Network check is informational — network_mode: none should block all
     if check_no_internal_network():
         print("✓ Internal network blocked (informational)")
     else:
@@ -113,7 +149,9 @@ def main() -> int:
         print(f"\nFailed checks: {', '.join(failed)}")
         return 1
 
-    print("\nAll health checks passed")
+    print("\nAll health checks passed — isolation configured")
+    print("NOTE: This validates container configuration, not runtime enforcement.")
+    print("The Junie agent process may still be bypassable without real confinement.")
     return 0
 
 

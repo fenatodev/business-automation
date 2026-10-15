@@ -133,9 +133,14 @@ class TestDockerfileIsolation:
         """The Dockerfile does not mount ~/.junie from host."""
         assert "~/.junie" not in dockerfile or "NOT" in dockerfile
 
-    def test_bubblewrap_installed(self, dockerfile):
-        """The Dockerfile installs bubblewrap for Junie sandbox mode."""
-        assert "bubblewrap" in dockerfile
+    def test_bubblewrap_or_junie_installed(self, dockerfile):
+        """The Dockerfile installs either bubblewrap (for sandbox mode) or Junie CLI.
+
+        Note: bubblewrap was removed when we discovered --sandbox is only available
+        in dev/nightly builds. The Dockerfile now installs Junie CLI officially.
+        """
+        # Either bubblewrap for sandbox mode OR Junie CLI official install
+        assert "bubblewrap" in dockerfile or "junie.jetbrains.com" in dockerfile
 
     def test_resource_limits_mentioned(self, dockerfile):
         """The Dockerfile mentions resource limits."""
@@ -209,9 +214,9 @@ class TestDockerComposeIsolation:
                 assert "${" in line or ":-" in line  # Should be a variable
 
     def test_internal_network_or_no_network(self, docker_compose):
-        """The compose file uses internal network or no network by default."""
-        # Either no network is connected, or the network is internal
-        assert "internal: true" in docker_compose or "network" not in docker_compose.split("services:")[1].split("volumes:")[0]
+        """The compose file uses network_mode: none or internal network by default."""
+        # network_mode: none is the strongest isolation — no network at all
+        assert "network_mode: none" in docker_compose or "internal: true" in docker_compose
 
     def test_restart_policy(self, docker_compose):
         """The compose file does not auto-restart by default."""
@@ -531,9 +536,14 @@ class TestDockerComposeSyntax:
         """The compose file has volume definitions."""
         assert "volumes:" in docker_compose
 
-    def test_compose_network_defined(self, docker_compose):
-        """The compose file has network definition."""
-        assert "networks:" in docker_compose
+    def test_compose_network_mode_none(self, docker_compose):
+        """The compose file uses network_mode: none for maximum isolation.
+
+        Note: With network_mode: none, there's no need for a networks section.
+        The previous version had a networks section with internal: true, but
+        network_mode: none is stronger — it disables all networking.
+        """
+        assert "network_mode: none" in docker_compose
 
 
 # ---------------------------------------------------------------------------
