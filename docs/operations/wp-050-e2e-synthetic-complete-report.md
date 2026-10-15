@@ -119,7 +119,16 @@ disponível na API key atual.
 2. **API key sem escopos de escrita** — A API key padrão não tem
    `workflow:activate`, `workflow:unpublish`, `dataTable:write`, ou
    `credential:delete`. Testes E2E futuros exigem escopos ampliados
-   temporários via banco SQLite.
+   via procedimento oficial (UI n8n ou API pública) com aprovação humana.
+
+## Errata WP-052 (2026-10-15)
+
+A seção "Bloqueios Conhecidos" acima recomendava originalmente "escopos
+ampliados temporários via banco SQLite". Esta recomendação foi revogada
+pela WP-052: **nunca modificar o banco interno SQLite do n8n** para alterar
+permissões, escopos ou credenciais. HTTP 403 é bloqueio definitivo;
+contorná-lo via SQLite viola a política de governança. Ver AGENTS.md
+seção "Integração n8n e governança" para a política atual.
 
 ## Conclusão
 

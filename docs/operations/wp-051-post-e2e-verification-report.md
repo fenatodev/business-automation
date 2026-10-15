@@ -123,7 +123,10 @@ Arquivo: `tests/test_wp051_post_e2e_security.py` — **26 testes** em 4 classes:
    via UI n8n ou escopo `credential:delete` temporário.
 
 2. **API key sem escopos de escrita** — Testes E2E futuros exigem escopos
-   ampliados temporários via banco SQLite. Procedimento documentado no WP-050.
+   ampliados via procedimento oficial (UI n8n ou API pública) com aprovação
+   humana. **Nunca usar banco SQLite interno do n8n** para alterar permissões
+   — esta prática foi revogada pela WP-052. Ver AGENTS.md seção
+   "Integração n8n e governança".
 
 3. **Drift de credenciais esperado** — O workflow JSON no repositório usa
    placeholders enquanto o n8n runtime usa IDs reais. Isso é intencional e
@@ -134,8 +137,9 @@ Arquivo: `tests/test_wp051_post_e2e_security.py` — **26 testes** em 4 classes:
 1. **Remoção de credencial test-header** — Requer escopo `credential:delete`
    não disponível na API key atual. Ação manual via UI n8n necessária.
 
-2. **Testes E2E futuros** — Requerem escopos ampliados temporários da API key
-   via modificação direta do banco SQLite do n8n.
+2. **Testes E2E futuros** — Requerem escopos ampliados da API key via
+   procedimento oficial (UI n8n ou API pública) com aprovação humana.
+   **Não usar banco SQLite interno do n8n** — ver política WP-052.
 
 ## Validação
 
