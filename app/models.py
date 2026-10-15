@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint, func
+from sqlalchemy import DateTime, ForeignKey, JSON, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -263,6 +263,63 @@ class ProposalBrief(Base):
         server_default="draft",
         nullable=False,
     )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+
+class ReviewQueueItem(Base):
+    """Commercial review queue item for the synthetic pilot.
+
+    Stores intake events after triage and draft generation, awaiting
+    human operator decision.  One row per unique event_id per tenant.
+    """
+    __tablename__ = "review_queue_items"
+    __table_args__ = (
+        UniqueConstraint(
+            "company_id",
+            "event_id",
+            name="uq_review_queue_items_company_event_id",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    company_id: Mapped[int] = mapped_column(
+        ForeignKey("companies.id"),
+        nullable=False,
+        index=True,
+    )
+
+    event_id: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    channel: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    message: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    intent: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    draft_reply: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    status: Mapped[str] = mapped_column(
+        String(30),
+        default="pending",
+        server_default="pending",
+        nullable=False,
+        index=True,
+    )
+
+    operator_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    needs_human_review: Mapped[bool] = mapped_column(default=False, nullable=False)
+    flags_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

@@ -1,0 +1,81 @@
+# WP-054: Minimal-privilege sandbox for n8n executor
+#
+# This docker-compose.yml creates a restricted container for the n8n executor
+# with the following isolation guarantees:
+#
+# 1. Read-only filesystem
+# 2. no-new-privileges security option
+# 3. No Docker socket mount
+# 4. No n8n data directory mount
+# 5. No host network mode
+# 6. Connects to existing n8n_default network to reach n8n container
+# 7. Resource limits (CPU/memory)
+#
+# IMPORTANT: This configuration is PREPARED but NOT APPLIED.
+# Applying it requires explicit user approval (Gate B).
+#
+# Topology note: The sandbox connects to the existing `n8n_default` Docker
+# network so it can reach the n8n container by hostname. We do NOT declare
+# an n8n service here — that would modify the running stack. The n8n container
+# is managed by its own docker-compose at the infrastructure level.
+#
+# Network egress: Connecting to n8n_default does NOT guarantee egress isolation.
+# The n8n_default network may have internet access. True egress restriction
+# requires a custom network with explicit firewall rules (future work).
+#
+# Usage (after approval):
+#   docker compose -f ops/sandbox/docker-compose.yml up -d
+#
+# Rollback:
+#   docker compose -f ops/sandbox/docker-compose.yml down
+
+services:
+  n8n-executor:
+    build:
+      context: ../..
+      dockerfile: ops/sandbox/Dockerfile
+    container_name: n8n-executor-sandbox
+    read_only: true
+    user: "n8n-operator:n8n-operator"
+    networks:
+      n8n_default:
+        aliases:
+          - n8n-executor
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
+    volumes:
+      # Journal and ledger directory is writable for persistence
+      - n8n-executor-data:/var/log/n8n-executor
+    environment:
+      N8N_BASE_URL: "http://n8n:5678"
+      N8N_API_KEY: "${N8N_API_KEY:-}"
+      ED25519_PUBLIC_KEY: "${ED25519_PUBLIC_KEY:-}"
+      LEDGER_PATH: "/var/log/n8n-executor/ledger.db"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python /app/healthcheck.py || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    # Do NOT expose ports to host
+    # Do NOT mount Docker socket
+    # Do NOT mount n8n data directory
+
+volumes:
+  n8n-executor-data:
+    driver: local
+
+networks:
+  n8n_default:
+    external: true
