@@ -111,6 +111,19 @@ Leads, customers e conversations pertencem a uma Company.
 - A API continua não autorizada para exposição pública.
 - Nunca introduzir dados reais de clientes em testes ou exemplos públicos.
 
+## Integração n8n e governança
+
+- O n8n é um serviço externo integrado via API HTTP pública.
+- Nunca modificar o banco de dados interno SQLite do n8n para alterar permissões, escopos, credenciais ou estado de workflows.
+- HTTP 401/403 é um bloqueio de autorização definitivo; não contorná-lo via SQLite, banco interno, descriptografia de credenciais ou qualquer outro meio.
+- Nunca ler, descriptografar ou extrair valores secretos de credenciais n8n.
+- Nunca acessar chaves de criptografia internas do n8n.
+- Para ampliar escopos de API key ou gerenciar credenciais, usar apenas a UI n8n ou a API pública suportada, com aprovação humana explícita.
+- Testes estáticos de workflow JSON não comprovam enforcement de segurança no executor; lacunas de enforcement devem ser marcadas como PENDENTE, não "protegidas".
+- Credenciais órfãs no n8n devem ser removidas via procedimento oficial (UI ou API pública) após aprovação específica; nunca via banco interno.
+- Workflow n8n permanece INACTIVE no repositório; ativação temporária exige autorização explícita por WP.
+- Não ativar workflows, não enviar mensagens externas e não usar APIs pagas sem aprovação.
+
 ## Agent reply
 
 - A mensagem customer é persistida antes da chamada ao modelo.
