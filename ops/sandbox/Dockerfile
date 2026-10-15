@@ -42,8 +42,8 @@ COPY app/services/approval_gate.py app/services/
 COPY app/services/n8n_executor.py app/services/
 
 # Copy healthcheck and executor entry-point scripts
-COPY ops/sandbox/healthcheck.py app/
-COPY ops/sandbox/run_executor.py app/
+COPY ops/sandbox/healthcheck.py /app/healthcheck.py
+COPY ops/sandbox/run_executor.py /app/run_executor.py
 
 # Create journal directory with proper permissions
 RUN mkdir -p /var/log/n8n-executor && \
