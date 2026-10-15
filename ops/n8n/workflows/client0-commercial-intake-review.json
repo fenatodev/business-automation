@@ -30,7 +30,7 @@
       "parameters": {
         "mode": "runOnceForEachItem",
         "language": "javaScript",
-        "jsCode": "const body = $json.body ?? {};\nconst channel = typeof body.channel === 'string' ? body.channel.trim() : '';\nconst message = typeof body.message === 'string' ? body.message.trim() : '';\nconst event_id = typeof body.event_id === 'string' ? body.event_id.trim() : '';\nif (!channel || !message || !event_id) return [];\nif (channel.length > 30 || message.length > 4000 || event_id.length > 100) return [];\nreturn [{ json: { channel, message, event_id } }];"
+        "jsCode": "const body = $json.body ?? {};\nconst channel = typeof body.channel === 'string' ? body.channel.trim() : '';\nconst message = typeof body.message === 'string' ? body.message.trim() : '';\nconst event_id = typeof body.event_id === 'string' ? body.event_id.trim() : '';\nif (!channel || !message || !event_id) return [];\nif (channel.length > 30 || message.length > 4000 || event_id.length > 100) return [];\nreturn { channel, message, event_id };"
       },
       "id": "22222222-2222-4222-8222-222222222222",
       "name": "Normalize Safe Input",
@@ -115,7 +115,7 @@
       "parameters": {
         "mode": "runOnceForEachItem",
         "language": "javaScript",
-        "jsCode": "const d = $json;\nif (d.can_send !== false || d.simulation_only !== true) {\n  throw new Error('Unsafe intake decision invariant');\n}\nreturn [{\n  json: {\n    event_id: String(d.event_id ?? ''),\n    status: d.needs_human_review ? 'needs_review' : 'draft_ready',\n    intent: String(d.intent ?? 'unknown'),\n    draft_reply: String(d.draft_reply ?? ''),\n    needs_human_review: Boolean(d.needs_human_review),\n    flags_json: JSON.stringify(Array.isArray(d.flags) ? d.flags : []),\n    received_at: new Date().toISOString()\n  }\n}];"
+        "jsCode": "const d = $json;\nif (d.can_send !== false || d.simulation_only !== true) {\n  throw new Error('Unsafe intake decision invariant');\n}\nconst json = {\n  event_id: String(d.event_id ?? ''),\n  status: d.needs_human_review ? 'needs_review' : 'draft_ready',\n  intent: String(d.intent ?? 'unknown'),\n  draft_reply: String(d.draft_reply ?? ''),\n  needs_human_review: Boolean(d.needs_human_review),\n  flags_json: JSON.stringify(Array.isArray(d.flags) ? d.flags : []),\n  received_at: new Date().toISOString()\n};\nreturn {json};"
       },
       "id": "66666666-6666-4666-8666-666666666666",
       "name": "Build Review Queue Row",
