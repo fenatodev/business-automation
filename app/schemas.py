@@ -1,6 +1,7 @@
-from typing import Literal
+from datetime import datetime
+from typing import Any, Literal
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class LeadCreate(BaseModel):
@@ -70,7 +71,7 @@ class OpportunityCreate(BaseModel):
     budget: str | None = Field(default=None, max_length=120)
     deadline: str | None = Field(default=None, max_length=120)
     requirements: str | None = None
-    captured_at: AwareDatetime
+    captured_at: datetime
 
 
 class OpportunityTriageUpdate(BaseModel):
@@ -135,3 +136,57 @@ class CommercialIntakeEvaluateRequest(BaseModel):
         if any(ord(char) < 32 or ord(char) == 127 for char in value):
             raise ValueError("commercial intake field contains control characters")
         return value
+
+
+# ---------------------------------------------------------------------------
+# Review Queue — WP-058
+# ---------------------------------------------------------------------------
+
+
+class ReviewQueueTrigger(BaseModel):
+    """Request body for triggering a synthetic review queue item."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    channel: str = Field(min_length=1, max_length=30)
+    message: str = Field(min_length=1, max_length=4000)
+    event_id: str = Field(min_length=1, max_length=100)
+
+    @field_validator("channel", "message", "event_id")
+    @classmethod
+    def nonempty_printable(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("review queue field cannot be blank")
+        if any(ord(char) < 32 or ord(char) == 127 for char in value):
+            raise ValueError("review queue field contains control characters")
+        return value
+
+
+class ReviewQueueDecision(BaseModel):
+    """Operator decision for a review queue item."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    decision: Literal["approve", "reject"]
+    operator_note: str | None = Field(default=None, max_length=2000)
+
+
+class ReviewQueueItemOut(BaseModel):
+    """Output schema for review queue items."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    company_id: int
+    event_id: str
+    channel: str
+    message: str
+    intent: str | None = None
+    draft_reply: str | None = None
+    status: str
+    operator_note: str | None = None
+    needs_human_review: bool
+    flags_json: dict[str, Any] | None = None
+    created_at: datetime
+    updated_at: datetime
