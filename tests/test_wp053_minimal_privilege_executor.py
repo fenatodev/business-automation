@@ -220,8 +220,12 @@ class TestApprovalEnforcement:
         ).hexdigest()
         executor.close()
 
-    def test_valid_approval_allows_operation(self, executor: N8nExecutor) -> None:
-        """Valid approval should allow the operation to proceed."""
+    def test_legacy_approval_is_rejected(self, executor: N8nExecutor) -> None:
+        """Legacy OperationApproval (SHA-256) is now ALWAYS rejected.
+
+        WP-056: The agent could forge SHA-256 hashes, so legacy approvals
+        are no longer accepted on any path. Use signed_approval instead.
+        """
         payload = {"name": "test-workflow", "active": False}
         approval = OperationApproval(
             operation=OperationType.WORKFLOW_UPDATE,
@@ -232,59 +236,47 @@ class TestApprovalEnforcement:
             operator="test-operator",
         )
 
-        # Mock the HTTP response
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {"id": "123", "name": "test-workflow"}
-        mock_response.text = ""
-        mock_response.request.url.path = "/api/v1/workflows/123"
-
-        with patch.object(executor._client, "request", return_value=mock_response):
-            result = executor.execute(OperationType.WORKFLOW_UPDATE, payload=payload, approval=approval)
-
-        assert result["id"] == "123"
+        # Legacy approval is now always rejected
+        with pytest.raises(ApprovalRequiredError):
+            executor.execute(
+                OperationType.WORKFLOW_UPDATE, payload=payload, approval=approval
+            )
         executor.close()
 
-    def test_expired_approval_is_rejected(self, executor: N8nExecutor, expired_approval: OperationApproval) -> None:
-        """Expired approval should be rejected."""
+    def test_legacy_expired_approval_is_rejected(self, executor: N8nExecutor, expired_approval: OperationApproval) -> None:
+        """Legacy expired approval is rejected (legacy path eliminated)."""
         payload = {"name": "test-workflow", "active": False}
-        with pytest.raises(ApprovalExpiredError) as exc_info:
+        # Legacy approval is rejected regardless of expiration
+        with pytest.raises(ApprovalRequiredError):
             executor.execute(
                 OperationType.WORKFLOW_UPDATE,
                 payload=payload,
                 approval=expired_approval,
             )
-
-        assert exc_info.value.operation == "workflow:update"
         executor.close()
 
-    def test_content_hash_mismatch_is_detected(self, executor: N8nExecutor) -> None:
-        """Payload that doesn't match the approval hash should be rejected."""
-        original_payload = {"name": "test-workflow", "active": False}
-        tampered_payload = {"name": "test-workflow", "active": True}  # Changed active
-
+    def test_legacy_hash_mismatch_is_rejected(self, executor: N8nExecutor) -> None:
+        """Legacy approval with hash mismatch is rejected (legacy path eliminated)."""
+        tampered_payload = {"name": "test-workflow", "active": True}
         approval = OperationApproval(
             operation=OperationType.WORKFLOW_UPDATE,
             content_hash=hashlib.sha256(
-                json.dumps(original_payload, sort_keys=True).encode()
+                json.dumps({"name": "test-workflow", "active": False}, sort_keys=True).encode()
             ).hexdigest(),
             expires_at=time.time() + 300,
             operator="test-operator",
         )
-
-        with pytest.raises(ContentHashMismatchError) as exc_info:
+        # Legacy approval is rejected regardless of hash
+        with pytest.raises(ApprovalRequiredError):
             executor.execute(
                 OperationType.WORKFLOW_UPDATE,
                 payload=tampered_payload,
                 approval=approval,
             )
-
-        assert exc_info.value.operation == "workflow:update"
-        assert exc_info.value.expected != exc_info.value.actual
         executor.close()
 
-    def test_wrong_operation_approval_is_rejected(self, executor: N8nExecutor) -> None:
-        """Approval for one operation should not allow another."""
+    def test_legacy_wrong_operation_is_rejected(self, executor: N8nExecutor) -> None:
+        """Legacy approval for wrong operation is rejected (legacy path eliminated)."""
         payload = {"name": "test-workflow"}
         approval = OperationApproval(
             operation=OperationType.WORKFLOW_UPDATE,
@@ -294,16 +286,13 @@ class TestApprovalEnforcement:
             expires_at=time.time() + 300,
             operator="test-operator",
         )
-
-        with pytest.raises(ProhibitedOperationError) as exc_info:
+        # Legacy approval is rejected regardless of operation mismatch
+        with pytest.raises(ApprovalRequiredError):
             executor.execute(
                 OperationType.WORKFLOW_ACTIVATE,
                 payload=payload,
                 approval=approval,
             )
-
-        assert "workflow:update" in exc_info.value.reason
-        assert "workflow:activate" in exc_info.value.reason
         executor.close()
 
     def test_approval_required_is_logged(self, executor: N8nExecutor) -> None:
@@ -538,7 +527,10 @@ class TestBypassAttempts:
         executor.close()
 
     def test_cannot_use_different_payload_with_approval(self, executor: N8nExecutor) -> None:
-        """Approval bound to one payload should not work with another."""
+        """Legacy approval is rejected regardless of payload mismatch.
+
+        WP-056: Legacy OperationApproval is no longer accepted on any path.
+        """
         original = {"name": "safe-workflow", "active": False}
         malicious = {"name": "safe-workflow", "active": True, "webhook": "http://evil.com"}
 
@@ -551,7 +543,8 @@ class TestBypassAttempts:
             operator="test-operator",
         )
 
-        with pytest.raises(ContentHashMismatchError):
+        # Legacy approval is rejected regardless of payload
+        with pytest.raises(ApprovalRequiredError):
             executor.execute(
                 OperationType.WORKFLOW_UPDATE,
                 payload=malicious,

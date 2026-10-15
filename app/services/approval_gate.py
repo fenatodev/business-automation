@@ -1,46 +1,37 @@
-"""Approval gate with HMAC-signed approvals for the n8n executor.
+"""Approval gate with Ed25519 asymmetric signatures and atomic SQLite ledger.
 
-This module solves the fundamental flaw in WP-053's OperationApproval:
-the agent could forge approvals by computing its own SHA-256 hash.
-
-The ApprovalGate requires an HMAC secret that is NOT accessible to the
-agent process. Approvals are signed with HMAC-SHA256 using this secret,
-so the agent cannot forge valid approvals without the secret.
+This module replaces the HMAC-SHA256 symmetric scheme (WP-053/054/055) with
+Ed25519 asymmetric signatures. The private key lives ONLY with the human
+approver; the executor holds ONLY the public key and can never forge approvals.
 
 Key design decisions:
-1. HMAC secret must come from outside the agent process (env var, vault, etc.)
-2. Approvals are bound to operation type, payload hash, operator, and expiry
-3. The HMAC signature covers all approval fields, not just the payload
-4. A tamper-evident journal chain prevents retroactive modification
-5. The gate itself does not execute operations — it only validates approvals
+1. Ed25519 asymmetric: private key signs, public key verifies — no shared secret
+2. Approvals include a nonce for replay prevention beyond one-time consumption
+3. An atomic SQLite ledger (ApprovalLedger) records consumed approvals with
+   UNIQUE constraints, fsync, and WAL mode for cross-process durability
+4. Fail-closed: if the ledger is unreadable, unwritable, or corrupted,
+   the verifier refuses to proceed rather than risking silent replay
+5. HMAC-SHA256 is retained only as a deprecated legacy path; new code MUST
+   use Ed25519
 
-The ApprovalGate is designed to be used by the N8nExecutor (or any executor)
-to validate that a human operator with access to the HMAC secret approved
-the operation, not the agent itself.
+The ApprovalLedger is a NEW, ISOLATED SQLite database — NEVER the n8n internal
+database. It exists solely for approval consumption tracking.
 
 Usage:
-    # Human operator signs an approval (outside the agent process):
-    import hmac, hashlib, json, time
-    secret = os.environ["APPROVAL_SECRET"]  # NOT accessible to agent
-    payload = {"workflow_id": "99999999-9999-4999-8999-999999999999"}
-    message = json.dumps({
-        "operation": "workflow:activate",
-        "payload_hash": hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest(),
-        "operator": "human-admin",
-        "expires_at": time.time() + 300
-    }, sort_keys=True)
-    signature = hmac.new(secret.encode(), message.encode(), hashlib.sha256).hexdigest()
-
-    # Agent passes the signed approval to the executor:
-    approval = SignedApproval(
-        operation=OperationType.WORKFLOW_ACTIVATE,
-        payload_hash=...,
+    # Human operator (private key — OUTSIDE agent environment):
+    from app.services.approval_gate import Ed25519Signer
+    signer = Ed25519Signer(private_key_pem=b"-----BEGIN...")
+    approval = signer.sign(
+        operation="workflow:activate",
+        payload={"workflow_id": "..."},
         operator="human-admin",
-        expires_at=...,
-        signature=signature
     )
-    gate = ApprovalGate(secret=secret)  # Secret injected from outside
-    gate.validate(approval, payload)
+
+    # Executor (public key only — cannot forge):
+    from app.services.approval_gate import Ed25519Verifier, ApprovalLedger
+    ledger = ApprovalLedger(path="/path/to/ledger.db")
+    verifier = Ed25519Verifier(public_key_pem=b"-----BEGIN...", ledger=ledger)
+    verifier.validate(approval, payload)
 """
 
 from __future__ import annotations
@@ -48,6 +39,8 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import os
+import sqlite3
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -55,34 +48,517 @@ from typing import Any
 
 
 # ---------------------------------------------------------------------------
-# Signed approval
+# Ed25519 asymmetric signed approval
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class SignedApprovalEd25519:
+    """An approval signed with Ed25519 asymmetric cryptography.
+
+    The private key is held ONLY by the human approver. The executor
+    holds ONLY the public key and can verify but never forge approvals.
+
+    Fields:
+        operation: The operation type value, e.g. "workflow:activate"
+        payload_hash: SHA-256 hex digest of the payload
+        operator: Human operator identity (authenticated externally)
+        expires_at: Unix timestamp when approval expires
+        nonce: Unique one-time value preventing replay even with same payload
+        signature: Ed25519 signature bytes (hex-encoded) over the signed message
+    """
+
+    operation: str
+    payload_hash: str
+    operator: str
+    expires_at: float
+    nonce: str
+    signature: str  # hex-encoded Ed25519 signature
+
+    def to_signed_message(self) -> str:
+        """Reconstruct the canonical message that was signed.
+
+        The message includes ALL fields except the signature itself,
+        so any tampering is detected during verification.
+        """
+        return json.dumps({
+            "operation": self.operation,
+            "payload_hash": self.payload_hash,
+            "operator": self.operator,
+            "expires_at": self.expires_at,
+            "nonce": self.nonce,
+        }, sort_keys=True, default=str)
+
+    @property
+    def approval_id(self) -> str:
+        """Unique identifier for ledger consumption tracking."""
+        return self.nonce
+
+
+# ---------------------------------------------------------------------------
+# Ed25519 signer (private key — human operator only)
+# ---------------------------------------------------------------------------
+
+
+class Ed25519Signer:
+    """Creates Ed25519-signed approvals — private key side only.
+
+    This class holds the Ed25519 PRIVATE key and can sign approvals.
+    It MUST NOT be accessible to the agent/executor process.
+
+    In production, this runs in a separate environment (operator workstation,
+    vault, HSM) with the private key. The signed approval is then passed
+    to the executor via a secure channel for verification.
+
+    Usage:
+        signer = Ed25519Signer(private_key_pem=b"-----BEGIN...")
+        approval = signer.sign(
+            operation="workflow:activate",
+            payload={"workflow_id": "..."},
+            operator="human-admin",
+        )
+    """
+
+    def __init__(self, private_key_pem: bytes):
+        """Initialize with Ed25519 private key in PEM format.
+
+        Args:
+            private_key_pem: Ed25519 private key in PEM format.
+                MUST NOT be accessible to the agent/executor.
+        """
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+            Ed25519PrivateKey,
+        )
+        from cryptography.hazmat.primitives import serialization
+
+        if not private_key_pem:
+            raise ValueError("Private key PEM must not be empty")
+
+        self._private_key: Ed25519PrivateKey = serialization.load_pem_private_key(
+            private_key_pem, password=None
+        )
+
+    @property
+    def public_key_pem(self) -> bytes:
+        """Return the public key in PEM format for the verifier."""
+        from cryptography.hazmat.primitives import serialization
+
+        return self._private_key.public_key().public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+
+    def sign(
+        self,
+        operation: str,
+        payload: Any,
+        operator: str,
+        expires_in_seconds: float = 300.0,
+        nonce: str | None = None,
+    ) -> SignedApprovalEd25519:
+        """Create an Ed25519-signed approval.
+
+        Args:
+            operation: The operation type value, e.g. "workflow:activate".
+            payload: The payload to be executed.
+            operator: The authenticated human operator identity.
+            expires_in_seconds: Approval validity window (default 5 min).
+            nonce: Optional unique nonce; auto-generated if not provided.
+
+        Returns:
+            A SignedApprovalEd25519 that can be verified by the executor.
+        """
+        if nonce is None:
+            nonce = hashlib.sha256(
+                f"{time.time()}:{os.urandom(16).hex()}:{operator}".encode()
+            ).hexdigest()
+
+        payload_bytes = json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
+        payload_hash = hashlib.sha256(payload_bytes).hexdigest()
+        expires_at = time.time() + expires_in_seconds
+
+        message = json.dumps({
+            "operation": operation,
+            "payload_hash": payload_hash,
+            "operator": operator,
+            "expires_at": expires_at,
+            "nonce": nonce,
+        }, sort_keys=True, default=str)
+
+        signature = self._private_key.sign(message.encode("utf-8"))
+
+        return SignedApprovalEd25519(
+            operation=operation,
+            payload_hash=payload_hash,
+            operator=operator,
+            expires_at=expires_at,
+            nonce=nonce,
+            signature=signature.hex(),
+        )
+
+
+# ---------------------------------------------------------------------------
+# Ed25519 verifier (public key only — executor side)
+# ---------------------------------------------------------------------------
+
+
+class Ed25519Verifier:
+    """Verifies Ed25519-signed approvals — public key only, cannot sign.
+
+    This class holds ONLY the Ed25519 PUBLIC key. It can verify approvals
+    but CANNOT create them. The private key is never accessible to the
+    executor process.
+
+    The verifier integrates with ApprovalLedger for atomic, durable,
+    cross-process consumption tracking. If the ledger is unavailable,
+    the verifier fails closed — no silent replay risk.
+
+    Usage:
+        ledger = ApprovalLedger(path="/path/to/ledger.db")
+        verifier = Ed25519Verifier(
+            public_key_pem=b"-----BEGIN...",
+            ledger=ledger,
+        )
+        verifier.validate(approval, payload)
+    """
+
+    def __init__(
+        self,
+        public_key_pem: bytes,
+        ledger: "ApprovalLedger | None" = None,
+    ):
+        """Initialize with Ed25519 public key in PEM format.
+
+        Args:
+            public_key_pem: Ed25519 public key in PEM format.
+            ledger: Optional ApprovalLedger for durable consumption tracking.
+                If provided, consumed approvals are recorded atomically.
+        """
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+            Ed25519PublicKey,
+        )
+        from cryptography.hazmat.primitives import serialization
+
+        if not public_key_pem:
+            raise ValueError("Public key PEM must not be empty")
+
+        self._public_key: Ed25519PublicKey = serialization.load_pem_public_key(
+            public_key_pem
+        )
+        self._ledger = ledger
+
+    def validate(self, approval: SignedApprovalEd25519, payload: Any) -> bool:
+        """Validate an Ed25519-signed approval.
+
+        Checks:
+        1. Ed25519 signature is valid (proves private key holder approved)
+        2. Approval has not expired
+        3. Payload hash matches
+        4. Approval has not been replayed (via ledger UNIQUE constraint)
+
+        Args:
+            approval: The signed approval to validate.
+            payload: The payload to be executed.
+
+        Returns:
+            True if the approval is valid and consumed.
+
+        Raises:
+            ApprovalSignatureError: If Ed25519 signature is invalid.
+            ApprovalExpiredError: If the approval has expired.
+            ApprovalPayloadMismatchError: If payload hash doesn't match.
+            ApprovalReplayError: If the approval was already consumed.
+            LedgerError: If the ledger is unavailable (fail-closed).
+        """
+        # 0. Check ledger availability (fail-closed)
+        if self._ledger is not None:
+            if not self._ledger.is_available():
+                raise LedgerError(
+                    "Ledger unavailable — fail-closed to prevent silent replay"
+                )
+
+        # 1. Verify Ed25519 signature
+        message = approval.to_signed_message()
+        try:
+            signature_bytes = bytes.fromhex(approval.signature)
+            self._public_key.verify(signature_bytes, message.encode("utf-8"))
+        except Exception as e:
+            raise ApprovalSignatureError(
+                f"Ed25519 signature verification failed: {e}",
+                actual=approval.signature,
+            )
+
+        # 2. Check expiration
+        now = time.time()
+        if now > approval.expires_at:
+            raise ApprovalExpiredError(
+                operation=approval.operation,
+                expired_at=approval.expires_at,
+            )
+
+        # 3. Verify payload hash
+        payload_bytes = json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
+        actual_payload_hash = hashlib.sha256(payload_bytes).hexdigest()
+
+        if actual_payload_hash != approval.payload_hash:
+            raise ApprovalPayloadMismatchError(
+                operation=approval.operation,
+                expected=approval.payload_hash,
+                actual=actual_payload_hash,
+            )
+
+        # 4. Atomically consume in ledger (fail-closed)
+        if self._ledger is not None:
+            self._ledger.consume(approval.approval_id, approval.operation)
+
+        return True
+
+    def validate_operation(self, approval: SignedApprovalEd25519, expected_operation: str) -> bool:
+        """Validate that the approval matches the requested operation.
+
+        Args:
+            approval: The signed approval.
+            expected_operation: The operation type value being requested.
+
+        Returns:
+            True if the operation matches.
+
+        Raises:
+            ApprovalOperationMismatchError: If the operation doesn't match.
+        """
+        if approval.operation != expected_operation:
+            raise ApprovalOperationMismatchError(
+                approved=approval.operation,
+                requested=expected_operation,
+            )
+        return True
+
+
+# ---------------------------------------------------------------------------
+# Atomic SQLite approval ledger
+# ---------------------------------------------------------------------------
+
+
+class LedgerError(Exception):
+    """Raised when the approval ledger is unavailable or corrupted."""
+
+    def __init__(self, reason: str):
+        self.reason = reason
+        super().__init__(f"Ledger error: {reason}")
+
+
+class ApprovalLedger:
+    """Atomic, durable SQLite ledger for approval consumption tracking.
+
+    This is a NEW, ISOLATED SQLite database — NEVER the n8n internal database.
+    It provides:
+    - UNIQUE constraint on approval_id (prevents duplicate consumption)
+    - WAL mode for concurrent read/write safety
+    - fsync after every write (durability across crashes)
+    - Fail-closed: if the ledger is unreadable/unwritable, operations fail
+
+    Cross-process concurrency: Two processes trying to consume the same
+    approval will have one succeed and the other get an IntegrityError.
+
+    Usage:
+        ledger = ApprovalLedger(path="/path/to/ledger.db")
+        ledger.consume(approval_id, operation)
+    """
+
+    _CREATE_TABLE = """
+        CREATE TABLE IF NOT EXISTS consumed_approvals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            approval_id TEXT NOT NULL UNIQUE,
+            operation TEXT NOT NULL,
+            consumed_at REAL NOT NULL,
+            operator TEXT
+        )
+    """
+
+    def __init__(self, path: str | Path):
+        """Initialize the approval ledger.
+
+        Args:
+            path: Path to the SQLite database file. This is a NEW, ISOLATED
+                database — never the n8n internal database.
+
+        Raises:
+            LedgerError: If the database cannot be opened or initialized.
+        """
+        self._path = str(path)
+        self._available = True
+        try:
+            self._init_db()
+        except Exception as e:
+            self._available = False
+            raise LedgerError(f"Failed to initialize ledger: {e}") from e
+
+    def _get_connection(self) -> sqlite3.Connection:
+        """Get a new database connection with safety settings."""
+        conn = sqlite3.connect(self._path, timeout=10)
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA synchronous=FULL")
+        conn.execute("PRAGMA foreign_keys=ON")
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    def _init_db(self) -> None:
+        """Initialize the database schema."""
+        conn = self._get_connection()
+        try:
+            conn.execute(self._CREATE_TABLE)
+            conn.commit()
+        finally:
+            conn.close()
+
+    def is_available(self) -> bool:
+        """Check if the ledger is available for operations.
+
+        Returns:
+            True if the ledger is accessible, False otherwise.
+        """
+        if not self._available:
+            return False
+        try:
+            conn = self._get_connection()
+            conn.execute("SELECT 1 FROM consumed_approvals LIMIT 1")
+            conn.close()
+            return True
+        except Exception:
+            self._available = False
+            return False
+
+    def consume(
+        self,
+        approval_id: str,
+        operation: str,
+        operator: str | None = None,
+    ) -> bool:
+        """Atomically consume an approval, recording it in the ledger.
+
+        This operation is atomic and durable:
+        - UNIQUE constraint prevents duplicate consumption
+        - fsync ensures durability across crashes
+        - If the write fails, the operation fails closed
+
+        Args:
+            approval_id: Unique approval identifier (nonce).
+            operation: The operation type value.
+            operator: Optional operator identity.
+
+        Returns:
+            True if the approval was successfully consumed.
+
+        Raises:
+            LedgerError: If the ledger is unavailable or write fails.
+            ApprovalReplayError: If the approval was already consumed.
+        """
+        if not self._available:
+            raise LedgerError("Ledger unavailable — fail-closed")
+
+        conn = None
+        try:
+            conn = self._get_connection()
+            conn.execute(
+                "INSERT INTO consumed_approvals (approval_id, operation, consumed_at, operator) "
+                "VALUES (?, ?, ?, ?)",
+                (approval_id, operation, time.time(), operator),
+            )
+            conn.commit()
+            # Force fsync for durability
+            conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
+            return True
+        except sqlite3.IntegrityError:
+            # UNIQUE constraint violation — approval already consumed
+            raise ApprovalReplayError(
+                operation=operation,
+                approval_id=approval_id,
+            )
+        except Exception as e:
+            self._available = False
+            raise LedgerError(f"Failed to consume approval: {e}") from e
+        finally:
+            if conn:
+                conn.close()
+
+    def is_consumed(self, approval_id: str) -> bool:
+        """Check if an approval was already consumed.
+
+        Args:
+            approval_id: The approval identifier to check.
+
+        Returns:
+            True if the approval was previously consumed.
+
+        Raises:
+            LedgerError: If the ledger is unavailable.
+        """
+        if not self._available:
+            raise LedgerError("Ledger unavailable — fail-closed")
+
+        try:
+            conn = self._get_connection()
+            try:
+                row = conn.execute(
+                    "SELECT 1 FROM consumed_approvals WHERE approval_id = ?",
+                    (approval_id,),
+                ).fetchone()
+                return row is not None
+            finally:
+                conn.close()
+        except Exception as e:
+            self._available = False
+            raise LedgerError(f"Failed to check consumption: {e}") from e
+
+    def get_consumed_count(self) -> int:
+        """Return the total number of consumed approvals.
+
+        Returns:
+            The count of consumed approvals.
+
+        Raises:
+            LedgerError: If the ledger is unavailable.
+        """
+        if not self._available:
+            raise LedgerError("Ledger unavailable — fail-closed")
+
+        try:
+            conn = self._get_connection()
+            try:
+                row = conn.execute(
+                    "SELECT COUNT(*) FROM consumed_approvals"
+                ).fetchone()
+                return row[0]
+            finally:
+                conn.close()
+        except Exception as e:
+            self._available = False
+            raise LedgerError(f"Failed to get count: {e}") from e
+
+
+# ---------------------------------------------------------------------------
+# Legacy HMAC-SHA256 signed approval (deprecated)
 # ---------------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
 class SignedApproval:
-    """An approval signed with HMAC-SHA256.
+    """DEPRECATED — An approval signed with HMAC-SHA256.
 
-    Unlike WP-053's OperationApproval, this approval cannot be forged by
-    the agent because the HMAC signature requires a secret that is not
-    accessible to the agent process.
+    WARNING: This symmetric scheme allows the agent to forge approvals
+    if it has access to the HMAC secret. Use SignedApprovalEd25519 instead.
 
-    The signature covers ALL fields: operation, payload_hash, operator,
-    and expires_at — preventing any field from being tampered after signing.
+    Retained only for backward compatibility with existing tests.
     """
 
-    operation: str  # Operation type value, e.g. "workflow:activate"
-    payload_hash: str  # SHA-256 hex digest of the payload
-    operator: str  # Human operator who approved
-    expires_at: float  # Unix timestamp when approval expires
-    signature: str  # HMAC-SHA256 hex digest of the signed message
+    operation: str
+    payload_hash: str
+    operator: str
+    expires_at: float
+    signature: str
 
     def to_signed_message(self) -> str:
-        """Reconstruct the message that was signed.
-
-        This is used by the ApprovalGate to verify the signature.
-        The message format must match exactly what was signed.
-        """
+        """Reconstruct the message that was signed."""
         return json.dumps({
             "operation": self.operation,
             "payload_hash": self.payload_hash,

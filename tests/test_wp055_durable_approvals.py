@@ -238,12 +238,16 @@ class TestLegacyBypassBlocked:
         )
         assert result == {"status": "ok"}
 
-    def test_legacy_approval_works_without_verifier(self, executor_config, mock_http_client):
-        """Legacy approval should still work when no verifier is configured (deprecation path)."""
+    def test_legacy_approval_rejected_without_verifier(self, executor_config, mock_http_client):
+        """Legacy approval is ALWAYS rejected — no bypass, even without verifier.
+
+        WP-056: OperationApproval (SHA-256) is no longer accepted on any path.
+        The agent could forge SHA-256 hashes, so this path is eliminated.
+        """
         executor = N8nExecutor(executor_config)
         executor._client = mock_http_client
 
-        # No verifier configured
+        # No verifier configured — legacy approval should still be rejected
         payload = {"workflow_id": "test-123"}
         content_hash = hashlib.sha256(
             json.dumps(payload, sort_keys=True).encode()
@@ -255,14 +259,27 @@ class TestLegacyBypassBlocked:
             operator="test-operator",
         )
 
-        # Legacy approval should work (with deprecation warning)
-        with patch.object(executor, '_execute_http', return_value={"status": "ok"}):
-            result = executor.execute(
+        # Legacy approval is now ALWAYS rejected
+        with pytest.raises(ApprovalRequiredError):
+            executor.execute(
                 operation=OperationType.WORKFLOW_ACTIVATE,
                 payload=payload,
                 approval=legacy_approval,
             )
-            assert result == {"status": "ok"}
+
+    def test_write_op_rejected_without_verifier(self, executor_config, mock_http_client):
+        """Write operations require a configured verifier — fail-closed."""
+        executor = N8nExecutor(executor_config)
+        executor._client = mock_http_client
+
+        # No verifier configured — even signed_approval is rejected
+        payload = {"workflow_id": "test-123"}
+
+        with pytest.raises(ApprovalRequiredError):
+            executor.execute(
+                operation=OperationType.WORKFLOW_ACTIVATE,
+                payload=payload,
+            )
 
     def test_no_approval_rejected_for_write_op(self, executor_config, mock_http_client):
         """Write operations without any approval should be rejected."""
