@@ -1,0 +1,71 @@
+# WP-054: Minimal-privilege sandbox for n8n executor
+#
+# This docker-compose.yml creates a restricted container for the n8n executor
+# with the following isolation guarantees:
+#
+# 1. Read-only filesystem
+# 2. no-new-privileges security option
+# 3. No Docker socket mount
+# 4. No n8n data directory mount
+# 5. No host network mode
+# 6. Dedicated network with only n8n as peer
+# 7. Resource limits (CPU/memory)
+#
+# IMPORTANT: This configuration is PREPARED but NOT APPLIED.
+# Applying it requires explicit user approval (Gate B).
+#
+# Usage (after approval):
+#   docker-compose -f ops/sandbox/docker-compose.yml up -d
+#
+# Rollback:
+#   docker-compose -f ops/sandbox/docker-compose.yml down
+
+version: "3.8"
+
+services:
+  n8n-executor:
+    build:
+      context: ../..
+      dockerfile: ops/sandbox/Dockerfile
+    container_name: n8n-executor-sandbox
+    read_only: true
+    user: "n8n-operator:n8n-operator"
+    network_mode: service:n8n
+    networks:
+      - n8n-executor-net
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
+    volumes:
+      # Only the journal directory is writable
+      - n8n-executor-journal:/var/log/n8n-executor
+    environment:
+      - N8N_BASE_URL=http://n8n:5678
+      - N8N_API_KEY=${N8N_API_KEY:?Error: N8N_API_KEY must be set}
+      - APPROVAL_SECRET=${APPROVAL_SECRET:?Error: APPROVAL_SECRET must be set by human operator}
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; print('ok')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  n8n-executor-journal:
+    driver: local
+
+networks:
+  n8n-executor-net:
+    driver: bridge
+    # Do NOT connect to host network
+    # Do NOT expose ports to host
