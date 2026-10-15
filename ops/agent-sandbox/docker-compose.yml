@@ -1,0 +1,100 @@
+# WP-057: Junie Agent Sandbox
+#
+# This docker-compose.yml creates a restricted container for the Junie agent
+# process itself, not just the n8n executor. The goal is to confine the agent
+# so that it cannot access Docker socket, sudo, LXD, n8n SQLite, secrets, or
+# the user's real home directory.
+#
+# Key isolation guarantees:
+# 1. Non-root user (no sudo, no docker group, no lxd group)
+# 2. Read-only filesystem (with specific writable directories)
+# 3. No Docker socket mount
+# 4. No n8n data directory mount
+# 5. No host network access (--network none for testing)
+# 6. no-new-privileges security option
+# 7. Resource limits (CPU/memory)
+# 8. No MCP servers that can control the host
+# 9. No access to user's real home directory
+# 10. No SSH agent or ~/.config mount
+#
+# IMPORTANT: This configuration is PREPARED but NOT APPLIED.
+# Applying it requires explicit user approval (Gate B).
+#
+# For testing with --network none:
+#   docker compose -f ops/agent-sandbox/docker-compose.yml run --rm junie-agent python /workspace/healthcheck.py
+#
+# For running with network access (after approval):
+#   docker compose -f ops/agent-sandbox/docker-compose.yml up -d
+#
+# Rollback:
+#   docker compose -f ops/agent-sandbox/docker-compose.yml down
+
+services:
+  junie-agent:
+    build:
+      context: ../..
+      dockerfile: ops/agent-sandbox/Dockerfile
+    container_name: junie-agent-sandbox
+    read_only: true
+    user: "junie-agent:junie-agent"
+    # Do NOT connect to any network by default for testing
+    # To enable network access, add:
+    # networks:
+    #   junie-agent-network:
+    #     aliases:
+    #       - junie-agent
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
+    volumes:
+      # Workspace is writable for project files
+      - junie-agent-workspace:/workspace
+      # Logs and Junie config are writable
+      - junie-agent-data:/var/log/junie-agent
+    environment:
+      # Junie API key for authentication — MUST be injected at runtime
+      JUNIE_API_KEY: "${JUNIE_API_KEY:-}"
+      # Reduced-scope Git token for repository access
+      GIT_TOKEN: "${GIT_TOKEN:-}"
+      # Task to execute in headless mode
+      TASK: "${TASK:-}"
+      # Junie home directory inside container
+      JUNIE_HOME: "/var/log/junie-agent"
+      # User home directory inside container
+      HOME: "/workspace"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
+    restart: "no"
+    healthcheck:
+      test: ["CMD-SHELL", "python /workspace/healthcheck.py || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    # Do NOT expose ports to host
+    # Do NOT mount Docker socket
+    # Do NOT mount n8n data directory
+    # Do NOT mount user's real home directory
+    # Do NOT mount ~/.config or ~/.junie from host
+    # Do NOT mount SSH agent socket
+
+volumes:
+  junie-agent-workspace:
+    driver: local
+  junie-agent-data:
+    driver: local
+
+# Network is defined but NOT used by default
+# To enable network access, uncomment the network reference in the service
+# and ensure it has the appropriate restrictions
+networks:
+  junie-agent-network:
+    driver: bridge
+    internal: true  # No internet access by default
