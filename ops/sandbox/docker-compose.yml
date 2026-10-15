@@ -49,9 +49,9 @@ services:
       # Only the journal directory is writable
       - n8n-executor-journal:/var/log/n8n-executor
     environment:
-      - N8N_BASE_URL=http://n8n:5678
-      - N8N_API_KEY=${N8N_API_KEY:?Error: N8N_API_KEY must be set}
-      - APPROVAL_SECRET=${APPROVAL_SECRET:?Error: APPROVAL_SECRET must be set by human operator}
+      N8N_BASE_URL: "http://n8n:5678"
+      N8N_API_KEY: "${N8N_API_KEY:-}"
+      APPROVAL_SECRET: "${APPROVAL_SECRET:-}"
     deploy:
       resources:
         limits:

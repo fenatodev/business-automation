@@ -33,12 +33,17 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN pip install --no-cache-dir httpx
 
+# Copy __init__.py so that 'from app.services.xxx import ...' works inside the container
+COPY app/__init__.py app/
+COPY app/services/__init__.py app/services/
+
 # Copy application code — only the services needed by the executor
 COPY app/services/approval_gate.py app/services/
 COPY app/services/n8n_executor.py app/services/
 
-# Copy healthcheck script
+# Copy healthcheck and executor entry-point scripts
 COPY ops/sandbox/healthcheck.py app/
+COPY ops/sandbox/run_executor.py app/
 
 # Create journal directory with proper permissions
 RUN mkdir -p /var/log/n8n-executor && \

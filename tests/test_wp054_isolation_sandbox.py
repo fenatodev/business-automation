@@ -550,3 +550,198 @@ class TestIsolationLimitations:
         # 3. No shared filesystem between Junie and executor
         # 4. Network policy restricting Junie's access to executor only via API
         pass
+
+
+# ---------------------------------------------------------------------------
+# Real build errors detected on Ubuntu (WP-054 corrections)
+# ---------------------------------------------------------------------------
+
+
+class TestDockerComposeSyntax:
+    """Test that docker-compose.yml has valid YAML syntax.
+
+    These tests detect the real errors found when running
+    `docker compose config` on Ubuntu:
+    - environment list format with ${VAR:?msg} is parsed as map
+    - missing COPY for run_executor.py
+    - missing __init__.py for Python package imports
+    """
+
+    def test_compose_environment_is_map_not_list(self):
+        """docker-compose environment must use map format, not list with :? syntax.
+
+        The syntax '- VAR=${VAR:?Error}' in list format causes Docker Compose
+        to parse the string as a map because ':' inside ${} is confused with
+        the YAML key-value separator. This was verified on Ubuntu.
+        """
+        compose_path = Path("ops/sandbox/docker-compose.yml")
+        if not compose_path.exists():
+            pytest.skip("Compose file not yet created")
+        content = compose_path.read_text()
+        # Must NOT use list format with :? syntax
+        assert "- N8N_API_KEY=${N8N_API_KEY:?" not in content
+        assert "- APPROVAL_SECRET=${APPROVAL_SECRET:?" not in content
+        # Should use map format
+        assert "N8N_API_KEY:" in content
+        assert "APPROVAL_SECRET:" in content
+
+    def test_compose_environment_uses_safe_defaults(self):
+        """Environment variables should use safe defaults, not fail-fast syntax.
+
+        Using ${VAR:-} (empty default) instead of ${VAR:?error} avoids
+        the YAML parsing issue while still allowing runtime validation.
+        """
+        compose_path = Path("ops/sandbox/docker-compose.yml")
+        if not compose_path.exists():
+            pytest.skip("Compose file not yet created")
+        content = compose_path.read_text()
+        # Should use :- (safe default) not :? (fail-fast)
+        assert "${N8N_API_KEY:-}" in content or 'N8N_API_KEY: ""' in content
+        assert "${APPROVAL_SECRET:-}" in content or 'APPROVAL_SECRET: ""' in content
+
+
+class TestDockerfileCompleteness:
+    """Test that the Dockerfile includes all required COPY commands.
+
+    These tests detect the real build errors found on Ubuntu:
+    - CMD references run_executor.py but never copies it
+    - Imports app.services.* but __init__.py files are not copied
+    """
+
+    def test_dockerfile_copies_run_executor(self):
+        """Dockerfile must COPY run_executor.py before CMD references it.
+
+        CMD ["python", "/app/run_executor.py"] fails at runtime if the
+        file was never copied into the image. This was verified on Ubuntu.
+        """
+        dockerfile_path = Path("ops/sandbox/Dockerfile")
+        if not dockerfile_path.exists():
+            pytest.skip("Dockerfile not yet created")
+        content = dockerfile_path.read_text()
+        assert "COPY" in content
+        assert "run_executor.py" in content
+
+    def test_dockerfile_copies_init_files(self):
+        """Dockerfile must COPY __init__.py for Python package imports.
+
+        'from app.services.approval_gate import ...' requires both
+        app/__init__.py and app/services/__init__.py to exist in the image.
+        Without them, Python raises ModuleNotFoundError.
+        """
+        dockerfile_path = Path("ops/sandbox/Dockerfile")
+        if not dockerfile_path.exists():
+            pytest.skip("Dockerfile not yet created")
+        content = dockerfile_path.read_text()
+        assert "__init__.py" in content
+
+    def test_dockerfile_copies_app_init(self):
+        """Dockerfile must copy app/__init__.py specifically."""
+        dockerfile_path = Path("ops/sandbox/Dockerfile")
+        if not dockerfile_path.exists():
+            pytest.skip("Dockerfile not yet created")
+        content = dockerfile_path.read_text()
+        # Must copy app/__init__.py so 'import app' works
+        assert "COPY app/__init__.py" in content
+
+    def test_dockerfile_copies_services_init(self):
+        """Dockerfile must copy app/services/__init__.py specifically."""
+        dockerfile_path = Path("ops/sandbox/Dockerfile")
+        if not dockerfile_path.exists():
+            pytest.skip("Dockerfile not yet created")
+        content = dockerfile_path.read_text()
+        # Must copy app/services/__init__.py so 'from app.services.xxx import' works
+        assert "COPY app/services/__init__.py" in content
+
+
+class TestHMACTrustBoundary:
+    """Test that the HMAC trust boundary limitations are documented.
+
+    These tests verify that the report correctly documents the fundamental
+    limitation: HMAC with the same shared key does NOT prevent forgery
+    if the agent controls the host.
+    """
+
+    def test_report_documents_hmac_limitation(self):
+        """The WP-054 report must document the HMAC symmetric key limitation."""
+        report_path = Path("docs/operations/wp-054-effective-isolation-report.md")
+        if not report_path.exists():
+            pytest.skip("Report not yet created")
+        content = report_path.read_text()
+        # Must mention that HMAC symmetric key is a limitation
+        assert "convenção de software" in content.lower() or "software convention" in content.lower()
+
+    def test_report_mentions_asymmetric_alternative(self):
+        """The report should mention asymmetric signatures as the real solution."""
+        report_path = Path("docs/operations/wp-054-effective-isolation-report.md")
+        if not report_path.exists():
+            pytest.skip("Report not yet created")
+        content = report_path.read_text()
+        # Should mention asymmetric approach (Ed25519, RSA, or public/private key)
+        has_asymmetric = any(
+            kw in content for kw in [
+                "assimétrica", "asymmetric", "Ed25519", "RSA",
+                "chave pública", "public key", "chave privada", "private key",
+            ]
+        )
+        assert has_asymmetric, (
+            "Report should mention asymmetric signatures as the real solution "
+            "to the HMAC trust boundary problem"
+        )
+
+    def test_verifier_cannot_sign_but_has_secret(self):
+        """ApprovalVerifier cannot sign, but still holds the HMAC secret.
+
+        This is the fundamental limitation: the verifier needs the secret
+        to verify HMAC signatures. If the agent can read the secret from
+        the verifier's environment, it can forge signatures.
+        """
+        from app.services.approval_gate import ApprovalVerifier
+
+        verifier = ApprovalVerifier(secret="test-secret")
+        # Verifier has no sign_approval method
+        assert not hasattr(verifier, "sign_approval")
+        # But it DOES have the secret — this is the limitation
+        assert verifier.secret == "test-secret"
+        # With the secret, an attacker could compute valid HMAC signatures
+        # The separation of classes is a software convention, not crypto isolation
+
+
+class TestNetworkEgressLimitation:
+    """Test that network egress limitations are properly documented.
+
+    A Docker bridge network does NOT block external traffic by default.
+    """
+
+    def test_compose_documents_egress_limitation(self):
+        """The docker-compose comments should note that n8n_default doesn't block egress."""
+        compose_path = Path("ops/sandbox/docker-compose.yml")
+        if not compose_path.exists():
+            pytest.skip("Compose file not yet created")
+        content = compose_path.read_text()
+        # Should mention egress limitation in comments
+        has_egress_note = any(
+            kw in content.lower() for kw in [
+                "egress", "internet", "external", "isolamento",
+            ]
+        )
+        assert has_egress_note, (
+            "docker-compose.yml should document that n8n_default "
+            "does not guarantee egress isolation"
+        )
+
+    def test_report_documents_network_egress_limitation(self):
+        """The report must document that Docker bridge doesn't block egress."""
+        report_path = Path("docs/operations/wp-054-effective-isolation-report.md")
+        if not report_path.exists():
+            pytest.skip("Report not yet created")
+        content = report_path.read_text()
+        # Should mention egress limitation
+        has_egress = any(
+            kw in content.lower() for kw in [
+                "egress", "internet", "external traffic", "isolamento de egress",
+            ]
+        )
+        assert has_egress, (
+            "Report should document that n8n_default bridge network "
+            "does not block external traffic"
+        )
