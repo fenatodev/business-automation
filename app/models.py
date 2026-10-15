@@ -303,8 +303,8 @@ class ReviewQueueItem(Base):
 
     event_id: Mapped[str] = mapped_column(String(100), nullable=False)
 
-    channel: Mapped[str] = mapped_column(String(30))
-    message: Mapped[str] = mapped_column(Text)
+    channel: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     intent: Mapped[str | None] = mapped_column(String(60), nullable=True)
     draft_reply: Mapped[str | None] = mapped_column(Text, nullable=True)
