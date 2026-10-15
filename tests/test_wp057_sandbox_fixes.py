@@ -1,14 +1,16 @@
 """WP-057: Tests for sandbox fixes — detecting real defects found in audit.
 
-These tests validate the 8 defects identified in the audit:
+These tests validate the defects identified in the audit and finalization:
 1. Dockerfile installs Junie CLI officially (not silent Python fallback)
-2. --sandbox flag is NOT invoked unconditionally on release builds
-3. docker-compose.yml uses network_mode: none explicitly
-4. No git credential.helper store or plaintext token persistence
-5. Volumes don't hide scripts copied in Dockerfile (documented limitation)
-6. Healthcheck has no false-success fallback when Junie CLI is missing
-7. Clear distinction between isolation configured vs enforced
-8. Dockerfile completeness: all files referenced by CMD/ENTRYPOINT are copied
+2. Dockerfile fails immediately on installation failure (no || true or || echo)
+3. --sandbox flag is NOT invoked unconditionally on release builds
+4. docker-compose.yml uses network_mode: none explicitly for test profile
+5. docker-compose.yml has operational profile with internal network
+6. No git credential.helper store or plaintext token persistence
+7. Volumes don't hide scripts copied in Dockerfile (documented limitation)
+8. Healthcheck has no false-success fallback when Junie CLI is missing
+9. Clear distinction between isolation configured vs enforced
+10. Dockerfile completeness: all files referenced by CMD/ENTRYPOINT are copied
 
 These tests use synthetic data only — no real tokens, no n8n access,
 no Docker build or runtime modifications.
@@ -90,6 +92,40 @@ class TestJunieCLIInstallation:
             "Dockerfile should mention --sandbox limitation"
         )
 
+    def test_dockerfile_fails_on_install_error(self, dockerfile):
+        """The Dockerfile must NOT mask installation failures with || true or || echo."""
+        # Check that || true and || echo are NOT used to mask failures
+        lines = dockerfile.split("\n")
+        for i, line in enumerate(lines):
+            stripped = line.strip()
+            # Skip comments
+            if stripped.startswith("#"):
+                continue
+            # Check for || true or || echo patterns that mask failures
+            if "|| true" in stripped:
+                assert False, (
+                    f"Dockerfile masks failure with || true: {stripped}"
+                )
+            if "|| echo" in stripped:
+                assert False, (
+                    f"Dockerfile masks failure with || echo: {stripped}"
+                )
+
+    def test_dockerfile_junie_version_fails_build(self, dockerfile):
+        """The Dockerfile must fail the build if junie --version fails."""
+        # Find the line with junie --version
+        lines = dockerfile.split("\n")
+        for line in lines:
+            stripped = line.strip()
+            if "junie --version" in stripped and not stripped.startswith("#"):
+                # This line should NOT have || true or || echo
+                assert "|| true" not in stripped and "|| echo" not in stripped, (
+                    f"junie --version should fail build on error, not mask it: {stripped}"
+                )
+                break
+        else:
+            pytest.fail("Dockerfile should contain 'junie --version' command")
+
 
 # ---------------------------------------------------------------------------
 # TestSandboxFlag: --sandbox is NOT invoked unconditionally
@@ -133,27 +169,28 @@ class TestNetworkMode:
     """Validate that docker-compose explicitly disables network access."""
 
     def test_network_mode_none(self, docker_compose):
-        """The compose file must use network_mode: none explicitly."""
+        """The compose file must use network_mode: none explicitly for test profile."""
         assert "network_mode: none" in docker_compose, (
-            "docker-compose.yml must use network_mode: none"
+            "docker-compose.yml must use network_mode: none for test profile"
         )
 
-    def test_no_default_network_created(self, docker_compose):
-        """The compose file should NOT define a networks section that creates a bridge."""
-        # With network_mode: none, there should be no active networks section
-        lines = docker_compose.split("\n")
-        # Check that there's no uncommented networks section with a driver
-        in_networks_section = False
-        for line in lines:
-            stripped = line.strip()
-            if stripped.startswith("networks:"):
-                in_networks_section = True
-            elif in_networks_section and stripped and not stripped.startswith("#"):
-                # Found an uncommented line in networks section
-                assert False, (
-                    "docker-compose.yml should not have active networks section "
-                    "when using network_mode: none"
-                )
+    def test_operational_profile_exists(self, docker_compose):
+        """The compose file must have an operational profile with restricted network."""
+        assert "junie-agent-operational" in docker_compose, (
+            "docker-compose.yml must have operational profile service"
+        )
+        assert "profiles:" in docker_compose, (
+            "docker-compose.yml must define profiles"
+        )
+        assert "operational" in docker_compose, (
+            "docker-compose.yml must have operational profile"
+        )
+
+    def test_internal_network_for_operational(self, docker_compose):
+        """The operational profile must use internal network (no internet access)."""
+        assert "internal: true" in docker_compose, (
+            "docker-compose.yml must have internal network for operational profile"
+        )
 
     def test_docker_compose_config_validates(self, agent_sandbox_dir):
         """docker compose config should pass without errors."""

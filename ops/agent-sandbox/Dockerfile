@@ -42,15 +42,15 @@ RUN apt-get update && \
         curl && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Junie CLI officially
+# Install Junie CLI officially — FAIL IMMEDIATELY if installation fails
 # The official installer downloads the shim + latest release version
 # NOTE: --sandbox flag is ONLY available in dev/nightly/experimental builds
 # Release builds (like the one installed here) do NOT support --sandbox
 RUN curl -fsSL https://junie.jetbrains.com/install.sh | bash && \
-    ln -s /root/.local/bin/junie /usr/local/bin/junie || true
+    ln -s /root/.local/bin/junie /usr/local/bin/junie
 
-# Verify Junie CLI installation
-RUN junie --version || echo "WARNING: Junie CLI installation failed — container will report BLOKEADO"
+# Verify Junie CLI installation — FAIL BUILD if not installed
+RUN junie --version
 
 # Create non-root user without privileged groups
 # This user has NO docker, sudo, or lxd groups
