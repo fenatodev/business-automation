@@ -216,6 +216,117 @@ class TestReviewQueuePersistence:
         assert "/review-queue/synthetic-trigger" in url
 
 
+class TestWorkflowToSchemaContract:
+    """Verify the workflow payload matches the ReviewQueueTrigger schema.
+
+    These tests ensure that if the workflow body or the FastAPI schema changes,
+    the mismatch is caught.  They replace the Build Review Queue Row tests
+    that were removed when the workflow was simplified to call FastAPI directly.
+    """
+
+    def test_workflow_payload_fields_match_schema(self) -> None:
+        """The workflow body must send exactly the fields accepted by
+        ReviewQueueTrigger (channel, message, event_id)."""
+        wf = _load_workflow()
+        http_node = _get_node(wf, "Queue to Review (FastAPI)")
+        body = http_node["parameters"]["body"]
+
+        from app.schemas import ReviewQueueTrigger
+        schema_fields = set(ReviewQueueTrigger.model_fields.keys())
+
+        # Extract field names from the n8n expression: JSON.stringify({ channel: ..., message: ..., event_id: ... })
+        import re
+        field_names = set(re.findall(r"(\w+)\s*:", body))
+
+        # Workflow should send all required schema fields
+        for field in schema_fields:
+            assert field in field_names, (
+                f"Workflow body missing schema field: {field}"
+            )
+
+    def test_workflow_does_not_send_extra_fields(self) -> None:
+        """The workflow should not send fields outside ReviewQueueTrigger."""
+        wf = _load_workflow()
+        http_node = _get_node(wf, "Queue to Review (FastAPI)")
+        body = http_node["parameters"]["body"]
+
+        from app.schemas import ReviewQueueTrigger
+        schema_fields = set(ReviewQueueTrigger.model_fields.keys())
+
+        import re
+        field_names = set(re.findall(r"(\w+)\s*:", body))
+
+        for field in field_names:
+            assert field in schema_fields, (
+                f"Workflow sends field '{field}' not in ReviewQueueTrigger schema"
+            )
+
+    def test_workflow_channel_field_maps_to_schema_channel(self) -> None:
+        """The workflow channel expression must reference $json.channel."""
+        wf = _load_workflow()
+        http_node = _get_node(wf, "Queue to Review (FastAPI)")
+        body = http_node["parameters"]["body"]
+        assert "$json.channel" in body
+
+    def test_workflow_message_field_maps_to_schema_message(self) -> None:
+        """The workflow message expression must reference $json.message."""
+        wf = _load_workflow()
+        http_node = _get_node(wf, "Queue to Review (FastAPI)")
+        body = http_node["parameters"]["body"]
+        assert "$json.message" in body
+
+    def test_workflow_event_id_field_maps_to_schema_event_id(self) -> None:
+        """The workflow event_id expression must reference $json.event_id."""
+        wf = _load_workflow()
+        http_node = _get_node(wf, "Queue to Review (FastAPI)")
+        body = http_node["parameters"]["body"]
+        assert "$json.event_id" in body
+
+    def test_review_queue_trigger_schema_requires_channel(self) -> None:
+        """ReviewQueueTrigger must require channel (not optional)."""
+        from app.schemas import ReviewQueueTrigger
+        field = ReviewQueueTrigger.model_fields["channel"]
+        assert field.is_required()
+
+    def test_review_queue_trigger_schema_requires_message(self) -> None:
+        """ReviewQueueTrigger must require message (not optional)."""
+        from app.schemas import ReviewQueueTrigger
+        field = ReviewQueueTrigger.model_fields["message"]
+        assert field.is_required()
+
+    def test_review_queue_trigger_schema_requires_event_id(self) -> None:
+        """ReviewQueueTrigger must require event_id (not optional)."""
+        from app.schemas import ReviewQueueTrigger
+        field = ReviewQueueTrigger.model_fields["event_id"]
+        assert field.is_required()
+
+    def test_review_queue_trigger_enforces_max_length(self) -> None:
+        """ReviewQueueTrigger must enforce max length on string fields."""
+        from app.schemas import ReviewQueueTrigger
+        from pydantic.types import MaxLen
+        fields = ReviewQueueTrigger.model_fields
+        channel_max = next(
+            (m.max_length for m in fields["channel"].metadata if isinstance(m, MaxLen)),
+            None,
+        )
+        message_max = next(
+            (m.max_length for m in fields["message"].metadata if isinstance(m, MaxLen)),
+            None,
+        )
+        event_max = next(
+            (m.max_length for m in fields["event_id"].metadata if isinstance(m, MaxLen)),
+            None,
+        )
+        assert channel_max == 30
+        assert message_max == 4000
+        assert event_max == 100
+
+    def test_review_queue_trigger_forbids_extra_fields(self) -> None:
+        """ReviewQueueTrigger must forbid extra fields to prevent injection."""
+        from app.schemas import ReviewQueueTrigger
+        assert ReviewQueueTrigger.model_config.get("extra") == "forbid"
+
+
 # ---------------------------------------------------------------------------
 # Workflow connection topology tests
 # ---------------------------------------------------------------------------
