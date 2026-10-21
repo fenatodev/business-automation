@@ -284,7 +284,7 @@ class TestAuthorizationBlockEnforcement:
         """HTTP Request to FastAPI must use Bearer authentication."""
         wf = _load_workflow()
         http_node = next(
-            (n for n in wf["nodes"] if n["name"] == "Evaluate Private Intake API"),
+            (n for n in wf["nodes"] if n["name"] == "Queue to Review (FastAPI)"),
             None,
         )
         assert http_node is not None, "FastAPI HTTP Request node not found"

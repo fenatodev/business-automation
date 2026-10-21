@@ -78,7 +78,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://ba-intake-private:8000/internal/commercial-intake/evaluate",
+        "url": "http://ba-intake-private:8000/review-queue/synthetic-trigger",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpBearerAuth",
         "sendBody": true,
@@ -97,7 +97,7 @@
         }
       },
       "id": "55555555-5555-4555-8555-555555555555",
-      "name": "Evaluate Private Intake API",
+      "name": "Queue to Review (FastAPI)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
@@ -110,118 +110,6 @@
           "name": "business-automation-operator"
         }
       }
-    },
-    {
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "language": "javaScript",
-        "jsCode": "const d = $json;\nif (d.can_send !== false || d.simulation_only !== true) {\n  throw new Error('Unsafe intake decision invariant');\n}\nconst json = {\n  event_id: String(d.event_id ?? ''),\n  status: d.needs_human_review ? 'needs_review' : 'draft_ready',\n  intent: String(d.intent ?? 'unknown'),\n  draft_reply: String(d.draft_reply ?? ''),\n  needs_human_review: Boolean(d.needs_human_review),\n  flags_json: JSON.stringify(Array.isArray(d.flags) ? d.flags : []),\n  received_at: new Date().toISOString()\n};\nreturn {json};"
-      },
-      "id": "66666666-6666-4666-8666-666666666666",
-      "name": "Build Review Queue Row",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1300,
-        0
-      ]
-    },
-    {
-      "parameters": {
-        "resource": "row",
-        "operation": "insert",
-        "dataTableId": {
-          "__rl": true,
-          "mode": "name",
-          "value": "client0_commercial_review_queue"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "event_id": "={{ $json.event_id }}",
-            "status": "={{ $json.status }}",
-            "intent": "={{ $json.intent }}",
-            "draft_reply": "={{ $json.draft_reply }}",
-            "needs_human_review": "={{ $json.needs_human_review }}",
-            "flags_json": "={{ $json.flags_json }}",
-            "received_at": "={{ $json.received_at }}"
-          },
-          "schema": [
-            {
-              "id": "event_id",
-              "displayName": "event_id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "status",
-              "displayName": "status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "intent",
-              "displayName": "intent",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "draft_reply",
-              "displayName": "draft_reply",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": false
-            },
-            {
-              "id": "needs_human_review",
-              "displayName": "needs_human_review",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "flags_json",
-              "displayName": "flags_json",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": false
-            },
-            {
-              "id": "received_at",
-              "displayName": "received_at",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "dateTime",
-              "canBeUsedToMatch": true
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "77777777-7777-4777-8777-777777777777",
-      "name": "Queue for Human Review",
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1.1,
-      "position": [
-        1560,
-        0
-      ]
     }
   ],
   "connections": {
@@ -263,29 +151,7 @@
       "main": [
         [
           {
-            "node": "Evaluate Private Intake API",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Evaluate Private Intake API": {
-      "main": [
-        [
-          {
-            "node": "Build Review Queue Row",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Build Review Queue Row": {
-      "main": [
-        [
-          {
-            "node": "Queue for Human Review",
+            "node": "Queue to Review (FastAPI)",
             "type": "main",
             "index": 0
           }

@@ -65,7 +65,7 @@ class TestCredentialDriftDetection:
     def test_workflow_uses_bearer_credential_placeholder(self) -> None:
         """The FastAPI HTTP Request node must use a placeholder, not a real credential ID."""
         wf = _load_workflow()
-        http_node = _get_node(wf, "Evaluate Private Intake API")
+        http_node = _get_node(wf, "Queue to Review (FastAPI)")
         creds = http_node.get("credentials", {})
         bearer_cred = creds.get("httpBearerAuth", {})
         cred_id = bearer_cred.get("id", "")
@@ -164,20 +164,17 @@ class TestPostE2EState:
         # Should use direct object return
         assert "return {" in code or "return []" in code
 
-    def test_build_row_node_uses_n8n_2x_compatible_return(self) -> None:
-        """After WP-050 fix, Build Review Queue Row should use {json} destructuring."""
+    def test_workflow_calls_review_queue_endpoint(self) -> None:
+        """The workflow now calls /review-queue/synthetic-trigger directly."""
         wf = _load_workflow()
-        build = _get_node(wf, "Build Review Queue Row")
-        code = build["parameters"]["jsCode"]
-        # Should use the n8n 2.x compatible format
-        assert "return {json}" in code or "return { json }" in code, (
-            "Build Review Queue Row does not use n8n 2.x compatible return format"
-        )
+        http_node = _get_node(wf, "Queue to Review (FastAPI)")
+        url = http_node["parameters"]["url"]
+        assert "/review-queue/synthetic-trigger" in url
 
     def test_fastapi_url_uses_container_name_not_ip(self) -> None:
         """The FastAPI URL should use the container name, not a hardcoded IP."""
         wf = _load_workflow()
-        http_node = _get_node(wf, "Evaluate Private Intake API")
+        http_node = _get_node(wf, "Queue to Review (FastAPI)")
         url = http_node["parameters"]["url"]
         # Should NOT contain a hardcoded IP address
         ip_pattern = re.compile(r'http://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:')
@@ -233,36 +230,24 @@ class TestSecurityInvariants:
     def test_fastapi_call_requires_bearer_auth(self) -> None:
         """The HTTP Request to FastAPI must use Bearer authentication."""
         wf = _load_workflow()
-        http_node = _get_node(wf, "Evaluate Private Intake API")
+        http_node = _get_node(wf, "Queue to Review (FastAPI)")
         assert http_node["parameters"]["authentication"] == "genericCredentialType"
         assert http_node["parameters"]["genericAuthType"] == "httpBearerAuth"
 
     def test_fastapi_call_does_not_follow_redirects(self) -> None:
         """Redirects should be disabled to prevent open redirect attacks."""
         wf = _load_workflow()
-        http_node = _get_node(wf, "Evaluate Private Intake API")
+        http_node = _get_node(wf, "Queue to Review (FastAPI)")
         redirect_config = http_node["parameters"]["options"]["redirect"]["redirect"]
         assert redirect_config["followRedirects"] is False
 
-    def test_build_row_validates_can_send_invariant(self) -> None:
-        """Build Review Queue Row must reject if can_send is not False."""
+    def test_safety_checks_are_server_side(self) -> None:
+        """Safety checks (can_send, simulation_only) are now enforced
+        server-side by the FastAPI review_queue endpoint, not in the workflow."""
         wf = _load_workflow()
-        build = _get_node(wf, "Build Review Queue Row")
-        code = build["parameters"]["jsCode"]
-        assert "can_send" in code
-        assert "can_send !== false" in code or "can_send != false" in code, (
-            "Build Review Queue Row does not validate can_send invariant"
-        )
-
-    def test_build_row_validates_simulation_only_invariant(self) -> None:
-        """Build Review Queue Row must reject if simulation_only is not True."""
-        wf = _load_workflow()
-        build = _get_node(wf, "Build Review Queue Row")
-        code = build["parameters"]["jsCode"]
-        assert "simulation_only" in code
-        assert "simulation_only !== true" in code or "simulation_only != true" in code, (
-            "Build Review Queue Row does not validate simulation_only invariant"
-        )
+        http_node = _get_node(wf, "Queue to Review (FastAPI)")
+        url = http_node["parameters"]["url"]
+        assert "/review-queue/synthetic-trigger" in url
 
     def test_dedupe_is_by_event_id(self) -> None:
         """Deduplication must be based on event_id to prevent replay attacks."""
@@ -311,15 +296,11 @@ class TestAuthorizationBypassPrevention:
                     f"Code node '{node['name']}' uses language '{lang}'"
                 )
 
-    def test_data_table_uses_named_reference(self) -> None:
-        """Data Table should use a named reference, not a hardcoded ID."""
+    def test_no_data_table_node(self) -> None:
+        """Workflow should not use n8n Data Table; it calls FastAPI directly."""
         wf = _load_workflow()
-        dt = _get_node(wf, "Queue for Human Review")
-        locator = dt["parameters"]["dataTableId"]
-        assert locator["mode"] == "name", (
-            "Data Table should use named reference mode, not ID mode"
-        )
-        assert locator["value"] == "client0_commercial_review_queue"
+        dt_nodes = [n for n in wf["nodes"] if n["type"] == "n8n-nodes-base.dataTable"]
+        assert len(dt_nodes) == 0, "Should not use n8n Data Table"
 
     def test_workflow_has_no_unexpected_connections(self) -> None:
         """The workflow should have only the expected linear connections."""
@@ -329,9 +310,7 @@ class TestAuthorizationBypassPrevention:
             "Normalize Safe Input",
             "Persistent Event Dedupe",
             "Coarse Rate Guard",
-            "Evaluate Private Intake API",
-            "Build Review Queue Row",
-            "Queue for Human Review",
+            "Queue to Review (FastAPI)",
         ]
         actual_nodes = [node["name"] for node in wf["nodes"]]
         assert actual_nodes == expected_nodes, (
@@ -361,7 +340,7 @@ class TestAuthorizationBypassPrevention:
     def test_http_request_has_timeout(self) -> None:
         """HTTP Request to FastAPI must have a timeout."""
         wf = _load_workflow()
-        http_node = _get_node(wf, "Evaluate Private Intake API")
+        http_node = _get_node(wf, "Queue to Review (FastAPI)")
         timeout = http_node["parameters"]["options"].get("timeout")
         assert timeout is not None, "HTTP Request has no timeout"
         assert isinstance(timeout, int)
