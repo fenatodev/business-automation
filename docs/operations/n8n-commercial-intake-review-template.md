@@ -1,88 +1,43 @@
-# Client0 — n8n commercial intake review template
+# Client0 — n8n commercial intake review (WP-058)
 
-Status: **template inativo; não é produção**.
+**Estado do arquivo Git:** template inativo, `active=false`; não é comprovação de deployment no n8n real.
 
-Arquivo importável:
+Workflow: `ops/n8n/workflows/client0-commercial-intake-review.json`
 
-`ops/n8n/workflows/client0-commercial-intake-review.json`
-
-## Fluxo preparado
+## Fluxo versionado (5 nodes)
 
 ```text
-Webhook autenticado
-  -> normalização estrita
-  -> deduplicação persistente por event_id
-  -> throttle operacional simples (10/min)
-  -> POST para FastAPI privada
-  -> verificação can_send=false / simulation_only=true
-  -> Data Table de revisão humana
+Webhook (Header Auth)
+ → Normalize Safe Input
+ → Persistent Event Dedupe
+ → Coarse Rate Guard
+ → Queue to Review (FastAPI)
+     POST http://ba-intake-private:8000/review-queue/synthetic-trigger
+     Bearer operator (credencial local, não incluída no Git)
+     → triagem + rascunho + review_queue_items em PostgreSQL
 ```
 
-O workflow está versionado com `active=false`. Não há node de WhatsApp,
-email, Telegram, redes sociais ou outro canal de saída.
+A fila atual é **PostgreSQL via FastAPI**; a Data Table interna do n8n **não participa mais deste template versionado**. A Data Table histórica ainda pode existir na instância n8n e não deve ser excluída automaticamente. O painel local `/operator` lê a fila via `GET /review-queue/` e registra decisões por `PATCH /review-queue/{id}/decision`. Aprovar um item **não dispara mensagem**.
 
-## Controles
+## Contratos e limites conhecidos
 
-- Webhook usa `headerAuth`; o JSON contém somente referência de
-  credential local, nunca o segredo.
-- A chamada da API usa `httpBearerAuth`; a credencial real deve existir
-  somente no n8n local.
-- `Remove Duplicates` v2 guarda `event_id` entre execuções, escopo
-  workflow e histórico limitado a 10.000 entradas.
-- O Code node de rate guard é um **throttle operacional**, não um controle
-  de segurança/DoS: usa static data do workflow, não oferece garantia
-  transacional sob concorrência.
-- Antes de gravar na fila, o workflow aborta se a API retornar
-  `can_send != false` ou `simulation_only != true`.
-- A fila é uma Data Table local chamada
-  `client0_commercial_review_queue`.
-- O template nunca aprova ou envia o `draft_reply`.
+- Webhook usa `headerAuth`; a requisição FastAPI usa `httpBearerAuth` com placeholders de credenciais no arquivo.
+- `company_id` deriva da identidade Bearer do operador autenticado no FastAPI; não deve vir do corpo do webhook.
+- A API utiliza `event_id` por tenant para idempotência persistente; o node Remove Duplicates limita também eventos repetidos antes da API, mas não substitui o índice único no PostgreSQL.
+- O node Coarse Rate Guard usa dados estáticos do workflow e não é proteção transacional de rate limiting.
+- O workflow não tem nós de envio externo, mas **não há evidência de execução n8n → FastAPI neste commit**.
+- O endpoint `/review-queue/synthetic-trigger` é um endpoint de **piloto sintético**. Sem garantia de que todas as entradas recebidas sejam fictícias, não expor publicamente nem utilizar dados de clientes reais.
+- A mudança do template não atualiza automaticamente o workflow existente na instância n8n. Confirmar revisão/importação e credenciais exclusivamente por APIs/UI suportadas; nunca manipular o banco interno do n8n.
 
-## Dependências locais ainda não efetivadas
+## Validação já disponível
 
-A importação pode ser validada sem ativação. Execução real continua
-**bloqueada** até todos os itens abaixo serem resolvidos localmente:
+Testes Python cobrem o contrato JSON do workflow, autenticação declarada, endpoint FastAPI e fila. O script `scripts/demo_wp058_pipeline.py` validou, segundo o relatório do Junie, a persistência e decisões em PostgreSQL 17 descartável. **Isso não constitui prova de que a instância n8n importou ou executou esta versão.**
 
-1. **Reachability API:** o template aponta provisoriamente para
-   `http://ba-intake-private:8000/internal/commercial-intake/evaluate`.
-   WP-044 comprovou DNS e HTTP 401 para esse alias enquanto o container
-   privado estava temporariamente ativo. O container de teste foi removido;
-   execução real continua bloqueada até autorização própria.
-2. **Credential de entrada:** criar/bind de uma credencial n8n Header Auth
-   chamada `business-automation-internal-ingress`.
-3. **Credential da API:** criar/bind de uma credencial n8n Bearer Auth
-   chamada `business-automation-operator`, usando identidade operator
-   privada apropriada. Segredo não entra no Git.
-4. **Data Table:** criar
-   `client0_commercial_review_queue` com as colunas exatas presentes no
-   template antes de executar o fluxo.
-5. **Ativação:** exige um gate separado. Importar não autoriza ativar.
+## Validação local restante — Junie
 
-## Validação GitHub
+1. Sincronizar branch `wp/058-commercial-pilot` e executar testes do contrato e `node --check app/operator_ui/app.js`.
+2. Validar o JSON do workflow com a versão instalada do n8n, sem ativar nem sobrescrever o workflow existente. Preferir importação isolada/temporária e remover apenas recursos de teste recém-criados.
+3. Executar E2E n8n → API de teste → PostgreSQL descartável com payload sintético e credenciais **de teste**, se for possível sem alterar a stack operacional. Caso contrário, relatar bloqueio de integração. O teste de API/DB isolado já está coberto.
+4. Registrar evidência sanitizada: código HTTP, row criada no banco de teste, duplicação, e ausência de execução de envio. Não anexar tokens nem PII.
 
-`tests/test_n8n_commercial_intake_workflow.py` valida:
-
-- workflow inativo;
-- tipos de node permitidos;
-- ausência de segredos literais;
-- autenticação requerida;
-- dedupe persistente;
-- URL da API fixa;
-- redirect HTTP desabilitado;
-- schema da fila;
-- ausência de canais externos;
-- invariantes de não envio.
-
-## Próxima validação local mínima
-
-Para uma nova versão do template, a próxima ação no Ubuntu pode ser apenas:
-
-- clonar a revisão exata;
-- copiar **este workflow** para `/tmp` do container;
-- executar `n8n import:workflow` sem `--activeState=fromJson`;
-- confirmar que a importação termina com sucesso e fica desativada;
-- não criar credentials, Data Table, rede ou ativação nessa validação;
-- remover apenas o arquivo temporário copiado para o container.
-
-Se a importação falhar por incompatibilidade de schema/node, registrar
-somente a mensagem sanitizada e parar. A correção volta para GitHub.
+**Não ativar produção nem enviar mensagens reais sem aprovação explícita.**
