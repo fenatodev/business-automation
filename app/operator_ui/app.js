@@ -6,6 +6,7 @@
 
   let bearer = null;
   let sessionEpoch = 0;
+  let reviewEpoch = 0;
   let opportunities = [];
   let selectedId = null;
   let activeBrief = null;
@@ -79,6 +80,10 @@
   function disconnect(message = "Acesso desconectado.") {
     sessionEpoch += 1;
     bearer = null;
+    reviewEpoch += 1;
+    $("rq-list").replaceChildren();
+    $("rq-count").textContent = "—";
+    $("rq-form").reset();
     opportunities = [];
     clearSelection();
     $("workspace").hidden = true;
@@ -277,6 +282,96 @@
     }
   }
 
+
+  // Review queue uses the same in-memory Bearer session, with a strict route allowlist.
+  async function reviewApi(path, method = "GET", body) {
+    if (!bearer) throw new Error("Conecte um operador.");
+    if (!(/^\/review-queue\/$/.test(path) ||
+          /^\/review-queue\/synthetic-trigger$/.test(path) ||
+          /^\/review-queue\/\d+\/decision$/.test(path))) {
+      throw new Error("Rota de revisão não permitida.");
+    }
+    const epoch = sessionEpoch;
+    const headers = {Authorization: "Bearer " + bearer};
+    if (body !== undefined) headers["Content-Type"] = "application/json";
+    const response = await fetch(path, {method, headers, body: body === undefined ? undefined : JSON.stringify(body),
+      credentials: "omit", cache: "no-store", redirect: "error", referrerPolicy: "no-referrer"});
+    if (epoch !== sessionEpoch) throw new Error("Sessão encerrada.");
+    if (response.status === 401) {
+      disconnect("Credencial inválida.");
+      throw new ApiFailure(401);
+    }
+    if (!response.ok) throw new ApiFailure(response.status);
+    return response.json();
+  }
+  async function refreshReviewQueue() {
+    const epoch = ++reviewEpoch;
+    const items = await reviewApi("/review-queue/");
+    if (epoch !== reviewEpoch) return;
+    if (!Array.isArray(items)) throw new Error("Fila inválida.");
+    $("rq-count").textContent = items.length + " pendente(s)";
+    const list = $("rq-list");
+    list.replaceChildren();
+    for (const item of items) {
+      const card = document.createElement("article");
+      card.className = "review-card";
+      const heading = document.createElement("strong");
+      heading.textContent = "#" + item.id + " · " + (item.intent || "Triagem");
+      const meta = document.createElement("p");
+      meta.className = "small";
+      meta.textContent = "Evento: " + item.event_id + " · " + (item.channel || "web");
+      const message = document.createElement("p");
+      message.className = "readout";
+      message.textContent = item.message || "Sem mensagem";
+      const label = document.createElement("strong");
+      label.textContent = "Rascunho";
+      const draft = document.createElement("p");
+      draft.className = "readout";
+      draft.textContent = item.draft_reply || "Sem rascunho";
+      const note = document.createElement("textarea");
+      note.maxLength = 2000;
+      note.rows = 2;
+      note.placeholder = "Nota da decisão (opcional)";
+      note.setAttribute("aria-label", "Nota para item " + item.id);
+      const actions = document.createElement("div");
+      actions.className = "review-actions";
+      for (const decision of ["approve", "reject"]) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = decision === "approve" ? "primary" : "secondary";
+        button.textContent = decision === "approve" ? "Aprovar internamente" : "Rejeitar";
+        button.addEventListener("click", () => withButton(button, async () => {
+          await reviewApi("/review-queue/" + item.id + "/decision", "PATCH",
+            {decision, operator_note: note.value.trim() || null});
+          await refreshReviewQueue();
+          notify("Decisão registrada. Nenhuma mensagem enviada.");
+        }));
+        actions.append(button);
+      }
+      card.append(heading, meta, message, label, draft, note, actions);
+      list.append(card);
+    }
+    if (!items.length) {
+      const p = document.createElement("p");
+      p.className = "small";
+      p.textContent = "Nenhum item pendente.";
+      list.append(p);
+    }
+  }
+  $("rq-refresh").addEventListener("click", () => withButton($("rq-refresh"), refreshReviewQueue));
+  $("rq-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const button = $("rq-form").querySelector('button[type="submit"]');
+    withButton(button, async () => {
+      const event_id = $("rq-event").value.trim();
+      const message = $("rq-message").value.trim();
+      const channel = $("rq-channel").value;
+      if (!event_id || !message) {notify("Preencha os campos.", true); return;}
+      await reviewApi("/review-queue/synthetic-trigger", "POST", {event_id, message, channel});
+      await refreshReviewQueue();
+      notify("Entrada sintética processada; sem envio externo.");
+    });
+  });
   $("access-form").addEventListener("submit", (event) => {
     event.preventDefault();
     withButton($("connect-button"), async () => {
@@ -290,7 +385,7 @@
       sessionEpoch += 1;
       bearer = secret;
       try {
-        await refreshList(null);
+        await Promise.all([refreshList(null), refreshReviewQueue()]);
         $("workspace").hidden = false;
         $("access-status").textContent = "Conectado";
         $("access-status").classList.add("connected");

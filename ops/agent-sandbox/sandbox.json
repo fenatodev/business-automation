@@ -1,0 +1,91 @@
+{
+  "junieAgentSandbox": {
+    "version": "1.0",
+    "description": "WP-057: Junie Agent Sandbox Configuration",
+    "isolation": {
+      "readOnly": true,
+      "noNewPrivileges": true,
+      "noDockerSocket": true,
+      "noLXD": true,
+      "noSudo": true,
+      "noHostNetwork": true,
+      "noUserHome": true,
+      "noSSHAgent": true,
+      "noN8nData": true
+    },
+    "mcpServers": {},
+    "mcpPolicy": {
+      "defaultAction": "deny",
+      "allowedServers": [],
+      "deniedServers": [
+        "playwright",
+        "computer-use",
+        "desktop-control",
+        "system-tools"
+      ],
+      "description": "All MCP servers that can control the host are denied by default. Only explicitly allowed servers can be used."
+    },
+    "network": {
+      "unrestricted": false,
+      "allowUnixSockets": [],
+      "allowSystemCertificateValidation": true,
+      "allowedHosts": [],
+      "deniedHosts": [
+        "localhost",
+        "127.0.0.1",
+        "0.0.0.0",
+        "172.16.0.0/12",
+        "192.168.0.0/16",
+        "10.0.0.0/8"
+      ],
+      "description": "Network access is restricted by default. No Unix sockets, no internal networks. External access requires explicit approval."
+    },
+    "fileSystem": {
+      "allowWrite": [
+        "/workspace",
+        "/var/log/junie-agent",
+        "/tmp/junie-agent"
+      ],
+      "denyWrite": [
+        "/var/run/docker.sock",
+        "/var/lib/lxd",
+        "/etc",
+        "/usr",
+        "/root",
+        "/home/fenatodev"
+      ],
+      "denyRead": [
+        "/root",
+        "/home/fenatodev/.ssh",
+        "/home/fenatodev/.config",
+        "/home/fenatodev/.junie",
+        "/home/fenatodev/.local/share/pycharm",
+        "/var/lib/n8n"
+      ],
+      "description": "Write access is limited to workspace, logs, and temp. Read access to sensitive directories is denied."
+    },
+    "junieConfig": {
+      "brave": false,
+      "sandbox": true,
+      "headless": true,
+      "allowlist": {
+        "terminalCommands": [
+          "python",
+          "pytest",
+          "git status",
+          "git diff",
+          "git log",
+          "git add",
+          "git commit",
+          "git push"
+        ],
+        "description": "Only safe commands are auto-approved. All other commands require explicit approval."
+      }
+    },
+    "resourceLimits": {
+      "cpus": "1.0",
+      "memory": "512M",
+      "description": "Resource limits prevent the agent from consuming excessive host resources."
+    }
+  }
+}
