@@ -11,9 +11,21 @@ WORKFLOW = (
     / "client0-commercial-intake-review.json"
 )
 
+IMPORT_COPY = (
+    Path(__file__).resolve().parents[1]
+    / "ops"
+    / "n8n"
+    / "workflows"
+    / "client0-commercial-intake-review-import-copy.json"
+)
+
 
 def _load():
     return json.loads(WORKFLOW.read_text(encoding="utf-8"))
+
+
+def _load_import_copy():
+    return json.loads(IMPORT_COPY.read_text(encoding="utf-8"))
 
 
 def test_workflow_is_inactive_and_import_only():
@@ -138,3 +150,115 @@ def test_workflow_flows_to_fastapi_review_queue():
             for t in group:
                 assert t["node"] in [n["name"] for n in workflow["nodes"]], \
                     f"Connection to non-existent node: {t['node']}"
+
+
+# --- Import copy validation (WP-058) ---
+
+
+def test_import_copy_exists_and_is_inactive():
+    """Import copy should exist and remain inactive."""
+    assert IMPORT_COPY.exists(), "Import copy file not found"
+    wf = _load_import_copy()
+    assert wf["active"] is False
+
+
+def test_import_copy_has_distinct_id_from_original():
+    """Import copy must have a different ID from the original workflow."""
+    original = _load()
+    copy = _load_import_copy()
+    assert copy["id"] != original["id"], "Import copy should have distinct ID"
+    # Both should be valid UUIDs
+    uuid.UUID(original["id"])
+    uuid.UUID(copy["id"])
+
+
+def test_import_copy_has_distinct_name():
+    """Import copy should have a distinct name from the original."""
+    original = _load()
+    copy = _load_import_copy()
+    assert copy["name"] != original["name"], "Import copy should have distinct name"
+    assert "IMPORT COPY" in copy["name"]
+
+
+def test_import_copy_preserves_node_count():
+    """Import copy should preserve the same number of nodes as original."""
+    original = _load()
+    copy = _load_import_copy()
+    assert len(copy["nodes"]) == len(original["nodes"])
+
+
+def test_import_copy_preserves_node_types():
+    """Import copy should preserve the same node types as original."""
+    original = _load()
+    copy = _load_import_copy()
+    original_types = {n["type"] for n in original["nodes"]}
+    copy_types = {n["type"] for n in copy["nodes"]}
+    assert copy_types == original_types
+
+
+def test_import_copy_preserves_node_names():
+    """Import copy should preserve the same node names as original."""
+    original = _load()
+    copy = _load_import_copy()
+    original_names = {n["name"] for n in original["nodes"]}
+    copy_names = {n["name"] for n in copy["nodes"]}
+    assert copy_names == original_names
+
+
+def test_import_copy_has_distinct_node_ids():
+    """Import copy nodes should have different IDs from original nodes."""
+    original = _load()
+    copy = _load_import_copy()
+    original_ids = {n["id"] for n in original["nodes"]}
+    copy_ids = {n["id"] for n in copy["nodes"]}
+    assert original_ids.isdisjoint(copy_ids), "Import copy node IDs should be distinct"
+
+
+def test_import_copy_preserves_connections():
+    """Import copy should preserve the same connection structure as original."""
+    original = _load()
+    copy = _load_import_copy()
+    assert set(copy["connections"].keys()) == set(original["connections"].keys())
+
+
+def test_import_copy_no_secrets():
+    """Import copy should not contain literal secrets."""
+    text = IMPORT_COPY.read_text(encoding="utf-8")
+    lowered = text.lower()
+    assert "authorization: bearer" not in lowered
+    assert "replace_local_header_credential_id" in lowered
+    assert "replace_local_bearer_credential_id" in lowered
+
+
+def test_import_copy_webhook_requires_auth():
+    """Import copy webhook should require header authentication."""
+    copy = _load_import_copy()
+    webhook = next(node for node in copy["nodes"] if node["type"] == "n8n-nodes-base.webhook")
+    assert webhook["parameters"]["authentication"] == "headerAuth"
+    assert webhook["parameters"]["httpMethod"] == "POST"
+
+
+def test_import_copy_calls_fastapi_review_queue():
+    """Import copy should call the same FastAPI endpoint as original."""
+    copy = _load_import_copy()
+    node = next(node for node in copy["nodes"] if node["name"] == "Queue to Review (FastAPI)")
+    assert node["parameters"]["method"] == "POST"
+    assert "/review-queue/synthetic-trigger" in node["parameters"]["url"]
+    assert node["parameters"]["authentication"] == "genericCredentialType"
+
+
+def test_import_copy_no_external_channels():
+    """Import copy should not contain external channel nodes."""
+    copy = _load_import_copy()
+    serialized = json.dumps(copy).lower()
+    forbidden = (
+        "whatsapp",
+        "telegram",
+        "gmail",
+        "smtp",
+        "twilio",
+        "slack",
+        "facebook",
+        "instagram",
+    )
+    assert not any(term in serialized for term in forbidden)

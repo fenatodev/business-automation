@@ -1,0 +1,172 @@
+{
+  "id": "1be7af9d-2bdc-4ce1-b3d4-fe9774b20994",
+  "name": "Client0 - Commercial Intake Review (IMPORT COPY - INACTIVE)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "client0-commercial-intake",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "179e95e9-c454-46f3-ada1-e519233eab6b",
+      "name": "Inbound Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "0acb53fd-646e-4feb-9a06-3886f26f6572",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_LOCAL_HEADER_CREDENTIAL_ID",
+          "name": "business-automation-internal-ingress"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const body = $json.body ?? {};\nconst channel = typeof body.channel === 'string' ? body.channel.trim() : '';\nconst message = typeof body.message === 'string' ? body.message.trim() : '';\nconst event_id = typeof body.event_id === 'string' ? body.event_id.trim() : '';\nif (!channel || !message || !event_id) return [];\nif (channel.length > 30 || message.length > 4000 || event_id.length > 100) return [];\nreturn { channel, message, event_id };"
+      },
+      "id": "fa9a2ede-906b-47b6-bc7c-05ba34475523",
+      "name": "Normalize Safe Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "logic": "removeItemsWithAlreadySeenKeyValues",
+        "dedupeValue": "={{ $json.event_id }}",
+        "options": {
+          "scope": "workflow",
+          "historySize": 10000
+        }
+      },
+      "id": "2a4009fa-3a65-4b7d-9c3c-9a044e5018bf",
+      "name": "Persistent Event Dedupe",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        520,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const data = $getWorkflowStaticData('global');\nconst now = Date.now();\nconst windowMs = 60_000;\nconst maxPerWindow = 10;\nconst recent = Array.isArray(data.intakeRateWindow) ? data.intakeRateWindow.filter((ts) => Number.isFinite(ts) && now - ts < windowMs) : [];\nif (recent.length >= maxPerWindow) {\n  data.intakeRateWindow = recent;\n  return [];\n}\nrecent.push(now);\ndata.intakeRateWindow = recent;\nreturn $input.all();"
+      },
+      "id": "39e6b981-a543-4818-a216-e7866fb818cd",
+      "name": "Coarse Rate Guard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ba-intake-private:8000/review-queue/synthetic-trigger",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "specifyBody": "raw",
+        "body": "={{ JSON.stringify({ channel: $json.channel, message: $json.message, event_id: $json.event_id }) }}",
+        "options": {
+          "timeout": 10000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false,
+              "maxRedirects": 0
+            }
+          }
+        }
+      },
+      "id": "6fc8caaf-ed07-4bf5-bb16-936cd4a063ee",
+      "name": "Queue to Review (FastAPI)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1040,
+        0
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_LOCAL_BEARER_CREDENTIAL_ID",
+          "name": "business-automation-operator"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Inbound Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Safe Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Safe Input": {
+      "main": [
+        [
+          {
+            "node": "Persistent Event Dedupe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persistent Event Dedupe": {
+      "main": [
+        [
+          {
+            "node": "Coarse Rate Guard",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Coarse Rate Guard": {
+      "main": [
+        [
+          {
+            "node": "Queue to Review (FastAPI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f4e54a86-834d-4a94-bc6f-6b4576804240",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
