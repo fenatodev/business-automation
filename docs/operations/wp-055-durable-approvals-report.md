@@ -1,8 +1,8 @@
 # WP-055 — Eliminar bypass legado e persistir aprovações após reinício
 
-**Status**: Concluído  
-**Data**: 2026-10-15  
-**Branch**: `wp/055-durable-approvals`  
+**Status**: Concluído
+**Data**: 2026-10-15
+**Branch**: `wp/055-durable-approvals`
 **Commit**: pendente
 
 ## Resumo
@@ -18,7 +18,7 @@ Corrigidos 2 dos 5 riscos identificados no issue #136:
 
 **Problema**: `ApprovalVerifier._used_approvals` era um `set[str]` em memória. Se o processo do executor reiniciava, o set era limpo e uma aprovação já usada podia ser replayada.
 
-**Solução**: 
+**Solução**:
 - `ApprovalVerifier.__init__()` agora chama `_load_used_approvals()` para carregar aprovações já consumidas do journal file.
 - `ApprovalVerifier.validate()` persiste o ID da aprovação consumida no journal com status `approval_consumed`.
 - Ao reiniciar, o novo `ApprovalVerifier` carrega esses IDs do journal e rejeita replay.
