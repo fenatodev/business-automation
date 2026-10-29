@@ -28,6 +28,7 @@ from __future__ import annotations
 import json
 import os
 import stat
+import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -564,7 +565,7 @@ class TestHealthcheckExecution:
         import subprocess
 
         result = subprocess.run(
-            [".venv/bin/python", "ops/agent-sandbox/healthcheck.py"],
+            [sys.executable, "ops/agent-sandbox/healthcheck.py"],
             capture_output=True,
             text=True,
             timeout=10,
@@ -580,7 +581,7 @@ class TestHealthcheckExecution:
         import subprocess
 
         result = subprocess.run(
-            [".venv/bin/python", "-c",
+            [sys.executable, "-c",
              "import os; print(not os.path.exists('/var/run/docker.sock'))"],
             capture_output=True,
             text=True,
@@ -594,7 +595,7 @@ class TestHealthcheckExecution:
         import subprocess
 
         result = subprocess.run(
-            [".venv/bin/python", "-c",
+            [sys.executable, "-c",
              "print(not any(__import__('os').path.exists(p) for p in ['/var/lib/lxd/unix.socket', '/var/lib/lxd/socket']))"],
             capture_output=True,
             text=True,
@@ -607,7 +608,7 @@ class TestHealthcheckExecution:
         import subprocess
 
         result = subprocess.run(
-            [".venv/bin/python", "-c",
+            [sys.executable, "-c",
              "import os; print(not os.path.exists('/home/fenatodev/.ssh'))"],
             capture_output=True,
             text=True,
@@ -620,7 +621,7 @@ class TestHealthcheckExecution:
         import subprocess
 
         result = subprocess.run(
-            [".venv/bin/python", "-c",
+            [sys.executable, "-c",
              "import os; print(not os.path.exists('/var/lib/n8n'))"],
             capture_output=True,
             text=True,
@@ -633,7 +634,7 @@ class TestHealthcheckExecution:
         import subprocess
 
         result = subprocess.run(
-            [".venv/bin/python", "-c",
+            [sys.executable, "-c",
              "import os; print(os.getuid() != 0)"],
             capture_output=True,
             text=True,
