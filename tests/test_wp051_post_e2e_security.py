@@ -320,7 +320,7 @@ class TestAuthorizationBypassPrevention:
 
     def test_no_active_on_failure_connections(self) -> None:
         """The workflow should not have active on-failure connections that could bypass security.
-        
+
         Note: n8n's removeDuplicates node creates a branch 1 (empty) for deduplicated items.
         An empty branch [] is harmless — it just means duplicates are discarded.
         We only flag branches that actually connect to another node."""
