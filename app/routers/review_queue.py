@@ -53,6 +53,15 @@ def list_pending_review_items(
     return [ReviewQueueItemOut.model_validate(item) for item in items]
 
 
+@router.get("/summary", response_model=dict[str, int])
+def get_review_queue_summary(
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+) -> dict[str, int]:
+    """Return tenant-scoped counts; no message content or PII."""
+    return pipeline.review_queue_summary(db, identity.company_id)
+
+
 @router.get("/{item_id}", response_model=ReviewQueueItemOut)
 def get_review_item(
     item_id: int,
