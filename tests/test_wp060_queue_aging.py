@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import update
 from app.models import ReviewQueueItem
 from tests.test_commercial_pipeline_e2e import _synthetic_trigger
-from tests.conftest import TestingSessionLocal
+from conftest import TestingSessionLocal
 
 
 def test_aging_requires_auth(client):
