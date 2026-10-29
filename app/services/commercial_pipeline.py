@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -185,3 +185,17 @@ def get_item(
             ReviewQueueItem.company_id == company_id,
         )
     )
+
+
+def review_queue_summary(db: Session, company_id: int) -> dict[str, int]:
+    """Count operator queue states within the authenticated tenant only."""
+    rows = db.execute(
+        select(ReviewQueueItem.status, func.count(ReviewQueueItem.id))
+        .where(ReviewQueueItem.company_id == company_id)
+        .group_by(ReviewQueueItem.status)
+    ).all()
+    counts = {"pending": 0, "approve": 0, "reject": 0}
+    for state, count in rows:
+        if state in counts:
+            counts[state] = int(count)
+    return counts
