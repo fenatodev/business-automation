@@ -6,6 +6,8 @@ Uses only the existing intake engine; no external calls, no real messages sent.
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
 import logging
 from typing import Any
 
@@ -199,3 +201,16 @@ def review_queue_summary(db: Session, company_id: int) -> dict[str, int]:
         if state in counts:
             counts[state] = int(count)
     return counts
+
+
+def review_queue_aging(db: Session, company_id: int, *, older_than_hours: int = 24) -> dict[str, int]:
+    """Count overdue pending items for one tenant without exposing item contents."""
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=older_than_hours)
+    overdue = db.scalar(
+        select(func.count(ReviewQueueItem.id)).where(
+            ReviewQueueItem.company_id == company_id,
+            ReviewQueueItem.status == "pending",
+            ReviewQueueItem.created_at < cutoff,
+        )
+    )
+    return {"older_than_hours": older_than_hours, "overdue_pending": int(overdue or 0)}

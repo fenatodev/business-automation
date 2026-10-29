@@ -84,6 +84,7 @@
     $("rq-list").replaceChildren();
     $("rq-count").textContent = "—";
     $("rq-summary").textContent = "Resumo operacional indisponível.";
+    $("rq-aging").textContent = "Atrasos: indisponível.";
     $("rq-form").reset();
     opportunities = [];
     clearSelection();
@@ -289,6 +290,7 @@
     if (!bearer) throw new Error("Conecte um operador.");
     if (!(/^\/review-queue\/$/.test(path) ||
           /^\/review-queue\/summary$/.test(path) ||
+          /^\/review-queue\/aging$/.test(path) ||
           /^\/review-queue\/synthetic-trigger$/.test(path) ||
           /^\/review-queue\/\d+\/decision$/.test(path))) {
       throw new Error("Rota de revisão não permitida.");
@@ -308,15 +310,17 @@
   }
   async function refreshReviewQueue() {
     const epoch = ++reviewEpoch;
-    const [items, summary] = await Promise.all([
+    const [items, summary, aging] = await Promise.all([
       reviewApi("/review-queue/"),
       reviewApi("/review-queue/summary"),
+      reviewApi("/review-queue/aging"),
     ]);
     if (epoch !== reviewEpoch) return;
     if (!Array.isArray(items)) throw new Error("Fila inválida.");
     $("rq-count").textContent = items.length + " pendente(s)";
     $("rq-summary").textContent = "Pendentes: " + summary.pending +
       " · Aprovados: " + summary.approve + " · Rejeitados: " + summary.reject;
+    $("rq-aging").textContent = "Pendentes há mais de 24h: " + aging.overdue_pending;
     const list = $("rq-list");
     list.replaceChildren();
     for (const item of items) {
