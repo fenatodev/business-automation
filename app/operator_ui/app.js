@@ -83,6 +83,7 @@
     reviewEpoch += 1;
     $("rq-list").replaceChildren();
     $("rq-count").textContent = "—";
+    $("rq-summary").textContent = "Resumo operacional indisponível.";
     $("rq-form").reset();
     opportunities = [];
     clearSelection();
@@ -287,6 +288,7 @@
   async function reviewApi(path, method = "GET", body) {
     if (!bearer) throw new Error("Conecte um operador.");
     if (!(/^\/review-queue\/$/.test(path) ||
+          /^\/review-queue\/summary$/.test(path) ||
           /^\/review-queue\/synthetic-trigger$/.test(path) ||
           /^\/review-queue\/\d+\/decision$/.test(path))) {
       throw new Error("Rota de revisão não permitida.");
@@ -306,10 +308,15 @@
   }
   async function refreshReviewQueue() {
     const epoch = ++reviewEpoch;
-    const items = await reviewApi("/review-queue/");
+    const [items, summary] = await Promise.all([
+      reviewApi("/review-queue/"),
+      reviewApi("/review-queue/summary"),
+    ]);
     if (epoch !== reviewEpoch) return;
     if (!Array.isArray(items)) throw new Error("Fila inválida.");
     $("rq-count").textContent = items.length + " pendente(s)";
+    $("rq-summary").textContent = "Pendentes: " + summary.pending +
+      " · Aprovados: " + summary.approve + " · Rejeitados: " + summary.reject;
     const list = $("rq-list");
     list.replaceChildren();
     for (const item of items) {
