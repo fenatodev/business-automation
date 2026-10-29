@@ -72,3 +72,12 @@ O Ubuntu voltou a ficar acessível. Verificação real em 29/10/2026:
 - O repositório local principal ainda estava em `wp/058-commercial-pilot`, embora o código tenha sido integrado à `main`. Criar worktree separado e limpo a partir da `main` para tarefas novas, sem descartar o worktree antigo.
 
 Próxima verificação: executar um teste de leitura não destrutivo do Codex em worktree novo e confirmar que plugins/memória têm efeito observável; sem consumir APIs pagas extras nem acessar segredos.
+
+## Teste de execução Codex (read-only)
+
+- Worktree `~/dev/worktrees/codex-audit` criado limpo a partir de `origin/main`, sem editar a árvore principal.
+- Primeiro teste `codex exec --ephemeral --sandbox read-only` ficou aguardando stdin e encerrou por timeout (exit 124); nenhuma auditoria produzida.
+- Segunda tentativa com `</dev/null` **funcionou** (exit 0): o Codex leu `AGENTS.md` e respondeu `OK` em ~10 s.
+- A sessão relatou consumo de **8.848 tokens**, mesmo para uma verificação curta. Não interpretar isso como cobrança monetária adicional; verificar uso/cota no produto antes de auditorias longas.
+- **Padrão obrigatório para futuras chamadas remotas:** fechar stdin com `</dev/null`, usar `--sandbox read-only` em auditorias, limite de tempo e registrar saída. Não executar tarefas amplas antes de medir eficiência das integrações de memória/contexto.
+- MCPs/plugins estão configurados, mas seu uso efetivo **não foi comprovado** pelo teste simples de leitura do repositório.
