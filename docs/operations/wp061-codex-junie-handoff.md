@@ -60,4 +60,15 @@ Não criar uma nova arquitetura de orquestração antes de demonstrar lacuna con
 
 ## Estado da inspeção local em 29/10/2026
 
-A tentativa de acesso ao Ubuntu via conector remoto retornou **dispositivo offline**. A versão do Codex CLI, opções de compressão, memória persistente e plugins **não foram verificadas nesta sessão**. Não afirmar que estão habilitados ou funcionais até inspecionar configurações e comportamento com ferramentas locais.
+O Ubuntu voltou a ficar acessível. Verificação real em 29/10/2026:
+
+- Codex CLI instalado: **0.165.0**; configuração em `~/.codex/config.toml`.
+- MCPs `agentmemory` e `context-mode`: **enabled** no `codex mcp list`.
+- Plugins `agentmemory@agentmemory` e `context-mode@context-mode`: **enabled=true** na configuração.
+- `context-mode` disponível em `~/.local/bin/context-mode`. Uma chamada `--version` não retornou rapidamente; **funcionamento end-to-end ainda não comprovado**.
+- Serviço local em `127.0.0.1:3111` está escutando; GET `/health` retornou HTTP 404, portanto o protocolo da API de memória ainda **não foi validado**. Não confundir 404 dessa rota com serviço desligado.
+- `codex features list`: `async_compaction=false` (under development), `compaction_image_budget=true`, `remote_compaction_v2=false` (removed). Não há confirmação independente de compactação ativa em uma sessão real.
+- A configuração do Codex tem `model=gpt-6-astra`, esforço `low`, `hooks=true` e `plugin_hooks=true`. O comando de recursos apresenta `plugin_hooks=false` como recurso removido; verificar precedência efetiva sem presumir funcionamento dos hooks.
+- O repositório local principal ainda estava em `wp/058-commercial-pilot`, embora o código tenha sido integrado à `main`. Criar worktree separado e limpo a partir da `main` para tarefas novas, sem descartar o worktree antigo.
+
+Próxima verificação: executar um teste de leitura não destrutivo do Codex em worktree novo e confirmar que plugins/memória têm efeito observável; sem consumir APIs pagas extras nem acessar segredos.
