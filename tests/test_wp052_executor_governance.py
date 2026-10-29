@@ -328,7 +328,7 @@ class TestSecretMinimization:
 
     def test_no_real_api_key_values_in_tests(self) -> None:
         """Test files must not contain actual API key values.
-        
+
         Note: We check for patterns that indicate actual key values,
         not just header names used in documentation or test patterns.
         Real API keys are typically long alphanumeric strings assigned
