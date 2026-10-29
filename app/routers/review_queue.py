@@ -62,6 +62,15 @@ def get_review_queue_summary(
     return pipeline.review_queue_summary(db, identity.company_id)
 
 
+@router.get("/aging", response_model=dict[str, int])
+def get_review_queue_aging(
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+) -> dict[str, int]:
+    """Show stale pending work without exposing messages or customer data."""
+    return pipeline.review_queue_aging(db, identity.company_id)
+
+
 @router.get("/{item_id}", response_model=ReviewQueueItemOut)
 def get_review_item(
     item_id: int,
