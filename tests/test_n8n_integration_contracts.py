@@ -539,7 +539,7 @@ class TestFastAPIResponseToWorkflowContract:
 
 class TestTimestampHandling:
     """Verify timestamps are handled correctly.
-    
+
     The FastAPI review_queue endpoint handles timestamps server-side
     using SQLAlchemy DateTime(timezone=True) with server_default now().
     The workflow no longer generates timestamps client-side.
