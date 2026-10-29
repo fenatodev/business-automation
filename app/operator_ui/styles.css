@@ -218,3 +218,7 @@ footer {
   .inline-fields button { flex: 1; }
   .panel-heading { align-items: flex-start; }
 }
+
+.review-card {padding:16px; border:1px solid var(--line);border-radius:9px;background:#101722;overflow-wrap:anywhere}
+.review-card textarea {margin-top:12px}
+.review-actions {display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
