@@ -167,3 +167,11 @@ Exibe nome, telefone, email e lead de origem. `customerApi()` com allowlist
 estrita; renderização com `textContent`/`appendChild`. Carregamento automático
 ao conectar.
 **1323 testes passaram**; compileall, diff-check: PASS.
+
+## WP-087 — Visão detalhada de customer com conversas (30/10/2026)
+
+Clicar em um customer na lista abre painel de detalhes com informações e
+conversas associadas. Backend com filtro `customer_id` em
+`GET /companies/{company_id}/conversations` e count endpoint. UI com
+`showCustomerDetail()`, `loadCustomerConversations()` e botão voltar.
+**1349 testes passaram**; compileall, diff-check: PASS.

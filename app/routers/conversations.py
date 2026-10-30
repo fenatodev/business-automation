@@ -139,6 +139,7 @@ def list_company_conversations(
     channel: str | None = Query(None, description="Filter by channel"),
     status: str | None = Query(None, description="Filter by status"),
     q: str | None = Query(None, description="Search keywords in messages"),
+    customer_id: int | None = Query(None, description="Filter by customer"),
     sort: str = Query(default="last_message", description="Sort by: id, last_message, created_at"),
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -162,6 +163,9 @@ def list_company_conversations(
 
     if status is not None:
         stmt = stmt.where(Conversation.status == status)
+
+    if customer_id is not None:
+        stmt = stmt.where(Conversation.customer_id == customer_id)
 
     if q is not None:
         stmt = stmt.where(
@@ -195,6 +199,7 @@ def count_company_conversations(
     channel: str | None = Query(None, description="Filter by channel"),
     status: str | None = Query(None, description="Filter by status"),
     q: str | None = Query(None, description="Search keywords in messages"),
+    customer_id: int | None = Query(None, description="Filter by customer"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator_company),
 ):
@@ -215,6 +220,9 @@ def count_company_conversations(
 
     if status is not None:
         stmt = stmt.where(Conversation.status == status)
+
+    if customer_id is not None:
+        stmt = stmt.where(Conversation.customer_id == customer_id)
 
     if q is not None:
         stmt = stmt.where(
