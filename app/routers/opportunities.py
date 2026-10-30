@@ -117,14 +117,21 @@ def create_opportunity(
 
 @router.get("/opportunities")
 def list_opportunities(
+    exclude_archived: bool = False,
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    return db.scalars(
+    """List opportunities, optionally excluding archived (done/lost) ones."""
+    stmt = (
         select(Opportunity)
         .where(Opportunity.company_id == identity.company_id)
-        .order_by(Opportunity.id)
-    ).all()
+    )
+
+    if exclude_archived:
+        stmt = stmt.where(Opportunity.next_action.notin_(["done", "lost"]))
+
+    stmt = stmt.order_by(Opportunity.id)
+    return db.scalars(stmt).all()
 
 
 @router.get("/opportunities/{opportunity_id}")

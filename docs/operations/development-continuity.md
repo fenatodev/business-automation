@@ -191,3 +191,11 @@ canal (whatsapp, instagram, web, telegram, email); validação de allowlist.
 POST /conversations com customer_id vinculado. Recarrega a lista de
 conversas após criação.
 **1377 testes passaram**; compileall, diff-check: PASS.
+
+## WP-090 — Arquivamento visual de oportunidades (30/10/2026)
+
+Toggle "Exibir arquivadas" na lista de oportunidades oculta por padrão
+as oportunidades com status `done`/`lost`. Backend com `exclude_archived`
+query param em `GET /opportunities`. Schema `OpportunityTriageUpdate`
+com `in_progress`, `done`, `lost` como opções de triagem.
+**1393 testes passaram**; compileall, diff-check: PASS.

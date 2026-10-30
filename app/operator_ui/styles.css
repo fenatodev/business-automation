@@ -473,6 +473,27 @@ footer {
   background: #1a2636;
 }
 
+/* Opportunity toolbar and archive toggle — WP-090 */
+.opp-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.opp-archive-toggle {
+  font-size: 0.82rem;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+}
+.opp-archive-toggle input[type="checkbox"] {
+  cursor: pointer;
+}
+
 /* Leads — Notes textarea — WP-088 */
 .lead-notes {
   margin-top: 8px;

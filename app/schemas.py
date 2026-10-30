@@ -86,6 +86,9 @@ class OpportunityTriageUpdate(BaseModel):
         "ignore",
         "follow",
         "prepare_proposal",
+        "in_progress",
+        "done",
+        "lost",
     ]
     triage_note: str | None = None
 

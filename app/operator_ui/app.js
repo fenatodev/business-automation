@@ -125,7 +125,7 @@
       throw new Error("Conecte uma identidade de operador.");
     }
     // Somente caminhos internos fixos. Não aceitar URLs de anúncio como destino de fetch.
-    if (!/^\/(opportunities)(\/\d+(\/triage|\/proposal-brief)?)?$/.test(path)) {
+    if (!/^\/(opportunities)(\?exclude_archived=true)?(\/\d+(\/triage|\/proposal-brief)?)?$/.test(path)) {
       throw new Error("Rota não permitida nesta interface.");
     }
     const epoch = sessionEpoch;
@@ -305,7 +305,9 @@
   }
 
   async function refreshList(preferId = selectedId) {
-    const result = await api("/opportunities");
+    const showArchived = $("show-archived").checked;
+    const params = showArchived ? "" : "?exclude_archived=true";
+    const result = await api("/opportunities" + params);
     if (!Array.isArray(result)) {
       throw new Error("Resposta de listagem inválida.");
     }
@@ -317,6 +319,11 @@
       showList();
     }
   }
+
+  // WP-090 — Archive toggle
+  $("show-archived").addEventListener("change", () => {
+    refreshList();
+  });
 
 
   // Review queue uses the same in-memory Bearer session, with a strict route allowlist.
