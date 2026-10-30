@@ -73,14 +73,15 @@ def create_lead(
 
 @router.get("/leads")
 def list_leads(
+    status: str | None = None,
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    return db.scalars(
-        select(Lead)
-        .where(Lead.company_id == identity.company_id)
-        .order_by(Lead.id)
-    ).all()
+    """List leads, optionally filtered by status."""
+    query = select(Lead).where(Lead.company_id == identity.company_id)
+    if status:
+        query = query.where(Lead.status == status)
+    return db.scalars(query.order_by(Lead.id)).all()
 
 
 @router.get("/leads/{lead_id}")

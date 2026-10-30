@@ -135,3 +135,11 @@ de oportunidades (por next_action), conversas (por status), leads (por status),
 tarefas internas e review queue. UI com cards de métricas no topo do painel
 do operador, carregada automaticamente ao conectar.
 **1240 testes passaram**; compileall, diff-check: PASS.
+
+## WP-083 — Gerenciamento de leads no operador (30/10/2026)
+
+Seção "07 / LEADS" no painel do operador com lista de leads, filtro por status
+e seletor inline para atualizar status rapidamente. Backend com filtro opcional
+`status` em `GET /leads`. `leadApi()` com allowlist estrita; renderização com
+`textContent`/`appendChild` (sem innerHTML).
+**1268 testes passaram**; compileall, diff-check: PASS.

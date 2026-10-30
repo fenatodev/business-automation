@@ -281,6 +281,34 @@
           </form>
         </div>
       </section>
+
+      <section class="panel" aria-labelledby="leads-title">
+        <div class="panel-heading">
+          <div>
+            <span class="section-index">07 / LEADS</span>
+            <h2 id="leads-title">Leads</h2>
+          </div>
+          <button id="leads-refresh" type="button">Atualizar</button>
+        </div>
+        <p class="small">Gerencie leads: altere status para acompanhar o funil comercial.</p>
+
+        <div class="lead-filters">
+          <div class="lead-filter-group">
+            <label for="lead-filter-status">Status</label>
+            <select id="lead-filter-status">
+              <option value="">Todos os status</option>
+              <option value="new">Novo</option>
+              <option value="contacted">Contatado</option>
+              <option value="qualified">Qualificado</option>
+              <option value="proposal">Proposta</option>
+              <option value="won">Convertido</option>
+              <option value="lost">Perdido</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="leads-list" class="lead-list"></div>
+      </section>
     </main>
 
     <footer>Operação interna · dados e permissões pertencem à API · sem envio automático de propostas</footer>
