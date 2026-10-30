@@ -124,10 +124,22 @@ Operador-only, tenant-isolado. Sem migration.
 
 ## WP-068 — supervisor 24×7 (30/10/2026)
 
-Branch `wp/068-supervisor-24x7`.
+[PR #152](https://github.com/fenatodev/business-automation/pull/152),
+branch `wp/068-supervisor-24x7`.
 Loop contínuo sobre `run_once()` com polling configurável, shutdown graceful
 (SIGTERM/SIGINT) e estatísticas de saúde (ciclos, tarefas, erros).
 Script CLI standalone em `scripts/run_supervisor.py`.
 **1136 testes passaram**; compileall, diff-check: PASS.
 
-Próximo recorte: avaliar integrações externas (n8n workflow activation, etc).
+## WP-069 — persistência do intake comercial (30/10/2026)
+
+[PR #153](https://github.com/fenatodev/business-automation/pull/153),
+branch `wp/069-intake-persistence`.
+`POST /internal/commercial-intake/evaluate` era simulation-only. Novo endpoint
+`POST /internal/commercial-intake/create` avalia o intake e persiste como
+Opportunity, fechando o ciclo intake → opportunity → triage da F2.
+Deduplicação por event_id, tenant-isolado, operator-only.
+**1138 testes passaram**; compileall, diff-check: PASS.
+
+Próximo recorte: avaliar o fluxo de triage do operador para oportunidades
+criadas pelo intake e as integrações externas (n8n workflow activation, etc).
