@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from app.routers.internal_tasks import router as internal_tasks_router
 from app.dependencies import get_db
 from app.routers.commercial_intake import router as commercial_intake_router
 from app.routers.companies import router as companies_router
@@ -24,6 +25,7 @@ app.include_router(leads_router)
 app.include_router(opportunities_router)
 app.include_router(operator_ui_router)
 app.include_router(review_queue_router)
+app.include_router(internal_tasks_router)
 
 
 # =========================================================

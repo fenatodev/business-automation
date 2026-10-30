@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, JSON, String, Text, UniqueConstraint, func
+from sqlalchemy import CheckConstraint, Index, DateTime, ForeignKey, JSON, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -333,3 +333,29 @@ class ReviewQueueItem(Base):
         onupdate=func.now(),
         nullable=False,
     )
+
+
+class InternalTask(Base):
+    """Durable internal synthetic intake work; never dispatches messages."""
+
+    __tablename__ = "internal_tasks"
+    __table_args__ = (
+        UniqueConstraint("company_id", "event_id", name="uq_internal_tasks_company_event"),
+        CheckConstraint("status IN ('queued', 'running', 'succeeded', 'failed')", name="ck_internal_tasks_status"),
+        CheckConstraint("attempts >= 0 AND attempts <= 3", name="ck_internal_tasks_attempts"),
+        Index("ix_internal_tasks_ready", "status", "available_at"),
+        Index("ix_internal_tasks_lease", "status", "lease_until"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    company_id: Mapped[int] = mapped_column(ForeignKey("companies.id"), nullable=False)
+    event_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="queued", server_default="queued")
+    attempts: Mapped[int] = mapped_column(default=0, server_default="0")
+    available_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    claim_token: Mapped[str | None] = mapped_column(String(36))
+    result: Mapped[dict | None] = mapped_column(JSON)
+    error_code: Mapped[str | None] = mapped_column(String(40))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

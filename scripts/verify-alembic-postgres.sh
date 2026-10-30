@@ -121,6 +121,12 @@ fi
 
 echo "FRESH_DATABASE_UPGRADE_OK"
 
+# WP-063: real separate-connection claims and recovery on this disposable DB.
+DATABASE_URL="$FRESH_URL" uv run python scripts/verify_internal_tasks_postgres.py
+if [ "$?" -ne 0 ]; then
+    fail "Internal task concurrency/recovery validation failed."
+fi
+
 # Scenario B: synthetic legacy baseline.
 create_db "$LEGACY_DB"
 if [ "$?" -ne 0 ]; then

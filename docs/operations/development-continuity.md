@@ -37,3 +37,37 @@
 ## Handoff de cada PR
 
 Registrar objetivo, arquivos, estado (PASS/BLOCKED), comandos e resultados, comportamento em PostgreSQL quando aplicável, riscos, dependências locais, próximo passo concreto e o que **não foi** validado.
+
+## WP-063 — motor interno durável (30/10/2026)
+
+Implementação na branch `wp/063-durable-internal-tasks`; spec reproduzível em
+`specs/wp-063-durable-internal-tasks.md`. O novo endpoint persiste triagem
+sintética por tenant; worker explícito conclui na fila de revisão humana.
+Retries limitados, lease, fencing e deduplicação sobrevivem a novas sessões.
+Não há envio externo, ativação n8n nem worker instalado no ambiente principal.
+
+Evidência local: **1119 testes passaram**, dois warnings preexistentes;
+`compileall app tests` e `git diff --check` passaram. Harness PostgreSQL 17
+**PASS**: upgrade novo/legado, único head, ausência de drift, rejeição de
+mapeamento ambíguo, dez corridas de claim, retomada por nova conexão e disputa
+entre conclusão sob lock e recuperação. Nenhum banco real foi usado.
+
+Context Mode e AgentMemory responderam nesta sessão; memória retornou busca
+vazia. São opcionais, sem dependência de produto. CI/PR continuam como gate de
+integração; consultar a branch e checks no GitHub para estado posterior.
+
+Para reproduzir em checkout descartável dessa branch:
+
+```bash
+uv run pytest
+.venv/bin/python -m compileall app tests
+git diff --check
+DATABASE_URL='sqlite+pysqlite:///:memory:' bash scripts/verify-alembic-postgres.sh
+```
+
+O último comando cria seu próprio container efêmero e remove somente esse
+container. Não executar migration/worker contra `.env` operacional.
+Próximo recorte independente: consulta paginada e resumo de tarefas internas
+falhas/atrasadas para o operador. Reprocessamento manual, supervisor 24x7,
+retenção e integrações externas continuam pendentes; não afirmar prontidão
+comercial nem operação contínua validada em produção.
