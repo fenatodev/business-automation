@@ -45,6 +45,42 @@
     </section>
 
     <main id="workspace" hidden>
+      <section class="panel" aria-labelledby="dashboard-title">
+        <div class="panel-heading">
+          <div>
+            <span class="section-index">00 / VISÃO GERAL</span>
+            <h2 id="dashboard-title">Dashboard</h2>
+          </div>
+          <button id="dashboard-refresh" type="button">Atualizar</button>
+        </div>
+        <div id="dashboard-cards" class="dashboard-cards">
+          <div class="dashboard-card">
+            <h3>Oportunidades</h3>
+            <div id="dash-opp-total" class="dashboard-number">—</div>
+            <div id="dash-opp-details" class="dashboard-details"></div>
+          </div>
+          <div class="dashboard-card">
+            <h3>Conversas</h3>
+            <div id="dash-conv-total" class="dashboard-number">—</div>
+            <div id="dash-conv-details" class="dashboard-details"></div>
+          </div>
+          <div class="dashboard-card">
+            <h3>Leads</h3>
+            <div id="dash-lead-total" class="dashboard-number">—</div>
+            <div id="dash-lead-details" class="dashboard-details"></div>
+          </div>
+          <div class="dashboard-card">
+            <h3>Tarefas</h3>
+            <div id="dash-task-details" class="dashboard-details"></div>
+          </div>
+          <div class="dashboard-card">
+            <h3>Revisão</h3>
+            <div id="dash-rq-total" class="dashboard-number">—</div>
+            <div id="dash-rq-details" class="dashboard-details"></div>
+          </div>
+        </div>
+      </section>
+
       <section class="panel" aria-labelledby="rq-title"><div class="panel-heading"><div><span class="section-index">05 / PILOTO SINTÉTICO</span><h2 id="rq-title">Fila de revisão comercial</h2></div><button id="rq-refresh" type="button">Atualizar</button></div><p class="small">Aprovações registram decisões internas. Não enviam mensagens.</p><form id="rq-form"><div class="two-col"><div><label for="rq-event">ID do evento</label><input id="rq-event" required maxlength="100" placeholder="demo-001"></div><div><label for="rq-channel">Canal simulado</label><select id="rq-channel"><option value="web">Web</option><option value="email">E-mail simulado</option><option value="whatsapp">WhatsApp simulado</option></select></div></div><label for="rq-message">Mensagem fictícia</label><textarea id="rq-message" required maxlength="4000" rows="3"></textarea><button type="submit" class="primary">Simular entrada</button></form><h3>Pendentes <span id="rq-count" class="tag">—</span></h3><p id="rq-summary" class="small" aria-live="polite">Resumo operacional indisponível.</p><p id="rq-aging" class="small" aria-live="polite">Atrasos: indisponível.</p><div id="rq-list" class="opportunity-list"></div><div class="review-actions"><button id="rq-prev" type="button" class="secondary" disabled>Anterior</button><span id="rq-page" class="small">Página 1</span><button id="rq-next" type="button" class="secondary" disabled>Próxima</button></div></section>
       <div class="layout">
         <div class="column">

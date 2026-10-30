@@ -127,3 +127,11 @@ permite ao operador fechar e reabrir conversas. UI com botão "Fechar" que
 alterna entre open/closed. Filtro e count por status já existentes funcionam
 com o novo endpoint.
 **1229 testes passaram**; compileall, diff-check: PASS.
+
+## WP-082 — Dashboard de métricas (30/10/2026)
+
+Novo endpoint GET /internal-tasks/dashboard agrega contagens tenant-isoladas
+de oportunidades (por next_action), conversas (por status), leads (por status),
+tarefas internas e review queue. UI com cards de métricas no topo do painel
+do operador, carregada automaticamente ao conectar.
+**1240 testes passaram**; compileall, diff-check: PASS.

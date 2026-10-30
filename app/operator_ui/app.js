@@ -819,10 +819,87 @@
   $("conv-list").replaceChildren();
   $("conv-detail").hidden = true;
 
+  // Dashboard — WP-082
+  async function refreshDashboard() {
+    if (!bearer) return;
+    const res = await fetch("/internal-tasks/dashboard", {
+      headers: {"Authorization": "Bearer " + bearer},
+    });
+    if (res.status === 403) {disconnect("Permissão de operador necessária."); return;}
+    if (!res.ok) return;
+    const data = await res.json();
+    renderDashboard(data);
+  }
+
+  function renderDashboard(data) {
+    // Opportunities
+    const opp = data.opportunities || {};
+    $("dash-opp-total").textContent = opp.total || 0;
+    const oppDetails = $("dash-opp-details");
+    oppDetails.replaceChildren();
+    for (const [k, v] of Object.entries(opp)) {
+      if (k === "total") continue;
+      const span = document.createElement("span");
+      span.textContent = k + ": " + v;
+      oppDetails.appendChild(span);
+    }
+
+    // Conversations
+    const conv = data.conversations || {};
+    $("dash-conv-total").textContent = conv.total || 0;
+    const convDetails = $("dash-conv-details");
+    convDetails.replaceChildren();
+    for (const [k, v] of Object.entries(conv)) {
+      if (k === "total") continue;
+      const span = document.createElement("span");
+      span.textContent = k + ": " + v;
+      convDetails.appendChild(span);
+    }
+
+    // Leads
+    const leads = data.leads || {};
+    $("dash-lead-total").textContent = leads.total || 0;
+    const leadDetails = $("dash-lead-details");
+    leadDetails.replaceChildren();
+    for (const [k, v] of Object.entries(leads)) {
+      if (k === "total") continue;
+      const span = document.createElement("span");
+      span.textContent = k + ": " + v;
+      leadDetails.appendChild(span);
+    }
+
+    // Tasks
+    const taskDetails = $("dash-task-details");
+    taskDetails.replaceChildren();
+    for (const [k, v] of Object.entries(data.tasks || {})) {
+      const span = document.createElement("span");
+      span.textContent = k + ": " + v;
+      taskDetails.appendChild(span);
+    }
+
+    // Review queue
+    const rq = data.review_queue || {};
+    $("dash-rq-total").textContent = rq.total || 0;
+    const rqDetails = $("dash-rq-details");
+    rqDetails.replaceChildren();
+    for (const [k, v] of Object.entries(rq)) {
+      if (k === "total") continue;
+      const span = document.createElement("span");
+      span.textContent = k + ": " + v;
+      rqDetails.appendChild(span);
+    }
+  }
+
+  $("dashboard-refresh").addEventListener("click", () => withButton($("dashboard-refresh"), async () => {
+    await refreshDashboard();
+    notify("Dashboard atualizado.");
+  }));
+
   // Integrate conversations into the connect flow via MutationObserver.
   const workspaceObserver = new MutationObserver((records) => {
     for (const record of records) {
       if (record.attributeName === "hidden" && !$("workspace").hidden && bearer) {
+        refreshDashboard().catch(() => {});
         refreshConversations().catch(() => {});
         workspaceObserver.disconnect();
       }
