@@ -457,3 +457,18 @@ footer {
   background: var(--panel-alt);
   color: var(--text);
 }
+
+/* Leads — Convert button — WP-085 */
+.lead-convert-btn {
+  margin-top: 8px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--panel-alt);
+  color: var(--text);
+  cursor: pointer;
+}
+.lead-convert-btn:hover {
+  background: #1a2636;
+}

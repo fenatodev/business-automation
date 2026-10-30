@@ -151,3 +151,11 @@ Endpoints PATCH /proposal-brief/approve e /proposal-brief/reject. Approve
 para draft sem alterar opportunity. UI com botões "Aprovar" e "Rejeitar"
 no painel de brief, visíveis conforme status.
 **1279 testes passaram**; compileall, diff-check: PASS.
+
+## WP-085 — Converter lead em customer via UI (30/10/2026)
+
+Botão "Converter" na seção de leads do operador. Conecta ao endpoint existente
+`POST /leads/{lead_id}/convert` (customers.py). Confirmação antes da conversão;
+botão oculto para leads já convertidos (status "won"). Tratamento de 409
+(duplicata) e 403 (auth).
+**1297 testes passaram**; compileall, diff-check: PASS.
