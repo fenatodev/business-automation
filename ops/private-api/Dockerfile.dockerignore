@@ -1,0 +1,20 @@
+# Dedicated build context for ops/private-api/Dockerfile.
+# Allow only the paths explicitly copied by that Dockerfile.
+*
+!pyproject.toml
+!uv.lock
+!README.md
+!src/
+!src/**
+!app/
+!app/**
+# Exclude local secrets and development artifacts even inside allowed trees.
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+**/*secret*
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.venv/
