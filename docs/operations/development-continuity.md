@@ -112,3 +112,10 @@ e `offset` (default 0). `GET /companies/{company_id}/conversations/count`
 retorna `{"total": N}` respeitando os filtros existentes.
 UI com botões Anterior/Próxima e indicador de página.
 **1211 testes passaram**; compileall, diff-check: PASS.
+
+## WP-080 — Ordenação de conversas (30/10/2026)
+
+`GET /companies/{company_id}/conversations` aceita `sort` (default "last_message").
+Opções: last_message (subquery max(Message.created_at)), created_at (desc),
+id (asc). Valor inválido decai para ID. UI com dropdown "Ordenar".
+**1220 testes passaram**; compileall, diff-check: PASS.

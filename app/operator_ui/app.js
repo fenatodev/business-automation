@@ -18,6 +18,7 @@
   let convFilterChannel = "";
   let convFilterStatus = "";
   let convFilterQuery = "";
+  let convFilterSort = "last_message";
   let convOffset = 0;
   const convPageSize = 50;
   let convTotal = 0;
@@ -113,6 +114,7 @@
     convFilterChannel = "";
     convFilterStatus = "";
     convFilterQuery = "";
+    convFilterSort = "last_message";
     convOffset = 0;
     convTotal = 0;
     notify(message);
@@ -576,6 +578,7 @@
     if (convFilterChannel) params.set("channel", convFilterChannel);
     if (convFilterStatus) params.set("status", convFilterStatus);
     if (convFilterQuery) params.set("q", convFilterQuery);
+    params.set("sort", convFilterSort);
     params.set("limit", String(convPageSize));
     params.set("offset", String(convOffset));
     return "/companies/" + companyId + "/conversations?" + params.toString();
@@ -712,10 +715,12 @@
     convFilterChannel = "";
     convFilterStatus = "";
     convFilterQuery = "";
+    convFilterSort = "last_message";
     convOffset = 0;
     $("conv-filter-channel").value = "";
     $("conv-filter-status").value = "";
     $("conv-search-q").value = "";
+    $("conv-filter-sort").value = "last_message";
     refreshConversations().catch(() => {});
   }
 
@@ -749,6 +754,12 @@
 
   $("conv-clear-filter").addEventListener("click", () => {
     clearConversationFilters();
+  });
+
+  $("conv-filter-sort").addEventListener("change", (e) => {
+    convFilterSort = e.target.value;
+    convOffset = 0;
+    refreshConversations().catch(() => {});
   });
 
   $("conv-refresh").addEventListener("click", () => {

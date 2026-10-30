@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, select
+from sqlalchemy import func, select, desc
 from sqlalchemy.orm import Session, joinedload
 
 from app.auth import AccessIdentity
@@ -119,6 +119,7 @@ def list_company_conversations(
     channel: str | None = Query(None, description="Filter by channel"),
     status: str | None = Query(None, description="Filter by status"),
     q: str | None = Query(None, description="Search keywords in messages"),
+    sort: str = Query(default="last_message", description="Sort by: id, last_message, created_at"),
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
@@ -151,7 +152,20 @@ def list_company_conversations(
             )
         )
 
-    stmt = stmt.order_by(Conversation.id).offset(offset).limit(limit)
+    if sort == "last_message":
+        last_msg = (
+            select(func.max(Message.created_at))
+            .where(Message.conversation_id == Conversation.id)
+            .correlate(Conversation)
+            .scalar_subquery()
+        )
+        stmt = stmt.order_by(desc(last_msg), Conversation.id)
+    elif sort == "created_at":
+        stmt = stmt.order_by(desc(Conversation.created_at), Conversation.id)
+    else:
+        stmt = stmt.order_by(Conversation.id)
+
+    stmt = stmt.offset(offset).limit(limit)
     return db.scalars(stmt).all()
 
 
