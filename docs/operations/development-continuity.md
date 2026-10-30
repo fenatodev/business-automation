@@ -94,12 +94,11 @@ e mostra leases expirados sem recuperá-los como efeito da consulta.
 Próxima WP executável: apresentar lista/resumo no `/operator`, usando somente
 os endpoints existentes, sem expor payload e sem iniciar worker automaticamente.
 
-## WP-073 — triagem manual para "em andamento" (30/10/2026)
+## WP-074 — fechar oportunidades como concluída ou perdida (30/10/2026)
 
-[PR #157](https://github.com/fenatodev/business-automation/pull/157),
-branch `wp/073-triage-in-progress`, commit `06ef088`.
-`in_progress` adicionado ao `OpportunityTriageUpdate` e ao select de triagem
-da UI do operador. O operador pode marcar uma oportunidade como "em andamento"
-sem passar pelo fluxo de aprovação do brief. `in_progress` bloqueia a criação
-de proposal brief (comportamento existente para estados ≠ `prepare_proposal`).
-**1142 testes passaram**; compileall, diff-check: PASS.
+`done` e `lost` adicionados ao `OpportunityTriageUpdate` como estados finais do
+ciclo comercial. O operador pode fechar uma oportunidade como "Concluída" ou
+"Perdida" via triagem, completando o fluxo F2: intake → opportunity → triage →
+brief → aprovação → in_progress → done/lost. `in_progress` também adicionado
+(com WP-073) para completar a cadeia de estados. Estados finais bloqueiam a
+criação de proposal brief. **1146 testes passaram**; compileall, diff-check: PASS.
