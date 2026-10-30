@@ -225,8 +225,22 @@
     $("brief-form").hidden = false;
     const exists = Boolean(brief);
     $("brief-review-control").hidden = !exists;
+    const statusActions = $("brief-actions");
+    if (exists) {
+      const showActions = brief.status === "ready_for_review" || brief.status === "approved";
+      statusActions.hidden = !showActions;
+      $("brief-approve").hidden = brief.status !== "ready_for_review";
+      $("brief-reject").hidden = false;
+    } else {
+      statusActions.hidden = true;
+    }
+    const statusLabels = {
+      draft: "Rascunho",
+      ready_for_review: "Pronto para revisão",
+      approved: "Aprovado",
+    };
     $("brief-status").textContent = exists
-      ? brief.status === "ready_for_review" ? "Pronto para revisão" : "Rascunho"
+      ? (statusLabels[brief.status] || brief.status)
       : "Ainda não criado";
     $("save-brief-button").textContent = exists ? "Salvar alterações" : "Criar rascunho";
     $("brief-guide").textContent = exists
@@ -513,6 +527,28 @@
       );
     });
   });
+
+  // Brief approve — WP-084
+  $("brief-approve").addEventListener("click", () => withButton($("brief-approve"), async () => {
+    if (selectedId === null) return;
+    const id = selectedId;
+    await api("/opportunities/" + id + "/proposal-brief/approve", {
+      method: "PATCH",
+    });
+    await refreshList(id);
+    notify("Brief aprovado. Oportunidade avançada para em andamento.");
+  }));
+
+  // Brief reject — WP-084
+  $("brief-reject").addEventListener("click", () => withButton($("brief-reject"), async () => {
+    if (selectedId === null) return;
+    const id = selectedId;
+    await api("/opportunities/" + id + "/proposal-brief/reject", {
+      method: "PATCH",
+    });
+    await refreshList(id);
+    notify("Brief rejeitado. Voltado para rascunho.");
+  }));
 
   // Conversations — strict allowlist, same pattern as reviewApi/taskApi.
   async function conversationApi(path, method = "GET", body) {

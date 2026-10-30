@@ -301,3 +301,76 @@ def update_proposal_brief(
     db.refresh(brief)
 
     return brief
+
+
+@router.patch("/opportunities/{opportunity_id}/proposal-brief/approve")
+def approve_proposal_brief(
+    opportunity_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Approve a proposal brief and advance the opportunity to in_progress.
+
+    Atomic operation: updates both brief status and opportunity next_action.
+    Only accepts briefs that are 'ready_for_review'.
+    """
+    opportunity = _get_tenant_opportunity(
+        db,
+        opportunity_id,
+        identity.company_id,
+    )
+
+    brief = _get_proposal_brief(
+        db,
+        opportunity.id,
+    )
+
+    if brief.status != "ready_for_review":
+        raise HTTPException(
+            status_code=400,
+            detail="Brief must be 'ready_for_review' to approve",
+        )
+
+    brief.status = "approved"
+    opportunity.next_action = "in_progress"
+
+    db.commit()
+    db.refresh(brief)
+
+    return brief
+
+
+@router.patch("/opportunities/{opportunity_id}/proposal-brief/reject")
+def reject_proposal_brief(
+    opportunity_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Reject a proposal brief, reverting it to draft.
+
+    Only accepts briefs that are 'approved' or 'ready_for_review'.
+    Does not change the opportunity next_action.
+    """
+    opportunity = _get_tenant_opportunity(
+        db,
+        opportunity_id,
+        identity.company_id,
+    )
+
+    brief = _get_proposal_brief(
+        db,
+        opportunity.id,
+    )
+
+    if brief.status not in ("approved", "ready_for_review"):
+        raise HTTPException(
+            status_code=400,
+            detail="Brief must be 'approved' or 'ready_for_review' to reject",
+        )
+
+    brief.status = "draft"
+
+    db.commit()
+    db.refresh(brief)
+
+    return brief

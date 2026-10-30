@@ -143,3 +143,11 @@ e seletor inline para atualizar status rapidamente. Backend com filtro opcional
 `status` em `GET /leads`. `leadApi()` com allowlist estrita; renderização com
 `textContent`/`appendChild` (sem innerHTML).
 **1268 testes passaram**; compileall, diff-check: PASS.
+
+## WP-084 — Approve e reject do proposal brief (30/10/2026)
+
+Endpoints PATCH /proposal-brief/approve e /proposal-brief/reject. Approve
+é atômico (brief → approved, opportunity → in_progress). Reject volta brief
+para draft sem alterar opportunity. UI com botões "Aprovar" e "Rejeitar"
+no painel de brief, visíveis conforme status.
+**1279 testes passaram**; compileall, diff-check: PASS.
