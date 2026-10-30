@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -117,14 +117,39 @@ def create_opportunity(
 
 @router.get("/opportunities")
 def list_opportunities(
+    next_action: str | None = Query(default=None),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
+    """List opportunities, optionally filtered by next_action."""
+    query = select(Opportunity).where(
+        Opportunity.company_id == identity.company_id
+    )
+    if next_action is not None:
+        query = query.where(Opportunity.next_action == next_action)
     return db.scalars(
-        select(Opportunity)
-        .where(Opportunity.company_id == identity.company_id)
-        .order_by(Opportunity.id)
+        query.order_by(Opportunity.id)
     ).all()
+
+
+@router.get("/opportunities/pipeline-summary")
+def pipeline_summary(
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Return a count of opportunities grouped by next_action, tenant-isolated."""
+    rows = db.execute(
+        select(
+            Opportunity.next_action,
+            func.count(Opportunity.id),
+        )
+        .where(Opportunity.company_id == identity.company_id)
+        .group_by(Opportunity.next_action)
+    ).all()
+    result: dict[str, int] = {}
+    for action, count in rows:
+        result[action] = count
+    return result
 
 
 @router.get("/opportunities/{opportunity_id}")
