@@ -81,3 +81,28 @@ Próxima verificação: executar um teste de leitura não destrutivo do Codex em
 - A sessão relatou consumo de **8.848 tokens**, mesmo para uma verificação curta. Não interpretar isso como cobrança monetária adicional; verificar uso/cota no produto antes de auditorias longas.
 - **Padrão obrigatório para futuras chamadas remotas:** fechar stdin com `</dev/null`, usar `--sandbox read-only` em auditorias, limite de tempo e registrar saída. Não executar tarefas amplas antes de medir eficiência das integrações de memória/contexto.
 - MCPs/plugins estão configurados, mas seu uso efetivo **não foi comprovado** pelo teste simples de leitura do repositório.
+
+## Auditoria Codex read-only — 30/10/2026
+
+Executado com `codex exec --ephemeral --sandbox read-only` em worktree isolado da main (HEAD `3463ce8` no momento do teste). Exit 0, relatório escrito em `/tmp/wp061-architecture-audit.txt`. Sem alterações de código, sem testes executados nesta etapa.
+
+### Achados auditáveis
+
+1. **Decisão concorrente — confirmado por inspeção, corrida não reproduzida.** `app/services/commercial_pipeline.py` executa read-check-write de status pending sem condição atômica. Duas decisões paralelas podem sobrescrever uma à outra. Necessário teste de concorrência PostgreSQL e update condicional com 409 no perdedor.
+2. **Listagem sem limite — confirmado por inspeção.** `list_pending_items` usa `.all()`, potencial crescimento ilimitado por tenant. Adicionar paginação com limite máximo e ordenação determinística, sem quebrar consumidores existentes sem migração.
+3. **Contexto Docker sem exclusões — confirmado por inspeção.** Contexto de build usa raiz do repo, sem `.dockerignore`. Adicionar exclusões seguras e testes com arquivos sentinela. Não foi demonstrado segredo na imagem; Dockerfile usa COPY seletivo.
+
+### Resultado da integração Context Mode / AgentMemory
+
+- Codex recebeu instruções context-mode e tentou `mcp: context-mode/ctx_execute`.
+- Chamada falhou: **MCP tool call requires approval, but approval policy is never**. Não declarar economia de tokens comprovada. Requer ajuste pontual de permissões para chamadas MCP, sem liberar ações destrutivas ou expor segredos.
+- AgentMemory **não foi observado em uso** nesta execução. Serviço local 3111 escuta, mas rotas `/health`, `/healthz` e `/api/health` retornam 404; nenhuma dessas rotas valida o protocolo correto.
+
+### Próxima sequência objetiva
+
+1. Corrigir exclusões do Docker e verificar cobertura em CI, sem mexer em segredos.
+2. Tornar decisões concorrentes atômicas e validar com PostgreSQL descartável.
+3. Introduzir paginação com compatibilidade de API e atualizar `/operator`.
+4. Confirmar Context Mode e AgentMemory com uso demonstrável antes de afirmar compressão/memória compartilhada com Junie.
+
+Regra: cada item é PR pequeno, com handoff para Junie e testes reprodutíveis. Codex é executor temporário, não dependência do sistema.
