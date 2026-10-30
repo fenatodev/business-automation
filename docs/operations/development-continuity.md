@@ -94,11 +94,12 @@ e mostra leases expirados sem recuperá-los como efeito da consulta.
 Próxima WP executável: apresentar lista/resumo no `/operator`, usando somente
 os endpoints existentes, sem expor payload e sem iniciar worker automaticamente.
 
-## WP-072 — visão de pipeline de oportunidades (30/10/2026)
+## WP-073 — triagem manual para "em andamento" (30/10/2026)
 
-[PR #156](https://github.com/fenatodev/business-automation/pull/156),
-branch `wp/072-opportunity-pipeline`, commit `e374827`.
-Filtro opcional `?next_action=` em `GET /opportunities`; novo endpoint
-`GET /opportunities/pipeline-summary` com contagens por status, tenant-isolado.
-UI do operador com chips clicáveis de filtro e resumo do pipeline.
-**1154 testes passaram**; compileall, diff-check: PASS.
+[PR #157](https://github.com/fenatodev/business-automation/pull/157),
+branch `wp/073-triage-in-progress`, commit `06ef088`.
+`in_progress` adicionado ao `OpportunityTriageUpdate` e ao select de triagem
+da UI do operador. O operador pode marcar uma oportunidade como "em andamento"
+sem passar pelo fluxo de aprovação do brief. `in_progress` bloqueia a criação
+de proposal brief (comportamento existente para estados ≠ `prepare_proposal`).
+**1142 testes passaram**; compileall, diff-check: PASS.
