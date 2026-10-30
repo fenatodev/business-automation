@@ -344,3 +344,21 @@ footer {
   padding-top: 16px;
   border-top: 1px solid var(--line);
 }
+
+/* Pagination controls — WP-079 */
+.conv-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 14px 0 18px;
+}
+.conv-pagination button {
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+.conv-pagination .small {
+  font-size: 0.82rem;
+  color: var(--muted);
+}

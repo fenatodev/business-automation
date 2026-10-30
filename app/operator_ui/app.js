@@ -18,6 +18,9 @@
   let convFilterChannel = "";
   let convFilterStatus = "";
   let convFilterQuery = "";
+  let convOffset = 0;
+  const convPageSize = 50;
+  let convTotal = 0;
 
   const briefFields = [
     "offer_reference",
@@ -110,6 +113,8 @@
     convFilterChannel = "";
     convFilterStatus = "";
     convFilterQuery = "";
+    convOffset = 0;
+    convTotal = 0;
     notify(message);
   }
 
@@ -511,6 +516,7 @@
   async function conversationApi(path, method = "GET", body) {
     if (!bearer) throw new Error("Conecte um operador.");
     if (!(/^\/companies\/\d+\/conversations($|\?)/.test(path) ||
+          /^\/companies\/\d+\/conversations\/count($|\?)/.test(path) ||
           /^\/conversations\/$/.test(path) ||
           /^\/conversations\/\d+\/$/.test(path) ||
           /^\/conversations\/\d+\/messages$/.test(path))) {
@@ -570,8 +576,18 @@
     if (convFilterChannel) params.set("channel", convFilterChannel);
     if (convFilterStatus) params.set("status", convFilterStatus);
     if (convFilterQuery) params.set("q", convFilterQuery);
+    params.set("limit", String(convPageSize));
+    params.set("offset", String(convOffset));
+    return "/companies/" + companyId + "/conversations?" + params.toString();
+  }
+
+  function buildConversationCountUrl(companyId) {
+    const params = new URLSearchParams();
+    if (convFilterChannel) params.set("channel", convFilterChannel);
+    if (convFilterStatus) params.set("status", convFilterStatus);
+    if (convFilterQuery) params.set("q", convFilterQuery);
     const query = params.toString();
-    return "/companies/" + companyId + "/conversations" + (query ? "?" + query : "");
+    return "/companies/" + companyId + "/conversations/count" + (query ? "?" + query : "");
   }
 
   function showConversationList() {
@@ -651,15 +667,22 @@
     try {
       const company = opportunities.length > 0 ? opportunities[0].company_id : null;
       if (company) {
-        const url = buildConversationUrl(company);
-        conversations = await conversationApi(url);
+        const [convs, countResult] = await Promise.all([
+          conversationApi(buildConversationUrl(company)),
+          conversationApi(buildConversationCountUrl(company)),
+        ]);
+        conversations = convs;
+        convTotal = countResult.total || 0;
       } else {
         conversations = [];
+        convTotal = 0;
       }
     } catch (error) {
       conversations = [];
+      convTotal = 0;
     }
     showConversationList();
+    updateConversationPagination();
     if (selectedConvId !== null && conversations.some((c) => c.id === selectedConvId)) {
       await selectConversation(selectedConvId);
     } else if (selectedConvId !== null) {
@@ -671,29 +694,47 @@
     }
   }
 
+  function updateConversationPagination() {
+    const pagination = $("conv-pagination");
+    const totalPages = Math.max(1, Math.ceil(convTotal / convPageSize));
+    const currentPage = Math.floor(convOffset / convPageSize) + 1;
+    if (convTotal <= convPageSize) {
+      pagination.hidden = true;
+    } else {
+      pagination.hidden = false;
+      $("conv-prev").disabled = convOffset === 0;
+      $("conv-next").disabled = convOffset + conversations.length >= convTotal;
+      $("conv-page").textContent = "Página " + currentPage + " de " + totalPages + " (" + convTotal + ")";
+    }
+  }
+
   function clearConversationFilters() {
     convFilterChannel = "";
     convFilterStatus = "";
     convFilterQuery = "";
+    convOffset = 0;
     $("conv-filter-channel").value = "";
     $("conv-filter-status").value = "";
     $("conv-search-q").value = "";
     refreshConversations().catch(() => {});
   }
 
-  // Filter event listeners
+  // Filter event listeners (reset offset on filter change)
   $("conv-filter-channel").addEventListener("change", (e) => {
     convFilterChannel = e.target.value;
+    convOffset = 0;
     refreshConversations().catch(() => {});
   });
 
   $("conv-filter-status").addEventListener("change", (e) => {
     convFilterStatus = e.target.value;
+    convOffset = 0;
     refreshConversations().catch(() => {});
   });
 
   $("conv-search-btn").addEventListener("click", () => {
     convFilterQuery = $("conv-search-q").value.trim();
+    convOffset = 0;
     refreshConversations().catch(() => {});
   });
 
@@ -701,6 +742,7 @@
     if (e.key === "Enter") {
       e.preventDefault();
       convFilterQuery = $("conv-search-q").value.trim();
+      convOffset = 0;
       refreshConversations().catch(() => {});
     }
   });
@@ -715,6 +757,16 @@
       notify("Conversas atualizadas.");
     });
   });
+
+  $("conv-prev").addEventListener("click", () => withButton($("conv-prev"), async () => {
+    convOffset = Math.max(0, convOffset - convPageSize);
+    await refreshConversations();
+  }));
+
+  $("conv-next").addEventListener("click", () => withButton($("conv-next"), async () => {
+    convOffset += convPageSize;
+    await refreshConversations();
+  }));
 
   $("conv-reply-toggle").addEventListener("click", () => {
     const form = $("human-reply-form");

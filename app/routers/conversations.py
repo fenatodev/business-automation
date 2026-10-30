@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.auth import AccessIdentity
@@ -119,6 +119,8 @@ def list_company_conversations(
     channel: str | None = Query(None, description="Filter by channel"),
     status: str | None = Query(None, description="Filter by status"),
     q: str | None = Query(None, description="Search keywords in messages"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator_company),
 ):
@@ -141,9 +143,6 @@ def list_company_conversations(
         stmt = stmt.where(Conversation.status == status)
 
     if q is not None:
-        # Search for conversations that have messages containing the keyword
-        # Use func.lower for case-insensitive search (works in SQLite and PostgreSQL)
-        from sqlalchemy import func
         stmt = stmt.where(
             Conversation.id.in_(
                 select(Message.conversation_id).where(
@@ -152,8 +151,48 @@ def list_company_conversations(
             )
         )
 
-    stmt = stmt.order_by(Conversation.id)
+    stmt = stmt.order_by(Conversation.id).offset(offset).limit(limit)
     return db.scalars(stmt).all()
+
+
+@router.get("/companies/{company_id}/conversations/count")
+def count_company_conversations(
+    company_id: int,
+    channel: str | None = Query(None, description="Filter by channel"),
+    status: str | None = Query(None, description="Filter by status"),
+    q: str | None = Query(None, description="Search keywords in messages"),
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator_company),
+):
+    company = db.scalar(
+        select(Company).where(Company.id == identity.company_id)
+    )
+
+    if company is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Company not found",
+        )
+
+    stmt = select(func.count()).select_from(Conversation).where(Conversation.company_id == company_id)
+
+    if channel is not None:
+        stmt = stmt.where(Conversation.channel == channel)
+
+    if status is not None:
+        stmt = stmt.where(Conversation.status == status)
+
+    if q is not None:
+        stmt = stmt.where(
+            Conversation.id.in_(
+                select(Message.conversation_id).where(
+                    func.lower(Message.content).like(f"%{q.lower()}%")
+                )
+            )
+        )
+
+    total = db.scalar(stmt)
+    return {"total": total}
 
 
 @router.post("/conversations")

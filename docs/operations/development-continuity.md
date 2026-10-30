@@ -102,3 +102,13 @@ opcionais `channel`, `status` e `q` (busca case-insensitive em mensagens).
 UI com dropdowns de canal/status, campo de busca e botão limpar.
 `conversationApi()` atualizada para aceitar query params via `buildConversationUrl()`.
 **1197 testes passaram**; compileall, diff-check: PASS.
+
+## WP-079 — Paginação de conversas (30/10/2026)
+
+Adiciona paginação limit/offset ao endpoint de listagem de conversas e um
+endpoint de contagem para os controles de paginação da UI.
+`GET /companies/{company_id}/conversations` aceita `limit` (default 50, max 100)
+e `offset` (default 0). `GET /companies/{company_id}/conversations/count`
+retorna `{"total": N}` respeitando os filtros existentes.
+UI com botões Anterior/Próxima e indicador de página.
+**1211 testes passaram**; compileall, diff-check: PASS.
