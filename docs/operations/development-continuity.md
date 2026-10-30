@@ -93,3 +93,17 @@ e mostra leases expirados sem recuperá-los como efeito da consulta.
 
 Próxima WP executável: apresentar lista/resumo no `/operator`, usando somente
 os endpoints existentes, sem expor payload e sem iniciar worker automaticamente.
+
+## WP-065 — regressão do painel corrigida (30/10/2026)
+
+WP-064 integrada pelo [PR #147](https://github.com/fenatodev/business-automation/pull/147)
+em `b249266d8a832946ba3cac99609e98fe757c9a9b`, CI verde e revisão independente.
+Antes de estender o painel, a WP-065 corrige a conexão que rejeitava a própria
+rota paginada da fila. Spec: `specs/wp-065-review-pagination-route.md`.
+
+Teste JavaScript executável reproduziu FAIL antes da correção e PASS depois:
+conexão, offsets 0→50→0, opções de fetch preservadas e rejeição de rotas inválidas
+antes da rede. **1129 testes passaram**, dois warnings preexistentes; compileall,
+node syntax e diff-check PASS. Teste usa DOM/fetch sintéticos, não navegador real.
+Node.js passa a ser necessário também para esse teste pytest, sem dependência npm.
+Próxima WP continua sendo o painel de tarefas internas, a partir da main integrada.
