@@ -4,7 +4,7 @@ Provides endpoints for the human operator to manage the commercial review queue:
 trigger synthetic intake events, list pending items, and make approve/reject decisions.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.auth import AccessIdentity
@@ -45,11 +45,13 @@ def trigger_synthetic_intake(
 
 @router.get("/", response_model=list[ReviewQueueItemOut])
 def list_pending_review_items(
+    limit: int = Query(default=100, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ) -> list[ReviewQueueItemOut]:
     """List all pending review queue items for the authenticated tenant."""
-    items = pipeline.list_pending_items(db, identity.company_id)
+    items = pipeline.list_pending_items(db, identity.company_id, limit=limit, offset=offset)
     return [ReviewQueueItemOut.model_validate(item) for item in items]
 
 
