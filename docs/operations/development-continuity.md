@@ -122,4 +122,12 @@ configurável (`POST /retention`) para purgar tarefas terminadas antigas.
 Operador-only, tenant-isolado. Sem migration.
 **1136 testes passaram**; compileall, diff-check: PASS.
 
-Próximo recorte: avaliar supervisor 24×7 e integrações externas.
+## WP-068 — supervisor 24×7 (30/10/2026)
+
+Branch `wp/068-supervisor-24x7`.
+Loop contínuo sobre `run_once()` com polling configurável, shutdown graceful
+(SIGTERM/SIGINT) e estatísticas de saúde (ciclos, tarefas, erros).
+Script CLI standalone em `scripts/run_supervisor.py`.
+**1136 testes passaram**; compileall, diff-check: PASS.
+
+Próximo recorte: avaliar integrações externas (n8n workflow activation, etc).
