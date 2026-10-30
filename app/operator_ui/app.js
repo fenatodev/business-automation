@@ -13,6 +13,11 @@
   let selectedId = null;
   let activeBrief = null;
   let selectionVersion = 0;
+  let conversations = [];
+  let selectedConvId = null;
+  let convFilterChannel = "";
+  let convFilterStatus = "";
+  let convFilterQuery = "";
 
   const briefFields = [
     "offer_reference",
@@ -100,6 +105,11 @@
     $("opportunity-list").replaceChildren();
     $("list-meta").textContent = "Nenhuma consulta realizada.";
     $("capture-form").reset();
+    conversations = [];
+    selectedConvId = null;
+    convFilterChannel = "";
+    convFilterStatus = "";
+    convFilterQuery = "";
     notify(message);
   }
 
@@ -496,4 +506,252 @@
       );
     });
   });
+
+  // Conversations — strict allowlist, same pattern as reviewApi/taskApi.
+  async function conversationApi(path, method = "GET", body) {
+    if (!bearer) throw new Error("Conecte um operador.");
+    if (!(/^\/companies\/\d+\/conversations($|\?)/.test(path) ||
+          /^\/conversations\/$/.test(path) ||
+          /^\/conversations\/\d+\/$/.test(path) ||
+          /^\/conversations\/\d+\/messages$/.test(path))) {
+      throw new Error("Rota de conversas não permitida.");
+    }
+    const epoch = sessionEpoch;
+    const headers = {Authorization: "Bearer " + bearer};
+    if (body !== undefined) headers["Content-Type"] = "application/json";
+    const response = await fetch(path, {method, headers, body: body === undefined ? undefined : JSON.stringify(body),
+      credentials: "omit", cache: "no-store", redirect: "error", referrerPolicy: "no-referrer"});
+    if (epoch !== sessionEpoch) throw new Error("Sessão encerrada.");
+    if (response.status === 401) {
+      disconnect("Credencial inválida.");
+      throw new ApiFailure(401);
+    }
+    if (!response.ok) throw new ApiFailure(response.status);
+    return response.json();
+  }
+
+  // Human reply — strict allowlist for conversation messages.
+  async function replyApi(path, method = "GET", body) {
+    if (!bearer) throw new Error("Conecte um operador.");
+    if (!(/^\/conversations\/\d+\/messages$/.test(path))) {
+      throw new Error("Rota de resposta não permitida.");
+    }
+    const epoch = sessionEpoch;
+    const headers = {Authorization: "Bearer " + bearer};
+    if (body !== undefined) headers["Content-Type"] = "application/json";
+    const response = await fetch(path, {method, headers, body: body === undefined ? undefined : JSON.stringify(body),
+      credentials: "omit", cache: "no-store", redirect: "error", referrerPolicy: "no-referrer"});
+    if (epoch !== sessionEpoch) throw new Error("Sessão encerrada.");
+    if (response.status === 401) {
+      disconnect("Credencial inválida.");
+      throw new ApiFailure(401);
+    }
+    if (!response.ok) throw new ApiFailure(response.status);
+    return response.json();
+  }
+
+  const channelLabels = {
+    whatsapp: "WhatsApp",
+    instagram: "Instagram",
+    web: "Web",
+    telegram: "Telegram",
+    email: "E-mail",
+  };
+
+  const senderLabels = {
+    customer: "Cliente",
+    agent: "Agente",
+    human: "Humano",
+    system: "Sistema",
+  };
+
+  function buildConversationUrl(companyId) {
+    const params = new URLSearchParams();
+    if (convFilterChannel) params.set("channel", convFilterChannel);
+    if (convFilterStatus) params.set("status", convFilterStatus);
+    if (convFilterQuery) params.set("q", convFilterQuery);
+    const query = params.toString();
+    return "/companies/" + companyId + "/conversations" + (query ? "?" + query : "");
+  }
+
+  function showConversationList() {
+    const target = $("conv-list");
+    target.replaceChildren();
+    const ordered = [...conversations].sort((a, b) => b.id - a.id);
+    if (!ordered.length) {
+      const empty = document.createElement("p");
+      empty.className = "small";
+      empty.textContent = convFilterChannel || convFilterStatus || convFilterQuery
+        ? "Nenhuma conversa corresponde aos filtros."
+        : "Nenhuma conversa registrada.";
+      target.append(empty);
+      return;
+    }
+    for (const conv of ordered) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "conversation-item";
+      button.classList.toggle("active", conv.id === selectedConvId);
+      const channel = channelLabels[conv.channel] || conv.channel;
+      const title = document.createElement("strong");
+      title.textContent = "#" + conv.id + " · " + channel;
+      const meta = document.createElement("span");
+      meta.textContent = conv.status || "—";
+      button.append(title, meta);
+      button.addEventListener("click", () => {
+        selectConversation(conv.id).catch(() => {
+          notify("Falha ao carregar mensagens desta conversa.", true);
+        });
+      });
+      target.append(button);
+    }
+  }
+
+  async function selectConversation(id) {
+    selectedConvId = id;
+    showConversationList();
+    $("conv-detail").hidden = false;
+    $("conv-reply-toggle").hidden = false;
+    $("reply-conv-id").value = id;
+    const conv = conversations.find((c) => c.id === id);
+    const channel = conv ? (channelLabels[conv.channel] || conv.channel) : "Conversa";
+    $("conv-detail-header").textContent = channel + " · #" + id;
+    try {
+      const messages = await conversationApi("/conversations/" + id + "/messages");
+      if (selectedConvId !== id) return;
+      const target = $("conv-messages");
+      target.replaceChildren();
+      if (!messages.length) {
+        const empty = document.createElement("p");
+        empty.className = "small";
+        empty.textContent = "Nenhuma mensagem.";
+        target.append(empty);
+        return;
+      }
+      for (const msg of messages) {
+        const bubble = document.createElement("div");
+        bubble.className = "message-bubble";
+        bubble.classList.add(msg.sender_type);
+        const header = document.createElement("span");
+        header.className = "message-sender";
+        header.textContent = senderLabels[msg.sender_type] || msg.sender_type;
+        const content = document.createElement("p");
+        content.className = "message-content";
+        content.textContent = msg.content || "";
+        bubble.append(header, content);
+        target.append(bubble);
+      }
+    } catch (error) {
+      if (selectedConvId !== id) return;
+      notify("Não foi possível carregar as mensagens.", true);
+    }
+  }
+
+  async function refreshConversations() {
+    try {
+      const company = opportunities.length > 0 ? opportunities[0].company_id : null;
+      if (company) {
+        const url = buildConversationUrl(company);
+        conversations = await conversationApi(url);
+      } else {
+        conversations = [];
+      }
+    } catch (error) {
+      conversations = [];
+    }
+    showConversationList();
+    if (selectedConvId !== null && conversations.some((c) => c.id === selectedConvId)) {
+      await selectConversation(selectedConvId);
+    } else if (selectedConvId !== null) {
+      selectedConvId = null;
+      $("conv-detail").hidden = true;
+      $("conv-reply-toggle").hidden = true;
+      $("human-reply-form").hidden = true;
+      showConversationList();
+    }
+  }
+
+  function clearConversationFilters() {
+    convFilterChannel = "";
+    convFilterStatus = "";
+    convFilterQuery = "";
+    $("conv-filter-channel").value = "";
+    $("conv-filter-status").value = "";
+    $("conv-search-q").value = "";
+    refreshConversations().catch(() => {});
+  }
+
+  // Filter event listeners
+  $("conv-filter-channel").addEventListener("change", (e) => {
+    convFilterChannel = e.target.value;
+    refreshConversations().catch(() => {});
+  });
+
+  $("conv-filter-status").addEventListener("change", (e) => {
+    convFilterStatus = e.target.value;
+    refreshConversations().catch(() => {});
+  });
+
+  $("conv-search-btn").addEventListener("click", () => {
+    convFilterQuery = $("conv-search-q").value.trim();
+    refreshConversations().catch(() => {});
+  });
+
+  $("conv-search-q").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      convFilterQuery = $("conv-search-q").value.trim();
+      refreshConversations().catch(() => {});
+    }
+  });
+
+  $("conv-clear-filter").addEventListener("click", () => {
+    clearConversationFilters();
+  });
+
+  $("conv-refresh").addEventListener("click", () => {
+    withButton($("conv-refresh"), async () => {
+      await refreshConversations();
+      notify("Conversas atualizadas.");
+    });
+  });
+
+  $("conv-reply-toggle").addEventListener("click", () => {
+    const form = $("human-reply-form");
+    form.hidden = !form.hidden;
+  });
+
+  $("human-reply-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const button = $("human-reply-form").querySelector('button[type="submit"]');
+    withButton(button, async () => {
+      const convId = $("reply-conv-id").value;
+      const message = $("reply-message").value.trim();
+      if (!convId || !message) {notify("Preencha os campos.", true); return;}
+      const id = parseInt(convId, 10);
+      if (isNaN(id) || id < 1) {notify("ID da conversa inválido.", true); return;}
+      await replyApi("/conversations/" + id + "/messages", "POST", {
+        sender_type: "human",
+        content: message,
+      });
+      $("human-reply-form").reset();
+      $("reply-conv-id").value = id;
+      notify("Mensagem enviada na conversa #" + id + ".");
+      await selectConversation(id);
+    });
+  });
+
+  $("conv-list").replaceChildren();
+  $("conv-detail").hidden = true;
+
+  // Integrate conversations into the connect flow via MutationObserver.
+  const workspaceObserver = new MutationObserver((records) => {
+    for (const record of records) {
+      if (record.attributeName === "hidden" && !$("workspace").hidden && bearer) {
+        refreshConversations().catch(() => {});
+        workspaceObserver.disconnect();
+      }
+    }
+  });
+  workspaceObserver.observe($("workspace"), {attributes: true});
 })();

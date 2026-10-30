@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.auth import AccessIdentity
 from app.dependencies import (
@@ -116,6 +116,9 @@ def get_conversation(
 @router.get("/companies/{company_id}/conversations")
 def list_company_conversations(
     company_id: int,
+    channel: str | None = Query(None, description="Filter by channel"),
+    status: str | None = Query(None, description="Filter by status"),
+    q: str | None = Query(None, description="Search keywords in messages"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator_company),
 ):
@@ -129,11 +132,28 @@ def list_company_conversations(
             detail="Company not found",
         )
 
-    return db.scalars(
-        select(Conversation)
-        .where(Conversation.company_id == company_id)
-        .order_by(Conversation.id)
-    ).all()
+    stmt = select(Conversation).where(Conversation.company_id == company_id)
+
+    if channel is not None:
+        stmt = stmt.where(Conversation.channel == channel)
+
+    if status is not None:
+        stmt = stmt.where(Conversation.status == status)
+
+    if q is not None:
+        # Search for conversations that have messages containing the keyword
+        # Use func.lower for case-insensitive search (works in SQLite and PostgreSQL)
+        from sqlalchemy import func
+        stmt = stmt.where(
+            Conversation.id.in_(
+                select(Message.conversation_id).where(
+                    func.lower(Message.content).like(f"%{q.lower()}%")
+                )
+            )
+        )
+
+    stmt = stmt.order_by(Conversation.id)
+    return db.scalars(stmt).all()
 
 
 @router.post("/conversations")

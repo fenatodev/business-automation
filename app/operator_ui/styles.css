@@ -222,3 +222,125 @@ footer {
 .review-card {padding:16px; border:1px solid var(--line);border-radius:9px;background:#101722;overflow-wrap:anywhere}
 .review-card textarea {margin-top:12px}
 .review-actions {display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+
+/* Conversas e filtros — WP-078 */
+.conversation-list { display: grid; gap: 9px; }
+.conversation-item {
+  text-align: left;
+  display: grid;
+  gap: 7px;
+  width: 100%;
+  padding: 14px;
+  background: #101722;
+  border-color: #3c4958;
+}
+.conversation-item strong { font-size: 0.89rem; }
+.conversation-item span { font-size: 0.78rem; color: var(--muted); }
+.conversation-item.active { border-color: var(--accent); background: #15332e; }
+
+.conv-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 14px 0 18px;
+  padding: 14px;
+  background: #101722;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.conv-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+}
+.conv-filter-group label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.conv-filter-group select {
+  padding: 6px 8px;
+  font-size: 0.85rem;
+}
+.conv-search-group { flex: 1; min-width: 220px; }
+.conv-search-inline {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+.conv-search-inline input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+}
+.conv-search-inline button {
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.conv-detail {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #101722;
+}
+.conv-detail-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.conv-detail-header-row h3 { margin: 0; }
+.conv-messages {
+  display: grid;
+  gap: 10px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+.message-bubble {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel-alt);
+  font-size: 0.87rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.message-bubble.customer {
+  border-color: #2c6357;
+  background: var(--accent-dark);
+}
+.message-bubble.agent {
+  border-color: #3a5366;
+  background: #1a2636;
+}
+.message-bubble.human {
+  border-color: #515b67;
+  background: #1d2633;
+}
+.message-sender {
+  display: block;
+  font-size: 0.73rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.message-content {
+  margin: 0;
+  color: var(--text);
+}
+#human-reply-form {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}

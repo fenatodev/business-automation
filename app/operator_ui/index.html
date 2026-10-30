@@ -172,6 +172,63 @@
           </section>
         </div>
       </div>
+
+      <section class="panel" aria-labelledby="conversations-title">
+        <div class="panel-heading">
+          <div>
+            <span class="section-index">06 / COMUNICAÇÃO</span>
+            <h2 id="conversations-title">Conversas</h2>
+          </div>
+          <button id="conv-refresh" type="button">Atualizar</button>
+        </div>
+        <p class="small">Histórico de conversas por canal. Selecione uma conversa para ver as mensagens e responder.</p>
+
+        <div class="conv-filters">
+          <div class="conv-filter-group">
+            <label for="conv-filter-channel">Canal</label>
+            <select id="conv-filter-channel">
+              <option value="">Todos os canais</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="instagram">Instagram</option>
+              <option value="web">Web</option>
+              <option value="telegram">Telegram</option>
+              <option value="email">E-mail</option>
+            </select>
+          </div>
+          <div class="conv-filter-group">
+            <label for="conv-filter-status">Status</label>
+            <select id="conv-filter-status">
+              <option value="">Todos os status</option>
+              <option value="open">Aberta</option>
+              <option value="closed">Fechada</option>
+            </select>
+          </div>
+          <div class="conv-filter-group conv-search-group">
+            <label for="conv-search-q">Buscar</label>
+            <div class="conv-search-inline">
+              <input id="conv-search-q" type="search" placeholder="Keywords nas mensagens..." autocomplete="off">
+              <button id="conv-search-btn" type="button">Buscar</button>
+              <button id="conv-clear-filter" type="button" class="secondary">Limpar</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="conv-list" class="conversation-list"></div>
+        <div id="conv-detail" class="conv-detail" hidden>
+          <div class="conv-detail-header-row">
+            <h3 id="conv-detail-header"></h3>
+            <button id="conv-reply-toggle" type="button" class="secondary" hidden>Responder</button>
+          </div>
+          <div id="conv-messages" class="conv-messages"></div>
+          <form id="human-reply-form" hidden>
+            <input id="reply-conv-id" name="conversation_id" type="hidden" readonly>
+            <label for="reply-message">Mensagem *</label>
+            <textarea id="reply-message" name="message" required maxlength="4000" rows="4"
+                      placeholder="Escreva a resposta manual"></textarea>
+            <button type="submit" class="primary">Enviar mensagem</button>
+          </form>
+        </div>
+      </section>
     </main>
 
     <footer>Operação interna · dados e permissões pertencem à API · sem envio automático de propostas</footer>
