@@ -77,3 +77,19 @@ credencial GitHub não possui escopo `workflow`. O workflow existente foi
 preservado; a suíte offline continua obrigatória no CI. O harness PostgreSQL
 passou localmente; execução automática dele no CI permanece PENDENTE até
 alteração de workflow por credencial autorizada. Não ampliar escopos por inferência.
+
+## WP-064 — consultas operacionais (30/10/2026)
+
+WP-063 integrada pelo [PR #146](https://github.com/fenatodev/business-automation/pull/146),
+commit `f5e869ee3ca9ee75544c543926fd5e6603f41a15`, CI verde e reprodução independente.
+A branch `wp/064-internal-task-visibility` acrescenta listagem paginada/filtro e
+resumo tenant-scoped das tarefas; detalhes em `specs/wp-064-internal-task-visibility.md`.
+Nenhum schema, política de autorização, execução de worker ou serviço real mudou.
+
+Validação local: **1128 testes passaram**, dois warnings preexistentes,
+compileall e diff-check PASS. CI existente deve confirmar antes de integração.
+Resumo distingue tarefas disponíveis há mais de 24h de retries ainda em espera,
+e mostra leases expirados sem recuperá-los como efeito da consulta.
+
+Próxima WP executável: apresentar lista/resumo no `/operator`, usando somente
+os endpoints existentes, sem expor payload e sem iniciar worker automaticamente.

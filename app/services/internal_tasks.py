@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
-from sqlalchemy import select, update
+from sqlalchemy import case, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -23,6 +23,33 @@ def get_task(db: Session, task_id: int, company_id: int):
     return db.scalar(select(InternalTask).where(
         InternalTask.id == task_id, InternalTask.company_id == company_id,
     ))
+
+
+def list_tasks(db: Session, company_id: int, *, status=None, limit=50, offset=0):
+    query = select(InternalTask).where(InternalTask.company_id == company_id)
+    if status is not None:
+        query = query.where(InternalTask.status == status)
+    return db.scalars(query.order_by(InternalTask.created_at.desc(), InternalTask.id.desc())
+                      .offset(offset).limit(limit)).all()
+
+
+def task_summary(db: Session, company_id: int, *, now=None):
+    """Single tenant-filtered snapshot. Retry waiting is not overdue work."""
+    now = now or utcnow()
+    predicates = {state: InternalTask.status == state
+                  for state in ("queued", "running", "succeeded", "failed")}
+    predicates["overdue_queued"] = (
+        (InternalTask.status == "queued") &
+        (InternalTask.available_at < now - timedelta(hours=24))
+    )
+    predicates["expired_running"] = (
+        (InternalTask.status == "running") & (InternalTask.lease_until <= now)
+    )
+    row = db.execute(select(*[
+        func.count(case((predicate, 1))).label(name)
+        for name, predicate in predicates.items()
+    ]).where(InternalTask.company_id == company_id)).one()
+    return dict(row._mapping)
 
 
 def enqueue(db: Session, trigger: ReviewQueueTrigger, company_id: int):
