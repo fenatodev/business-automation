@@ -199,3 +199,9 @@ as oportunidades com status `done`/`lost`. Backend com `exclude_archived`
 query param em `GET /opportunities`. Schema `OpportunityTriageUpdate`
 com `in_progress`, `done`, `lost` como opções de triagem.
 **1393 testes passaram**; compileall, diff-check: PASS.
+
+## WP-091 — Badge de pendentes no operador (30/10/2026)
+
+Badge vermelho ao lado de "Oportunidades" mostra contagem de oportunidades
+com status `pending`. Atualizado automaticamente em `refreshList()`.
+**1404 testes passaram**; compileall, diff-check: PASS.

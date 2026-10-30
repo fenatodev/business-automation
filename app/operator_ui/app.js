@@ -312,6 +312,15 @@
       throw new Error("Resposta de listagem inválida.");
     }
     opportunities = result;
+    // WP-091 — pending badge
+    const pending = result.filter((o) => o.next_action === "pending").length;
+    const badge = $("pending-badge");
+    if (pending > 0) {
+      badge.hidden = false;
+      badge.textContent = pending;
+    } else {
+      badge.hidden = true;
+    }
     if (preferId !== null && opportunities.some((item) => item.id === preferId)) {
       await selectOpportunity(preferId);
     } else {
