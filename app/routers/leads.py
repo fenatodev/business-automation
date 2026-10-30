@@ -110,7 +110,10 @@ def update_lead(
         identity.company_id,
     )
 
-    lead.status = data.status
+    if data.status is not None:
+        lead.status = data.status
+    if data.interest is not None:
+        lead.interest = data.interest
 
     db.commit()
     db.refresh(lead)

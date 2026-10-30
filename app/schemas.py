@@ -59,7 +59,8 @@ class LeadUpdate(BaseModel):
         "proposal",
         "won",
         "lost",
-    ]
+    ] | None = None
+    interest: str | None = None
 
 
 class CompanyCreate(BaseModel):

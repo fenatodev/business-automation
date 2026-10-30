@@ -1048,6 +1048,17 @@
         item.appendChild(convertBtn);
       }
 
+      // Notes textarea — WP-088
+      const notesArea = document.createElement("textarea");
+      notesArea.className = "lead-notes";
+      notesArea.placeholder = "Notas...";
+      notesArea.rows = 2;
+      notesArea.textContent = lead.interest || "";
+      notesArea.addEventListener("change", () => {
+        updateLeadNotes(lead.id, notesArea.value);
+      });
+      item.appendChild(notesArea);
+
       list.appendChild(item);
     }
   }
@@ -1070,6 +1081,22 @@
     if (res.status === 403) {disconnect("Permissão de operador necessária."); return;}
     if (!res.ok) {console.error("[updateLeadStatus] Erro:", res.status); return;}
     notify("Lead #" + leadId + " atualizado para " + (leadStatusLabels[status] || status) + ".");
+  }
+
+  // Update lead notes — WP-088
+  async function updateLeadNotes(leadId, notes) {
+    const path = "/leads/" + leadId;
+    const res = await fetch(path, {
+      method: "PATCH",
+      headers: {
+        "Authorization": "Bearer " + bearer,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({interest: notes}),
+    });
+    if (res.status === 403) {disconnect("Permissão de operador necessária."); return;}
+    if (!res.ok) {console.error("[updateLeadNotes] Erro:", res.status); return;}
+    notify("Notas do lead #" + leadId + " salvas.");
   }
 
   // Convert lead to customer — WP-085

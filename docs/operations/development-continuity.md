@@ -175,3 +175,11 @@ conversas associadas. Backend com filtro `customer_id` em
 `GET /companies/{company_id}/conversations` e count endpoint. UI com
 `showCustomerDetail()`, `loadCustomerConversations()` e botão voltar.
 **1349 testes passaram**; compileall, diff-check: PASS.
+
+## WP-088 — Notas em leads via UI do operador (30/10/2026)
+
+Textarea "Notas" em cada lead permite ao operador registrar informações
+sobre interações. Reutiliza o campo `interest` existente (sem migration).
+`LeadUpdate` schema com `interest` e `status` opcionais; backend atualiza
+condicionalmente. Salvamento automático no evento `change`.
+**1363 testes passaram**; compileall, diff-check: PASS.

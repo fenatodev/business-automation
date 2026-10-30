@@ -473,6 +473,25 @@ footer {
   background: #1a2636;
 }
 
+/* Leads — Notes textarea — WP-088 */
+.lead-notes {
+  margin-top: 8px;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: #0d1420;
+  color: var(--text);
+  resize: vertical;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+.lead-notes:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
 /* Customers — WP-086 */
 .customer-list {
   display: grid;
