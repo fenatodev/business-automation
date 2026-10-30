@@ -7,6 +7,8 @@
   let bearer = null;
   let sessionEpoch = 0;
   let reviewEpoch = 0;
+  let reviewOffset = 0;
+  const reviewPageSize = 50;
   let opportunities = [];
   let selectedId = null;
   let activeBrief = null;
@@ -81,6 +83,7 @@
     sessionEpoch += 1;
     bearer = null;
     reviewEpoch += 1;
+    reviewOffset = 0;
     $("rq-list").replaceChildren();
     $("rq-count").textContent = "—";
     $("rq-summary").textContent = "Resumo operacional indisponível.";
@@ -311,13 +314,16 @@
   async function refreshReviewQueue() {
     const epoch = ++reviewEpoch;
     const [items, summary, aging] = await Promise.all([
-      reviewApi("/review-queue/"),
+      reviewApi("/review-queue/?limit=" + reviewPageSize + "&offset=" + reviewOffset),
       reviewApi("/review-queue/summary"),
       reviewApi("/review-queue/aging"),
     ]);
     if (epoch !== reviewEpoch) return;
     if (!Array.isArray(items)) throw new Error("Fila inválida.");
-    $("rq-count").textContent = items.length + " pendente(s)";
+    $("rq-count").textContent = summary.pending + " pendente(s)";
+    $("rq-prev").disabled = reviewOffset === 0;
+    $("rq-next").disabled = reviewOffset + items.length >= summary.pending;
+    $("rq-page").textContent = "Página " + (Math.floor(reviewOffset / reviewPageSize) + 1);
     $("rq-summary").textContent = "Pendentes: " + summary.pending +
       " · Aprovados: " + summary.approve + " · Rejeitados: " + summary.reject;
     $("rq-aging").textContent = "Pendentes há mais de 24h: " + aging.overdue_pending;
@@ -370,6 +376,14 @@
     }
   }
   $("rq-refresh").addEventListener("click", () => withButton($("rq-refresh"), refreshReviewQueue));
+  $("rq-prev").addEventListener("click", () => withButton($("rq-prev"), async () => {
+    reviewOffset = Math.max(0, reviewOffset - reviewPageSize);
+    await refreshReviewQueue();
+  }));
+  $("rq-next").addEventListener("click", () => withButton($("rq-next"), async () => {
+    reviewOffset += reviewPageSize;
+    await refreshReviewQueue();
+  }));
   $("rq-form").addEventListener("submit", (event) => {
     event.preventDefault();
     const button = $("rq-form").querySelector('button[type="submit"]');

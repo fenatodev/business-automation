@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 import logging
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -141,21 +141,28 @@ def apply_decision(
     Raises:
         ValueError: If item not found, wrong tenant, or already decided.
     """
-    item = db.scalar(
-        select(ReviewQueueItem).where(
+    result = db.execute(
+        update(ReviewQueueItem)
+        .where(
             ReviewQueueItem.id == item_id,
             ReviewQueueItem.company_id == company_id,
+            ReviewQueueItem.status == "pending",
         )
+        .values(status=decision, operator_note=operator_note)
     )
-    if item is None:
-        raise ValueError("Review queue item not found")
-
-    if item.status != "pending":
-        raise ValueError(f"Item already decided: status={item.status}")
-
-    item.status = decision
-    item.operator_note = operator_note
+    if result.rowcount != 1:
+        db.rollback()
+        existing = db.scalar(
+            select(ReviewQueueItem.status).where(
+                ReviewQueueItem.id == item_id,
+                ReviewQueueItem.company_id == company_id,
+            )
+        )
+        if existing is None:
+            raise ValueError("Review queue item not found")
+        raise ValueError(f"Item already decided: status={existing}")
     db.commit()
+    item = db.get(ReviewQueueItem, item_id)
     db.refresh(item)
     return item
 
@@ -163,6 +170,9 @@ def apply_decision(
 def list_pending_items(
     db: Session,
     company_id: int,
+    *,
+    limit: int = 100,
+    offset: int = 0,
 ) -> list[ReviewQueueItem]:
     """Return all pending review queue items for a tenant."""
     return db.scalars(
@@ -171,7 +181,9 @@ def list_pending_items(
             ReviewQueueItem.company_id == company_id,
             ReviewQueueItem.status == "pending",
         )
-        .order_by(ReviewQueueItem.created_at)
+        .order_by(ReviewQueueItem.created_at, ReviewQueueItem.id)
+        .offset(offset)
+        .limit(limit)
     ).all()
 
 
