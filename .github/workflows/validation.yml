@@ -222,20 +222,3 @@ jobs:
           print("TEMPLATE_CHECK=PASS (publication remains blocked)")
           PY
           rm -f proof-check.json
-
-  disposable-postgres:
-    name: Disposable PostgreSQL migrations and task concurrency
-    runs-on: ubuntu-24.04
-    timeout-minutes: 12
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - uses: astral-sh/setup-uv@v6
-      - name: Validate isolated schema, claims and recovery
-        env:
-          DATABASE_URL: sqlite+pysqlite:///:memory:
-        run: bash scripts/verify-alembic-postgres.sh

@@ -71,3 +71,9 @@ Próximo recorte independente: consulta paginada e resumo de tarefas internas
 falhas/atrasadas para o operador. Reprocessamento manual, supervisor 24x7,
 retenção e integrações externas continuam pendentes; não afirmar prontidão
 comercial nem operação contínua validada em produção.
+
+Limitação de CI: o push do job adicional PostgreSQL foi recusado porque a
+credencial GitHub não possui escopo `workflow`. O workflow existente foi
+preservado; a suíte offline continua obrigatória no CI. O harness PostgreSQL
+passou localmente; execução automática dele no CI permanece PENDENTE até
+alteração de workflow por credencial autorizada. Não ampliar escopos por inferência.
