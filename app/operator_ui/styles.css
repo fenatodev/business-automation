@@ -494,6 +494,11 @@ footer {
   gap: 10px;
   margin-bottom: 6px;
 }
+.opp-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 .opp-archive-toggle {
   font-size: 0.82rem;
   color: var(--muted);
@@ -505,6 +510,17 @@ footer {
 }
 .opp-archive-toggle input[type="checkbox"] {
   cursor: pointer;
+}
+
+/* WP-094 — Opportunity search */
+.opp-search-inline {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.82rem;
+  width: 200px;
 }
 
 /* WP-093 — Opportunity edit panel */

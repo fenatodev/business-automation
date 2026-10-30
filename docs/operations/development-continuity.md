@@ -220,3 +220,10 @@ Painel de edição inline no painel de triagem permite ao operador alterar
 título e descrição das oportunidades. Backend com `PATCH /opportunities/{id}`
 tenant-isolado. Validação de comprimento e campos obrigatórios.
 **1436 testes passaram**; compileall, diff-check: PASS.
+
+## WP-094 — Busca de oportunidades por keywords (30/10/2026)
+
+Campo de busca na toolbar de oportunidades filtra por título e descrição
+(case-insensitive). Backend com `?q=` query param em `GET /opportunities`.
+Combina com `exclude_archived` para filtragem composta.
+**1453 testes passaram**; compileall, diff-check: PASS.

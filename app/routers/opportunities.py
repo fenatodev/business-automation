@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -119,10 +119,11 @@ def create_opportunity(
 @router.get("/opportunities")
 def list_opportunities(
     exclude_archived: bool = False,
+    q: str | None = None,
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    """List opportunities, optionally excluding archived (done/lost) ones."""
+    """List opportunities with optional archive filter and keyword search."""
     stmt = (
         select(Opportunity)
         .where(Opportunity.company_id == identity.company_id)
@@ -130,6 +131,13 @@ def list_opportunities(
 
     if exclude_archived:
         stmt = stmt.where(Opportunity.next_action.notin_(["done", "lost"]))
+
+    if q:
+        pattern = f"%{q}%"
+        stmt = stmt.where(
+            func.lower(Opportunity.title).like(func.lower(pattern)) |
+            func.lower(Opportunity.description).like(func.lower(pattern))
+        )
 
     stmt = stmt.order_by(Opportunity.id)
     return db.scalars(stmt).all()

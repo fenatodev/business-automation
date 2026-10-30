@@ -133,7 +133,9 @@
     }
     // Somente caminhos internos fixos. Não aceitar URLs de anúncio como destino de fetch.
     // WP-093 — allow PATCH /opportunities/{id} for title/description edit
-    if (!/^\/(opportunities)(\?exclude_archived=true)?(\/\d+(\/(triage|proposal-brief))?)?$/.test(path)) {
+    // WP-094 — allow ?q= search param
+    if (!/^\/(opportunities)(\?[^&]*&[^&]*)?$/.test(path) &&
+        !/^\/(opportunities)(\/\d+(\/(triage|proposal-brief))?)?$/.test(path)) {
       throw new Error("Rota não permitida nesta interface.");
     }
     const epoch = sessionEpoch;
@@ -315,8 +317,13 @@
 
   async function refreshList(preferId = selectedId) {
     const showArchived = $("show-archived").checked;
-    const params = showArchived ? "" : "?exclude_archived=true";
-    const result = await api("/opportunities" + params);
+    // WP-094 — opportunity search
+    const searchQuery = $("opp-search").value.trim();
+    const params = [];
+    if (!showArchived) params.push("exclude_archived=true");
+    if (searchQuery) params.push("q=" + encodeURIComponent(searchQuery));
+    const query = params.length ? "?" + params.join("&") : "";
+    const result = await api("/opportunities" + query);
     if (!Array.isArray(result)) {
       throw new Error("Resposta de listagem inválida.");
     }
@@ -340,6 +347,11 @@
 
   // WP-090 — Archive toggle
   $("show-archived").addEventListener("change", () => {
+    refreshList();
+  });
+
+  // WP-094 — Opportunity search
+  $("opp-search").addEventListener("input", () => {
     refreshList();
   });
 
