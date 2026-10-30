@@ -41,11 +41,15 @@
     assumptions: "brief-assumptions",
     risks: "brief-risks",
   };
+  // WP-092 — actionLabels must cover all OpportunityTriageUpdate values
   const actionLabels = {
     pending: "Pendente",
     ignore: "Ignorar",
     follow: "Acompanhar",
     prepare_proposal: "Preparar proposta",
+    in_progress: "Em andamento",
+    done: "Concluída",
+    lost: "Perdida",
   };
 
   class ApiFailure extends Error {

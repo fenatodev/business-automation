@@ -205,3 +205,11 @@ com `in_progress`, `done`, `lost` como opções de triagem.
 Badge vermelho ao lado de "Oportunidades" mostra contagem de oportunidades
 com status `pending`. Atualizado automaticamente em `refreshList()`.
 **1404 testes passaram**; compileall, diff-check: PASS.
+
+## WP-092 — Labels de status de oportunidades no operador (30/10/2026)
+
+Os status `in_progress`, `done` e `lost` foram adicionados ao backend
+(WP-073/074) mas os labels em `actionLabels` do JavaScript não foram
+atualizados, fazendo o operador ver "Estado desconhecido". Corrigido
+adicionando os três labels faltantes.
+**1414 testes passaram**; compileall, diff-check: PASS.
