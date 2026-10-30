@@ -213,3 +213,10 @@ Os status `in_progress`, `done` e `lost` foram adicionados ao backend
 atualizados, fazendo o operador ver "Estado desconhecido". Corrigido
 adicionando os três labels faltantes.
 **1414 testes passaram**; compileall, diff-check: PASS.
+
+## WP-093 — Editar título e descrição de oportunidades (30/10/2026)
+
+Painel de edição inline no painel de triagem permite ao operador alterar
+título e descrição das oportunidades. Backend com `PATCH /opportunities/{id}`
+tenant-isolado. Validação de comprimento e campos obrigatórios.
+**1436 testes passaram**; compileall, diff-check: PASS.
