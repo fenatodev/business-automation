@@ -183,3 +183,11 @@ sobre interações. Reutiliza o campo `interest` existente (sem migration).
 `LeadUpdate` schema com `interest` e `status` opcionais; backend atualiza
 condicionalmente. Salvamento automático no evento `change`.
 **1363 testes passaram**; compileall, diff-check: PASS.
+
+## WP-089 — Criar conversa a partir de customer (30/10/2026)
+
+Botão "+ Nova conversa" no painel de detalhes do customer. Prompt para
+canal (whatsapp, instagram, web, telegram, email); validação de allowlist.
+POST /conversations com customer_id vinculado. Recarrega a lista de
+conversas após criação.
+**1377 testes passaram**; compileall, diff-check: PASS.
