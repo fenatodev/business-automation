@@ -222,3 +222,7 @@ footer {
 .review-card {padding:16px; border:1px solid var(--line);border-radius:9px;background:#101722;overflow-wrap:anywhere}
 .review-card textarea {margin-top:12px}
 .review-actions {display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+
+.task-card {padding:14px; border:1px solid var(--line);border-radius:9px;background:#101722;overflow-wrap:anywhere}
+.task-card strong {font-size:0.89rem}
+.task-card p {margin:6px 0 0}
