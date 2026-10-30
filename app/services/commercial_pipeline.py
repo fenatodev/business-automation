@@ -41,6 +41,34 @@ def _build_intake_event(
     )
 
 
+def build_review_item(
+    trigger: ReviewQueueTrigger, company_id: int, service_context: str,
+) -> ReviewQueueItem:
+    """Build a deterministic internal result without database or external effects."""
+    # Triage via intake engine
+    event = _build_intake_event(trigger, company_id, service_context)
+    decision: IntakeDecision = process_commercial_intake(
+        event,
+        candidate=CandidateReply(text=""),
+    )
+
+    return ReviewQueueItem(
+        company_id=company_id,
+        event_id=trigger.event_id,
+        channel=trigger.channel,
+        message=trigger.message,
+        intent=decision.intent if decision.intent != "unknown" else None,
+        draft_reply=decision.draft_reply or None,
+        status="pending",
+        needs_human_review=decision.needs_human_review,
+        flags_json={
+            "intent": decision.intent,
+            "next_step": decision.next_step,
+            "flags": decision.flags,
+        } if decision.flags else None,
+    )
+
+
 def triage_and_queue(
     db: Session,
     trigger: ReviewQueueTrigger,
@@ -75,29 +103,7 @@ def triage_and_queue(
         )
         return existing
 
-    # Triage via intake engine
-    event = _build_intake_event(trigger, company_id, service_context)
-    decision: IntakeDecision = process_commercial_intake(
-        event,
-        candidate=CandidateReply(text=""),
-    )
-
-    # Persist in review queue
-    item = ReviewQueueItem(
-        company_id=company_id,
-        event_id=trigger.event_id,
-        channel=trigger.channel,
-        message=trigger.message,
-        intent=decision.intent if decision.intent != "unknown" else None,
-        draft_reply=decision.draft_reply or None,
-        status="pending",
-        needs_human_review=decision.needs_human_review,
-        flags_json={
-            "intent": decision.intent,
-            "next_step": decision.next_step,
-            "flags": decision.flags,
-        } if decision.flags else None,
-    )
+    item = build_review_item(trigger, company_id, service_context)
     db.add(item)
 
     try:

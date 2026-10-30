@@ -190,3 +190,17 @@ class ReviewQueueItemOut(BaseModel):
     flags_json: dict[str, Any] | None = None
     created_at: datetime
     updated_at: datetime
+
+
+class InternalTaskOut(BaseModel):
+    """Operational status only: no message, payload, worker token or raw error."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    event_id: str
+    status: Literal["queued", "running", "succeeded", "failed"]
+    attempts: int
+    result: dict[str, int] | None = None
+    error_code: str | None = None
+    created_at: datetime
