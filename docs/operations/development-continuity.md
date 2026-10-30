@@ -94,9 +94,11 @@ e mostra leases expirados sem recuperá-los como efeito da consulta.
 Próxima WP executável: apresentar lista/resumo no `/operator`, usando somente
 os endpoints existentes, sem expor payload e sem iniciar worker automaticamente.
 
-## WP-076 — resposta manual do operador em conversas (30/10/2026)
+## WP-077 — conversar e responder integrados (30/10/2026)
 
-Formulário "Responder manualmente" adicionado ao `/operator` permitindo que o
-operador envie mensagens humanas (`sender_type: "human"`) em conversas existentes.
-`replyApi()` com allowlist estrita para `POST /conversations/{id}/messages`.
-Sem mudanças no backend. **1142 testes passaram**; compileall, diff-check: PASS.
+Unifica as seções WP-075 (histórico de conversas) e WP-076 (resposta manual)
+em uma única seção "06 / COMUNICAÇÃO" no `/operator`. Quando o operador
+seleciona uma conversa, o formulário de resposta é preenchido automaticamente
+com o ID da conversa (campo hidden readonly). Botão "Responder" toggle aparece
+no cabeçalho do detalhe. `conversationApi()` e `replyApi()` com allowlist estrita.
+Sem mudanças no backend. **1167 testes passaram**; compileall, diff-check: PASS.
