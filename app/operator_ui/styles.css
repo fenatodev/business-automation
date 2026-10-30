@@ -298,6 +298,7 @@ footer {
   margin-bottom: 12px;
 }
 .conv-detail-header-row h3 { margin: 0; }
+.conv-detail-actions { display: flex; gap: 6px; align-items: center; }
 .conv-messages {
   display: grid;
   gap: 10px;

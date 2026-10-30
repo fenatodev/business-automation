@@ -119,3 +119,11 @@ UI com botões Anterior/Próxima e indicador de página.
 Opções: last_message (subquery max(Message.created_at)), created_at (desc),
 id (asc). Valor inválido decai para ID. UI com dropdown "Ordenar".
 **1220 testes passaram**; compileall, diff-check: PASS.
+
+## WP-081 — Fechar conversas (30/10/2026)
+
+Novo endpoint PATCH /conversations/{id} com body {"status": "open"|"closed"}
+permite ao operador fechar e reabrir conversas. UI com botão "Fechar" que
+alterna entre open/closed. Filtro e count por status já existentes funcionam
+com o novo endpoint.
+**1229 testes passaram**; compileall, diff-check: PASS.
