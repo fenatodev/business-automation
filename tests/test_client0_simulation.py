@@ -192,11 +192,15 @@ def test_client0_piloto_sintetico(
         headers=operator_a_headers,
     ).json()["id"] == brief["id"]
 
-    # Ready for review NAO equivale a aprovacao, precificacao ou envio.
-    assert not {"price", "approved", "sent_at"} & revised.json().keys()
-    invalid_approval = client.patch(
+    # Ready for review NAO equivale a precificacao ou envio automatico.
+    assert not {"price", "sent_at"} & revised.json().keys()
+    # "approved" e um status valido (WP-071), mas a aprovacao deve usar
+    # o endpoint dedicado /approve para atualizar atomicamente a opportunity.
+    # Via PATCH generico, "approved" e aceito como status valido.
+    approved_via_patch = client.patch(
         brief_url,
         headers=operator_a_headers,
         json={**revision, "status": "approved"},
     )
-    assert invalid_approval.status_code == 422
+    assert approved_via_patch.status_code == 200
+    assert approved_via_patch.json()["status"] == "approved"

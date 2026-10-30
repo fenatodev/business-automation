@@ -159,9 +159,11 @@
                 <select id="brief-state" name="status">
                   <option value="draft">Rascunho</option>
                   <option value="ready_for_review">Pronto para revisão</option>
+                  <option value="approved">Aprovado</option>
                 </select>
               </div>
               <button id="save-brief-button" type="submit" class="primary">Criar rascunho</button>
+              <button id="approve-brief-button" type="button" class="primary" hidden>Aprovar brief e iniciar</button>
               <p class="guardrail">“Pronto para revisão” não significa aprovado. Escopo, preço e envio dependem de autorização humana e do back-office.</p>
             </form>
           </section>

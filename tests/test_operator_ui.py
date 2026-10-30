@@ -111,7 +111,7 @@ def test_client0_form_has_all_required_fields_without_price_or_submission(client
     ):
         assert required in page
     assert 'value="ready_for_review"' in page
-    assert 'value="approved"' not in page
+    assert 'value="approved"' in page  # WP-071: approved status added
     assert 'name="price"' not in page
     assert 'name="company_id"' not in page
 
