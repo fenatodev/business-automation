@@ -472,3 +472,33 @@ footer {
 .lead-convert-btn:hover {
   background: #1a2636;
 }
+
+/* Customers — WP-086 */
+.customer-list {
+  display: grid;
+  gap: 10px;
+}
+.customer-item {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #101722;
+}
+.customer-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.customer-item-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+.customer-item-details {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  color: var(--muted);
+}

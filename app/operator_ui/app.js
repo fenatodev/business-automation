@@ -1099,6 +1099,83 @@
     refreshLeads().catch(() => {});
   });
 
+  // Customers — WP-086
+
+  async function customerApi(path, method, body) {
+    if (!bearer) throw new Error("Conecte um operador.");
+    const allowed = ["/customers"];
+    if (!allowed.includes(path)) {
+      console.error("[customerApi] Rota não permitida:", path);
+      return;
+    }
+    const res = await fetch(path, {
+      method,
+      headers: {
+        "Authorization": "Bearer " + bearer,
+        "Content-Type": "application/json",
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (res.status === 403) {disconnect("Permissão de operador necessária."); return null;}
+    if (!res.ok) {console.error("[customerApi] Erro:", res.status); return null;}
+    return res.json();
+  }
+
+  async function refreshCustomers() {
+    if (!bearer) return;
+    const customers = await customerApi("/customers", "GET");
+    renderCustomers(customers || []);
+  }
+
+  function renderCustomers(customers) {
+    const list = $("customers-list");
+    list.replaceChildren();
+    if (!customers.length) {
+      const p = document.createElement("p");
+      p.className = "small";
+      p.textContent = "Nenhum customer encontrado.";
+      list.appendChild(p);
+      return;
+    }
+    for (const cust of customers) {
+      const item = document.createElement("div");
+      item.className = "customer-item";
+      const header = document.createElement("div");
+      header.className = "customer-item-header";
+      const name = document.createElement("span");
+      name.className = "customer-item-name";
+      name.textContent = cust.name || "Sem nome";
+      header.appendChild(name);
+      item.appendChild(header);
+
+      const details = document.createElement("div");
+      details.className = "customer-item-details";
+      if (cust.phone) {
+        const phone = document.createElement("span");
+        phone.textContent = "📞 " + cust.phone;
+        details.appendChild(phone);
+      }
+      if (cust.email) {
+        const email = document.createElement("span");
+        email.textContent = "✉️ " + cust.email;
+        details.appendChild(email);
+      }
+      if (cust.lead_id) {
+        const lead = document.createElement("span");
+        lead.textContent = "Lead #" + cust.lead_id;
+        details.appendChild(lead);
+      }
+      item.appendChild(details);
+
+      list.appendChild(item);
+    }
+  }
+
+  $("customers-refresh").addEventListener("click", () => withButton($("customers-refresh"), async () => {
+    await refreshCustomers();
+    notify("Customers atualizados.");
+  }));
+
   // Integrate conversations into the connect flow via MutationObserver.
   const workspaceObserver = new MutationObserver((records) => {
     for (const record of records) {
@@ -1106,6 +1183,7 @@
         refreshDashboard().catch(() => {});
         refreshConversations().catch(() => {});
         refreshLeads().catch(() => {});
+        refreshCustomers().catch(() => {});
         workspaceObserver.disconnect();
       }
     }

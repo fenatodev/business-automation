@@ -159,3 +159,11 @@ Botão "Converter" na seção de leads do operador. Conecta ao endpoint existent
 botão oculto para leads já convertidos (status "won"). Tratamento de 409
 (duplicata) e 403 (auth).
 **1297 testes passaram**; compileall, diff-check: PASS.
+
+## WP-086 — Lista de customers no operador (30/10/2026)
+
+Seção "08 / CUSTOMERS" no painel do operador com lista de customers ativos.
+Exibe nome, telefone, email e lead de origem. `customerApi()` com allowlist
+estrita; renderização com `textContent`/`appendChild`. Carregamento automático
+ao conectar.
+**1323 testes passaram**; compileall, diff-check: PASS.
