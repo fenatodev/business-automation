@@ -536,9 +536,12 @@
     // WP-150 — date filter
     const fromDate = $("opp-from-date").value || null;
     const toDate = $("opp-to-date").value || null;
+    // WP-189 — source filter
+    const source = $("opp-source-filter") ? $("opp-source-filter").value : "";
     const params = [];
     if (!showArchived) params.push("exclude_archived=true");
     if (oppPipelineFilter !== "all") params.push("next_action=" + encodeURIComponent(oppPipelineFilter));
+    if (source) params.push("source=" + encodeURIComponent(source));
     if (searchQuery) params.push("q=" + encodeURIComponent(searchQuery));
     if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
     if (toDate) params.push("to_date=" + encodeURIComponent(toDate));
@@ -549,6 +552,7 @@
     const countParams = [];
     if (!showArchived) countParams.push("exclude_archived=true");
     if (oppPipelineFilter !== "all") countParams.push("next_action=" + encodeURIComponent(oppPipelineFilter));
+    if (source) countParams.push("source=" + encodeURIComponent(source));
     if (searchQuery) countParams.push("q=" + encodeURIComponent(searchQuery));
     if (fromDate) countParams.push("from_date=" + encodeURIComponent(fromDate));
     if (toDate) countParams.push("to_date=" + encodeURIComponent(toDate));
@@ -616,6 +620,14 @@
     refreshList();
   });
 
+  // WP-189 — Opportunity source filter
+  if ($("opp-source-filter")) {
+    $("opp-source-filter").addEventListener("change", () => {
+      oppOffset = 0;
+      refreshList();
+    });
+  }
+
   // WP-150 — Date filter
   $("opp-from-date").addEventListener("change", () => {
     oppOffset = 0;
@@ -632,6 +644,7 @@
     $("opp-from-date").value = "";
     $("opp-to-date").value = "";
     $("opp-sort").value = "id";
+    if ($("opp-source-filter")) $("opp-source-filter").value = "";
     $("show-archived").checked = false;
     oppPipelineFilter = "all";
     document.querySelectorAll('.opp-pipeline-chip').forEach((chip) => {
@@ -2786,11 +2799,13 @@
   }
 
   $("opp-export-csv").addEventListener("click", () => {
-    // WP-123/150 — Export CSV with current filters
+    // WP-123/150/189 — Export CSV with current filters
     const params = [];
     const showArchived = $("show-archived").checked;
     if (!showArchived) params.push("exclude_archived=true");
     if (oppPipelineFilter !== "all") params.push("next_action=" + encodeURIComponent(oppPipelineFilter));
+    const source = $("opp-source-filter") ? $("opp-source-filter").value : "";
+    if (source) params.push("source=" + encodeURIComponent(source));
     const searchQuery = $("opp-search").value.trim();
     if (searchQuery) params.push("q=" + encodeURIComponent(searchQuery));
     const fromDate = $("opp-from-date").value;

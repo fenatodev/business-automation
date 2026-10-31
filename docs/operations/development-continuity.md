@@ -855,3 +855,11 @@ Adicionado `GET /proposal-briefs/{id}/conversations` retornando as conversas
 da mesma company. UI carrega conversas em paralelo com os dados do brief.
 
 **2371 testes passaram** (5 novos); compileall, diff-check: PASS.
+
+### WP-189 — Filtro de oportunidades por fonte
+
+O módulo de oportunidades não tinha filtro por fonte (source).
+Adicionado `?source=` em list, count e export CSV.
+UI com dropdown "Fonte" na toolbar.
+
+**2377 testes passaram** (6 novos); compileall, diff-check: PASS.
