@@ -808,3 +808,11 @@ nem paginação. Adicionado `?q=`, `?sort=`, `?limit=`, `?offset=` nos
 endpoints list e count, completando a paridade com os outros módulos.
 
 **2335 testes passaram** (13 novos); compileall, diff-check: PASS.
+
+### WP-182 — Exportação CSV de briefs
+
+O módulo de briefs não tinha exportação CSV. Adicionado
+`GET /proposal-briefs/export.csv` com filtros (status, busca),
+completando a paridade com os outros módulos.
+
+**2341 testes passaram** (6 novos); compileall, diff-check: PASS.

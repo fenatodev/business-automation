@@ -939,6 +939,64 @@ def count_proposal_briefs(
     return {"count": count}
 
 
+@router.get("/proposal-briefs/export.csv")
+def export_briefs_csv(
+    status: str | None = Query(default=None, description="Filter by brief status"),
+    q: str | None = Query(default=None, description="Search keywords in title and offer reference"),
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Export proposal briefs for the authenticated tenant as CSV, respecting filters."""
+    query = (
+        select(
+            ProposalBrief.id,
+            ProposalBrief.opportunity_id,
+            ProposalBrief.offer_reference,
+            ProposalBrief.status,
+            ProposalBrief.created_at,
+            Opportunity.title.label("opportunity_title"),
+        )
+        .join(Opportunity, ProposalBrief.opportunity_id == Opportunity.id)
+        .where(Opportunity.company_id == identity.company_id)
+        .order_by(ProposalBrief.id)
+    )
+
+    if status:
+        query = query.where(ProposalBrief.status == status)
+
+    if q:
+        pattern = f"%{q}%"
+        query = query.where(
+            func.lower(Opportunity.title).like(func.lower(pattern)) |
+            func.lower(ProposalBrief.offer_reference).like(func.lower(pattern))
+        )
+
+    rows = db.execute(query).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "ID", "Oportunidade ID", "Título", "Referência", "Status", "Criada em",
+    ])
+    for row in rows:
+        writer.writerow([
+            row.id,
+            row.opportunity_id,
+            row.opportunity_title or "",
+            row.offer_reference or "",
+            row.status,
+            row.created_at.isoformat() if row.created_at else "",
+        ])
+
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=proposal-briefs.csv",
+        },
+    )
+
+
 # ---------------------------------------------------------------------------
 # WP-180 — Bulk delete opportunities
 # ---------------------------------------------------------------------------
