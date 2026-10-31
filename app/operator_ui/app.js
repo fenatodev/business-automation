@@ -828,6 +828,35 @@
   $("disconnect-button").addEventListener("click", () => disconnect());
   window.addEventListener("pagehide", () => disconnect("Sessão encerrada."));
 
+  // WP-146 — Keyboard shortcuts
+  document.addEventListener("keydown", (e) => {
+    // Don't trigger shortcuts when typing in inputs
+    const tag = e.target.tagName;
+    const isInput = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+
+    // Ctrl+K / Cmd+K: focus search
+    if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+      e.preventDefault();
+      const searchInput = $("opp-search");
+      if (searchInput) {
+        searchInput.focus();
+        searchInput.select();
+      }
+    }
+
+    // Escape: clear selection
+    if (e.key === "Escape" && !isInput) {
+      clearSelection();
+      showList();
+    }
+
+    // Enter in triage form: submit triage (handled by form submit, but prevent double-submit)
+    if (e.key === "Enter" && isInput) {
+      // Let the form handle it naturally
+      return;
+    }
+  });
+
   $("refresh-button").addEventListener("click", () => {
     withButton($("refresh-button"), async () => {
       await refreshList();
