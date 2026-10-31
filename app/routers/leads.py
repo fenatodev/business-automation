@@ -1,4 +1,8 @@
+import csv
+import io
+
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import Response
 from sqlalchemy import func, select, desc
 from sqlalchemy.orm import Session
 
@@ -10,7 +14,7 @@ from app.dependencies import (
     require_operator_company,
 )
 from app.models import Company, Lead
-from app.schemas import LeadCreate, LeadUpdate
+from app.schemas import LeadBulkStatus, LeadCreate, LeadUpdate
 
 
 router = APIRouter()
@@ -122,6 +126,44 @@ def count_leads(
     return {"total": total}
 
 
+@router.get("/leads/export.csv")
+def export_leads_csv(
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Export all tenant leads as a CSV file."""
+    leads = db.scalars(
+        select(Lead)
+        .where(Lead.company_id == identity.company_id)
+        .order_by(Lead.id)
+    ).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "ID", "Nome", "Telefone", "E-mail", "Fonte", "Interesse",
+        "Status", "Criado em",
+    ])
+    for lead in leads:
+        writer.writerow([
+            lead.id,
+            lead.name,
+            lead.phone or "",
+            lead.source or "",
+            lead.interest or "",
+            lead.status or "",
+            lead.created_at.isoformat() if lead.created_at else "",
+        ])
+
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=leads.csv",
+        },
+    )
+
+
 @router.get("/leads/{lead_id}")
 def get_lead(
     lead_id: int,
@@ -180,3 +222,33 @@ def list_company_leads(
         .where(Lead.company_id == company_id)
         .order_by(Lead.id)
     ).all()
+
+
+@router.post("/leads/bulk-status")
+def bulk_update_lead_status(
+    data: LeadBulkStatus,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Bulk update status for multiple leads (tenant-isolated)."""
+    leads = db.scalars(
+        select(Lead).where(
+            Lead.id.in_(data.lead_ids),
+            Lead.company_id == identity.company_id,
+        )
+    ).all()
+
+    updated_ids = []
+    for lead in leads:
+        lead.status = data.status
+        updated_ids.append(lead.id)
+
+    db.commit()
+
+    skipped = set(data.lead_ids) - set(updated_ids)
+
+    return {
+        "updated": len(updated_ids),
+        "updated_ids": sorted(updated_ids),
+        "skipped": sorted(skipped),
+    }

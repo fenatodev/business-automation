@@ -16,7 +16,13 @@
         <h1>Operação comercial</h1>
         <p>Captura, triagem e preparação interna de propostas.</p>
       </div>
-      <div class="badge">PILOTO PRIVADO · LOOPBACK</div>
+      <div class="topbar-right">
+        <button id="notification-bell" type="button" class="notification-bell" title="Notificações" hidden>
+          <span class="notification-icon">🔔</span>
+          <span id="notification-count" class="notification-count" hidden></span>
+        </button>
+        <div class="badge">PILOTO PRIVADO · LOOPBACK</div>
+      </div>
     </header>
 
     <div id="notice" class="notice" role="status" aria-live="polite">
@@ -125,7 +131,10 @@
                 <span class="section-index">02 / CARTEIRA</span>
                 <h2 id="list-title">Oportunidades <span id="pending-badge" class="pending-badge" hidden></span></h2>
               </div>
-              <button id="refresh-button" type="button" class="secondary">Atualizar</button>
+              <div class="panel-actions">
+                <button id="opp-export-csv" type="button" class="secondary">Exportar CSV</button>
+                <button id="refresh-button" type="button" class="secondary">Atualizar</button>
+              </div>
             </div>
             <div class="opp-toolbar">
               <p id="list-meta" class="small">Nenhuma consulta realizada.</p>
@@ -141,6 +150,21 @@
                   Exibir arquivadas
                 </label>
               </div>
+            </div>
+            <div id="bulk-triage-bar" class="bulk-triage-bar" hidden>
+              <span id="bulk-selected-count" class="small">0 selecionadas</span>
+              <select id="bulk-triage-action" class="bulk-triage-select">
+                <option value="pending">Pendente</option>
+                <option value="follow">Acompanhar</option>
+                <option value="ignore">Ignorar</option>
+                <option value="prepare_proposal">Preparar proposta</option>
+                <option value="in_progress">Em andamento</option>
+                <option value="done">Concluída</option>
+                <option value="lost">Perdida</option>
+              </select>
+              <input type="text" id="bulk-triage-note" class="bulk-triage-note" placeholder="Nota (opcional)">
+              <button id="bulk-triage-apply" type="button" class="primary">Aplicar</button>
+              <button id="bulk-triage-clear" type="button" class="secondary">Limpar seleção</button>
             </div>
             <div id="opportunity-list" class="opportunity-list" aria-label="Lista de oportunidades"></div>
             <div id="opp-pagination" class="opp-pagination" hidden>
@@ -169,11 +193,23 @@
               <button id="save-edit-button" type="button" class="primary">Salvar alterações</button>
             </div>
             <dl class="metadata">
+              <dt>Fonte</dt><dd id="selected-source"></dd>
               <dt>Origem</dt><dd id="selected-url" class="break-word"></dd>
               <dt>Orçamento</dt><dd id="selected-budget"></dd>
               <dt>Prazo</dt><dd id="selected-deadline"></dd>
               <dt>Requisitos</dt><dd id="selected-requirements" class="break-word"></dd>
+              <dt>Capturada em</dt><dd id="selected-captured-at"></dd>
+              <dt>Nota de triagem</dt><dd id="selected-triage-note" class="break-word"></dd>
             </dl>
+            <!-- WP-113 — Standalone note editor -->
+            <div id="opp-note-panel" class="opp-note-panel">
+              <label for="opp-note">Nota de triagem</label>
+              <textarea id="opp-note" rows="3" placeholder="Anotações sobre esta oportunidade"></textarea>
+              <button id="save-opp-note" type="button" class="secondary">Salvar nota</button>
+            </div>
+            <div id="opp-detail-actions" class="opp-detail-actions">
+              <button id="view-brief-button" type="button" class="secondary">Ver brief</button>
+            </div>
             <form id="triage-form">
               <label for="next-action">Próxima ação *</label>
               <select id="next-action" name="next_action">
@@ -244,7 +280,10 @@
             <span class="section-index">06 / COMUNICAÇÃO</span>
             <h2 id="conversations-title">Conversas</h2>
           </div>
-          <button id="conv-refresh" type="button">Atualizar</button>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button id="conv-refresh" type="button">Atualizar</button>
+            <button id="conv-export-csv" type="button" class="secondary">Exportar CSV</button>
+          </div>
         </div>
         <p class="small">Histórico de conversas por canal. Selecione uma conversa para ver as mensagens e responder.</p>
 
@@ -317,9 +356,42 @@
             <span class="section-index">07 / LEADS</span>
             <h2 id="leads-title">Leads</h2>
           </div>
-          <button id="leads-refresh" type="button">Atualizar</button>
+          <div class="panel-actions">
+            <button id="leads-export-csv" type="button" class="secondary">Exportar CSV</button>
+            <button id="leads-refresh" type="button">Atualizar</button>
+            <button id="show-create-lead" type="button" class="secondary">+ Novo lead</button>
+          </div>
         </div>
         <p class="small">Gerencie leads: altere status para acompanhar o funil comercial.</p>
+
+        <!-- WP-112 — Create lead form -->
+        <form id="create-lead-form" class="create-lead-form" hidden>
+          <h4>Novo lead</h4>
+          <div class="two-col">
+            <div>
+              <label for="new-lead-name">Nome *</label>
+              <input id="new-lead-name" type="text" required maxlength="120">
+            </div>
+            <div>
+              <label for="new-lead-phone">Telefone</label>
+              <input id="new-lead-phone" type="text" maxlength="30">
+            </div>
+          </div>
+          <div class="two-col">
+            <div>
+              <label for="new-lead-source">Fonte</label>
+              <input id="new-lead-source" type="text" maxlength="50" placeholder="Ex.: site, indicação...">
+            </div>
+            <div>
+              <label for="new-lead-interest">Interesse</label>
+              <input id="new-lead-interest" type="text" maxlength="200">
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button type="submit" class="primary">Criar</button>
+            <button type="button" id="cancel-create-lead" class="secondary">Cancelar</button>
+          </div>
+        </form>
 
         <div class="lead-filters">
           <div class="lead-filter-group">
@@ -351,6 +423,18 @@
 
         <div id="leads-list" class="lead-list"></div>
 
+        <!-- WP-114 — Lead detail panel -->
+        <div id="lead-detail" class="lead-detail" hidden>
+          <div class="lead-detail-header">
+            <button id="lead-detail-back" type="button">← Voltar</button>
+            <h3 id="lead-detail-name"></h3>
+            <span id="lead-detail-status" class="tag"></span>
+          </div>
+          <div id="lead-detail-info" class="lead-detail-info"></div>
+          <h4>Conversas</h4>
+          <div id="lead-conversations-list" class="lead-conv-list"></div>
+        </div>
+
         <div id="leads-pagination" class="lead-pagination" hidden>
           <button id="leads-prev-page" type="button" class="secondary">Anterior</button>
           <span id="leads-page-info" class="small"></span>
@@ -364,9 +448,36 @@
             <span class="section-index">08 / CUSTOMERS</span>
             <h2 id="customers-title">Customers</h2>
           </div>
-          <button id="customers-refresh" type="button">Atualizar</button>
+          <div class="panel-actions">
+            <button id="customers-export-csv" type="button" class="secondary">Exportar CSV</button>
+            <button id="customers-refresh" type="button">Atualizar</button>
+            <button id="show-create-customer" type="button" class="secondary">+ Novo customer</button>
+          </div>
         </div>
         <p class="small">Visualize customers ativos. Leads convertidos aparecem aqui automaticamente.</p>
+
+        <!-- WP-111 — Create customer form -->
+        <form id="create-customer-form" class="create-customer-form" hidden>
+          <h4>Novo customer</h4>
+          <div class="two-col">
+            <div>
+              <label for="new-customer-name">Nome *</label>
+              <input id="new-customer-name" type="text" required maxlength="120">
+            </div>
+            <div>
+              <label for="new-customer-phone">Telefone</label>
+              <input id="new-customer-phone" type="text" maxlength="30">
+            </div>
+          </div>
+          <div>
+            <label for="new-customer-email">E-mail</label>
+            <input id="new-customer-email" type="email" maxlength="120">
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button type="submit" class="primary">Criar</button>
+            <button type="button" id="cancel-create-customer" class="secondary">Cancelar</button>
+          </div>
+        </form>
 
         <div class="customer-filters">
           <div class="customer-filter-group customer-search-inline">
@@ -398,6 +509,30 @@
             <h3 id="customer-detail-name"></h3>
           </div>
           <div id="customer-detail-info" class="customer-detail-info"></div>
+
+          <!-- WP-110 — Edit customer inline form -->
+          <form id="customer-edit-form" hidden>
+            <h4>Editar customer</h4>
+            <div class="two-col">
+              <div>
+                <label for="customer-edit-name">Nome</label>
+                <input id="customer-edit-name" type="text" required maxlength="120">
+              </div>
+              <div>
+                <label for="customer-edit-phone">Telefone</label>
+                <input id="customer-edit-phone" type="text" maxlength="30">
+              </div>
+            </div>
+            <div>
+              <label for="customer-edit-email">E-mail</label>
+              <input id="customer-edit-email" type="email" maxlength="120">
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button type="submit" class="primary">Salvar</button>
+              <button type="button" id="customer-edit-cancel" class="secondary">Cancelar</button>
+            </div>
+          </form>
+
           <h4>Conversas</h4>
           <button id="customer-new-conv" type="button" class="secondary">+ Nova conversa</button>
           <div id="customer-conversations-list" class="customer-conv-list"></div>

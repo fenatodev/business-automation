@@ -14,6 +14,7 @@
   let oppOffset = 0;
   const oppPageSize = 50;
   let oppTotal = 0;
+  const selectedOpportunityIds = new Set();
   let activeBrief = null;
   let selectionVersion = 0;
   let conversations = [];
@@ -86,8 +87,9 @@
     $("brief-form").reset();
     $("triage-form").reset();
     for (const id of (
-      ["selected-id", "selected-url",
-        "selected-budget", "selected-deadline", "selected-requirements"]
+      ["selected-id", "selected-source", "selected-url",
+        "selected-budget", "selected-deadline", "selected-requirements",
+        "selected-captured-at", "selected-triage-note"]
     )) {
       $(id).textContent = "";
     }
@@ -198,6 +200,7 @@
     target.replaceChildren();
     const ordered = [...opportunities].sort((a, b) => b.id - a.id);
     $("list-meta").textContent = ordered.length + " oportunidade(s) da sua empresa.";
+    updateBulkTriageBar();
     if (!ordered.length) {
       const empty = document.createElement("p");
       empty.className = "small";
@@ -206,21 +209,39 @@
       return;
     }
     for (const opportunity of ordered) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "opp-item-row";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "opp-checkbox";
+      checkbox.checked = selectedOpportunityIds.has(opportunity.id);
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) {
+          selectedOpportunityIds.add(opportunity.id);
+        } else {
+          selectedOpportunityIds.delete(opportunity.id);
+        }
+        updateBulkTriageBar();
+      });
       const button = document.createElement("button");
       button.type = "button";
       button.className = "opportunity-item";
       button.classList.toggle("active", opportunity.id === selectedId);
+      button.style.flex = "1";
+      button.style.textAlign = "left";
       const title = document.createElement("strong");
       title.textContent = "#" + opportunity.id + " · " + opportunity.title;
       const stage = document.createElement("span");
       stage.textContent = actionLabels[opportunity.next_action] || "Estado desconhecido";
       button.append(title, stage);
-      button.addEventListener("click", () => {
+      button.addEventListener("click", (e) => {
+        if (e.target === checkbox) return;
         selectOpportunity(opportunity.id).catch(() => {
           notify("Falha ao consultar o brief desta oportunidade.", true);
         });
       });
-      target.append(button);
+      wrapper.append(checkbox, button);
+      target.append(wrapper);
     }
   }
 
@@ -304,22 +325,23 @@
     // WP-093 — populate edit fields
     $("edit-title").value = record.title;
     $("edit-description").value = record.description;
+    text("selected-source", record.source || "");
+    text("selected-captured-at", record.captured_at
+      ? new Date(record.captured_at).toLocaleString("pt-BR") : "");
+    text("selected-triage-note", record.triage_note || "");
     text("selected-url", record.external_url);
     text("selected-budget", record.budget);
     text("selected-deadline", record.deadline);
     text("selected-requirements", record.requirements);
     $("next-action").value = record.next_action;
     $("triage-note").value = record.triage_note || "";
+    // WP-113 — populate standalone note editor
+    $("opp-note").value = record.triage_note || "";
     $("brief-status").textContent = "Carregando";
     showList();
 
-    if (record.next_action === "prepare_proposal") {
-      await loadBrief(id, version);
-    } else {
-      $("brief-status").textContent = "Não aplicável";
-      $("brief-guide").textContent =
-        "Registre 'Preparar proposta' na triagem para habilitar o brief.";
-    }
+    // WP-108 — always attempt to load brief, regardless of status
+    await loadBrief(id, version);
   }
 
   async function refreshList(preferId = selectedId) {
@@ -389,6 +411,15 @@
     refreshList();
   });
 
+  // WP-108 — View brief button scrolls to brief panel
+  $("view-brief-button").addEventListener("click", () => {
+    const panel = $("brief-panel");
+    if (panel) {
+      panel.hidden = false;
+      panel.scrollIntoView({behavior: "smooth", block: "start"});
+    }
+  });
+
   // WP-095 — Opportunity pagination
   $("opp-prev").addEventListener("click", () => withButton($("opp-prev"), async () => {
     oppOffset = Math.max(0, oppOffset - oppPageSize);
@@ -398,6 +429,31 @@
     oppOffset += oppPageSize;
     await refreshList();
   }));
+
+  // WP-113 — Save opportunity note independently
+  $("save-opp-note").addEventListener("click", async () => {
+    if (selectedId === null) return;
+    const triageNote = $("opp-note").value;
+    try {
+      const updated = await api("/opportunities/" + selectedId, {
+        method: "PATCH",
+        body: { triage_note: triageNote.trim() || null },
+      });
+      const idx = opportunities.findIndex((o) => o.id === selectedId);
+      if (idx !== -1) {
+        opportunities[idx] = updated;
+      }
+      $("triage-note").value = updated.triage_note || "";
+      $("opp-note").value = updated.triage_note || "";
+      notify("Nota salva.");
+    } catch (error) {
+      if (error instanceof ApiFailure) {
+        notify(error.message, true);
+      } else {
+        notify("Falha ao salvar nota.", true);
+      }
+    }
+  });
 
   // WP-093 — Save opportunity title/description edit
   $("save-edit-button").addEventListener("click", async () => {
@@ -1195,8 +1251,82 @@
       item.appendChild(notesArea);
 
       list.appendChild(item);
+
+      // WP-114 — Click to show detail
+      item.style.cursor = "pointer";
+      item.addEventListener("click", (e) => {
+        if (e.target.tagName === "SELECT" || e.target.tagName === "BUTTON" || e.target.tagName === "TEXTAREA") return;
+        showLeadDetail(lead);
+      });
     }
   }
+
+  // WP-114 — Lead detail panel
+  let currentLeadId = null;
+
+  async function showLeadDetail(lead) {
+    currentLeadId = lead.id;
+    $("leads-list").hidden = true;
+    $("leads-pagination").hidden = true;
+    $("lead-detail").hidden = false;
+    $("lead-detail-name").textContent = lead.name || "Sem nome";
+    $("lead-detail-status").textContent = leadStatusLabels[lead.status] || lead.status;
+
+    const info = $("lead-detail-info");
+    info.replaceChildren();
+    const fields = [
+      ["Telefone", lead.phone],
+      ["E-mail", lead.email],
+      ["Fonte", lead.source],
+      ["Interesse", lead.interest],
+      ["Criado em", lead.created_at],
+    ];
+    for (const [label, value] of fields) {
+      if (value) {
+        const dt = document.createElement("dt");
+        dt.textContent = label;
+        info.appendChild(dt);
+        const dd = document.createElement("dd");
+        dd.textContent = value;
+        info.appendChild(dd);
+      }
+    }
+
+    const convList = $("lead-conversations-list");
+    convList.replaceChildren();
+    try {
+      const convs = await api("/companies/" + company + "/conversations?limit=50");
+      const leadConvs = (convs || []).filter((c) => c.lead_id === lead.id);
+      if (!leadConvs.length) {
+        const p = document.createElement("p");
+        p.className = "small";
+        p.textContent = "Nenhuma conversa associada.";
+        convList.appendChild(p);
+      } else {
+        for (const conv of leadConvs) {
+          const div = document.createElement("div");
+          div.className = "conv-item small";
+          div.textContent = "#" + conv.id + " · " + (conv.channel || "web") + " · " + conv.status;
+          convList.appendChild(div);
+        }
+      }
+    } catch (e) {
+      console.error("[showLeadDetail] Falha ao carregar conversas:", e);
+    }
+  }
+
+  function hideLeadDetail() {
+    currentLeadId = null;
+    $("leads-list").hidden = false;
+    $("lead-detail").hidden = true;
+    if (leadTotal > leadPageSize) {
+      $("leads-pagination").hidden = false;
+    }
+  }
+
+  $("lead-detail-back").addEventListener("click", () => {
+    hideLeadDetail();
+  });
 
   async function updateLeadStatus(leadId, status) {
     const path = "/leads/" + leadId;
@@ -1455,6 +1585,18 @@
       info.appendChild(lead);
     }
 
+    // WP-110 — Add edit button
+    const editBtn = document.createElement("button");
+    editBtn.id = "customer-edit-btn";
+    editBtn.type = "button";
+    editBtn.className = "secondary";
+    editBtn.textContent = "✏️ Editar";
+    editBtn.style.marginTop = "8px";
+    editBtn.addEventListener("click", () => showCustomerEditForm(cust));
+    info.appendChild(editBtn);
+
+    hideCustomerEditForm();
+
     // Load conversations for this customer
     await loadCustomerConversations(cust.id);
   }
@@ -1511,6 +1653,61 @@
     $("customers-list").hidden = false;
     $("customer-detail").hidden = true;
   }
+
+  // WP-110 — Edit customer
+  async function showCustomerEditForm(cust) {
+    $("customer-edit-form").hidden = false;
+    $("customer-edit-name").value = cust.name || "";
+    $("customer-edit-phone").value = cust.phone || "";
+    $("customer-edit-email").value = cust.email || "";
+  }
+  function hideCustomerEditForm() {
+    $("customer-edit-form").hidden = true;
+  }
+
+  async function updateCustomer(customerId, data) {
+    if (!bearer) return;
+    const path = "/customers/" + customerId;
+    const res = await fetch(path, {
+      method: "PATCH",
+      headers: {
+        "Authorization": "Bearer " + bearer,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+    if (res.status === 403) {disconnect("Permissão de operador necessária."); return null;}
+    if (res.status === 404) {notify("Customer não encontrado.", true); return null;}
+    if (!res.ok) {notify("Falha ao atualizar customer.", true); return null;}
+    return res.json();
+  }
+
+  // WP-110 — Edit customer form handlers
+  $("customer-edit-cancel").addEventListener("click", () => {
+    hideCustomerEditForm();
+  });
+
+  $("customer-edit-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const name = $("customer-edit-name").value.trim();
+    const phone = $("customer-edit-phone").value.trim() || null;
+    const email = $("customer-edit-email").value.trim() || null;
+    if (!name) {notify("Nome é obrigatório.", true); return;}
+    const data = {name};
+    if (phone !== null) data.phone = phone;
+    if (email !== null) data.email = email;
+    const button = $("customer-edit-form").querySelector('button[type="submit"]');
+    withButton(button, async () => {
+      const updated = await updateCustomer(currentCustomerId, data);
+      if (updated) {
+        hideCustomerEditForm();
+        $("customer-detail-name").textContent = updated.name;
+        notify("Customer atualizado.");
+        await refreshCustomers();
+        showCustomerDetail(updated);
+      }
+    });
+  });
 
   // Create conversation from customer — WP-089
   async function createConversationFromCustomer(customerId) {
@@ -1644,4 +1841,169 @@
     }
   });
   workspaceObserver.observe($("workspace"), {attributes: true});
+
+  // WP-105 — Bulk triage
+  function updateBulkTriageBar() {
+    const bar = $("bulk-triage-bar");
+    const count = selectedOpportunityIds.size;
+    $("bulk-selected-count").textContent = count + " selecionada(s)";
+    bar.hidden = count === 0;
+  }
+
+  $("bulk-triage-clear").addEventListener("click", () => {
+    selectedOpportunityIds.clear();
+    showList();
+  });
+
+  $("bulk-triage-apply").addEventListener("click", () => {
+    const button = $("bulk-triage-apply");
+    withButton(button, async () => {
+      const ids = Array.from(selectedOpportunityIds);
+      if (!ids.length) {notify("Nenhuma oportunidade selecionada.", true); return;}
+      const action = $("bulk-triage-action").value;
+      const note = $("bulk-triage-note").value.trim() || null;
+      const result = await api("/opportunities/bulk-triage", {
+        method: "POST",
+        body: JSON.stringify({
+          opportunity_ids: ids,
+          next_action: action,
+          triage_note: note,
+        }),
+      });
+      selectedOpportunityIds.clear();
+      $("bulk-triage-note").value = "";
+      notify(result.updated + " oportunidade(s) atualizada(s). " + result.skipped + " ignorada(s).");
+      await refreshList();
+      showList();
+    });
+  });
+
+  // WP-106 — Export CSV buttons
+  function downloadCsv(url, filename) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  $("opp-export-csv").addEventListener("click", () => {
+    downloadCsv("/opportunities/export.csv", "opportunities.csv");
+    notify("Exportando oportunidades...");
+  });
+
+  $("leads-export-csv").addEventListener("click", () => {
+    downloadCsv("/leads/export.csv", "leads.csv");
+    notify("Exportando leads...");
+  });
+
+  $("customers-export-csv").addEventListener("click", () => {
+    downloadCsv("/customers/export.csv", "customers.csv");
+    notify("Exportando customers...");
+  });
+
+  // WP-111 — Create customer manually
+  async function createCustomer(name, phone, email) {
+    if (!bearer) return null;
+    const company = opportunities.length > 0 ? opportunities[0].company_id : null;
+    if (!company) {notify("Empresa não configurada.", true); return null;}
+    const res = await fetch("/customers", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + bearer,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({company_id: company, name, phone, email}),
+    });
+    if (res.status === 403) {disconnect("Permissão de operador necessária."); return null;}
+    if (!res.ok) {notify("Falha ao criar customer.", true); return null;}
+    return res.json();
+  }
+
+  $("show-create-customer").addEventListener("click", () => {
+    $("create-customer-form").hidden = false;
+    $("new-customer-name").focus();
+  });
+
+  $("cancel-create-customer").addEventListener("click", () => {
+    $("create-customer-form").hidden = true;
+    $("new-customer-name").value = "";
+    $("new-customer-phone").value = "";
+    $("new-customer-email").value = "";
+  });
+
+  $("create-customer-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const name = $("new-customer-name").value.trim();
+    const phone = $("new-customer-phone").value.trim() || null;
+    const email = $("new-customer-email").value.trim() || null;
+    if (!name) {notify("Nome é obrigatório.", true); return;}
+    const button = $("create-customer-form").querySelector('button[type="submit"]');
+    withButton(button, async () => {
+      const created = await createCustomer(name, phone, email);
+      if (created) {
+        $("create-customer-form").hidden = true;
+        $("new-customer-name").value = "";
+        $("new-customer-phone").value = "";
+        $("new-customer-email").value = "";
+        notify("Customer criado.");
+        await refreshCustomers();
+      }
+    });
+  });
+
+  // WP-112 — Create lead manually
+  async function createLead(name, phone, source, interest) {
+    if (!bearer) return null;
+    const company = opportunities.length > 0 ? opportunities[0].company_id : null;
+    if (!company) {notify("Empresa não configurada.", true); return null;}
+    const res = await fetch("/leads", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + bearer,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({company_id: company, name, phone, source: source || "manual", interest: interest || null}),
+    });
+    if (res.status === 403) {disconnect("Permissão de operador necessária."); return null;}
+    if (!res.ok) {notify("Falha ao criar lead.", true); return null;}
+    return res.json();
+  }
+
+  $("show-create-lead").addEventListener("click", () => {
+    $("create-lead-form").hidden = false;
+    $("new-lead-name").focus();
+  });
+
+  $("cancel-create-lead").addEventListener("click", () => {
+    $("create-lead-form").hidden = true;
+    $("new-lead-name").value = "";
+    $("new-lead-phone").value = "";
+    $("new-lead-source").value = "";
+    $("new-lead-interest").value = "";
+  });
+
+  $("create-lead-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const name = $("new-lead-name").value.trim();
+    const phone = $("new-lead-phone").value.trim() || null;
+    const source = $("new-lead-source").value.trim() || null;
+    const interest = $("new-lead-interest").value.trim() || null;
+    if (!name) {notify("Nome é obrigatório.", true); return;}
+    const button = $("create-lead-form").querySelector('button[type="submit"]');
+    withButton(button, async () => {
+      const created = await createLead(name, phone, source, interest);
+      if (created) {
+        $("create-lead-form").hidden = true;
+        $("new-lead-name").value = "";
+        $("new-lead-phone").value = "";
+        $("new-lead-source").value = "";
+        $("new-lead-interest").value = "";
+        notify("Lead criado.");
+        await refreshLeads();
+      }
+    });
+  });
 })();

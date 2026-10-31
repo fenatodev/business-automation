@@ -1,4 +1,8 @@
+import csv
+import io
+
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import Response
 from sqlalchemy import desc, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -7,6 +11,7 @@ from app.auth import AccessIdentity
 from app.dependencies import get_db, require_operator
 from app.models import Company, Opportunity, ProposalBrief
 from app.schemas import (
+    OpportunityBulkTriage,
     OpportunityCreate,
     OpportunityTriageUpdate,
     OpportunityUpdate,
@@ -206,6 +211,49 @@ def pipeline_summary(
     return {row[0]: row[1] for row in rows}
 
 
+@router.get("/opportunities/export.csv")
+def export_opportunities_csv(
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Export all tenant opportunities as a CSV file."""
+    opportunities = db.scalars(
+        select(Opportunity)
+        .where(Opportunity.company_id == identity.company_id)
+        .order_by(Opportunity.id)
+    ).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "ID", "Titulo", "Descricao", "Status", "Orçamento",
+        "Prazo", "Requisitos", "URL", "Fonte", "Nota triagem",
+        "Capturada em",
+    ])
+    for opp in opportunities:
+        writer.writerow([
+            opp.id,
+            opp.title,
+            opp.description or "",
+            opp.next_action or "",
+            opp.budget or "",
+            opp.deadline or "",
+            opp.requirements or "",
+            opp.external_url or "",
+            opp.source or "",
+            opp.triage_note or "",
+            opp.captured_at.isoformat() if opp.captured_at else "",
+        ])
+
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=opportunities.csv",
+        },
+    )
+
+
 @router.get("/opportunities/{opportunity_id}")
 def get_opportunity(
     opportunity_id: int,
@@ -226,17 +274,26 @@ def update_opportunity(
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    """Update opportunity title and/or description (tenant-isolated)."""
+    """Update opportunity title, description and/or triage note (tenant-isolated)."""
     opportunity = _get_tenant_opportunity(
         db,
         opportunity_id,
         identity.company_id,
     )
 
-    if data.title is not None:
-        opportunity.title = data.title
-    if data.description is not None:
-        opportunity.description = data.description
+    changed = data.model_dump(exclude_unset=True)
+    if not changed:
+        raise HTTPException(
+            status_code=400,
+            detail="No fields to update",
+        )
+
+    if "title" in changed:
+        opportunity.title = changed["title"]
+    if "description" in changed:
+        opportunity.description = changed["description"]
+    if "triage_note" in changed:
+        opportunity.triage_note = changed["triage_note"]
 
     db.commit()
     db.refresh(opportunity)
@@ -265,6 +322,42 @@ def triage_opportunity(
 
     return opportunity
 
+
+@router.post("/opportunities/bulk-triage")
+def bulk_triage_opportunities(
+    data: OpportunityBulkTriage,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Apply the same triage action to multiple opportunities at once.
+
+    Only opportunities belonging to the authenticated tenant are updated.
+    Opportunities that don't exist or belong to another tenant are skipped.
+    The response includes counts of updated and skipped opportunities.
+    """
+    opportunities = db.scalars(
+        select(Opportunity).where(
+            Opportunity.id.in_(data.opportunity_ids),
+            Opportunity.company_id == identity.company_id,
+        )
+    ).all()
+
+    updated_ids = []
+    skipped_count = len(data.opportunity_ids) - len(opportunities)
+
+    for opportunity in opportunities:
+        opportunity.next_action = data.next_action
+        opportunity.triage_note = data.triage_note
+        updated_ids.append(opportunity.id)
+
+    db.commit()
+
+    return {
+        "updated": len(updated_ids),
+        "updated_ids": updated_ids,
+        "skipped": skipped_count,
+        "next_action": data.next_action,
+    }
 
 
 def _get_proposal_brief(

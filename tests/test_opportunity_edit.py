@@ -69,8 +69,8 @@ class TestUpdateOpportunityBackend:
         assert data["title"] == "Título completo"
         assert data["description"] == "Descrição completa"
 
-    def test_update_empty_body_no_change(self, client, admin_headers, operator_a_headers):
-        """Empty body should return the opportunity unchanged."""
+    def test_update_empty_body_rejected(self, client, admin_headers, operator_a_headers):
+        """Empty body should be rejected with 400."""
         _create_company(client, admin_headers, "Alpha")
         opp = _create_opportunity(client, operator_a_headers, 1)
         res = client.patch(
@@ -78,10 +78,7 @@ class TestUpdateOpportunityBackend:
             headers=operator_a_headers,
             json={},
         )
-        assert res.status_code == 200
-        data = res.json()
-        assert data["title"] == "Test Opp"
-        assert data["description"] == "Test desc"
+        assert res.status_code == 400
 
     def test_update_requires_auth(self, client):
         res = client.patch("/opportunities/999", json={"title": "X"})

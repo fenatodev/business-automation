@@ -48,7 +48,14 @@ class CustomerCreate(BaseModel):
     company_id: int
     name: str
     phone: str
-    email: str | None = None    
+    email: str | None = None
+
+
+class CustomerUpdate(BaseModel):
+    """Update customer name, phone, and/or email."""
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    phone: str | None = Field(default=None, max_length=30)
+    email: str | None = Field(default=None, max_length=120)
 
 
 class LeadUpdate(BaseModel):
@@ -61,6 +68,19 @@ class LeadUpdate(BaseModel):
         "lost",
     ] | None = None
     interest: str | None = None
+
+
+class LeadBulkStatus(BaseModel):
+    """Bulk update status for multiple leads."""
+    lead_ids: list[int] = Field(min_length=1, max_length=100)
+    status: Literal[
+        "new",
+        "contacted",
+        "qualified",
+        "proposal",
+        "won",
+        "lost",
+    ]
 
 
 class CompanyCreate(BaseModel):
@@ -111,9 +131,10 @@ class IntakeCreateResponse(BaseModel):
 
 
 class OpportunityUpdate(BaseModel):
-    """Update opportunity title and/or description."""
+    """Update opportunity title, description and/or triage note."""
     title: str | None = Field(default=None, min_length=1, max_length=200)
     description: str | None = Field(default=None, min_length=1)
+    triage_note: str | None = None
 
 
 class OpportunityTriageUpdate(BaseModel):
@@ -127,6 +148,24 @@ class OpportunityTriageUpdate(BaseModel):
         "lost",
     ]
     triage_note: str | None = None
+
+
+class OpportunityBulkTriage(BaseModel):
+    """Apply the same triage action to multiple opportunities at once."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    opportunity_ids: list[int] = Field(min_length=1, max_length=100)
+    next_action: Literal[
+        "pending",
+        "ignore",
+        "follow",
+        "prepare_proposal",
+        "in_progress",
+        "done",
+        "lost",
+    ]
+    triage_note: str | None = Field(default=None, max_length=2000)
 
 
 
