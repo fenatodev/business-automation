@@ -994,3 +994,11 @@ mas faltava max_tokens (adicionado no backend pela WP-208). Adicionado
 campo de entrada numérico com validação min=1.
 
 **2611 testes passaram** (20 novos); compileall, diff-check: PASS.
+
+### WP-211 — Botão "Voltar" e título no painel de detalhes do brief
+
+O painel de detalhes do brief (WP-187) não tinha botão para voltar à lista
+nem título visível. Adicionado cabeçalho com botão "← Voltar" e título
+dinâmico baseado na oportunidade.
+
+**2630 testes passaram** (19 novos); compileall, diff-check: PASS.
