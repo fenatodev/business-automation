@@ -879,3 +879,11 @@ O dropdown de filtro de fonte não incluía "99freelas", que é uma fonte
 válida usada no sistema. Adicionado ao dropdown e atualizado README.
 
 **2387 testes passaram**; compileall, diff-check: PASS.
+
+### WP-192 — Criar oportunidade a partir de lead detail
+
+O painel de detalhes do lead não tinha botão para criar oportunidade,
+enquanto o customer detail já tinha (WP-167). Adicionado formulário inline
+seguindo o mesmo padrão: título, descrição, orçamento, prazo, requisitos.
+
+**2402 testes passaram** (15 novos); compileall, diff-check: PASS.

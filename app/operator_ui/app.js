@@ -2126,6 +2126,51 @@
     await showLeadDetail(leads.find((l) => l.id === leadId) || {id: leadId});
   }
 
+  // WP-192 — Create opportunity from lead detail
+  $("lead-new-opp").addEventListener("click", () => {
+    $("lead-opp-form").hidden = false;
+    $("lead-opp-title").focus();
+  });
+
+  $("cancel-lead-opp").addEventListener("click", () => {
+    $("lead-opp-form").hidden = true;
+    $("lead-opp-form").reset();
+  });
+
+  $("lead-opp-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const button = $("lead-opp-form").querySelector('button[type="submit"]');
+    withButton(button, async () => {
+      const title = $("lead-opp-title").value.trim();
+      const description = $("lead-opp-description").value.trim();
+      const budget = $("lead-opp-budget").value.trim() || null;
+      const deadline = $("lead-opp-deadline").value.trim() || null;
+      const requirements = $("lead-opp-requirements").value.trim() || null;
+      if (!title || !description) {
+        notify("Preencha título e descrição.", true);
+        return;
+      }
+      const opp = await api("/opportunities", {
+        method: "POST",
+        body: JSON.stringify({
+          company_id: opportunities.length > 0 ? opportunities[0].company_id : null,
+          source: "manual",
+          external_url: "lead-" + currentLeadId,
+          title,
+          description,
+          budget,
+          deadline,
+          requirements,
+          captured_at: new Date().toISOString(),
+        }),
+      });
+      $("lead-opp-form").hidden = true;
+      $("lead-opp-form").reset();
+      notify("Oportunidade #" + opp.id + " criada.");
+      await refreshList(opp.id);
+    });
+  });
+
   async function updateLeadStatus(leadId, status) {
     const path = "/leads/" + leadId;
     const allowed = path.startsWith("/leads/");
