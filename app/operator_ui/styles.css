@@ -1053,6 +1053,32 @@ footer {
   color: var(--muted);
 }
 
+/* WP-143 — Opportunity activity timeline */
+.opp-timeline-section {
+  margin: 10px 0;
+  padding: 10px;
+  background: var(--panel-alt);
+  border-radius: 6px;
+}
+.opp-timeline-section h3 {
+  font-size: 0.9rem;
+  margin: 0 0 8px 0;
+  color: var(--muted);
+}
+.opp-timeline-item {
+  padding: 6px 8px;
+  margin: 4px 0;
+  background: var(--bg);
+  border-radius: 4px;
+  font-size: 0.82rem;
+  border-left: 3px solid var(--accent);
+}
+.opp-timeline-item .small {
+  color: var(--muted);
+  display: block;
+  margin-top: 2px;
+}
+
 /* WP-118 — Opportunity status badges */
 .opp-status-badge {
   display: inline-block;

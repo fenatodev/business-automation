@@ -544,3 +544,12 @@ retorna até 50 conversas tenant-isoladas, ordenadas por ID descendente.
 UI com seção "Conversas relacionadas" no painel de detalhes; itens
 clicáveis navegam para a seção de conversas.
 **1999 testes passaram** (8 novos); compileall, diff-check: PASS.
+
+## WP-143 — Timeline de atividades da oportunidade (31/10/2026)
+
+O operador não via o histórico de ações em uma oportunidade. Adicionado
+endpoint `GET /opportunities/{id}/timeline` que deriva eventos dos dados
+existentes: criação, triagem (com nota) e mudanças de status do brief.
+Sem migration — usa apenas Opportunity e ProposalBrief. UI com seção
+"Atividades" no painel de detalhes.
+**2008 testes passaram** (9 novos); compileall, diff-check: PASS.
