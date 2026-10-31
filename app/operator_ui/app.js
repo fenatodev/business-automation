@@ -25,6 +25,8 @@
   let convFilterStatus = "";
   let convFilterQuery = "";
   let convFilterSort = "last_message";
+  let convFilterFromDate = "";
+  let convFilterToDate = "";
   let convOffset = 0;
   const convPageSize = 50;
   let convTotal = 0;
@@ -1058,6 +1060,8 @@
     if (convFilterChannel) params.set("channel", convFilterChannel);
     if (convFilterStatus) params.set("status", convFilterStatus);
     if (convFilterQuery) params.set("q", convFilterQuery);
+    if (convFilterFromDate) params.set("from_date", convFilterFromDate);
+    if (convFilterToDate) params.set("to_date", convFilterToDate);
     params.set("sort", convFilterSort);
     params.set("limit", String(convPageSize));
     params.set("offset", String(convOffset));
@@ -1069,6 +1073,8 @@
     if (convFilterChannel) params.set("channel", convFilterChannel);
     if (convFilterStatus) params.set("status", convFilterStatus);
     if (convFilterQuery) params.set("q", convFilterQuery);
+    if (convFilterFromDate) params.set("from_date", convFilterFromDate);
+    if (convFilterToDate) params.set("to_date", convFilterToDate);
     const query = params.toString();
     return "/companies/" + companyId + "/conversations/count" + (query ? "?" + query : "");
   }
@@ -1357,11 +1363,15 @@
     convFilterStatus = "";
     convFilterQuery = "";
     convFilterSort = "last_message";
+    convFilterFromDate = "";
+    convFilterToDate = "";
     convOffset = 0;
     $("conv-filter-channel").value = "";
     $("conv-filter-status").value = "";
     $("conv-search-q").value = "";
     $("conv-filter-sort").value = "last_message";
+    $("conv-from-date").value = "";
+    $("conv-to-date").value = "";
     refreshConversations().catch(() => {});
   }
 
@@ -1399,6 +1409,19 @@
 
   $("conv-filter-sort").addEventListener("change", (e) => {
     convFilterSort = e.target.value;
+    convOffset = 0;
+    refreshConversations().catch(() => {});
+  });
+
+  // WP-151 — Date filter
+  $("conv-from-date").addEventListener("change", (e) => {
+    convFilterFromDate = e.target.value;
+    convOffset = 0;
+    refreshConversations().catch(() => {});
+  });
+
+  $("conv-to-date").addEventListener("change", (e) => {
+    convFilterToDate = e.target.value;
     convOffset = 0;
     refreshConversations().catch(() => {});
   });

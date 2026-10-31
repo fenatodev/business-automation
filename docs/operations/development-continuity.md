@@ -602,3 +602,9 @@ de oportunidades, conectados a `refreshList()` e count endpoint. Botão
 "Limpar filtros" reseta todos os filtros (busca, data, ordenação,
 arquivadas, pipeline). Exportação CSV respeita os filtros de data.
 **2042 testes passaram** (18 novos); compileall, diff-check: PASS.
+
+## WP-151 — Filtro de data em conversas (31/10/2026)
+
+O módulo de conversas não tinha filtro por data. Adicionado `from_date`
+e `to_date` em list, count e export CSV. UI com campos de data na seção
+de filtros. **2049 testes passaram** (7 novos); compileall, diff-check: PASS.

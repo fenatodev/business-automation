@@ -188,6 +188,8 @@ def list_company_conversations(
     status: str | None = Query(None, description="Filter by status"),
     q: str | None = Query(None, description="Search keywords in messages"),
     customer_id: int | None = Query(None, description="Filter by customer"),
+    from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
+    to_date: str | None = Query(None, description="Filter created_at <= date (YYYY-MM-DD)"),
     sort: str = Query(default="last_message", description="Sort by: id, last_message, created_at"),
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -224,6 +226,12 @@ def list_company_conversations(
             )
         )
 
+    # WP-151 — date range filter on created_at (ISO 8601 string comparison)
+    if from_date:
+        stmt = stmt.where(Conversation.created_at >= from_date)
+    if to_date:
+        stmt = stmt.where(Conversation.created_at <= to_date + "T23:59:59")
+
     if sort == "last_message":
         last_msg = (
             select(func.max(Message.created_at))
@@ -248,6 +256,8 @@ def count_company_conversations(
     status: str | None = Query(None, description="Filter by status"),
     q: str | None = Query(None, description="Search keywords in messages"),
     customer_id: int | None = Query(None, description="Filter by customer"),
+    from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
+    to_date: str | None = Query(None, description="Filter created_at <= date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator_company),
 ):
@@ -280,6 +290,12 @@ def count_company_conversations(
                 )
             )
         )
+
+    # WP-151 — date range filter
+    if from_date:
+        stmt = stmt.where(Conversation.created_at >= from_date)
+    if to_date:
+        stmt = stmt.where(Conversation.created_at <= to_date + "T23:59:59")
 
     total = db.scalar(stmt)
     return {"total": total}
@@ -470,6 +486,8 @@ def export_conversations_csv(
     status: str | None = Query(None, description="Filter by status"),
     q: str | None = Query(None, description="Search keywords in messages"),
     customer_id: int | None = Query(None, description="Filter by customer"),
+    from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
+    to_date: str | None = Query(None, description="Filter created_at <= date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator_company),
 ):
@@ -503,6 +521,12 @@ def export_conversations_csv(
                 )
             )
         )
+
+    # WP-151 — date range filter
+    if from_date:
+        stmt = stmt.where(Conversation.created_at >= from_date)
+    if to_date:
+        stmt = stmt.where(Conversation.created_at <= to_date + "T23:59:59")
 
     conversations = db.scalars(stmt.order_by(Conversation.id)).all()
 
