@@ -319,6 +319,19 @@ def update_opportunity(
     return opportunity
 
 
+# Valid status transitions for the F2 commercial cycle
+# Note: new opportunities default to "pending" in the model
+_VALID_TRANSITIONS = {
+    "pending": {"ignore", "follow", "prepare_proposal", "in_progress"},
+    "ignore": set(),  # terminal state
+    "follow": {"pending", "ignore", "prepare_proposal", "in_progress"},
+    "prepare_proposal": {"pending", "follow", "in_progress"},
+    "in_progress": {"done", "lost"},
+    "done": set(),  # terminal state
+    "lost": set(),  # terminal state
+}
+
+
 @router.patch("/opportunities/{opportunity_id}/triage")
 def triage_opportunity(
     opportunity_id: int,
@@ -331,6 +344,14 @@ def triage_opportunity(
         opportunity_id,
         identity.company_id,
     )
+
+    current = opportunity.next_action
+    allowed = _VALID_TRANSITIONS.get(current, set())
+    if data.next_action not in allowed:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot transition from '{current}' to '{data.next_action}'",
+        )
 
     opportunity.next_action = data.next_action
     opportunity.triage_note = data.triage_note
@@ -350,8 +371,9 @@ def bulk_triage_opportunities(
     """Apply the same triage action to multiple opportunities at once.
 
     Only opportunities belonging to the authenticated tenant are updated.
-    Opportunities that don't exist or belong to another tenant are skipped.
-    The response includes counts of updated and skipped opportunities.
+    Opportunities that don't exist, belong to another tenant, or have
+    invalid transitions are skipped. The response includes counts of
+    updated and skipped opportunities.
     """
     opportunities = db.scalars(
         select(Opportunity).where(
@@ -361,9 +383,13 @@ def bulk_triage_opportunities(
     ).all()
 
     updated_ids = []
-    skipped_count = len(data.opportunity_ids) - len(opportunities)
+    base_skipped = len(data.opportunity_ids) - len(opportunities)
 
     for opportunity in opportunities:
+        current = opportunity.next_action
+        allowed = _VALID_TRANSITIONS.get(current, set())
+        if data.next_action not in allowed:
+            continue
         opportunity.next_action = data.next_action
         opportunity.triage_note = data.triage_note
         updated_ids.append(opportunity.id)
@@ -373,7 +399,7 @@ def bulk_triage_opportunities(
     return {
         "updated": len(updated_ids),
         "updated_ids": updated_ids,
-        "skipped": skipped_count,
+        "skipped": base_skipped + len(opportunities) - len(updated_ids),
         "next_action": data.next_action,
     }
 

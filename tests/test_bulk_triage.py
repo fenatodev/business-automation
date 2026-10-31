@@ -97,13 +97,14 @@ def test_bulk_triage_with_note(client, operator_a_headers, opportunities_a):
         assert opp.triage_note == "Prioridade alta"
 
 
-def test_bulk_triage_all_pending(client, operator_a_headers, opportunities_a):
+def test_bulk_triage_all_follow(client, operator_a_headers, opportunities_a):
+    # Opportunities default to "pending", so "follow" is a valid transition
     resp = client.post(
         "/opportunities/bulk-triage",
         headers=operator_a_headers,
         json={
             "opportunity_ids": [1, 2, 3, 4, 5],
-            "next_action": "pending",
+            "next_action": "follow",
         },
     )
     assert resp.status_code == 200
@@ -127,6 +128,12 @@ def test_bulk_triage_ignore(client, operator_a_headers, opportunities_a):
 
 
 def test_bulk_triage_done(client, operator_a_headers, opportunities_a):
+    # Must go through in_progress first
+    client.post(
+        "/opportunities/bulk-triage",
+        headers=operator_a_headers,
+        json={"opportunity_ids": [1], "next_action": "in_progress"},
+    )
     resp = client.post(
         "/opportunities/bulk-triage",
         headers=operator_a_headers,
@@ -141,6 +148,12 @@ def test_bulk_triage_done(client, operator_a_headers, opportunities_a):
 
 
 def test_bulk_triage_lost(client, operator_a_headers, opportunities_a):
+    # Must go through in_progress first
+    client.post(
+        "/opportunities/bulk-triage",
+        headers=operator_a_headers,
+        json={"opportunity_ids": [1], "next_action": "in_progress"},
+    )
     resp = client.post(
         "/opportunities/bulk-triage",
         headers=operator_a_headers,
@@ -298,16 +311,20 @@ def test_bulk_triage_single_item(client, operator_a_headers, opportunities_a):
 
 
 def test_bulk_triage_idempotent(client, operator_a_headers, opportunities_a):
-    # Apply the same triage twice
-    for _ in range(2):
-        resp = client.post(
-            "/opportunities/bulk-triage",
-            headers=operator_a_headers,
-            json={
-                "opportunity_ids": [1, 2],
-                "next_action": "follow",
-            },
-        )
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["updated"] == 2
+    # pending → follow is valid; follow → pending → follow is also valid
+    # First: pending → follow
+    resp = client.post(
+        "/opportunities/bulk-triage",
+        headers=operator_a_headers,
+        json={"opportunity_ids": [1, 2], "next_action": "follow"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["updated"] == 2
+    # Second: follow → pending (valid)
+    resp = client.post(
+        "/opportunities/bulk-triage",
+        headers=operator_a_headers,
+        json={"opportunity_ids": [1, 2], "next_action": "pending"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["updated"] == 2

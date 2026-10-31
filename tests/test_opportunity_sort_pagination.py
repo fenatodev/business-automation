@@ -56,7 +56,12 @@ class TestOpportunitySort:
         _create_company(client, admin_headers, "Alpha")
         opp1 = _create_opportunity(client, operator_a_headers, 1, "Pending", "P")
         opp2 = _create_opportunity(client, operator_a_headers, 1, "Done", "D")
-        # Change one to done
+        # Change one to done (requires in_progress first)
+        client.patch(
+            f"/opportunities/{opp2['id']}/triage",
+            headers=operator_a_headers,
+            json={"next_action": "in_progress"},
+        )
         client.patch(
             f"/opportunities/{opp2['id']}/triage",
             headers=operator_a_headers,
@@ -120,6 +125,11 @@ class TestOpportunityPagination:
         client.patch(
             f"/opportunities/{opp2['id']}/triage",
             headers=operator_a_headers,
+            json={"next_action": "in_progress"},
+        )
+        client.patch(
+            f"/opportunities/{opp2['id']}/triage",
+            headers=operator_a_headers,
             json={"next_action": "done"},
         )
         res = client.get("/opportunities?exclude_archived=true&limit=10", headers=operator_a_headers)
@@ -145,6 +155,11 @@ class TestOpportunityCount:
         _create_company(client, admin_headers, "Alpha")
         opp1 = _create_opportunity(client, operator_a_headers, 1, "Active", "A")
         opp2 = _create_opportunity(client, operator_a_headers, 1, "Done", "D")
+        client.patch(
+            f"/opportunities/{opp2['id']}/triage",
+            headers=operator_a_headers,
+            json={"next_action": "in_progress"},
+        )
         client.patch(
             f"/opportunities/{opp2['id']}/triage",
             headers=operator_a_headers,
