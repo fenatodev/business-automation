@@ -1639,6 +1639,21 @@
     });
   });
 
+  // WP-196 — Export CSV with current filters
+  $("conv-export-csv").addEventListener("click", () => {
+    const params = [];
+    if (convFilterChannel) params.push("channel=" + encodeURIComponent(convFilterChannel));
+    if (convFilterStatus) params.push("status=" + encodeURIComponent(convFilterStatus));
+    if (convFilterQuery) params.push("q=" + encodeURIComponent(convFilterQuery));
+    if (convFilterCustomerId) params.push("customer_id=" + encodeURIComponent(convFilterCustomerId));
+    if (convFilterFromDate) params.push("from_date=" + encodeURIComponent(convFilterFromDate));
+    if (convFilterToDate) params.push("to_date=" + encodeURIComponent(convFilterToDate));
+    const company = opportunities.length > 0 ? opportunities[0].company_id : null;
+    const url = "/companies/" + company + "/conversations/export.csv" + (params.length ? "?" + params.join("&") : "");
+    downloadCsv(url, "conversations.csv");
+    notify("Exportando conversas...");
+  });
+
   $("conv-prev").addEventListener("click", () => withButton($("conv-prev"), async () => {
     convOffset = Math.max(0, convOffset - convPageSize);
     await refreshConversations();

@@ -903,3 +903,11 @@ mas a UI não expunha essa funcionalidade. Adicionado dropdown "Customer"
 na seção de filtros que carrega os customers e filtra as conversas.
 
 **2425 testes passaram** (13 novos); compileall, diff-check: PASS.
+
+### WP-196 — Handler de exportação CSV de conversas
+
+O botão "Exportar CSV" existia no HTML mas não tinha handler JavaScript.
+Conectado ao endpoint existente, respeitando todos os filtros ativos
+(channel, status, busca, customer_id, datas).
+
+**2435 testes passaram** (10 novos); compileall, diff-check: PASS.
