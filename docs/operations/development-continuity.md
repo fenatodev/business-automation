@@ -561,3 +561,10 @@ Adicionado endpoint `GET /opportunities/{id}/leads` que retorna até 50 leads
 tenant-isolados, ordenados por ID descendente. UI com seção "Leads relacionados"
 no painel de detalhes.
 **2016 testes passaram** (8 novos); compileall, diff-check: PASS.
+
+## WP-146 — Atalhos de teclado no operador (31/10/2026)
+
+O operador dependia inteiramente do mouse para navegar. Adicionados atalhos
+de teclado: Ctrl+K foca o campo de busca de oportunidades; Escape limpa
+a seleção atual. Indicação dos atalhos no rodapé.
+**2016 testes passaram**; compileall, diff-check: PASS.
