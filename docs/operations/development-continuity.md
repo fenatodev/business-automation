@@ -986,3 +986,11 @@ aceita `max_tokens` opcional (int >= 1), passando para o Ollama via
 o max_tokens. Complementa system_prompt (WP-202) e temperature (WP-203).
 
 **2591 testes passaram** (33 novos); compileall, diff-check: PASS.
+
+### WP-210 — Campo max_tokens na configuração do agente UI
+
+A interface de configuração do agente tinha campos de prompt e temperatura
+mas faltava max_tokens (adicionado no backend pela WP-208). Adicionado
+campo de entrada numérico com validação min=1.
+
+**2611 testes passaram** (20 novos); compileall, diff-check: PASS.
