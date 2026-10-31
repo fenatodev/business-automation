@@ -1675,18 +1675,29 @@
     if (!bearer) return;
     const status = $("lead-filter-status").value;
     const q = $("lead-search") ? $("lead-search").value.trim() : "";
+    // WP-152 — date filter
+    const fromDate = $("lead-from-date") ? $("lead-from-date").value : "";
+    const toDate = $("lead-to-date") ? $("lead-to-date").value : "";
     const sort = $("lead-sort") ? $("lead-sort").value : "id";
     let path = "/leads";
     const params = [];
     if (status) params.push("status=" + encodeURIComponent(status));
     if (q) params.push("q=" + encodeURIComponent(q));
+    if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
+    if (toDate) params.push("to_date=" + encodeURIComponent(toDate));
     if (sort !== "id") params.push("sort=" + encodeURIComponent(sort));
     params.push("limit=" + leadPageSize);
     params.push("offset=" + leadOffset);
     if (params.length) path += "?" + params.join("&");
+    // Count params
+    const countParams = [];
+    if (status) countParams.push("status=" + encodeURIComponent(status));
+    if (q) countParams.push("q=" + encodeURIComponent(q));
+    if (fromDate) countParams.push("from_date=" + encodeURIComponent(fromDate));
+    if (toDate) countParams.push("to_date=" + encodeURIComponent(toDate));
     const [leads, countResult] = await Promise.all([
       leadApi(path, "GET"),
-      leadApi("/leads/count" + (status ? "?status=" + encodeURIComponent(status) : "") + (q ? "&q=" + encodeURIComponent(q) : ""), "GET")
+      leadApi("/leads/count" + (countParams.length ? "?" + countParams.join("&") : ""), "GET")
     ]);
     leadTotal = countResult ? countResult.total || 0 : 0;
     leadListLength = (leads || []).length;
@@ -1955,6 +1966,16 @@
 
   // WP-101 — Lead sorting
   $("lead-sort").addEventListener("change", () => {
+    leadOffset = 0;
+    refreshLeads().catch(() => {});
+  });
+
+  // WP-152 — Lead date filter
+  $("lead-from-date").addEventListener("change", () => {
+    leadOffset = 0;
+    refreshLeads().catch(() => {});
+  });
+  $("lead-to-date").addEventListener("change", () => {
     leadOffset = 0;
     refreshLeads().catch(() => {});
   });
@@ -2432,8 +2453,19 @@
     notify("Exportando oportunidades...");
   });
 
+  // WP-152 — Export CSV with current filters
   $("leads-export-csv").addEventListener("click", () => {
-    downloadCsv("/leads/export.csv", "leads.csv");
+    const params = [];
+    const status = $("lead-filter-status").value;
+    if (status) params.push("status=" + encodeURIComponent(status));
+    const q = $("lead-search") ? $("lead-search").value.trim() : "";
+    if (q) params.push("q=" + encodeURIComponent(q));
+    const fromDate = $("lead-from-date") ? $("lead-from-date").value : "";
+    if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
+    const toDate = $("lead-to-date") ? $("lead-to-date").value : "";
+    if (toDate) params.push("to_date=" + encodeURIComponent(toDate));
+    const url = "/leads/export.csv" + (params.length ? "?" + params.join("&") : "");
+    downloadCsv(url, "leads.csv");
     notify("Exportando leads...");
   });
 

@@ -79,13 +79,15 @@ def create_lead(
 def list_leads(
     status: str | None = None,
     q: str | None = Query(default=None, description="Search keywords in name and interest"),
+    from_date: str | None = Query(default=None, description="Filter created_at >= date (YYYY-MM-DD)"),
+    to_date: str | None = Query(default=None, description="Filter created_at <= date (YYYY-MM-DD)"),
     sort: str = Query(default="id", description="Sort by: id, created_at, status"),
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    """List leads, optionally filtered by status and searched by keywords."""
+    """List leads, optionally filtered by status, date range and searched by keywords."""
     query = select(Lead).where(Lead.company_id == identity.company_id)
     if status:
         query = query.where(Lead.status == status)
@@ -95,6 +97,11 @@ def list_leads(
             func.lower(Lead.name).like(func.lower(pattern)) |
             func.lower(Lead.interest).like(func.lower(pattern))
         )
+    # WP-152 — date range filter on created_at (ISO 8601 string comparison)
+    if from_date:
+        query = query.where(Lead.created_at >= from_date)
+    if to_date:
+        query = query.where(Lead.created_at <= to_date + "T23:59:59")
     if sort == "created_at":
         query = query.order_by(desc(Lead.created_at), Lead.id)
     elif sort == "status":
@@ -109,10 +116,12 @@ def list_leads(
 def count_leads(
     status: str | None = None,
     q: str | None = Query(default=None, description="Search keywords in name and interest"),
+    from_date: str | None = Query(default=None, description="Filter created_at >= date (YYYY-MM-DD)"),
+    to_date: str | None = Query(default=None, description="Filter created_at <= date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    """Count leads, optionally filtered by status and searched by keywords."""
+    """Count leads, optionally filtered by status, date range and searched by keywords."""
     query = select(func.count()).select_from(Lead).where(Lead.company_id == identity.company_id)
     if status:
         query = query.where(Lead.status == status)
@@ -122,6 +131,11 @@ def count_leads(
             func.lower(Lead.name).like(func.lower(pattern)) |
             func.lower(Lead.interest).like(func.lower(pattern))
         )
+    # WP-152 — date range filter
+    if from_date:
+        query = query.where(Lead.created_at >= from_date)
+    if to_date:
+        query = query.where(Lead.created_at <= to_date + "T23:59:59")
     total = db.scalar(query)
     return {"total": total}
 
@@ -130,6 +144,8 @@ def count_leads(
 def export_leads_csv(
     status: str | None = Query(None, description="Filter by status"),
     q: str | None = Query(None, description="Search keywords in name and interest"),
+    from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
+    to_date: str | None = Query(None, description="Filter created_at <= date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
@@ -143,6 +159,11 @@ def export_leads_csv(
             func.lower(Lead.name).like(func.lower(pattern)) |
             func.lower(Lead.interest).like(func.lower(pattern))
         )
+    # WP-152 — date range filter
+    if from_date:
+        query = query.where(Lead.created_at >= from_date)
+    if to_date:
+        query = query.where(Lead.created_at <= to_date + "T23:59:59")
     leads = db.scalars(query.order_by(Lead.id)).all()
 
     output = io.StringIO()
