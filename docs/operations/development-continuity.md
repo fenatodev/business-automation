@@ -535,3 +535,12 @@ O operador só podia fechar/reabrir uma conversa de cada vez. Novo endpoint
 (open/closed) de forma tenant-isolada. UI com checkboxes na lista e barra
 de ação em massa.
 **1991 testes passaram** (8 novos); compileall, diff-check: PASS.
+
+## WP-142 — Conversas relacionadas à oportunidade (31/10/2026)
+
+O painel de detalhes da oportunidade não mostrava as conversas da mesma
+company. Adicionado endpoint `GET /opportunities/{id}/conversations` que
+retorna até 50 conversas tenant-isoladas, ordenadas por ID descendente.
+UI com seção "Conversas relacionadas" no painel de detalhes; itens
+clicáveis navegam para a seção de conversas.
+**1999 testes passaram** (8 novos); compileall, diff-check: PASS.

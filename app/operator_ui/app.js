@@ -156,10 +156,11 @@
     // WP-094 — allow ?q= search param
     // WP-095 — allow /opportunities/count and sort/limit/offset params
     // WP-139 — allow /opportunities/pipeline-summary
+    // WP-142 — allow /opportunities/{id}/conversations
     if (!/^\/opportunities(\?[^"]*)?$/.test(path) &&
         !/^\/opportunities\/count(\?[^"]*)?$/.test(path) &&
         !/^\/opportunities\/pipeline-summary$/.test(path) &&
-        !/^\/opportunities\/\d+(\/(triage|proposal-brief)(\/approve|\/reject)?)?$/.test(path)) {
+        !/^\/opportunities\/\d+(\/(triage|proposal-brief|conversations)(\/approve|\/reject)?)?$/.test(path)) {
       throw new Error("Rota não permitida nesta interface.");
     }
     const epoch = sessionEpoch;
@@ -358,6 +359,46 @@
 
     // WP-108 — always attempt to load brief, regardless of status
     await loadBrief(id, version);
+    // WP-142 — load related conversations
+    await loadOpportunityConversations(id);
+  }
+
+  // WP-142 — Load conversations related to the selected opportunity
+  async function loadOpportunityConversations(id) {
+    try {
+      const conversations = await api("/opportunities/" + id + "/conversations");
+      const list = $("opp-conv-list");
+      list.replaceChildren();
+      if (!conversations || !conversations.length) {
+        const empty = document.createElement("p");
+        empty.className = "small";
+        empty.textContent = "Nenhuma conversa registrada.";
+        list.appendChild(empty);
+        return;
+      }
+      for (const conv of conversations) {
+        const item = document.createElement("div");
+        item.className = "opp-conv-item";
+        const title = document.createElement("strong");
+        title.textContent = "#" + conv.id + " · " + conv.channel;
+        const meta = document.createElement("span");
+        meta.className = "small";
+        const status = conv.status === "open" ? "Aberta" : "Fechada";
+        meta.textContent = " " + status;
+        item.append(title, meta);
+        item.addEventListener("click", () => {
+          // Navigate to the conversations section and select this conversation
+          workspaceObserver.disconnect();
+          selectedConvId = conv.id;
+          refreshConversations().catch(() => {});
+          selectConversation(conv.id).catch(() => {});
+        });
+        list.appendChild(item);
+      }
+    } catch (error) {
+      // Silently fail — conversations are supplementary info
+      $("opp-conv-list").replaceChildren();
+    }
   }
 
   async function refreshList(preferId = selectedId) {
