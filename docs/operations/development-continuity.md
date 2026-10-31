@@ -491,3 +491,12 @@ segundo o padrão dos outros módulos. Controles de paginação (Anterior/Próxi
 adicionados no detalhe da conversa. allowlist atualizada para /messages/count.
 **1923 testes passaram** (17 novos); compileall, diff-check: PASS.
 PR #215: https://github.com/fenatodev/business-automation/pull/215
+
+## WP-137 — Auto-refresh do dashboard e polling de notificações (31/10/2026)
+
+O dashboard só atualizava manualmente e as notificações não tinham polling
+real. startDashboardRefresh() inicia polling a cada 60s;
+startNotificationRefresh() a cada 30s para atualizar o badge pendente.
+Ambos são parados no disconnect().
+**1938 testes passaram** (15 novos); compileall, diff-check: PASS.
+PR #216: https://github.com/fenatodev/business-automation/pull/216

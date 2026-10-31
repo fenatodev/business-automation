@@ -30,6 +30,7 @@
   let msgOffset = 0;
   const msgPageSize = 50;
   let msgTotal = 0;
+  let dashboardIntervalId = null;
 
   const briefFields = [
     "offer_reference",
@@ -138,6 +139,8 @@
     convTotal = 0;
     msgOffset = 0;
     msgTotal = 0;
+    stopDashboardRefresh();
+    stopNotificationRefresh();
     notify(message);
   }
 
@@ -668,6 +671,8 @@
         $("access-status").classList.add("connected");
         $("connect-button").hidden = true;
         $("disconnect-button").hidden = false;
+        startDashboardRefresh();
+        startNotificationRefresh();
         notify("Conectado. O acesso será descartado ao fechar ou recarregar a aba.");
       } catch (error) {
         disconnect("Não foi possível conectar. Use uma credencial de operador válida.");
@@ -1115,6 +1120,8 @@
   $("conv-list").replaceChildren();
   $("conv-detail").hidden = true;
 
+  const DASHBOARD_REFRESH_MS = 60000;
+
   // Dashboard — WP-082
   async function refreshDashboard() {
     if (!bearer) return;
@@ -1125,6 +1132,21 @@
     if (!res.ok) return;
     const data = await res.json();
     renderDashboard(data);
+  }
+
+  function startDashboardRefresh() {
+    stopDashboardRefresh();
+    refreshDashboard().catch(() => {});
+    dashboardIntervalId = setInterval(() => {
+      refreshDashboard().catch(() => {});
+    }, DASHBOARD_REFRESH_MS);
+  }
+
+  function stopDashboardRefresh() {
+    if (dashboardIntervalId !== null) {
+      clearInterval(dashboardIntervalId);
+      dashboardIntervalId = null;
+    }
   }
 
   function renderDashboard(data) {
@@ -1190,6 +1212,48 @@
     await refreshDashboard();
     notify("Dashboard atualizado.");
   }));
+
+  // WP-107 — Notifications polling
+  const NOTIFICATION_REFRESH_MS = 30000;
+  let notificationIntervalId = null;
+
+  async function updateNotifications() {
+    if (!bearer) return;
+    try {
+      const res = await fetch("/opportunities", {
+        headers: {"Authorization": "Bearer " + bearer},
+      });
+      if (res.status === 403) return;
+      if (!res.ok) return;
+      const result = await res.json();
+      if (!Array.isArray(result)) return;
+      const pending = result.filter((o) => o.next_action === "pending").length;
+      const badge = $("pending-badge");
+      if (pending > 0) {
+        badge.hidden = false;
+        badge.textContent = pending;
+      } else {
+        badge.hidden = true;
+      }
+    } catch (_e) {
+      // Silently ignore background notification errors
+    }
+  }
+
+  function startNotificationRefresh() {
+    stopNotificationRefresh();
+    notificationIntervalId = setInterval(() => {
+      if (!bearer) return;
+      updateNotifications().catch(() => {});
+    }, NOTIFICATION_REFRESH_MS);
+  }
+
+  function stopNotificationRefresh() {
+    if (notificationIntervalId !== null) {
+      clearInterval(notificationIntervalId);
+      notificationIntervalId = null;
+    }
+  }
 
   // Leads — WP-083
   const leadStatusLabels = {
