@@ -62,7 +62,8 @@ def test_agent_service_temperature_in_options():
     """Temperature is passed inside the options dict."""
     with open("app/services/agent.py") as f:
         code = f.read()
-    assert 'body["options"] = {"temperature": temperature}' in code
+    # WP-208 changed to use options dict pattern
+    assert 'options["temperature"] = temperature' in code or 'body["options"] = {"temperature": temperature}' in code
 
 
 def test_agent_service_no_temperature_by_default():

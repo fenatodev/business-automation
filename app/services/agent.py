@@ -22,6 +22,7 @@ def generate_agent_reply(
     history: list[dict],
     system_prompt: str | None = None,
     temperature: float | None = None,
+    max_tokens: int | None = None,
 ) -> str:
     # WP-202 — Allow custom system prompt; falls back to default
     prompt = system_prompt if system_prompt else _DEFAULT_SYSTEM_PROMPT
@@ -66,8 +67,14 @@ def generate_agent_reply(
     }
 
     # WP-203 — Pass temperature to Ollama if specified
+    # WP-208 — Pass max_tokens to Ollama if specified
+    options: dict[str, object] = {}
     if temperature is not None:
-        body["options"] = {"temperature": temperature}
+        options["temperature"] = temperature
+    if max_tokens is not None:
+        options["num_predict"] = max_tokens
+    if options:
+        body["options"] = options
 
     try:
         response = httpx.post(

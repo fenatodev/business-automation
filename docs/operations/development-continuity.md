@@ -976,3 +976,13 @@ está entre 0.0 e 2.0. Valores fora desse intervalo são rejeitados no
 nível do schema, impedindo valores inválidos de chegarem à API do Ollama.
 
 **2558 testes passaram** (29 novos); compileall, diff-check: PASS.
+
+### WP-208 — Max tokens configurável no agente
+
+O agente não tinha limite de tokens configurável. `generate_agent_reply()`
+aceita `max_tokens` opcional (int >= 1), passando para o Ollama via
+`num_predict` no options dict. `AgentRequest` e `CompanyAgentConfig` com
+`max_tokens` opcional e validação. O endpoint `POST /agent-reply` passa
+o max_tokens. Complementa system_prompt (WP-202) e temperature (WP-203).
+
+**2591 testes passaram** (33 novos); compileall, diff-check: PASS.

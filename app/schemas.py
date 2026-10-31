@@ -16,12 +16,20 @@ class AgentRequest(BaseModel):
     content: str
     system_prompt: str | None = None  # WP-202 — optional custom system prompt
     temperature: float | None = None  # WP-203 — optional temperature (0.0-2.0)
+    max_tokens: int | None = None  # WP-208 — optional max tokens
 
     @field_validator("temperature")
     @classmethod
     def temperature_range(cls, v: float | None) -> float | None:
         if v is not None and (v < 0.0 or v > 2.0):
             raise ValueError("temperature must be between 0.0 and 2.0")
+        return v
+
+    @field_validator("max_tokens")
+    @classmethod
+    def max_tokens_positive(cls, v: int | None) -> int | None:
+        if v is not None and v < 1:
+            raise ValueError("max_tokens must be at least 1")
         return v
 
 
@@ -118,12 +126,20 @@ class CompanyAgentConfig(BaseModel):
     """Per-company agent configuration."""
     system_prompt: str | None = None
     temperature: float | None = None
+    max_tokens: int | None = None  # WP-208 — optional max tokens
 
     @field_validator("temperature")
     @classmethod
     def temperature_range(cls, v: float | None) -> float | None:
         if v is not None and (v < 0.0 or v > 2.0):
             raise ValueError("temperature must be between 0.0 and 2.0")
+        return v
+
+    @field_validator("max_tokens")
+    @classmethod
+    def max_tokens_positive(cls, v: int | None) -> int | None:
+        if v is not None and v < 1:
+            raise ValueError("max_tokens must be at least 1")
         return v
 
 
