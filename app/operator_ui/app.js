@@ -249,12 +249,44 @@
       button.classList.toggle("active", opportunity.id === selectedId);
       button.style.flex = "1";
       button.style.textAlign = "left";
+      // WP-156 — Title row with id, title, and status badge
+      const titleRow = document.createElement("div");
+      titleRow.className = "opp-item-title-row";
       const title = document.createElement("strong");
       title.textContent = "#" + opportunity.id + " · " + opportunity.title;
       const stage = document.createElement("span");
       stage.className = "opp-status-badge opp-status-" + (opportunity.next_action || "unknown");
       stage.textContent = actionLabels[opportunity.next_action] || "Estado desconhecido";
-      button.append(title, stage);
+      titleRow.append(title, stage);
+      button.append(titleRow);
+      // WP-156 — Description preview (truncated)
+      if (opportunity.description) {
+        const desc = document.createElement("span");
+        desc.className = "opp-item-description";
+        const truncated = opportunity.description.length > 120
+          ? opportunity.description.substring(0, 120) + "…"
+          : opportunity.description;
+        desc.textContent = truncated;
+        button.append(desc);
+      }
+      // WP-156 — Meta row with budget and deadline
+      if (opportunity.budget || opportunity.deadline) {
+        const meta = document.createElement("div");
+        meta.className = "opp-item-meta";
+        if (opportunity.budget) {
+          const budgetSpan = document.createElement("span");
+          budgetSpan.className = "opp-item-budget";
+          budgetSpan.textContent = "💰 " + opportunity.budget;
+          meta.append(budgetSpan);
+        }
+        if (opportunity.deadline) {
+          const deadlineSpan = document.createElement("span");
+          deadlineSpan.className = "opp-item-deadline";
+          deadlineSpan.textContent = "📅 " + opportunity.deadline;
+          meta.append(deadlineSpan);
+        }
+        button.append(meta);
+      }
       button.addEventListener("click", (e) => {
         if (e.target === checkbox) return;
         selectOpportunity(opportunity.id).catch(() => {

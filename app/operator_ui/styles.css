@@ -170,6 +170,36 @@ form > button.primary { margin-top: 20px; }
 .opportunity-item span { font-size: 0.78rem; color: var(--muted); }
 .opportunity-item.active { border-color: var(--accent); background: #15332e; }
 
+/* WP-156 — Opportunity list: title row, description preview, meta row */
+.opp-item-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.opp-item-description {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 4px;
+}
+.opp-item-meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.opp-item-budget {
+  color: #7fdbca;
+}
+.opp-item-deadline {
+  color: #e2c08d;
+}
+
 .metadata {
   display: grid;
   grid-template-columns: 95px minmax(0, 1fr);
