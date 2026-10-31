@@ -27,6 +27,13 @@ def _create_opportunity(client, operator_headers, company_id, next_action="pendi
     opp = res.json()
     # Set the next_action via triage
     if next_action != "pending":
+        # done/lost require in_progress first
+        if next_action in ("done", "lost"):
+            client.patch(
+                f"/opportunities/{opp['id']}/triage",
+                headers=operator_headers,
+                json={"next_action": "in_progress"},
+            )
         triage_res = client.patch(
             f"/opportunities/{opp['id']}/triage",
             headers=operator_headers,

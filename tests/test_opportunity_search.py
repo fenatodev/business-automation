@@ -76,7 +76,12 @@ class TestOpportunitySearchBackend:
             headers=operator_a_headers,
             json={"title": "Test Finalizado"},
         )
-        # Set to done via triage
+        # Set to done via triage (requires in_progress first)
+        client.patch(
+            f"/opportunities/{opp['id']}/triage",
+            headers=operator_a_headers,
+            json={"next_action": "in_progress"},
+        )
         client.patch(
             f"/opportunities/{opp['id']}/triage",
             headers=operator_a_headers,
