@@ -1,4 +1,8 @@
+import csv
+import io
+
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -10,7 +14,7 @@ from app.dependencies import (
     require_operator_company,
 )
 from app.models import Company, Customer, Lead
-from app.schemas import CustomerCreate
+from app.schemas import CustomerCreate, CustomerUpdate
 
 
 router = APIRouter()
@@ -117,6 +121,43 @@ def count_customers(
     return {"total": total}
 
 
+@router.get("/customers/export.csv")
+def export_customers_csv(
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Export all tenant customers as a CSV file."""
+    customers = db.scalars(
+        select(Customer)
+        .where(Customer.company_id == identity.company_id)
+        .order_by(Customer.id)
+    ).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "ID", "Nome", "Telefone", "E-mail", "Lead origem",
+        "Criado em",
+    ])
+    for customer in customers:
+        writer.writerow([
+            customer.id,
+            customer.name,
+            customer.phone or "",
+            customer.email or "",
+            customer.lead_id or "",
+            customer.created_at.isoformat() if customer.created_at else "",
+        ])
+
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=customers.csv",
+        },
+    )
+
+
 @router.get("/customers/{customer_id}")
 def get_customer(
     customer_id: int,
@@ -183,6 +224,39 @@ def create_customer(
     db.refresh(new_customer)
 
     return new_customer
+
+
+@router.patch("/customers/{customer_id}")
+def update_customer(
+    customer_id: int,
+    update: CustomerUpdate,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Update customer name, phone, and/or email. Tenant-isolated."""
+    customer = _get_tenant_customer(
+        db,
+        customer_id,
+        identity.company_id,
+    )
+
+    data = update.model_dump(exclude_unset=True)
+    if not data:
+        raise HTTPException(
+            status_code=400,
+            detail="No fields to update",
+        )
+
+    if "name" in data:
+        customer.name = data["name"]
+    if "phone" in data:
+        customer.phone = data["phone"]
+    if "email" in data:
+        customer.email = data["email"]
+
+    db.commit()
+    db.refresh(customer)
+    return customer
 
 
 @router.post("/leads/{lead_id}/convert")
