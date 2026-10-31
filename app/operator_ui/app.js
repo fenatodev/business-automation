@@ -9,6 +9,7 @@
   let reviewEpoch = 0;
   let reviewOffset = 0;
   const reviewPageSize = 50;
+  let reviewTotal = 0;
   let opportunities = [];
   let selectedId = null;
   let oppOffset = 0;
@@ -105,6 +106,7 @@
     bearer = null;
     reviewEpoch += 1;
     reviewOffset = 0;
+    reviewTotal = 0;
     oppOffset = 0;
     oppTotal = 0;
     $("rq-list").replaceChildren();
@@ -497,11 +499,13 @@
   // Review queue uses the same in-memory Bearer session, with a strict route allowlist.
   async function reviewApi(path, method = "GET", body) {
     if (!bearer) throw new Error("Conecte um operador.");
-    if (!(/^\/review-queue\/$/.test(path) ||
-          /^\/review-queue\/summary$/.test(path) ||
-          /^\/review-queue\/aging$/.test(path) ||
-          /^\/review-queue\/synthetic-trigger$/.test(path) ||
-          /^\/review-queue\/\d+\/decision$/.test(path))) {
+    const route = path.split("#")[0];
+    if (!(/^\/review-queue\/(\?|$)/.test(route) ||
+          /^\/review-queue\/summary$/.test(route) ||
+          /^\/review-queue\/aging$/.test(route) ||
+          /^\/review-queue\/count(\?|$)/.test(route) ||
+          /^\/review-queue\/synthetic-trigger$/.test(route) ||
+          /^\/review-queue\/\d+\/decision$/.test(route))) {
       throw new Error("Rota de revisão não permitida.");
     }
     const epoch = sessionEpoch;
@@ -517,18 +521,36 @@
     if (!response.ok) throw new ApiFailure(response.status);
     return response.json();
   }
+  function buildReviewUrl() {
+    const params = new URLSearchParams();
+    params.set("limit", reviewPageSize);
+    params.set("offset", reviewOffset);
+    const status = $("rq-status-filter")?.value?.trim();
+    if (status) params.set("status", status);
+    const sort = $("rq-sort")?.value?.trim();
+    if (sort) params.set("sort", sort);
+    return "/review-queue/?" + params.toString();
+  }
+  function buildReviewCountUrl() {
+    const params = [];
+    const status = $("rq-status-filter")?.value?.trim();
+    if (status) params.push("status=" + encodeURIComponent(status));
+    return "/review-queue/count" + (params.length ? "?" + params.join("&") : "");
+  }
   async function refreshReviewQueue() {
     const epoch = ++reviewEpoch;
-    const [items, summary, aging] = await Promise.all([
-      reviewApi("/review-queue/?limit=" + reviewPageSize + "&offset=" + reviewOffset),
+    const [items, summary, aging, countData] = await Promise.all([
+      reviewApi(buildReviewUrl()),
       reviewApi("/review-queue/summary"),
       reviewApi("/review-queue/aging"),
+      reviewApi(buildReviewCountUrl()),
     ]);
     if (epoch !== reviewEpoch) return;
     if (!Array.isArray(items)) throw new Error("Fila inválida.");
+    reviewTotal = countData?.total || 0;
     $("rq-count").textContent = summary.pending + " pendente(s)";
     $("rq-prev").disabled = reviewOffset === 0;
-    $("rq-next").disabled = reviewOffset + items.length >= summary.pending;
+    $("rq-next").disabled = reviewOffset + items.length >= reviewTotal;
     $("rq-page").textContent = "Página " + (Math.floor(reviewOffset / reviewPageSize) + 1);
     $("rq-summary").textContent = "Pendentes: " + summary.pending +
       " · Aprovados: " + summary.approve + " · Rejeitados: " + summary.reject;
@@ -595,6 +617,20 @@
     reviewOffset += reviewPageSize;
     await refreshReviewQueue();
   }));
+  $("rq-status-filter").addEventListener("change", () => {
+    reviewOffset = 0;
+    refreshReviewQueue();
+  });
+  $("rq-sort").addEventListener("change", () => {
+    reviewOffset = 0;
+    refreshReviewQueue();
+  });
+  $("rq-clear-filters").addEventListener("click", () => {
+    $("rq-status-filter").value = "";
+    $("rq-sort").value = "created_at";
+    reviewOffset = 0;
+    refreshReviewQueue();
+  });
   $("rq-form").addEventListener("submit", (event) => {
     event.preventDefault();
     const button = $("rq-form").querySelector('button[type="submit"]');

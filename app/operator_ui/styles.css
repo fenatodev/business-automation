@@ -223,6 +223,38 @@ footer {
 .review-card textarea {margin-top:12px}
 .review-actions {display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
 
+/* Review queue filters — WP-134 */
+.rq-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 10px 12px;
+  background: #101722;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.rq-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rq-filter-group label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.rq-filter-group select {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: #0d1420;
+  color: var(--fg);
+  font-size: 13px;
+}
+
 /* Conversas e filtros — WP-078 */
 .conversation-list { display: grid; gap: 9px; }
 .conversation-item {
