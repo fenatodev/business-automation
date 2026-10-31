@@ -527,3 +527,11 @@ como mensagem com `sender_type="system"` e prefixo "📝 Nota interna: ", evitan
 migration. Endpoint `GET /conversations/{id}/note` retorna a nota mais recente.
 UI com campo de nota no painel de detalhes da conversa.
 **1983 testes passaram** (11 novos); compileall, diff-check: PASS.
+
+## WP-141 — Operações em massa em conversas (31/10/2026)
+
+O operador só podia fechar/reabrir uma conversa de cada vez. Novo endpoint
+`POST /conversations/bulk-status` aceita 1-100 IDs e atualiza status
+(open/closed) de forma tenant-isolada. UI com checkboxes na lista e barra
+de ação em massa.
+**1991 testes passaram** (8 novos); compileall, diff-check: PASS.
