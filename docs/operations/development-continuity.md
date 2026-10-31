@@ -302,3 +302,16 @@ telefone e email. Ordenação por `sort` (id, created_at, name). Paginação
 com `limit`/`offset` e novo `GET /customers/count`. UI com campo de busca,
 dropdown "Ordenar" e controles Anterior/Próxima.
 **1572 testes passaram** (17 novos); compileall, diff-check: PASS.
+
+## WP-112 — Criar lead manualmente via UI (31/10/2026)
+
+**Problema:** O operador não podia criar leads manualmente.
+
+**Solução:** Formulário "Novo lead" na seção de leads; reusa \`POST /leads\` existente.
+
+**Changes:**
+- \`index.html\`: Botão "+ Novo lead"; formulário com nome, telefone, fonte, interesse.
+- \`app.js\`: \`createLead()\` com POST; handlers show/cancel/submit.
+- \`tests/test_wp112_create_lead_ui.py\`: 17 testes UI.
+
+**Validation:** 1589 testes passaram, 17 novos. compileall ✓, diff-check ✓.

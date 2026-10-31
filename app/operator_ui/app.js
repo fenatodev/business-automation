@@ -1257,6 +1257,60 @@
     notify("Leads atualizados.");
   }));
 
+  // WP-112 — Create lead manually
+  async function createLead(name, phone, source, interest) {
+    if (!bearer) return null;
+    const company = opportunities.length > 0 ? opportunities[0].company_id : null;
+    if (!company) {notify("Empresa não configurada.", true); return null;}
+    const res = await fetch("/leads", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + bearer,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({company_id: company, name, phone, source: source || "manual", interest: interest || null}),
+    });
+    if (res.status === 403) {disconnect("Permissão de operador necessária."); return null;}
+    if (!res.ok) {notify("Falha ao criar lead.", true); return null;}
+    return res.json();
+  }
+
+  $("show-create-lead").addEventListener("click", () => {
+    $("create-lead-form").hidden = false;
+    $("new-lead-name").focus();
+  });
+
+  $("cancel-create-lead").addEventListener("click", () => {
+    $("create-lead-form").hidden = true;
+    $("new-lead-name").value = "";
+    $("new-lead-phone").value = "";
+    $("new-lead-source").value = "";
+    $("new-lead-interest").value = "";
+  });
+
+  $("create-lead-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const name = $("new-lead-name").value.trim();
+    const phone = $("new-lead-phone").value.trim() || null;
+    const source = $("new-lead-source").value.trim() || null;
+    const interest = $("new-lead-interest").value.trim() || null;
+    if (!name) {notify("Nome é obrigatório.", true); return;}
+
+    const button = $("create-lead-form").querySelector('button[type="submit"]');
+    withButton(button, async () => {
+      const created = await createLead(name, phone, source, interest);
+      if (created) {
+        $("create-lead-form").hidden = true;
+        $("new-lead-name").value = "";
+        $("new-lead-phone").value = "";
+        $("new-lead-source").value = "";
+        $("new-lead-interest").value = "";
+        notify("Lead criado.");
+        await refreshLeads();
+      }
+    });
+  });
+
   // WP-099 — Lead search
   const leadSearch = $("lead-search");
   if (leadSearch) {

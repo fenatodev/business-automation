@@ -317,9 +317,41 @@
             <span class="section-index">07 / LEADS</span>
             <h2 id="leads-title">Leads</h2>
           </div>
-          <button id="leads-refresh" type="button">Atualizar</button>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button id="leads-refresh" type="button">Atualizar</button>
+            <button id="show-create-lead" type="button" class="secondary">+ Novo lead</button>
+          </div>
         </div>
         <p class="small">Gerencie leads: altere status para acompanhar o funil comercial.</p>
+
+        <!-- WP-112 — Create lead form -->
+        <form id="create-lead-form" class="create-lead-form" hidden>
+          <h4>Novo lead</h4>
+          <div class="two-col">
+            <div>
+              <label for="new-lead-name">Nome *</label>
+              <input id="new-lead-name" type="text" required maxlength="120">
+            </div>
+            <div>
+              <label for="new-lead-phone">Telefone</label>
+              <input id="new-lead-phone" type="text" maxlength="30">
+            </div>
+          </div>
+          <div class="two-col">
+            <div>
+              <label for="new-lead-source">Fonte</label>
+              <input id="new-lead-source" type="text" maxlength="50" placeholder="ex: site, indicação">
+            </div>
+            <div>
+              <label for="new-lead-interest">Interesse</label>
+              <input id="new-lead-interest" type="text" maxlength="255">
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button type="submit" class="primary">Criar</button>
+            <button type="button" id="cancel-create-lead" class="secondary">Cancelar</button>
+          </div>
+        </form>
 
         <div class="lead-filters">
           <div class="lead-filter-group">
