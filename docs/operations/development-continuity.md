@@ -682,3 +682,10 @@ O painel do operador tinha apenas tema escuro. Adicionado botão de alternância
 de tema (🌙/☀️) na barra superior com persistência em localStorage.
 CSS com [data-theme="light"] override de todas as variáveis customizadas.
 **2158 testes passaram** (20 novos); compileall, diff-check: PASS.
+
+### WP-164 — Botão "Limpar filtros" na seção de tarefas internas
+
+A seção de tarefas internas tinha filtros (status, data, ordenação) mas sem
+botão para limpar todos de uma vez. Adicionado botão "Limpar filtros" seguindo
+o padrão dos outros módulos.
+**2168 testes passaram** (10 novos); compileall, diff-check: PASS.
