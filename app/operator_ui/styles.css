@@ -1526,3 +1526,26 @@ footer {
   color: var(--muted);
   flex: 0 0 auto;
 }
+
+/* WP-181 — Brief search, sort, pagination */
+.briefs-search-inline {
+  flex: 1 1 200px;
+  min-width: 150px;
+}
+.briefs-search-inline input {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+.briefs-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}

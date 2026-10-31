@@ -3450,12 +3450,16 @@
     });
   });
 
-  // WP-178 — Brief list view
+  // WP-178/WP-181 — Brief list view with search, sort, pagination
   const briefStatusLabels = {
     draft: "Rascunho",
     ready_for_review: "Pronto para revisão",
     approved: "Aprovado",
   };
+
+  let briefOffset = 0;
+  const briefPageSize = 50;
+  let briefTotal = 0;
 
   async function briefApi(path, method, body) {
     const allowed = path === "/proposal-briefs" || path === "/proposal-briefs/count" || path.startsWith("/proposal-briefs?");
@@ -3474,18 +3478,56 @@
     return res.json();
   }
 
+  function buildBriefUrl() {
+    const params = [];
+    const status = $("briefs-status-filter") ? $("briefs-status-filter").value : "";
+    const q = $("briefs-search") ? $("briefs-search").value.trim() : "";
+    const sort = $("briefs-sort") ? $("briefs-sort").value : "created_at";
+    if (status) params.push("status=" + encodeURIComponent(status));
+    if (q) params.push("q=" + encodeURIComponent(q));
+    params.push("sort=" + encodeURIComponent(sort));
+    params.push("limit=" + briefPageSize);
+    params.push("offset=" + briefOffset);
+    return "/proposal-briefs" + (params.length ? "?" + params.join("&") : "");
+  }
+
+  function buildBriefCountUrl() {
+    const params = [];
+    const status = $("briefs-status-filter") ? $("briefs-status-filter").value : "";
+    const q = $("briefs-search") ? $("briefs-search").value.trim() : "";
+    if (status) params.push("status=" + encodeURIComponent(status));
+    if (q) params.push("q=" + encodeURIComponent(q));
+    return "/proposal-briefs/count" + (params.length ? "?" + params.join("&") : "");
+  }
+
   async function refreshBriefs() {
     if (!bearer) return;
-    const status = $("briefs-status-filter") ? $("briefs-status-filter").value : "";
     try {
-      const params = [];
-      if (status) params.push("status=" + encodeURIComponent(status));
-      const path = "/proposal-briefs" + (params.length ? "?" + params.join("&") : "");
-      const briefs = await briefApi(path);
+      const [briefs, countData] = await Promise.all([
+        briefApi(buildBriefUrl()),
+        briefApi(buildBriefCountUrl()),
+      ]);
+      briefTotal = countData.count || 0;
       renderBriefs(briefs);
+      updateBriefPagination();
     } catch (e) {
       console.error("[refreshBriefs]", e);
     }
+  }
+
+  function updateBriefPagination() {
+    const pag = $("briefs-pagination");
+    if (!pag) return;
+    if (briefTotal <= briefPageSize) {
+      pag.hidden = true;
+      return;
+    }
+    pag.hidden = false;
+    const page = Math.floor(briefOffset / briefPageSize) + 1;
+    const totalPages = Math.ceil(briefTotal / briefPageSize);
+    $("briefs-page-info").textContent = "Página " + page + " de " + totalPages;
+    $("briefs-prev-page").disabled = briefOffset === 0;
+    $("briefs-next-page").disabled = briefOffset + briefPageSize >= briefTotal;
   }
 
   function renderBriefs(briefs) {
@@ -3522,12 +3564,46 @@
   }
 
   $("briefs-refresh").addEventListener("click", () => withButton($("briefs-refresh"), async () => {
+    briefOffset = 0;
     await refreshBriefs();
   }));
 
   $("briefs-status-filter").addEventListener("change", () => {
+    briefOffset = 0;
     refreshBriefs().catch(() => {});
   });
+
+  $("briefs-sort").addEventListener("change", () => {
+    briefOffset = 0;
+    refreshBriefs().catch(() => {});
+  });
+
+  $("briefs-search").addEventListener("input", debounce(() => {
+    briefOffset = 0;
+    refreshBriefs().catch(() => {});
+  }, 300));
+
+  $("briefs-prev-page").addEventListener("click", () => {
+    briefOffset = Math.max(0, briefOffset - briefPageSize);
+    refreshBriefs().catch(() => {});
+  });
+
+  $("briefs-next-page").addEventListener("click", () => {
+    briefOffset += briefPageSize;
+    refreshBriefs().catch(() => {});
+  });
+
+  $("briefs-clear-filters").addEventListener("click", () => {
+    if ($("briefs-status-filter")) $("briefs-status-filter").value = "";
+    if ($("briefs-search")) $("briefs-search").value = "";
+    if ($("briefs-sort")) $("briefs-sort").value = "created_at";
+    briefOffset = 0;
+    refreshBriefs().catch(() => {});
+  });
+
+  // Reset brief offset on disconnect
+  const origDisconnect = disconnect;
+  // (disconnect already handles interval cleanup)
 
   // Load briefs on workspace visible
   workspaceObserver.observe($("briefs-list") ? $("briefs-list").closest(".panel") : null, {attributes: true});

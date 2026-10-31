@@ -800,3 +800,11 @@ Adicionado `POST /opportunities/bulk-delete` e `POST /conversations/bulk-delete`
 tenant-isolados, seguindo o padrão de leads/customers.
 
 **2322 testes passaram** (8 novos); compileall, diff-check: PASS.
+
+### WP-181 — Busca, ordenação e paginação de briefs
+
+O módulo de briefs tinha filtro por status mas não tinha busca, ordenação
+nem paginação. Adicionado `?q=`, `?sort=`, `?limit=`, `?offset=` nos
+endpoints list e count, completando a paridade com os outros módulos.
+
+**2335 testes passaram** (13 novos); compileall, diff-check: PASS.

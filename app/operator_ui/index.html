@@ -860,8 +860,28 @@
               <option value="approved">Aprovado</option>
             </select>
           </div>
+          <div class="briefs-filter-group">
+            <label for="briefs-sort">Ordenar</label>
+            <select id="briefs-sort">
+              <option value="created_at">Data</option>
+              <option value="id">ID</option>
+              <option value="status">Status</option>
+            </select>
+          </div>
+          <div class="briefs-filter-group briefs-search-inline">
+            <label for="briefs-search">Buscar</label>
+            <input type="text" id="briefs-search" placeholder="Buscar por título ou referência...">
+          </div>
+          <div class="briefs-filter-group" style="align-self:flex-end;">
+            <button id="briefs-clear-filters" type="button" class="secondary">Limpar filtros</button>
+          </div>
         </div>
         <div id="briefs-list" class="briefs-list"></div>
+        <div id="briefs-pagination" class="briefs-pagination" hidden>
+          <button id="briefs-prev-page" type="button" class="secondary">Anterior</button>
+          <span id="briefs-page-info" class="small"></span>
+          <button id="briefs-next-page" type="button" class="secondary">Próxima</button>
+        </div>
       </section>
     </main>
 

@@ -854,6 +854,10 @@ def reject_proposal_brief(
 @router.get("/proposal-briefs")
 def list_proposal_briefs(
     status: str | None = Query(default=None, description="Filter by brief status"),
+    q: str | None = Query(default=None, description="Search keywords in title and offer reference"),
+    sort: str = Query(default="created_at", description="Sort by: created_at, id, status"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
@@ -872,12 +876,26 @@ def list_proposal_briefs(
         )
         .join(Opportunity, ProposalBrief.opportunity_id == Opportunity.id)
         .where(Opportunity.company_id == identity.company_id)
-        .order_by(desc(ProposalBrief.created_at))
     )
 
     if status:
         query = query.where(ProposalBrief.status == status)
 
+    if q:
+        pattern = f"%{q}%"
+        query = query.where(
+            func.lower(Opportunity.title).like(func.lower(pattern)) |
+            func.lower(ProposalBrief.offer_reference).like(func.lower(pattern))
+        )
+
+    if sort == "created_at":
+        query = query.order_by(desc(ProposalBrief.created_at), desc(ProposalBrief.id))
+    elif sort == "status":
+        query = query.order_by(ProposalBrief.status, ProposalBrief.id)
+    else:
+        query = query.order_by(ProposalBrief.id)
+
+    query = query.offset(offset).limit(limit)
     rows = db.execute(query).all()
     return [
         {
@@ -895,6 +913,7 @@ def list_proposal_briefs(
 @router.get("/proposal-briefs/count")
 def count_proposal_briefs(
     status: str | None = Query(default=None, description="Filter by brief status"),
+    q: str | None = Query(default=None, description="Search keywords in title and offer reference"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
@@ -908,6 +927,13 @@ def count_proposal_briefs(
 
     if status:
         query = query.where(ProposalBrief.status == status)
+
+    if q:
+        pattern = f"%{q}%"
+        query = query.where(
+            func.lower(Opportunity.title).like(func.lower(pattern)) |
+            func.lower(ProposalBrief.offer_reference).like(func.lower(pattern))
+        )
 
     count = db.execute(query).scalar_one()
     return {"count": count}
