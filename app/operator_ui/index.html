@@ -84,13 +84,39 @@
             </form>
           </section>
 
-          <section class="panel" aria-labelledby="list-title">
+          <section class="panel" aria-labelledby="pipeline-title">
             <div class="panel-heading">
               <div>
                 <span class="section-index">02 / CARTEIRA</span>
-                <h2 id="list-title">Oportunidades</h2>
+                <h2 id="pipeline-title">Pipeline de oportunidades</h2>
               </div>
-              <button id="refresh-button" type="button" class="secondary">Atualizar</button>
+              <button id="pipeline-refresh" type="button" class="secondary">Atualizar</button>
+            </div>
+            <div id="pipeline-summary" class="pipeline-summary" aria-label="Resumo do pipeline">
+              <button class="pipeline-chip" data-filter="all" aria-pressed="true">
+                <span class="pipeline-chip-label">Todas</span>
+                <span id="pipeline-all" class="pipeline-chip-count">—</span>
+              </button>
+              <button class="pipeline-chip" data-filter="pending">
+                <span class="pipeline-chip-label">Pendente</span>
+                <span id="pipeline-pending" class="pipeline-chip-count">—</span>
+              </button>
+              <button class="pipeline-chip" data-filter="follow">
+                <span class="pipeline-chip-label">Acompanhar</span>
+                <span id="pipeline-follow" class="pipeline-chip-count">—</span>
+              </button>
+              <button class="pipeline-chip" data-filter="prepare_proposal">
+                <span class="pipeline-chip-label">Proposta</span>
+                <span id="pipeline-prepare_proposal" class="pipeline-chip-count">—</span>
+              </button>
+              <button class="pipeline-chip" data-filter="in_progress">
+                <span class="pipeline-chip-label">Em andamento</span>
+                <span id="pipeline-in_progress" class="pipeline-chip-count">—</span>
+              </button>
+              <button class="pipeline-chip" data-filter="ignore">
+                <span class="pipeline-chip-label">Ignorado</span>
+                <span id="pipeline-ignore" class="pipeline-chip-count">—</span>
+              </button>
             </div>
             <p id="list-meta" class="small">Nenhuma consulta realizada.</p>
             <div id="opportunity-list" class="opportunity-list" aria-label="Lista de oportunidades"></div>

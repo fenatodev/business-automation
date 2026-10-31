@@ -94,11 +94,11 @@ e mostra leases expirados sem recuperá-los como efeito da consulta.
 Próxima WP executável: apresentar lista/resumo no `/operator`, usando somente
 os endpoints existentes, sem expor payload e sem iniciar worker automaticamente.
 
-## WP-071 — fluxo de aprovação do proposal brief (30/10/2026)
+## WP-072 — visão de pipeline de oportunidades (30/10/2026)
 
-[PR #155](https://github.com/fenatodev/business-automation/pull/155),
-branch `wp/071-brief-approval-flow`, commit `6fb23b7`.
-`"approved"` adicionado ao ProposalBrief status; `"in_progress"` ao
-Opportunity next_action. Endpoint atômico `PATCH /proposal-brief/approve`
-avalia brief e avança opportunity. Botão de aprovação na UI do operador.
-**1135 testes passaram**; compileall, diff-check: PASS.
+[PR #156](https://github.com/fenatodev/business-automation/pull/156),
+branch `wp/072-opportunity-pipeline`, commit `e374827`.
+Filtro opcional `?next_action=` em `GET /opportunities`; novo endpoint
+`GET /opportunities/pipeline-summary` com contagens por status, tenant-isolado.
+UI do operador com chips clicáveis de filtro e resumo do pipeline.
+**1154 testes passaram**; compileall, diff-check: PASS.
