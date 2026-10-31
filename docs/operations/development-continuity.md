@@ -872,3 +872,10 @@ Adicionado botão "Limpar" que reseta formulário e esconde decisão.
 Adicionado `sourceLabels` para exibir fonte em português.
 
 **2387 testes passaram** (10 novos); compileall, diff-check: PASS.
+
+### WP-191 — Corrigir filtro de fonte das oportunidades
+
+O dropdown de filtro de fonte não incluía "99freelas", que é uma fonte
+válida usada no sistema. Adicionado ao dropdown e atualizado README.
+
+**2387 testes passaram**; compileall, diff-check: PASS.
