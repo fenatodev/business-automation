@@ -312,7 +312,14 @@ footer {
 .conv-search-inline button {
   padding: 6px 12px;
   font-size: 0.82rem;
-  white-space: nowrap;
+}
+.conv-date-filter {
+  padding: 6px 8px;
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
 }
 
 .conv-detail {
