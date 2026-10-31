@@ -378,6 +378,38 @@ footer {
   border-top: 1px solid var(--line);
 }
 
+/* WP-140 — Conversation internal note */
+.conv-note-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.conv-note-section h4 {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.conv-note-section textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  resize: vertical;
+  margin-bottom: 8px;
+}
+.conv-note-section button {
+  font-size: 0.82rem;
+}
+#conv-note-status {
+  margin-left: 8px;
+  color: var(--success);
+}
+
 /* Pagination controls — WP-079 */
 .conv-pagination {
   display: flex;

@@ -518,3 +518,12 @@ chip mostra status e contagem via /opportunities/pipeline-summary. Ao clicar,
 o filtro next_action é aplicado à lista. 7 chips: Todas, Pendente, Acompanhar,
 Proposta, Em andamento, Concluída, Perdida.
 **1972 testes passaram** (19 novos); compileall, diff-check: PASS.
+
+## WP-140 — Notas internas em conversas (31/10/2026)
+
+O operador não podia registrar notas internas em conversas. Adicionado campo
+`note` opcional ao schema `ConversationUpdate`. Ao salvar, a nota é armazenada
+como mensagem com `sender_type="system"` e prefixo "📝 Nota interna: ", evitando
+migration. Endpoint `GET /conversations/{id}/note` retorna a nota mais recente.
+UI com campo de nota no painel de detalhes da conversa.
+**1983 testes passaram** (11 novos); compileall, diff-check: PASS.
