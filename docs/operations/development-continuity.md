@@ -757,3 +757,12 @@ endpoint PATCH usa model_dump(exclude_unset=True) para atualizar
 apenas os campos fornecidos.
 
 **2272 testes passaram** (10 novos); compileall, diff-check: PASS.
+
+### WP-175 — Badges visuais em leads e conversas
+
+O operador tinha badge apenas nas oportunidades pendentes.
+Adicionado badge vermelho ao lado de "Leads" (contagem de leads novos)
+e "Conversas" (contagem de conversas abertas).
+Polling de notificações atualiza os 3 badges em paralelo.
+
+**2272 testes passaram**; compileall, diff-check: PASS.
