@@ -2076,7 +2076,7 @@
 
   async function customerApi(path, method, body) {
     if (!bearer) throw new Error("Conecte um operador.");
-    const allowedPattern = /^\/customers(\/count)?(\?.*)?$/;
+    const allowedPattern = /^\/customers(\/(count|export\.csv))?(\?.*)?$/;
     if (!allowedPattern.test(path.split("#")[0])) {
       console.error("[customerApi] Rota não permitida:", path);
       return;
@@ -2590,6 +2590,41 @@
     const url = "/customers/export.csv" + (params.length ? "?" + params.join("&") : "");
     downloadCsv(url, "customers.csv");
     notify("Exportando customers...");
+  });
+
+  // WP-158 — Import CSV for customers
+  $("customers-import-csv").addEventListener("click", () => {
+    $("customers-import-file").click();
+  });
+
+  $("customers-import-file").addEventListener("change", async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (!bearer) {notify("Não conectado.", true); return;}
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch("/customers/import.csv", {
+        method: "POST",
+        headers: {"Authorization": "Bearer " + bearer},
+        body: formData,
+      });
+      if (res.status === 403) {disconnect("Permissão de operador necessária."); return;}
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        notify("Falha ao importar: " + (data.detail || "erro desconhecido"), true);
+        return;
+      }
+      const data = await res.json();
+      notify(
+        "Importação concluída: " + data.imported + " importado(s), " +
+        data.skipped + " duplicata(s), " + data.errors + " erro(s)."
+      );
+      await refreshCustomers();
+    } catch (err) {
+      notify("Falha ao importar CSV.", true);
+    }
+    event.target.value = "";
   });
 
   $("rq-export-csv").addEventListener("click", () => {

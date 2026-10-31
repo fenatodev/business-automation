@@ -1,7 +1,7 @@
 import csv
 import io
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
 from fastapi.responses import Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -218,6 +218,93 @@ def list_company_customers(
         .where(Customer.company_id == company_id)
         .order_by(Customer.id)
     ).all()
+
+
+@router.post("/customers/import.csv")
+def import_customers_csv(
+    file: UploadFile,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Import customers from a CSV file.
+
+    Expected columns: Nome, Telefone, E-mail (optional).
+    Duplicate phones are skipped. Max 500 rows per import.
+    Returns: {imported, skipped, errors}
+    """
+    if file.content_type not in ("text/csv", "application/csv", None):
+        raise HTTPException(
+            status_code=400,
+            detail="Apenas arquivos CSV são aceitos",
+        )
+
+    content = file.file.read().decode("utf-8-sig")
+    reader = csv.DictReader(io.StringIO(content))
+
+    # Validate header
+    if reader.fieldnames is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Arquivo CSV vazio ou inválido",
+        )
+
+    required_columns = {"Nome", "Telefone"}
+    available = set(reader.fieldnames or [])
+    if not required_columns.issubset(available):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Colunas obrigatórias ausentes: {required_columns - available}",
+        )
+
+    # Load existing phones for deduplication
+    existing_phones = {
+        row[0]
+        for row in db.execute(
+            select(Customer.phone).where(Customer.company_id == identity.company_id)
+        ).fetchall()
+    }
+
+    imported = 0
+    skipped = 0
+    errors = 0
+    max_rows = 500
+    row_count = 0
+
+    for row in reader:
+        if row_count >= max_rows:
+            break
+        row_count += 1
+
+        name = (row.get("Nome") or "").strip()
+        phone = (row.get("Telefone") or "").strip()
+        email = (row.get("E-mail") or "").strip() or None
+
+        if not name or not phone:
+            errors += 1
+            continue
+
+        if phone in existing_phones:
+            skipped += 1
+            continue
+
+        new_customer = Customer(
+            company_id=identity.company_id,
+            name=name,
+            phone=phone,
+            email=email,
+        )
+        db.add(new_customer)
+        existing_phones.add(phone)
+        imported += 1
+
+    db.commit()
+
+    return {
+        "imported": imported,
+        "skipped": skipped,
+        "errors": errors,
+        "total_processed": row_count,
+    }
 
 
 @router.post("/customers")
