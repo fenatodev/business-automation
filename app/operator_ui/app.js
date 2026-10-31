@@ -291,7 +291,8 @@
   // Review queue uses the same in-memory Bearer session, with a strict route allowlist.
   async function reviewApi(path, method = "GET", body) {
     if (!bearer) throw new Error("Conecte um operador.");
-    if (!(/^\/review-queue\/$/.test(path) ||
+    if (typeof path !== "string" || /[\u0000-\u0020\u007f]/.test(path) ||
+        !(/^\/review-queue\/(?:\?limit=(?:[1-9]|[1-9][0-9]|100)&offset=(?:0|[1-9][0-9]*))?$/.test(path) ||
           /^\/review-queue\/summary$/.test(path) ||
           /^\/review-queue\/aging$/.test(path) ||
           /^\/review-queue\/synthetic-trigger$/.test(path) ||
