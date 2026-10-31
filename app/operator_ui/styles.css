@@ -1582,3 +1582,33 @@ footer {
   color: var(--accent);
   margin: 0;
 }
+
+/* WP-187 — Brief detail panel */
+.detail-panel {
+  margin: 12px 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-bg);
+}
+.detail-panel-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.detail-field {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.detail-field-label {
+  font-weight: 600;
+  min-width: 180px;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.detail-field-value {
+  flex: 1 1 auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

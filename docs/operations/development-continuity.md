@@ -839,3 +839,11 @@ Adicionado `POST /proposal-briefs/bulk-delete` tenant-isolado com 1-100 IDs.
 Botão "Excluir selecionados" na barra bulk existente.
 
 **2361 testes passaram** (6 novos); compileall, diff-check: PASS.
+
+### WP-187 — Detalhes expandidos do proposal brief
+
+O operador via apenas título, referência e status na lista de briefs.
+Adicionado `GET /proposal-briefs/{id}` retornando todos os campos (diagnóstico,
+escopo, entregáveis, critérios de aceitação). Painel clicável na UI.
+
+**2366 testes passaram** (5 novos); compileall, diff-check: PASS.

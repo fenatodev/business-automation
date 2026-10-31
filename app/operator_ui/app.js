@@ -3465,6 +3465,7 @@
   async function briefApi(path, method, body) {
     const allowed = path === "/proposal-briefs" || path === "/proposal-briefs/count" ||
       path === "/proposal-briefs/bulk-status" || path === "/proposal-briefs/bulk-delete" ||
+      /^\/proposal-briefs\/\d+$/.test(path) ||
       path.startsWith("/proposal-briefs?");
     if (!allowed) throw new Error("Path não permitido: " + path);
     const url = path + (path.includes("?") ? "&" : "?") + "t=" + Date.now();
@@ -3554,12 +3555,14 @@
     briefs.forEach((brief) => {
       const item = document.createElement("div");
       item.className = "brief-item";
+      item.style.cursor = "pointer";
       // WP-184 — Checkbox for bulk selection
       const cb = document.createElement("input");
       cb.type = "checkbox";
       cb.className = "briefs-checkbox";
       cb.dataset.id = brief.id;
-      cb.addEventListener("change", () => {
+      cb.addEventListener("change", (e) => {
+        e.stopPropagation();
         if (cb.checked) { selectedBriefIds.add(brief.id); }
         else { selectedBriefIds.delete(brief.id); }
         updateBriefBulkBar();
@@ -3581,8 +3584,58 @@
       item.appendChild(ref);
       item.appendChild(status);
       item.appendChild(date);
+      // WP-187 — Click to show detail panel
+      item.addEventListener("click", (e) => {
+        if (e.target.type === "checkbox") return;
+        selectBrief(brief.id, brief.opportunity_title || "Sem título");
+      });
       list.appendChild(item);
     });
+  }
+
+  // WP-187 — Load and display brief detail
+  async function selectBrief(briefId, title) {
+    const detail = $("brief-detail");
+    if (!detail) return;
+    // Toggle close
+    if (!detail.hidden && detail.dataset.briefId == briefId) {
+      detail.hidden = true;
+      return;
+    }
+    detail.hidden = false;
+    detail.dataset.briefId = briefId;
+    const content = $("brief-detail-content");
+    if (content) content.textContent = "Carregando...";
+    try {
+      const brief = await briefApi("/proposal-briefs/" + briefId);
+      if (content) {
+        while (content.firstChild) content.removeChild(content.firstChild);
+        const fields = [
+          ["Referência", brief.offer_reference],
+          ["Status", briefStatusLabels[brief.status] || brief.status],
+          ["Oportunidade", title],
+          ["Diagnóstico", brief.diagnosis],
+          ["Escopo", brief.scope],
+          ["Entregáveis", brief.deliverables],
+          ["Critérios de aceitação", brief.acceptance_criteria],
+        ];
+        fields.forEach(([label, value]) => {
+          const row = document.createElement("div");
+          row.className = "detail-field";
+          const labelEl = document.createElement("span");
+          labelEl.className = "detail-field-label";
+          labelEl.textContent = label + ":";
+          const valueEl = document.createElement("span");
+          valueEl.className = "detail-field-value";
+          valueEl.textContent = value || "—";
+          row.appendChild(labelEl);
+          row.appendChild(valueEl);
+          content.appendChild(row);
+        });
+      }
+    } catch (e) {
+      if (content) content.textContent = "Falha ao carregar brief.";
+    }
   }
 
   // WP-184 — Bulk status handlers for briefs

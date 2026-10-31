@@ -1021,6 +1021,44 @@ def export_briefs_csv(
 
 
 # ---------------------------------------------------------------------------
+# WP-187 — Get single brief detail (tenant-isolated)
+# Placed after static paths (/count, /export.csv) to avoid route conflict.
+# ---------------------------------------------------------------------------
+
+
+@router.get("/proposal-briefs/{brief_id}")
+def get_proposal_brief(
+    brief_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Get a single proposal brief with all fields (tenant-isolated)."""
+    brief = db.execute(
+        select(ProposalBrief)
+        .join(Opportunity, ProposalBrief.opportunity_id == Opportunity.id)
+        .where(
+            ProposalBrief.id == brief_id,
+            Opportunity.company_id == identity.company_id,
+        )
+    ).scalar_one_or_none()
+
+    if brief is None:
+        raise HTTPException(status_code=404, detail="Brief não encontrado")
+
+    return {
+        "id": brief.id,
+        "opportunity_id": brief.opportunity_id,
+        "offer_reference": brief.offer_reference,
+        "diagnosis": brief.diagnosis,
+        "scope": brief.scope,
+        "deliverables": brief.deliverables,
+        "acceptance_criteria": brief.acceptance_criteria,
+        "status": brief.status,
+        "created_at": brief.created_at.isoformat() if brief.created_at else None,
+    }
+
+
+# ---------------------------------------------------------------------------
 # WP-180 — Bulk delete opportunities
 # ---------------------------------------------------------------------------
 
