@@ -302,3 +302,10 @@ telefone e email. Ordenação por `sort` (id, created_at, name). Paginação
 com `limit`/`offset` e novo `GET /customers/count`. UI com campo de busca,
 dropdown "Ordenar" e controles Anterior/Próxima.
 **1572 testes passaram** (17 novos); compileall, diff-check: PASS.
+
+## WP-109 — Exportação CSV de conversas (31/10/2026)
+
+O operador podia exportar oportunidades, leads e customers, mas não conversas.
+Adicionado `GET /companies/{company_id}/conversations/export.csv` retornando
+CSV tenant-isolado com conversas e mensagens concatenadas. Botão "Exportar CSV"
+na seção de conversas. **1579 testes passaram** (7 novos); compileall, diff-check: PASS.

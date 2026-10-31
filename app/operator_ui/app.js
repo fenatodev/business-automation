@@ -678,6 +678,7 @@
     if (!bearer) throw new Error("Conecte um operador.");
     if (!(/^\/companies\/\d+\/conversations($|\?)/.test(path) ||
           /^\/companies\/\d+\/conversations\/count($|\?)/.test(path) ||
+          /^\/companies\/\d+\/conversations\/export\.csv$/.test(path) ||
           /^\/conversations\/$/.test(path) ||
           /^\/conversations\/\d+\/$/.test(path) ||
           /^\/conversations\/\d+\/messages$/.test(path))) {
@@ -929,6 +930,26 @@
       notify("Conversas atualizadas.");
     });
   });
+
+  // WP-109 — Export conversations CSV
+  $("conv-export-csv").addEventListener("click", () => withButton($("conv-export-csv"), async () => {
+    if (!bearer) return;
+    const company = opportunities.length > 0 ? opportunities[0].company_id : null;
+    if (!company) {notify("Empresa não configurada.", true); return;}
+    const res = await fetch("/companies/" + company + "/conversations/export.csv", {
+      headers: {"Authorization": "Bearer " + bearer},
+    });
+    if (res.status === 401) {disconnect("Credencial inválida."); return;}
+    if (!res.ok) {notify("Falha ao exportar conversas.", true); return;}
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "conversations.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    notify("Conversas exportadas.");
+  }));
 
   $("conv-prev").addEventListener("click", () => withButton($("conv-prev"), async () => {
     convOffset = Math.max(0, convOffset - convPageSize);

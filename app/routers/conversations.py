@@ -1,4 +1,8 @@
+import csv
+import io
+
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import Response
 from sqlalchemy import func, select, desc
 from sqlalchemy.orm import Session, joinedload
 
@@ -353,3 +357,62 @@ def list_messages(
         .where(Message.conversation_id == conversation.id)
         .order_by(Message.id)
     ).all()
+
+
+@router.get("/companies/{company_id}/conversations/export.csv")
+def export_conversations_csv(
+    company_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator_company),
+):
+    """Export all tenant conversations with their messages as CSV."""
+    company = db.scalar(
+        select(Company).where(Company.id == identity.company_id)
+    )
+
+    if company is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Company not found",
+        )
+
+    conversations = db.scalars(
+        select(Conversation)
+        .where(Conversation.company_id == company_id)
+        .order_by(Conversation.id)
+    ).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "ID", "Canal", "Status", "Lead", "Customer",
+        "Mensagens", "Criado em",
+    ])
+
+    for conv in conversations:
+        messages = db.scalars(
+            select(Message)
+            .where(Message.conversation_id == conv.id)
+            .order_by(Message.id)
+        ).all()
+        message_text = " | ".join(
+            f"[{msg.sender_type}] {msg.content}" for msg in messages
+        ) if messages else ""
+
+        writer.writerow([
+            conv.id,
+            conv.channel,
+            conv.status,
+            conv.lead_id or "",
+            conv.customer_id or "",
+            message_text,
+            conv.created_at.isoformat() if conv.created_at else "",
+        ])
+
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=conversations.csv",
+        },
+    )
