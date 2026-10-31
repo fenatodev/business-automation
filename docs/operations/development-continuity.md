@@ -462,3 +462,13 @@ terminais; in_progress é obrigatório antes de done/lost. Bulk triage
 pula oportunidades com transição inválida.
 **1874 testes passaram** (11 novos); compileall, diff-check: PASS.
 PR #212: https://github.com/fenatodev/business-automation/pull/212
+
+## WP-134 — Filtros e ordenação na review queue UI (31/10/2026)
+
+A review queue na UI tinha paginação mas não tinha filtros visíveis de
+status e ordenação. Adicionado dropdown de status (Todos, Pendente,
+Aprovado, Rejeitado), dropdown de ordenação (Data, ID, Status) e botão
+Limpar. buildReviewUrl() e buildReviewCountUrl() conectam os filtros
+ao backend. reviewApi allowlist atualizada para /count e query params.
+**1891 testes passaram** (17 novos); compileall, diff-check: PASS.
+PR #213: https://github.com/fenatodev/business-automation/pull/213
