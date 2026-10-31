@@ -108,12 +108,51 @@ def get_dashboard(
     for status, count in rq_rows:
         review_queue[status] = int(count)
 
+    # WP-161 — Next actions: items needing immediate attention
+    next_actions = []
+    if opportunities.get("pending", 0) > 0:
+        next_actions.append({
+            "type": "opportunity",
+            "label": f"{opportunities['pending']} oportunidade(s) pendente(s) de triagem",
+            "count": opportunities["pending"],
+            "section": "opportunities",
+        })
+    if conversations.get("open", 0) > 0:
+        next_actions.append({
+            "type": "conversation",
+            "label": f"{conversations['open']} conversa(s) aberta(s)",
+            "count": conversations["open"],
+            "section": "conversations",
+        })
+    if leads.get("new", 0) > 0:
+        next_actions.append({
+            "type": "lead",
+            "label": f"{leads['new']} lead(s) novo(s)",
+            "count": leads["new"],
+            "section": "leads",
+        })
+    if task_summary.get("failed", 0) > 0:
+        next_actions.append({
+            "type": "task",
+            "label": f"{task_summary['failed']} tarefa(s) falhada(s)",
+            "count": task_summary["failed"],
+            "section": "tasks",
+        })
+    if review_queue.get("pending", 0) > 0:
+        next_actions.append({
+            "type": "review",
+            "label": f"{review_queue['pending']} item(ns) na fila de revisão",
+            "count": review_queue["pending"],
+            "section": "review_queue",
+        })
+
     return {
         "opportunities": opportunities,
         "conversations": conversations,
         "leads": leads,
         "tasks": task_summary,
         "review_queue": review_queue,
+        "next_actions": next_actions,
     }
 
 

@@ -667,3 +667,11 @@ Orçamento, Prazo e Requisitos. Deduplicação por external_url, tenant isolatio
 limite de 500 linhas. Botão "Importar CSV" na UI. `source="import"` adicionado
 ao OpportunityCreate Literal.
 **2129 testes passaram** (14 novos); compileall, diff-check: PASS.
+
+### WP-161 — Resumo de próximas ações no dashboard
+
+O dashboard mostrava contagens mas não destacava o que precisa atenção imediata.
+Adicionado `next_actions` ao endpoint /internal-tasks/dashboard derivando itens
+pendentes: oportunidades sem triagem, conversas abertas, leads novos, tarefas
+falhadas e review queue pendente. Seção visual "⚡ Próximas ações" no dashboard.
+**2138 testes passaram** (9 novos); compileall, diff-check: PASS.
