@@ -8,7 +8,7 @@ import csv
 import io
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
-from sqlalchemy import select
+from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
 
 from app.auth import AccessIdentity
@@ -93,15 +93,49 @@ def trigger_synthetic_intake(
 
 
 @router.get("/", response_model=list[ReviewQueueItemOut])
-def list_pending_review_items(
+def list_review_items(
+    status: str | None = Query(None, description="Filter by status: pending, approved, rejected (default: pending)"),
+    sort: str = Query(default="created_at", description="Sort by: id, created_at, status"),
     limit: int = Query(default=100, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ) -> list[ReviewQueueItemOut]:
-    """List all pending review queue items for the authenticated tenant."""
-    items = pipeline.list_pending_items(db, identity.company_id, limit=limit, offset=offset)
+    """List review queue items for the authenticated tenant with optional filters.
+
+    Defaults to pending items only for backward compatibility.
+    """
+    stmt = select(ReviewQueueItem).where(ReviewQueueItem.company_id == identity.company_id)
+    if status is not None:
+        stmt = stmt.where(ReviewQueueItem.status == status)
+    else:
+        # Default to pending for backward compatibility
+        stmt = stmt.where(ReviewQueueItem.status == "pending")
+    if sort == "created_at":
+        stmt = stmt.order_by(desc(ReviewQueueItem.created_at), ReviewQueueItem.id)
+    elif sort == "status":
+        stmt = stmt.order_by(ReviewQueueItem.status, ReviewQueueItem.id)
+    else:
+        stmt = stmt.order_by(ReviewQueueItem.id)
+    stmt = stmt.offset(offset).limit(limit)
+    items = db.scalars(stmt).all()
     return [ReviewQueueItemOut.model_validate(item) for item in items]
+
+
+@router.get("/count")
+def count_review_items(
+    status: str | None = Query(None, description="Filter by status"),
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+) -> dict[str, int]:
+    """Count review queue items with optional status filter."""
+    stmt = select(func.count()).select_from(ReviewQueueItem).where(
+        ReviewQueueItem.company_id == identity.company_id
+    )
+    if status is not None:
+        stmt = stmt.where(ReviewQueueItem.status == status)
+    total = db.scalar(stmt)
+    return {"total": total}
 
 
 @router.get("/summary", response_model=dict[str, int])
