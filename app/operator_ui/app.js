@@ -1094,10 +1094,12 @@
     if (!bearer) return;
     const status = $("lead-filter-status").value;
     const q = $("lead-search") ? $("lead-search").value.trim() : "";
+    const sort = $("lead-sort") ? $("lead-sort").value : "id";
     let path = "/leads";
     const params = [];
     if (status) params.push("status=" + encodeURIComponent(status));
     if (q) params.push("q=" + encodeURIComponent(q));
+    if (sort !== "id") params.push("sort=" + encodeURIComponent(sort));
     params.push("limit=" + leadPageSize);
     params.push("offset=" + leadOffset);
     if (params.length) path += "?" + params.join("&");
@@ -1295,6 +1297,12 @@
     leadOffset += leadPageSize;
     await refreshLeads();
   }));
+
+  // WP-101 — Lead sorting
+  $("lead-sort").addEventListener("change", () => {
+    leadOffset = 0;
+    refreshLeads().catch(() => {});
+  });
 
   // Customers — WP-086
 

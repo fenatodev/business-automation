@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, select
+from sqlalchemy import func, select, desc
 from sqlalchemy.orm import Session
 
 from app.auth import AccessIdentity
@@ -75,6 +75,7 @@ def create_lead(
 def list_leads(
     status: str | None = None,
     q: str | None = Query(default=None, description="Search keywords in name and interest"),
+    sort: str = Query(default="id", description="Sort by: id, created_at, status"),
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
@@ -90,7 +91,13 @@ def list_leads(
             func.lower(Lead.name).like(func.lower(pattern)) |
             func.lower(Lead.interest).like(func.lower(pattern))
         )
-    query = query.order_by(Lead.id).offset(offset).limit(limit)
+    if sort == "created_at":
+        query = query.order_by(desc(Lead.created_at), Lead.id)
+    elif sort == "status":
+        query = query.order_by(Lead.status, Lead.id)
+    else:
+        query = query.order_by(Lead.id)
+    query = query.offset(offset).limit(limit)
     return db.scalars(query).all()
 
 
