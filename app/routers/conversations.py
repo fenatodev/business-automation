@@ -10,7 +10,7 @@ from app.dependencies import (
     require_operator_company,
 )
 from app.models import Company, Conversation, Customer, Lead, Message
-from app.schemas import AgentRequest, ConversationCreate, MessageCreate
+from app.schemas import AgentRequest, ConversationCreate, ConversationUpdate, MessageCreate
 from app.services.agent import AgentServiceError, generate_agent_reply
 
 
@@ -111,6 +111,26 @@ def get_conversation(
         conversation_id,
         identity.company_id,
     )
+
+
+@router.patch("/conversations/{conversation_id}")
+def update_conversation(
+    conversation_id: int,
+    data: ConversationUpdate,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    conversation = _get_tenant_conversation(
+        db,
+        conversation_id,
+        identity.company_id,
+    )
+
+    conversation.status = data.status
+    db.commit()
+    db.refresh(conversation)
+
+    return conversation
 
 
 @router.get("/companies/{company_id}/conversations")

@@ -631,6 +631,7 @@
     showConversationList();
     $("conv-detail").hidden = false;
     $("conv-reply-toggle").hidden = false;
+    $("conv-close-toggle").hidden = false;
     $("reply-conv-id").value = id;
     const conv = conversations.find((c) => c.id === id);
     const channel = conv ? (channelLabels[conv.channel] || conv.channel) : "Conversa";
@@ -692,6 +693,7 @@
       selectedConvId = null;
       $("conv-detail").hidden = true;
       $("conv-reply-toggle").hidden = true;
+      $("conv-close-toggle").hidden = true;
       $("human-reply-form").hidden = true;
       showConversationList();
     }
@@ -783,6 +785,16 @@
     const form = $("human-reply-form");
     form.hidden = !form.hidden;
   });
+
+  $("conv-close-toggle").addEventListener("click", () => withButton($("conv-close-toggle"), async () => {
+    if (selectedConvId === null) return;
+    const newStatus = conversations.find((c) => c.id === selectedConvId)?.status === "closed" ? "open" : "closed";
+    await conversationApi("/conversations/" + selectedConvId, "PATCH", { status: newStatus });
+    const label = newStatus === "closed" ? "fechada" : "reaberta";
+    notify("Conversa #" + selectedConvId + " " + label + ".");
+    await refreshConversations();
+    if (selectedConvId !== null) await selectConversation(selectedConvId);
+  }));
 
   $("human-reply-form").addEventListener("submit", (event) => {
     event.preventDefault();

@@ -29,6 +29,11 @@ class ConversationCreate(BaseModel):
     customer_id: int | None = None
 
 
+class ConversationUpdate(BaseModel):
+    """Update conversation status."""
+    status: Literal["open", "closed"]
+
+
 class MessageCreate(BaseModel):
     sender_type: Literal[
         "customer",
