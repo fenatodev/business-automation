@@ -83,11 +83,14 @@
     $("brief-form").reset();
     $("triage-form").reset();
     for (const id of (
-      ["selected-id", "selected-title", "selected-description", "selected-url",
+      ["selected-id", "selected-url",
         "selected-budget", "selected-deadline", "selected-requirements"]
     )) {
       $(id).textContent = "";
     }
+    // WP-093 — clear edit fields
+    $("edit-title").value = "";
+    $("edit-description").value = "";
     $("brief-guide").textContent = "";
     $("brief-status").textContent = "Sem brief";
   }
@@ -129,7 +132,8 @@
       throw new Error("Conecte uma identidade de operador.");
     }
     // Somente caminhos internos fixos. Não aceitar URLs de anúncio como destino de fetch.
-    if (!/^\/(opportunities)(\?exclude_archived=true)?(\/\d+(\/triage|\/proposal-brief)?)?$/.test(path)) {
+    // WP-093 — allow PATCH /opportunities/{id} for title/description edit
+    if (!/^\/(opportunities)(\?exclude_archived=true)?(\/\d+(\/(triage|proposal-brief))?)?$/.test(path)) {
       throw new Error("Rota não permitida nesta interface.");
     }
     const epoch = sessionEpoch;
@@ -288,8 +292,9 @@
     $("brief-form").hidden = true;
     $("brief-form").reset();
     text("selected-id", "#" + id);
-    text("selected-title", record.title);
-    text("selected-description", record.description);
+    // WP-093 — populate edit fields
+    $("edit-title").value = record.title;
+    $("edit-description").value = record.description;
     text("selected-url", record.external_url);
     text("selected-budget", record.budget);
     text("selected-deadline", record.deadline);
@@ -336,6 +341,43 @@
   // WP-090 — Archive toggle
   $("show-archived").addEventListener("change", () => {
     refreshList();
+  });
+
+  // WP-093 — Save opportunity title/description edit
+  $("save-edit-button").addEventListener("click", async () => {
+    if (selectedId === null) return;
+    const title = $("edit-title").value.trim();
+    const description = $("edit-description").value.trim();
+    if (!title) {
+      notify("Título não pode estar vazio.", true);
+      return;
+    }
+    if (!description) {
+      notify("Descrição não pode estar vazia.", true);
+      return;
+    }
+    try {
+      const updated = await api("/opportunities/" + selectedId, {
+        method: "PATCH",
+        body: { title, description },
+      });
+      // Update in-memory list
+      const idx = opportunities.findIndex((o) => o.id === selectedId);
+      if (idx !== -1) {
+        opportunities[idx] = updated;
+      }
+      $("edit-title").value = updated.title;
+      $("edit-description").value = updated.description;
+      notify("Oportunidade atualizada.");
+      // Re-render list to reflect title changes
+      showList();
+    } catch (error) {
+      if (error instanceof ApiFailure) {
+        notify(error.message, true);
+      } else {
+        notify("Falha ao salvar alterações.", true);
+      }
+    }
   });
 
 

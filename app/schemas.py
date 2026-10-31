@@ -80,6 +80,12 @@ class OpportunityCreate(BaseModel):
     captured_at: datetime
 
 
+class OpportunityUpdate(BaseModel):
+    """Update opportunity title and/or description."""
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    description: str | None = Field(default=None, min_length=1)
+
+
 class OpportunityTriageUpdate(BaseModel):
     next_action: Literal[
         "pending",

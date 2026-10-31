@@ -507,6 +507,40 @@ footer {
   cursor: pointer;
 }
 
+/* WP-093 — Opportunity edit panel */
+.opp-edit-panel {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+}
+.opp-edit-panel label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-top: 8px;
+  margin-bottom: 2px;
+  color: var(--muted);
+}
+.opp-edit-panel label:first-child {
+  margin-top: 0;
+}
+.opp-edit-panel input[type="text"],
+.opp-edit-panel textarea {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+.opp-edit-panel button {
+  margin-top: 8px;
+}
+
 /* Leads — Notes textarea — WP-088 */
 .lead-notes {
   margin-top: 8px;

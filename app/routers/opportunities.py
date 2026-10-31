@@ -9,6 +9,7 @@ from app.models import Company, Opportunity, ProposalBrief
 from app.schemas import (
     OpportunityCreate,
     OpportunityTriageUpdate,
+    OpportunityUpdate,
     ProposalBriefCreate,
     ProposalBriefUpdate,
 )
@@ -145,6 +146,31 @@ def get_opportunity(
         opportunity_id,
         identity.company_id,
     )
+
+
+@router.patch("/opportunities/{opportunity_id}")
+def update_opportunity(
+    opportunity_id: int,
+    data: OpportunityUpdate,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Update opportunity title and/or description (tenant-isolated)."""
+    opportunity = _get_tenant_opportunity(
+        db,
+        opportunity_id,
+        identity.company_id,
+    )
+
+    if data.title is not None:
+        opportunity.title = data.title
+    if data.description is not None:
+        opportunity.description = data.description
+
+    db.commit()
+    db.refresh(opportunity)
+
+    return opportunity
 
 
 @router.patch("/opportunities/{opportunity_id}/triage")

@@ -147,8 +147,14 @@
               </div>
               <span id="selected-id" class="tag"></span>
             </div>
-            <h3 id="selected-title"></h3>
-            <p id="selected-description" class="readout"></p>
+            <!-- WP-093 — Editable title and description -->
+            <div id="opp-edit-panel" class="opp-edit-panel">
+              <label for="edit-title">Título</label>
+              <input id="edit-title" type="text" maxlength="200" placeholder="Título da oportunidade">
+              <label for="edit-description">Descrição</label>
+              <textarea id="edit-description" rows="3" placeholder="Descrição da oportunidade"></textarea>
+              <button id="save-edit-button" type="button" class="primary">Salvar alterações</button>
+            </div>
             <dl class="metadata">
               <dt>Origem</dt><dd id="selected-url" class="break-word"></dd>
               <dt>Orçamento</dt><dd id="selected-budget"></dd>
