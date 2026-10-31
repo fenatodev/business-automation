@@ -697,3 +697,9 @@ mas sem botão para limpar todos de uma vez. Adicionado botão "Limpar filtros"
 completando a paridade com os outros 4 módulos. Export CSV de leads movido para
 a barra de filtros para consistência visual.
 **2191 testes passaram** (23 novos); compileall, diff-check: PASS.
+
+### WP-166 — Atualizar README com estado atual do projeto
+
+README atualizado com 2191 testes e lista completa de funcionalidades:
+paridade de filtros em todos os 6 módulos, tema claro/escuro, notas em
+conversas, bulk operations, exportação CSV completa e filtros de data.
