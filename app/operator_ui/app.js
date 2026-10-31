@@ -1036,6 +1036,18 @@
       });
       item.appendChild(select);
 
+      // Convert button — WP-085 (hide for already-converted leads)
+      if (lead.status !== "won") {
+        const convertBtn = document.createElement("button");
+        convertBtn.className = "lead-convert-btn secondary";
+        convertBtn.textContent = "Converter";
+        convertBtn.type = "button";
+        convertBtn.addEventListener("click", () => {
+          convertLead(lead.id);
+        });
+        item.appendChild(convertBtn);
+      }
+
       list.appendChild(item);
     }
   }
@@ -1058,6 +1070,24 @@
     if (res.status === 403) {disconnect("Permissão de operador necessária."); return;}
     if (!res.ok) {console.error("[updateLeadStatus] Erro:", res.status); return;}
     notify("Lead #" + leadId + " atualizado para " + (leadStatusLabels[status] || status) + ".");
+  }
+
+  // Convert lead to customer — WP-085
+  async function convertLead(leadId) {
+    if (!confirm("Converter este lead em customer? O status será alterado para 'Convertido'.")) return;
+    const path = "/leads/" + leadId + "/convert";
+    const res = await fetch(path, {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + bearer,
+        "Content-Type": "application/json",
+      },
+    });
+    if (res.status === 403) {disconnect("Permissão de operador necessária."); return;}
+    if (res.status === 409) {notify("Lead já foi convertido em customer."); return;}
+    if (!res.ok) {console.error("[convertLead] Erro:", res.status); return;}
+    notify("Lead #" + leadId + " convertido em customer.");
+    await refreshLeads();
   }
 
   $("leads-refresh").addEventListener("click", () => withButton($("leads-refresh"), async () => {
