@@ -3464,7 +3464,8 @@
 
   async function briefApi(path, method, body) {
     const allowed = path === "/proposal-briefs" || path === "/proposal-briefs/count" ||
-      path === "/proposal-briefs/bulk-status" || path.startsWith("/proposal-briefs?");
+      path === "/proposal-briefs/bulk-status" || path === "/proposal-briefs/bulk-delete" ||
+      path.startsWith("/proposal-briefs?");
     if (!allowed) throw new Error("Path não permitido: " + path);
     const url = path + (path.includes("?") ? "&" : "?") + "t=" + Date.now();
     const res = await fetch(url, {
@@ -3613,6 +3614,25 @@
         await refreshBriefs();
       } catch (e) {
         notify("Falha ao atualizar status.", true);
+      }
+    });
+  });
+
+  $("briefs-bulk-delete").addEventListener("click", () => {
+    const button = $("briefs-bulk-delete");
+    withButton(button, async () => {
+      const ids = Array.from(selectedBriefIds);
+      if (!ids.length) {notify("Nenhum brief selecionado.", true); return;}
+      if (!confirm("Excluir " + ids.length + " brief(s)?")) return;
+      try {
+        const result = await briefApi("/proposal-briefs/bulk-delete", "POST", {
+          brief_ids: ids,
+        });
+        selectedBriefIds.clear();
+        notify(result.deleted + " brief(s) excluído(s). " + result.skipped.length + " ignorado(s).");
+        await refreshBriefs();
+      } catch (e) {
+        notify("Falha ao excluir briefs.", true);
       }
     });
   });
