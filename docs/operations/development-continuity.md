@@ -1002,3 +1002,11 @@ nem título visível. Adicionado cabeçalho com botão "← Voltar" e título
 dinâmico baseado na oportunidade.
 
 **2630 testes passaram** (19 novos); compileall, diff-check: PASS.
+
+### WP-212 — Atualizar README
+
+README atualizado com 2630 testes e novas funcionalidades:
+campo max_tokens na UI do agente e painel de detalhes do brief
+com botão "Voltar" e título dinâmico.
+
+**2630 testes passaram**; compileall, diff-check: PASS.
