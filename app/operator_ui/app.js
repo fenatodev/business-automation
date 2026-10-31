@@ -1808,6 +1808,29 @@
       rqDetails.appendChild(span);
     }
 
+    // WP-198 — Opportunities by source
+    const sourceSection = $("opp-source-section");
+    const sourceList = $("opp-source-list");
+    const sources = data.opportunities_by_source || {};
+    sourceList.replaceChildren();
+    const sourceLabels = {
+      "manual": "Manual",
+      "intake": "Intake comercial",
+      "review_queue": "Fila de revisão",
+      "import": "Importação CSV",
+      "99freelas": "99Freelas",
+    };
+    let hasSources = false;
+    for (const [k, v] of Object.entries(sources)) {
+      if (k === "total") continue;
+      hasSources = true;
+      const li = document.createElement("li");
+      li.className = "next-action-item";
+      li.textContent = (sourceLabels[k] || k) + ": " + v;
+      sourceList.appendChild(li);
+    }
+    sourceSection.hidden = !hasSources;
+
     // WP-161 — Next actions summary
     // WP-193 — Clickable next actions that scroll to section
     const nextActionsSection = $("next-actions-section");

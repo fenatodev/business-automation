@@ -911,3 +911,12 @@ Conectado ao endpoint existente, respeitando todos os filtros ativos
 (channel, status, busca, customer_id, datas).
 
 **2435 testes passaram** (10 novos); compileall, diff-check: PASS.
+
+### WP-198 — Fontes de oportunidade no dashboard
+
+O dashboard mostrava contagens por status mas não de onde vêm as
+oportunidades. Adicionado `opportunities_by_source` ao endpoint
+`/internal-tasks/dashboard` e seção visual "📊 Fontes de oportunidade"
+no dashboard do operador.
+
+**2444 testes passaram** (9 novos); compileall, diff-check: PASS.

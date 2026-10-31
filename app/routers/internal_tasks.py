@@ -108,6 +108,16 @@ def get_dashboard(
     for status, count in rq_rows:
         review_queue[status] = int(count)
 
+    # WP-198 — Opportunities by source
+    source_rows = db.execute(
+        select(Opportunity.source, func.count(Opportunity.id))
+        .where(Opportunity.company_id == company_id)
+        .group_by(Opportunity.source)
+    ).all()
+    opportunities_by_source = {"total": sum(c for _, c in source_rows)}
+    for source, count in source_rows:
+        opportunities_by_source[source] = int(count)
+
     # WP-161 — Next actions: items needing immediate attention
     next_actions = []
     if opportunities.get("pending", 0) > 0:
@@ -152,6 +162,7 @@ def get_dashboard(
         "leads": leads,
         "tasks": task_summary,
         "review_queue": review_queue,
+        "opportunities_by_source": opportunities_by_source,
         "next_actions": next_actions,
     }
 
