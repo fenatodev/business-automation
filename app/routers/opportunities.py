@@ -233,6 +233,7 @@ def import_opportunities_csv(
 def list_opportunities(
     exclude_archived: bool = False,
     next_action: str | None = Query(None, description="Filter by next_action status"),
+    source: str | None = Query(None, description="Filter by source"),
     q: str | None = Query(None, description="Search keywords in title and description"),
     from_date: str | None = Query(None, description="Filter captured_at >= date (YYYY-MM-DD)"),
     to_date: str | None = Query(None, description="Filter captured_at <= date (YYYY-MM-DD)"),
@@ -253,6 +254,9 @@ def list_opportunities(
 
     if next_action is not None:
         stmt = stmt.where(Opportunity.next_action == next_action)
+
+    if source is not None:
+        stmt = stmt.where(Opportunity.source == source)
 
     if q:
         pattern = f"%{q}%"
@@ -282,6 +286,7 @@ def list_opportunities(
 def count_opportunities(
     exclude_archived: bool = False,
     next_action: str | None = Query(None, description="Filter by next_action status"),
+    source: str | None = Query(None, description="Filter by source"),
     q: str | None = Query(None, description="Search keywords in title and description"),
     from_date: str | None = Query(None, description="Filter captured_at >= date (YYYY-MM-DD)"),
     to_date: str | None = Query(None, description="Filter captured_at <= date (YYYY-MM-DD)"),
@@ -300,6 +305,9 @@ def count_opportunities(
 
     if next_action is not None:
         stmt = stmt.where(Opportunity.next_action == next_action)
+
+    if source is not None:
+        stmt = stmt.where(Opportunity.source == source)
 
     if q:
         pattern = f"%{q}%"
@@ -339,6 +347,7 @@ def pipeline_summary(
 def export_opportunities_csv(
     exclude_archived: bool = False,
     next_action: str | None = Query(None, description="Filter by next_action status"),
+    source: str | None = Query(None, description="Filter by source"),
     q: str | None = Query(None, description="Search keywords in title and description"),
     from_date: str | None = Query(None, description="Filter captured_at >= date (YYYY-MM-DD)"),
     to_date: str | None = Query(None, description="Filter captured_at <= date (YYYY-MM-DD)"),
@@ -356,6 +365,9 @@ def export_opportunities_csv(
 
     if next_action is not None:
         stmt = stmt.where(Opportunity.next_action == next_action)
+
+    if source is not None:
+        stmt = stmt.where(Opportunity.source == source)
 
     if q:
         pattern = f"%{q}%"
