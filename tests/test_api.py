@@ -1076,7 +1076,7 @@ def test_proposal_brief_requires_prepare_proposal(
     create_company(client, admin_headers)
 
     for index, state in enumerate(
-        ["pending", "ignore", "follow"],
+        ["pending", "ignore", "follow", "in_progress"],
         start=1,
     ):
         opportunity = create_opportunity(

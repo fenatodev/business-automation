@@ -40,6 +40,7 @@
     ignore: "Ignorar",
     follow: "Acompanhar",
     prepare_proposal: "Preparar proposta",
+    in_progress: "Em andamento",
   };
 
   class ApiFailure extends Error {
