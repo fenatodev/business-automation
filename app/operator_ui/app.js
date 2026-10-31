@@ -926,6 +926,28 @@
   $("disconnect-button").addEventListener("click", () => disconnect());
   window.addEventListener("pagehide", () => disconnect("Sessão encerrada."));
 
+  // WP-163 — Theme toggle (dark/light)
+  (function initTheme() {
+    const toggle = $("theme-toggle");
+    if (!toggle) return;
+
+    function setTheme(theme) {
+      document.documentElement.setAttribute("data-theme", theme);
+      try { localStorage.setItem("operator-theme", theme); } catch (e) { /* ignore */ }
+      toggle.textContent = theme === "light" ? "☀️" : "🌙";
+    }
+
+    // Load saved theme or default to dark
+    let saved = "dark";
+    try { saved = localStorage.getItem("operator-theme") || "dark"; } catch (e) { /* ignore */ }
+    setTheme(saved);
+
+    toggle.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme");
+      setTheme(current === "light" ? "dark" : "light");
+    });
+  })();
+
   // WP-146 — Keyboard shortcuts
   document.addEventListener("keydown", (e) => {
     // Don't trigger shortcuts when typing in inputs

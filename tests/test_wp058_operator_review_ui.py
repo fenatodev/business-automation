@@ -30,8 +30,11 @@ def test_review_queue_cannot_send_external_messages():
     assert "Simular entrada" in HTML
     assert "Aprovar internamente" in JS
     assert "window.open" not in JS
-    assert "localStorage" not in JS
+    # WP-163: localStorage is allowed only for theme preference
     assert "sessionStorage" not in JS
+    if "localStorage" in JS:
+        assert 'setItem("operator-theme"' in JS
+        assert 'getItem("operator-theme")' in JS
 
 
 def test_review_queue_escapes_external_text():

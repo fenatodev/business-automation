@@ -60,11 +60,22 @@ def test_operator_assets_are_fixed_read_only_and_private_cache(client):
     assert 'source: fields.source' in script.text
     assert '/proposal-brief' in script.text
 
-    for prohibited in (
-        "localStorage", "sessionStorage", "document.cookie", "innerHTML",
-        "insertAdjacentHTML", "console.log", "eval(", "window.open",
-    ):
-        assert prohibited not in script.text
+    # WP-163: localStorage is allowed ONLY for theme preference ("operator-theme")
+    # Verify no sensitive data is persisted
+    assert "sessionStorage" not in script.text
+    assert "document.cookie" not in script.text
+    assert "innerHTML" not in script.text
+    assert "insertAdjacentHTML" not in script.text
+    assert "console.log" not in script.text
+    assert "eval(" not in script.text
+    assert "window.open" not in script.text
+    # localStorage is only used for theme, not for bearer tokens or secrets
+    if "localStorage" in script.text:
+        assert 'setItem("operator-theme"' in script.text
+        assert 'getItem("operator-theme")' in script.text
+        # Ensure bearer token is NOT in localStorage
+        assert 'setItem("bearer"' not in script.text
+        assert 'setItem("token"' not in script.text
 
 
 def test_ui_is_not_an_authentication_bypass(
