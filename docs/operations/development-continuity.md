@@ -651,3 +651,10 @@ O operador só podia criar leads manualmente um por um. `POST /leads/import.csv`
 aceita CSV com Nome, Telefone, Fonte e Interesse. Deduplicação por telefone,
 tenant isolation, limite de 500 linhas. Botão "Importar CSV" na UI.
 **2103 testes passaram** (12 novos); compileall, diff-check: PASS.
+
+### WP-158 — Importação CSV de customers
+
+O operador só podia criar customers manualmente um por um. `POST /customers/import.csv`
+aceita CSV com Nome, Telefone e E-mail (opcional). Deduplicação por telefone,
+tenant isolation, limite de 500 linhas. Botão "Importar CSV" na UI.
+**2115 testes passaram** (12 novos); compileall, diff-check: PASS.
