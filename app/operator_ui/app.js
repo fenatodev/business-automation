@@ -38,6 +38,8 @@
   // WP-169/170 — Bulk delete state
   const selectedLeadIds = new Set();
   const selectedCustomerIds = new Set();
+  // WP-171 — Bulk decision state for review queue
+  const selectedRqIds = new Set();
 
   const briefFields = [
     "offer_reference",
@@ -737,6 +739,7 @@
           /^\/review-queue\/aging$/.test(route) ||
           /^\/review-queue\/count(\?|$)/.test(route) ||
           /^\/review-queue\/synthetic-trigger$/.test(route) ||
+          /^\/review-queue\/bulk-decision$/.test(route) ||
           /^\/review-queue\/\d+\/decision$/.test(route))) {
       throw new Error("Rota de revisão não permitida.");
     }
@@ -797,11 +800,28 @@
     $("rq-summary").textContent = "Pendentes: " + summary.pending +
       " · Aprovados: " + summary.approve + " · Rejeitados: " + summary.reject;
     $("rq-aging").textContent = "Pendentes há mais de 24h: " + aging.overdue_pending;
+    // WP-171 — Reset bulk selection on refresh
+    selectedRqIds.clear();
+    $("rq-bulk-bar").hidden = true;
     const list = $("rq-list");
     list.replaceChildren();
     for (const item of items) {
       const card = document.createElement("article");
       card.className = "review-card";
+      // WP-171 — Checkbox for bulk decision
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "rq-checkbox";
+      checkbox.checked = selectedRqIds.has(item.id);
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) {
+          selectedRqIds.add(item.id);
+        } else {
+          selectedRqIds.delete(item.id);
+        }
+        updateRqBulkBar();
+      });
+      card.appendChild(checkbox);
       const heading = document.createElement("strong");
       heading.textContent = "#" + item.id + " · " + (item.intent || "Triagem");
       const meta = document.createElement("p");
@@ -3248,5 +3268,57 @@
     await origRefreshCustomers();
     $("customer-bulk-bar").hidden = true;
   };
+
+  // WP-171 — Bulk decision handlers for review queue
+  function updateRqBulkBar() {
+    const bar = $("rq-bulk-bar");
+    const count = selectedRqIds.size;
+    $("rq-bulk-selected-count").textContent = count + " selecionado(s)";
+    bar.hidden = count === 0;
+  }
+
+  $("rq-bulk-clear").addEventListener("click", () => {
+    selectedRqIds.clear();
+    refreshReviewQueue();
+  });
+
+  $("rq-bulk-approve").addEventListener("click", () => {
+    const button = $("rq-bulk-approve");
+    withButton(button, async () => {
+      const ids = Array.from(selectedRqIds);
+      if (!ids.length) {notify("Nenhum item selecionado.", true); return;}
+      try {
+        const result = await reviewApi("/review-queue/bulk-decision", "POST", {
+          item_ids: ids,
+          decision: "approve",
+        });
+        selectedRqIds.clear();
+        notify(result.applied + " item(s) aprovado(s). " + result.skipped.length + " ignorado(s).");
+        await refreshReviewQueue();
+        await refreshList();
+      } catch (e) {
+        notify("Falha ao aplicar decisão.", true);
+      }
+    });
+  });
+
+  $("rq-bulk-reject").addEventListener("click", () => {
+    const button = $("rq-bulk-reject");
+    withButton(button, async () => {
+      const ids = Array.from(selectedRqIds);
+      if (!ids.length) {notify("Nenhum item selecionado.", true); return;}
+      try {
+        const result = await reviewApi("/review-queue/bulk-decision", "POST", {
+          item_ids: ids,
+          decision: "reject",
+        });
+        selectedRqIds.clear();
+        notify(result.applied + " item(s) rejeitado(s). " + result.skipped.length + " ignorado(s).");
+        await refreshReviewQueue();
+      } catch (e) {
+        notify("Falha ao aplicar decisão.", true);
+      }
+    });
+  });
 
 })();
