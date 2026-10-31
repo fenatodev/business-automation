@@ -1640,6 +1640,24 @@
       span.textContent = k + ": " + v;
       rqDetails.appendChild(span);
     }
+
+    // WP-161 — Next actions summary
+    const nextActionsSection = $("next-actions-section");
+    const nextActionsList = $("next-actions-list");
+    const nextActions = data.next_actions || [];
+    if (nextActions.length > 0) {
+      nextActionsSection.hidden = false;
+      nextActionsList.replaceChildren();
+      for (const action of nextActions) {
+        const li = document.createElement("li");
+        li.className = "next-action-item";
+        li.textContent = action.label;
+        li.title = "Seção: " + action.section;
+        nextActionsList.appendChild(li);
+      }
+    } else {
+      nextActionsSection.hidden = true;
+    }
   }
 
   $("dashboard-refresh").addEventListener("click", () => withButton($("dashboard-refresh"), async () => {

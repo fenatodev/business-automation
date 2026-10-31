@@ -565,6 +565,37 @@ footer {
   font-size: 0.78rem;
 }
 
+/* WP-161 — Next actions summary */
+.next-actions-section {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: #1a1f2b;
+  border: 1px solid #f59e0b44;
+  border-radius: 10px;
+}
+.next-actions-section h3 {
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.next-actions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.next-action-item {
+  padding: 8px 12px;
+  background: #101722;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
 /* Leads — WP-083 */
 .lead-filters {
   display: flex;
