@@ -1597,6 +1597,24 @@ footer {
   border-radius: 8px;
   background: var(--card-bg);
 }
+/* WP-211 — Brief detail header with back button */
+.detail-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.detail-panel-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  flex: 1;
+}
+.detail-panel-header button {
+  font-size: 0.85rem;
+  padding: 4px 10px;
+}
 .detail-panel-content {
   display: flex;
   flex-direction: column;

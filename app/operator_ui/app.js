@@ -3821,6 +3821,8 @@
     }
     detail.hidden = false;
     detail.dataset.briefId = briefId;
+    const titleEl = $("brief-detail-title");
+    if (titleEl) titleEl.textContent = "Brief: " + title;
     const content = $("brief-detail-content");
     if (content) content.textContent = "Carregando...";
     try {
@@ -3878,6 +3880,12 @@
       if (content) content.textContent = "Falha ao carregar brief.";
     }
   }
+
+  // WP-211 — Back button for brief detail
+  $("brief-detail-back")?.addEventListener("click", () => {
+    const detail = $("brief-detail");
+    if (detail) detail.hidden = true;
+  });
 
   // WP-184 — Bulk status handlers for briefs
   function updateBriefBulkBar() {
