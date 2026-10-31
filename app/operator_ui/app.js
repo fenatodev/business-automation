@@ -1549,6 +1549,57 @@
     notify("Customers atualizados.");
   }));
 
+  // WP-111 — Create customer manually
+  async function createCustomer(name, phone, email) {
+    if (!bearer) return null;
+    const company = opportunities.length > 0 ? opportunities[0].company_id : null;
+    if (!company) {notify("Empresa não configurada.", true); return null;}
+    const res = await fetch("/customers", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + bearer,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({company_id: company, name, phone, email}),
+    });
+    if (res.status === 403) {disconnect("Permissão de operador necessária."); return null;}
+    if (!res.ok) {notify("Falha ao criar customer.", true); return null;}
+    return res.json();
+  }
+
+  $("show-create-customer").addEventListener("click", () => {
+    $("create-customer-form").hidden = false;
+    $("new-customer-name").focus();
+  });
+
+  $("cancel-create-customer").addEventListener("click", () => {
+    $("create-customer-form").hidden = true;
+    $("new-customer-name").value = "";
+    $("new-customer-phone").value = "";
+    $("new-customer-email").value = "";
+  });
+
+  $("create-customer-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const name = $("new-customer-name").value.trim();
+    const phone = $("new-customer-phone").value.trim() || null;
+    const email = $("new-customer-email").value.trim() || null;
+    if (!name) {notify("Nome é obrigatório.", true); return;}
+
+    const button = $("create-customer-form").querySelector('button[type="submit"]');
+    withButton(button, async () => {
+      const created = await createCustomer(name, phone, email);
+      if (created) {
+        $("create-customer-form").hidden = true;
+        $("new-customer-name").value = "";
+        $("new-customer-phone").value = "";
+        $("new-customer-email").value = "";
+        notify("Customer criado.");
+        await refreshCustomers();
+      }
+    });
+  });
+
   // WP-104 — Customer search, sort, pagination
   $("customer-search").addEventListener("input", () => {
     customerOffset = 0;

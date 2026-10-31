@@ -302,3 +302,16 @@ telefone e email. Ordenação por `sort` (id, created_at, name). Paginação
 com `limit`/`offset` e novo `GET /customers/count`. UI com campo de busca,
 dropdown "Ordenar" e controles Anterior/Próxima.
 **1572 testes passaram** (17 novos); compileall, diff-check: PASS.
+
+## WP-111 — Criar customer manualmente via UI (31/10/2026)
+
+**Problema:** O operador podia criar customers apenas convertendo leads.
+
+**Solução:** Formulário "Novo customer" na seção de customers; reusa \`POST /customers\` existente.
+
+**Changes:**
+- \`index.html\`: Botão "+ Novo customer"; formulário com nome, telefone, e-mail.
+- \`app.js\`: \`createCustomer()\` com POST; handlers show/cancel/submit.
+- \`tests/test_wp111_create_customer_ui.py\`: 15 testes UI.
+
+**Validation:** 1587 testes passaram, 15 novos. compileall ✓, diff-check ✓.

@@ -364,9 +364,35 @@
             <span class="section-index">08 / CUSTOMERS</span>
             <h2 id="customers-title">Customers</h2>
           </div>
-          <button id="customers-refresh" type="button">Atualizar</button>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button id="customers-refresh" type="button">Atualizar</button>
+            <button id="show-create-customer" type="button" class="secondary">+ Novo customer</button>
+          </div>
         </div>
         <p class="small">Visualize customers ativos. Leads convertidos aparecem aqui automaticamente.</p>
+
+        <!-- WP-111 — Create customer form -->
+        <form id="create-customer-form" class="create-customer-form" hidden>
+          <h4>Novo customer</h4>
+          <div class="two-col">
+            <div>
+              <label for="new-customer-name">Nome *</label>
+              <input id="new-customer-name" type="text" required maxlength="120">
+            </div>
+            <div>
+              <label for="new-customer-phone">Telefone</label>
+              <input id="new-customer-phone" type="text" maxlength="30">
+            </div>
+          </div>
+          <div>
+            <label for="new-customer-email">E-mail</label>
+            <input id="new-customer-email" type="email" maxlength="120">
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button type="submit" class="primary">Criar</button>
+            <button type="button" id="cancel-create-customer" class="secondary">Cancelar</button>
+          </div>
+        </form>
 
         <div class="customer-filters">
           <div class="customer-filter-group customer-search-inline">
