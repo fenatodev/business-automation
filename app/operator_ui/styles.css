@@ -602,6 +602,23 @@ footer {
   border-color: #3b82f6;
 }
 
+/* WP-100 — Lead pagination */
+.lead-pagination {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0 18px;
+}
+.lead-pagination button {
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+.lead-pagination .small {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
 /* Customers — WP-086 */
 .customer-list {
   display: grid;

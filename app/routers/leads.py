@@ -75,6 +75,8 @@ def create_lead(
 def list_leads(
     status: str | None = None,
     q: str | None = Query(default=None, description="Search keywords in name and interest"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
@@ -88,7 +90,29 @@ def list_leads(
             func.lower(Lead.name).like(func.lower(pattern)) |
             func.lower(Lead.interest).like(func.lower(pattern))
         )
-    return db.scalars(query.order_by(Lead.id)).all()
+    query = query.order_by(Lead.id).offset(offset).limit(limit)
+    return db.scalars(query).all()
+
+
+@router.get("/leads/count")
+def count_leads(
+    status: str | None = None,
+    q: str | None = Query(default=None, description="Search keywords in name and interest"),
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Count leads, optionally filtered by status and searched by keywords."""
+    query = select(func.count()).select_from(Lead).where(Lead.company_id == identity.company_id)
+    if status:
+        query = query.where(Lead.status == status)
+    if q:
+        pattern = f"%{q}%"
+        query = query.where(
+            func.lower(Lead.name).like(func.lower(pattern)) |
+            func.lower(Lead.interest).like(func.lower(pattern))
+        )
+    total = db.scalar(query)
+    return {"total": total}
 
 
 @router.get("/leads/{lead_id}")

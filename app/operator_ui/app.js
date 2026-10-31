@@ -1066,9 +1066,14 @@
 
   const leadStatusOptions = ["new", "contacted", "qualified", "proposal", "won", "lost"];
 
+  // WP-100 — Lead pagination state
+  let leadOffset = 0;
+  const leadPageSize = 50;
+  let leadTotal = 0;
+
   async function leadApi(path, method, body) {
-    // Allow /leads with optional query params, and /leads/{status}
-    if (!(/^\/leads($|\/(new|contacted|qualified|proposal|won|lost)$|\/\d+$)/.test(path.split("?")[0]))) {
+    // Allow /leads with optional query params, /leads/{status}, /leads/{id}, /leads/count
+    if (!(/^\/leads($|\/(new|contacted|qualified|proposal|won|lost)$|\/count$|\/\d+$)/.test(path.split("?")[0]))) {
       console.error("[leadApi] Rota não permitida:", path);
       return;
     }
@@ -1093,9 +1098,17 @@
     const params = [];
     if (status) params.push("status=" + encodeURIComponent(status));
     if (q) params.push("q=" + encodeURIComponent(q));
+    params.push("limit=" + leadPageSize);
+    params.push("offset=" + leadOffset);
     if (params.length) path += "?" + params.join("&");
-    const leads = await leadApi(path, "GET");
+    const [leads, countResult] = await Promise.all([
+      leadApi(path, "GET"),
+      leadApi("/leads/count" + (status ? "?status=" + encodeURIComponent(status) : "") + (q ? "&q=" + encodeURIComponent(q) : ""), "GET")
+    ]);
+    leadTotal = countResult ? countResult.total || 0 : 0;
+    leadListLength = (leads || []).length;
     renderLeads(leads || []);
+    updateLeadPagination();
   }
 
   function renderLeads(leads) {
@@ -1242,17 +1255,46 @@
     notify("Leads atualizados.");
   }));
 
-  $("lead-filter-status").addEventListener("change", () => {
-    refreshLeads().catch(() => {});
-  });
-
   // WP-099 — Lead search
   const leadSearch = $("lead-search");
   if (leadSearch) {
     leadSearch.addEventListener("input", () => {
+      leadOffset = 0;
       refreshLeads().catch(() => {});
     });
   }
+
+  // WP-100 — Lead pagination
+  function updateLeadPagination() {
+    const pagination = $("leads-pagination");
+    const totalPages = Math.max(1, Math.ceil(leadTotal / leadPageSize));
+    const currentPage = Math.floor(leadOffset / leadPageSize) + 1;
+    if (leadTotal <= leadPageSize) {
+      pagination.hidden = true;
+    } else {
+      pagination.hidden = false;
+      $("leads-prev-page").disabled = leadOffset === 0;
+      $("leads-next-page").disabled = leadOffset + leadListLength >= leadTotal;
+      $("leads-page-info").textContent = "Página " + currentPage + " de " + totalPages + " (" + leadTotal + ")";
+    }
+  }
+
+  let leadListLength = 0;
+
+  $("lead-filter-status").addEventListener("change", () => {
+    leadOffset = 0;
+    refreshLeads().catch(() => {});
+  });
+
+  $("leads-prev-page").addEventListener("click", () => withButton($("leads-prev-page"), async () => {
+    leadOffset = Math.max(0, leadOffset - leadPageSize);
+    await refreshLeads();
+  }));
+
+  $("leads-next-page").addEventListener("click", () => withButton($("leads-next-page"), async () => {
+    leadOffset += leadPageSize;
+    await refreshLeads();
+  }));
 
   // Customers — WP-086
 
