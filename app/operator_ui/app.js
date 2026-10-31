@@ -2527,6 +2527,41 @@
     notify("Exportando oportunidades...");
   });
 
+  // WP-159 — Import CSV for opportunities
+  $("opp-import-csv").addEventListener("click", () => {
+    $("opp-import-file").click();
+  });
+
+  $("opp-import-file").addEventListener("change", async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (!bearer) {notify("Não conectado.", true); return;}
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch("/opportunities/import.csv", {
+        method: "POST",
+        headers: {"Authorization": "Bearer " + bearer},
+        body: formData,
+      });
+      if (res.status === 403) {disconnect("Permissão de operador necessária."); return;}
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        notify("Falha ao importar: " + (data.detail || "erro desconhecido"), true);
+        return;
+      }
+      const data = await res.json();
+      notify(
+        "Importação concluída: " + data.imported + " importado(s), " +
+        data.skipped + " duplicata(s), " + data.errors + " erro(s)."
+      );
+      await refreshList();
+    } catch (err) {
+      notify("Falha ao importar CSV.", true);
+    }
+    event.target.value = "";
+  });
+
   // WP-152 — Export CSV with current filters
   $("leads-export-csv").addEventListener("click", () => {
     const params = [];

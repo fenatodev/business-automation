@@ -97,7 +97,7 @@ class CompanyCreate(BaseModel):
 
 
 class OpportunityCreate(BaseModel):
-    source: Literal["99freelas", "intake", "review_queue", "manual"]
+    source: Literal["99freelas", "intake", "review_queue", "manual", "import"]
     external_url: str = Field(min_length=1, max_length=1000)
     title: str = Field(min_length=1, max_length=200)
     description: str = Field(min_length=1)
