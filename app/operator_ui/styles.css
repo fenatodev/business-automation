@@ -1079,6 +1079,37 @@ footer {
   margin-top: 2px;
 }
 
+/* WP-144 — Opportunity related leads */
+.opp-leads-section {
+  margin: 10px 0;
+  padding: 10px;
+  background: var(--panel-alt);
+  border-radius: 6px;
+}
+.opp-leads-section h3 {
+  font-size: 0.9rem;
+  margin: 0 0 8px 0;
+  color: var(--muted);
+}
+.opp-leads-list {
+  display: flex;
+  flex-direction: column;
+}
+.opp-lead-item {
+  padding: 6px 8px;
+  margin: 4px 0;
+  background: var(--bg);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.opp-lead-item:hover {
+  background: var(--hover);
+}
+.opp-lead-item .small {
+  color: var(--muted);
+}
+
 /* WP-118 — Opportunity status badges */
 .opp-status-badge {
   display: inline-block;

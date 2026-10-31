@@ -553,3 +553,11 @@ existentes: criação, triagem (com nota) e mudanças de status do brief.
 Sem migration — usa apenas Opportunity e ProposalBrief. UI com seção
 "Atividades" no painel de detalhes.
 **2008 testes passaram** (9 novos); compileall, diff-check: PASS.
+
+## WP-144 — Leads relacionados à oportunidade (31/10/2026)
+
+O painel de detalhes da oportunidade não mostrava os leads da mesma company.
+Adicionado endpoint `GET /opportunities/{id}/leads` que retorna até 50 leads
+tenant-isolados, ordenados por ID descendente. UI com seção "Leads relacionados"
+no painel de detalhes.
+**2016 testes passaram** (8 novos); compileall, diff-check: PASS.

@@ -307,6 +307,28 @@ def get_opportunity_conversations(
     return conversations
 
 
+@router.get("/opportunities/{opportunity_id}/leads")
+def get_opportunity_leads(
+    opportunity_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Return leads belonging to the same company as the opportunity (tenant-isolated)."""
+    _get_tenant_opportunity(
+        db,
+        opportunity_id,
+        identity.company_id,
+    )
+    from app.models import Lead
+    leads = db.scalars(
+        select(Lead)
+        .where(Lead.company_id == identity.company_id)
+        .order_by(desc(Lead.id))
+        .limit(50)
+    ).all()
+    return leads
+
+
 @router.get("/opportunities/{opportunity_id}/timeline")
 def get_opportunity_timeline(
     opportunity_id: int,
