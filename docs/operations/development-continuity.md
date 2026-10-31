@@ -585,3 +585,11 @@ mas não indicava quantas mensagens cada uma tinha. `loadOpportunityConversation
 agora carrega contagens em paralelo via `/messages/count` e exibe "N msg"
 ao lado do status de cada conversa.
 **2016 testes passaram**; compileall, diff-check: PASS.
+
+## WP-149 — Filtro de data em oportunidades (31/10/2026)
+
+O módulo de oportunidades não tinha filtro por data. Adicionado `from_date`
+e `to_date` query params em `GET /opportunities`, `GET /opportunities/count`
+e `GET /opportunities/export.csv`. Usa comparação de strings ISO 8601
+(`captured_at >= from_date`) compatível com SQLite e PostgreSQL.
+**2024 testes passaram** (8 novos); compileall, diff-check: PASS.
