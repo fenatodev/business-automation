@@ -1113,6 +1113,19 @@
     updateLeadPagination();
   }
 
+  // WP-115 — Bulk lead status state
+  const selectedLeadIds = new Set();
+
+  function updateLeadsBulkBar() {
+    const bar = $("leads-bulk-bar");
+    if (selectedLeadIds.size > 0) {
+      bar.hidden = false;
+      $("leads-bulk-count").textContent = selectedLeadIds.size + " selecionado(s)";
+    } else {
+      bar.hidden = true;
+    }
+  }
+
   function renderLeads(leads) {
     const list = $("leads-list");
     list.replaceChildren();
@@ -1126,6 +1139,21 @@
     for (const lead of leads) {
       const item = document.createElement("div");
       item.className = "lead-item";
+
+      // WP-115 — Checkbox
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "lead-checkbox";
+      checkbox.checked = selectedLeadIds.has(lead.id);
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) {
+          selectedLeadIds.add(lead.id);
+        } else {
+          selectedLeadIds.delete(lead.id);
+        }
+        updateLeadsBulkBar();
+      });
+      item.appendChild(checkbox);
       const header = document.createElement("div");
       header.className = "lead-item-header";
       const name = document.createElement("span");
@@ -1302,6 +1330,46 @@
   $("lead-sort").addEventListener("change", () => {
     leadOffset = 0;
     refreshLeads().catch(() => {});
+  });
+
+  // WP-115 — Bulk lead status handlers
+  $("leads-bulk-apply").addEventListener("click", async () => {
+    const status = $("leads-bulk-status").value;
+    if (!status) {
+      notify("Selecione um status.", true);
+      return;
+    }
+    if (selectedLeadIds.size === 0) {
+      notify("Nenhum lead selecionado.", true);
+      return;
+    }
+    try {
+      const res = await fetch("/leads/bulk-status", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + bearer,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          lead_ids: Array.from(selectedLeadIds),
+          status,
+        }),
+      });
+      if (res.status === 403) {disconnect("Permissão de operador necessária."); return;}
+      if (!res.ok) {console.error("[bulkLeadStatus] Erro:", res.status); return;}
+      const data = await res.json();
+      selectedLeadIds.clear();
+      updateLeadsBulkBar();
+      notify(data.updated + " lead(s) atualizado(s).");
+      await refreshLeads();
+    } catch (e) {
+      console.error("[bulkLeadStatus] Falha:", e);
+    }
+  });
+
+  $("leads-bulk-clear").addEventListener("click", () => {
+    selectedLeadIds.clear();
+    updateLeadsBulkBar();
   });
 
   // Customers — WP-086, WP-104

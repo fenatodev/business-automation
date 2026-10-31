@@ -349,6 +349,22 @@
           </div>
         </div>
 
+        <!-- WP-115 — Bulk status bar -->
+        <div id="leads-bulk-bar" class="leads-bulk-bar" hidden>
+          <span id="leads-bulk-count" class="small"></span>
+          <select id="leads-bulk-status">
+            <option value="">Alterar status...</option>
+            <option value="new">Novo</option>
+            <option value="contacted">Contatado</option>
+            <option value="qualified">Qualificado</option>
+            <option value="proposal">Proposta</option>
+            <option value="won">Convertido</option>
+            <option value="lost">Perdido</option>
+          </select>
+          <button id="leads-bulk-apply" type="button" class="primary">Aplicar</button>
+          <button id="leads-bulk-clear" type="button" class="secondary">Limpar</button>
+        </div>
+
         <div id="leads-list" class="lead-list"></div>
 
         <div id="leads-pagination" class="lead-pagination" hidden>

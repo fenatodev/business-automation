@@ -771,3 +771,25 @@ footer {
   margin-left: 0;
   color: var(--text);
 }
+
+/* WP-115 — Bulk lead status bar */
+.leads-bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #101722;
+}
+.leads-bulk-bar select {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+}
+.lead-checkbox {
+  margin-right: 8px;
+}

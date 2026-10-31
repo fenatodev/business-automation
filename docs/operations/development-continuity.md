@@ -302,3 +302,18 @@ telefone e email. Ordenação por `sort` (id, created_at, name). Paginação
 com `limit`/`offset` e novo `GET /customers/count`. UI com campo de busca,
 dropdown "Ordenar" e controles Anterior/Próxima.
 **1572 testes passaram** (17 novos); compileall, diff-check: PASS.
+
+## WP-115 — Status em massa de leads (31/10/2026)
+
+**Problema:** Status de leads só podia ser alterado um por um.
+
+**Solução:** \`POST /leads/bulk-status\` com 1-100 IDs; barra de status em massa na UI.
+
+**Changes:**
+- \`schemas.py\`: \`LeadBulkStatus\`.
+- \`leads.py\`: \`POST /leads/bulk-status\` tenant-isolado.
+- \`index.html\`: Barra \`leads-bulk-bar\`.
+- \`app.js\`: Checkboxes, handlers apply/clear.
+- \`tests/test_lead_bulk_status.py\`: 8 testes.
+
+**Validation:** 1580 testes passaram. compileall ✓, diff-check ✓.

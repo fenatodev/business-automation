@@ -63,6 +63,19 @@ class LeadUpdate(BaseModel):
     interest: str | None = None
 
 
+class LeadBulkStatus(BaseModel):
+    """Bulk update status for multiple leads."""
+    lead_ids: list[int] = Field(min_length=1, max_length=100)
+    status: Literal[
+        "new",
+        "contacted",
+        "qualified",
+        "proposal",
+        "won",
+        "lost",
+    ]
+
+
 class CompanyCreate(BaseModel):
     name: str
     slug: str

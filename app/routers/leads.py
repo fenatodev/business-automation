@@ -10,7 +10,7 @@ from app.dependencies import (
     require_operator_company,
 )
 from app.models import Company, Lead
-from app.schemas import LeadCreate, LeadUpdate
+from app.schemas import LeadBulkStatus, LeadCreate, LeadUpdate
 
 
 router = APIRouter()
@@ -180,3 +180,33 @@ def list_company_leads(
         .where(Lead.company_id == company_id)
         .order_by(Lead.id)
     ).all()
+
+
+@router.post("/leads/bulk-status")
+def bulk_update_lead_status(
+    data: LeadBulkStatus,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Bulk update status for multiple leads (tenant-isolated)."""
+    leads = db.scalars(
+        select(Lead).where(
+            Lead.id.in_(data.lead_ids),
+            Lead.company_id == identity.company_id,
+        )
+    ).all()
+
+    updated_ids = []
+    for lead in leads:
+        lead.status = data.status
+        updated_ids.append(lead.id)
+
+    db.commit()
+
+    skipped = set(data.lead_ids) - set(updated_ids)
+
+    return {
+        "updated": len(updated_ids),
+        "updated_ids": sorted(updated_ids),
+        "skipped": sorted(skipped),
+    }
