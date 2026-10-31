@@ -675,3 +675,10 @@ Adicionado `next_actions` ao endpoint /internal-tasks/dashboard derivando itens
 pendentes: oportunidades sem triagem, conversas abertas, leads novos, tarefas
 falhadas e review queue pendente. Seção visual "⚡ Próximas ações" no dashboard.
 **2138 testes passaram** (9 novos); compileall, diff-check: PASS.
+
+### WP-163 — Toggle de tema claro/escuro no operador
+
+O painel do operador tinha apenas tema escuro. Adicionado botão de alternância
+de tema (🌙/☀️) na barra superior com persistência em localStorage.
+CSS com [data-theme="light"] override de todas as variáveis customizadas.
+**2158 testes passaram** (20 novos); compileall, diff-check: PASS.
