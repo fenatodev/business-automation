@@ -126,6 +126,8 @@ def list_opportunities(
     exclude_archived: bool = False,
     next_action: str | None = Query(None, description="Filter by next_action status"),
     q: str | None = Query(None, description="Search keywords in title and description"),
+    from_date: str | None = Query(None, description="Filter captured_at >= date (YYYY-MM-DD)"),
+    to_date: str | None = Query(None, description="Filter captured_at <= date (YYYY-MM-DD)"),
     sort: str = Query(default="id", description="Sort by: id, created_at, next_action"),
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -151,6 +153,12 @@ def list_opportunities(
             func.lower(Opportunity.description).like(func.lower(pattern))
         )
 
+    # WP-149 — date range filter on captured_at (ISO 8601 string comparison)
+    if from_date:
+        stmt = stmt.where(Opportunity.captured_at >= from_date)
+    if to_date:
+        stmt = stmt.where(Opportunity.captured_at <= to_date + "T23:59:59")
+
     if sort == "created_at":
         stmt = stmt.order_by(desc(Opportunity.created_at), desc(Opportunity.id))
     elif sort == "next_action":
@@ -167,6 +175,8 @@ def count_opportunities(
     exclude_archived: bool = False,
     next_action: str | None = Query(None, description="Filter by next_action status"),
     q: str | None = Query(None, description="Search keywords in title and description"),
+    from_date: str | None = Query(None, description="Filter captured_at >= date (YYYY-MM-DD)"),
+    to_date: str | None = Query(None, description="Filter captured_at <= date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
@@ -189,6 +199,12 @@ def count_opportunities(
             func.lower(Opportunity.title).like(func.lower(pattern)) |
             func.lower(Opportunity.description).like(func.lower(pattern))
         )
+
+    # WP-149 — date range filter
+    if from_date:
+        stmt = stmt.where(Opportunity.captured_at >= from_date)
+    if to_date:
+        stmt = stmt.where(Opportunity.captured_at <= to_date + "T23:59:59")
 
     total = db.scalar(stmt)
     return {"total": total}
@@ -216,6 +232,8 @@ def export_opportunities_csv(
     exclude_archived: bool = False,
     next_action: str | None = Query(None, description="Filter by next_action status"),
     q: str | None = Query(None, description="Search keywords in title and description"),
+    from_date: str | None = Query(None, description="Filter captured_at >= date (YYYY-MM-DD)"),
+    to_date: str | None = Query(None, description="Filter captured_at <= date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
@@ -237,6 +255,12 @@ def export_opportunities_csv(
             func.lower(Opportunity.title).like(func.lower(pattern)) |
             func.lower(Opportunity.description).like(func.lower(pattern))
         )
+
+    # WP-149 — date range filter
+    if from_date:
+        stmt = stmt.where(Opportunity.captured_at >= from_date)
+    if to_date:
+        stmt = stmt.where(Opportunity.captured_at <= to_date + "T23:59:59")
 
     stmt = stmt.order_by(Opportunity.id)
     opportunities = db.scalars(stmt).all()
