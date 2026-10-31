@@ -1067,16 +1067,8 @@
   const leadStatusOptions = ["new", "contacted", "qualified", "proposal", "won", "lost"];
 
   async function leadApi(path, method, body) {
-    const allowed = [
-      "/leads",
-      "/leads/new",
-      "/leads/contacted",
-      "/leads/qualified",
-      "/leads/proposal",
-      "/leads/won",
-      "/leads/lost",
-    ];
-    if (!allowed.includes(path)) {
+    // Allow /leads with optional query params, and /leads/{status}
+    if (!(/^\/leads($|\/(new|contacted|qualified|proposal|won|lost)$|\/\d+$)/.test(path.split("?")[0]))) {
       console.error("[leadApi] Rota não permitida:", path);
       return;
     }
@@ -1096,7 +1088,12 @@
   async function refreshLeads() {
     if (!bearer) return;
     const status = $("lead-filter-status").value;
-    const path = status ? "/leads/" + status : "/leads";
+    const q = $("lead-search") ? $("lead-search").value.trim() : "";
+    let path = "/leads";
+    const params = [];
+    if (status) params.push("status=" + encodeURIComponent(status));
+    if (q) params.push("q=" + encodeURIComponent(q));
+    if (params.length) path += "?" + params.join("&");
     const leads = await leadApi(path, "GET");
     renderLeads(leads || []);
   }
@@ -1248,6 +1245,14 @@
   $("lead-filter-status").addEventListener("change", () => {
     refreshLeads().catch(() => {});
   });
+
+  // WP-099 — Lead search
+  const leadSearch = $("lead-search");
+  if (leadSearch) {
+    leadSearch.addEventListener("input", () => {
+      refreshLeads().catch(() => {});
+    });
+  }
 
   // Customers — WP-086
 

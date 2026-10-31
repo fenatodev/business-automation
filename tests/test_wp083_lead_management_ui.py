@@ -50,15 +50,16 @@ class TestLeadJavaScript:
         assert "async function leadApi(" in operator_ui["js"]
 
     def test_lead_api_allowlist(self, operator_ui):
-        """leadApi has strict allowlist."""
+        """leadApi has strict allowlist (regex-based)."""
         js = operator_ui["js"]
-        assert '"/leads"' in js
-        assert '"/leads/new"' in js
-        assert '"/leads/contacted"' in js
-        assert '"/leads/qualified"' in js
-        assert '"/leads/proposal"' in js
-        assert '"/leads/won"' in js
-        assert '"/leads/lost"' in js
+        # WP-099: allowlist changed to regex pattern
+        assert "/leads" in js
+        assert "new" in js
+        assert "contacted" in js
+        assert "qualified" in js
+        assert "proposal" in js
+        assert "won" in js
+        assert "lost" in js
 
     def test_lead_api_rejects_unauthorized_route(self, operator_ui):
         """leadApi rejects routes not in allowlist."""

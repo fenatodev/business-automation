@@ -263,3 +263,10 @@ mas não informava ao operador qual foi criada. Modificado `apply_decision`
 para retornar a `opportunity_id` criada, e a UI agora mostra a oportunidade
 criada e atualiza a lista automaticamente. Rejeitar retorna `opportunity_id: null`.
 **1494 testes passaram**; compileall, diff-check: PASS.
+
+## WP-099 — Busca de leads por keywords (31/10/2026)
+
+O módulo de leads tinha filtro por status mas não tinha busca por keywords.
+Adicionado parâmetro `?q=` em `GET /leads` com busca case-insensitive em
+nome e interesse. UI com campo de busca inline que filtra em tempo real.
+**1503 testes passaram**; compileall, diff-check: PASS.
