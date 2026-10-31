@@ -1907,6 +1907,11 @@
     notify("Exportando customers...");
   });
 
+  $("rq-export-csv").addEventListener("click", () => {
+    downloadCsv("/review-queue/export.csv", "review-queue.csv");
+    notify("Exportando fila de revisão...");
+  });
+
   // WP-111 — Create customer manually
   async function createCustomer(name, phone, email) {
     if (!bearer) return null;
