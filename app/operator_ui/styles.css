@@ -473,6 +473,19 @@ footer {
   background: #1a2636;
 }
 
+/* Pending badge — WP-091 */
+.pending-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
 /* Opportunity toolbar and archive toggle — WP-090 */
 .opp-toolbar {
   display: flex;
