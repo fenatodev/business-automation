@@ -345,6 +345,15 @@
         </div>
 
         <div id="conv-list" class="conversation-list"></div>
+        <div id="conv-bulk-bar" class="conv-bulk-bar" hidden>
+          <span id="conv-bulk-count" class="small">0 selecionadas</span>
+          <select id="conv-bulk-action" class="conv-bulk-select">
+            <option value="closed">Fechar</option>
+            <option value="open">Reabrir</option>
+          </select>
+          <button id="conv-bulk-apply" type="button" class="primary">Aplicar</button>
+          <button id="conv-bulk-clear" type="button" class="secondary">Limpar</button>
+        </div>
         <div id="conv-pagination" class="conv-pagination" hidden>
           <button id="conv-prev" type="button" class="secondary" disabled>Anterior</button>
           <span id="conv-page" class="small">Página 1</span>

@@ -28,6 +28,7 @@
   let convOffset = 0;
   const convPageSize = 50;
   let convTotal = 0;
+  const selectedConvIds = new Set();
   let msgOffset = 0;
   const msgPageSize = 50;
   let msgTotal = 0;
@@ -812,7 +813,8 @@
           /^\/conversations\/$/.test(path) ||
           /^\/conversations\/\d+\/$/.test(path) ||
           /^\/conversations\/\d+\/messages(\/count)?(\?|$)/.test(path) ||
-          /^\/conversations\/\d+\/note$/.test(path))) {
+          /^\/conversations\/\d+\/note$/.test(path) ||
+          /^\/conversations\/bulk-status$/.test(path))) {
       throw new Error("Rota de conversas não permitida.");
     }
     const epoch = sessionEpoch;
@@ -898,6 +900,22 @@
       return;
     }
     for (const conv of conversations) {
+      const row = document.createElement("div");
+      row.className = "conv-item-row";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "conv-checkbox";
+      checkbox.checked = selectedConvIds.has(conv.id);
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) {
+          selectedConvIds.add(conv.id);
+        } else {
+          selectedConvIds.delete(conv.id);
+        }
+        updateConvBulkBar();
+      });
+      row.append(checkbox);
+
       const button = document.createElement("button");
       button.type = "button";
       button.className = "conversation-item";
@@ -914,7 +932,18 @@
           notify("Falha ao carregar mensagens desta conversa.", true);
         });
       });
-      target.append(button);
+      row.append(button);
+      target.append(row);
+    }
+  }
+
+  function updateConvBulkBar() {
+    const bar = $("conv-bulk-bar");
+    if (selectedConvIds.size > 0) {
+      bar.hidden = false;
+      $("conv-bulk-count").textContent = selectedConvIds.size + " selecionadas";
+    } else {
+      bar.hidden = true;
     }
   }
 
@@ -1013,6 +1042,30 @@
     }
   }));
 
+  // WP-141 — Bulk conversation status
+  $("conv-bulk-apply").addEventListener("click", () => withButton($("conv-bulk-apply"), async () => {
+    if (selectedConvIds.size === 0) return;
+    const status = $("conv-bulk-action").value;
+    try {
+      const result = await conversationApi("/conversations/bulk-status", "POST", {
+        conversation_ids: Array.from(selectedConvIds),
+        status,
+      });
+      notify(result.updated + " conversa(s) atualizada(s).");
+      selectedConvIds.clear();
+      updateConvBulkBar();
+      await refreshConversations();
+    } catch (error) {
+      notify("Falha ao atualizar conversas.", true);
+    }
+  }));
+
+  $("conv-bulk-clear").addEventListener("click", () => {
+    selectedConvIds.clear();
+    updateConvBulkBar();
+    showConversationList();
+  });
+
   async function refreshConversations() {
     try {
       const company = opportunities.length > 0 ? opportunities[0].company_id : null;
@@ -1042,6 +1095,8 @@
       $("conv-close-toggle").hidden = true;
       $("human-reply-form").hidden = true;
       $("conv-note-section").hidden = true;
+      selectedConvIds.clear();
+      updateConvBulkBar();
       showConversationList();
     }
   }
@@ -1179,6 +1234,8 @@
   $("conv-list").replaceChildren();
   $("conv-detail").hidden = true;
   $("conv-note-section").hidden = true;
+  selectedConvIds.clear();
+  updateConvBulkBar();
 
   const DASHBOARD_REFRESH_MS = 60000;
 

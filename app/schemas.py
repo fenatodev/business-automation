@@ -35,6 +35,12 @@ class ConversationUpdate(BaseModel):
     note: str | None = Field(default=None, max_length=2000)
 
 
+class ConversationBulkStatus(BaseModel):
+    """Bulk update status for multiple conversations."""
+    conversation_ids: list[int] = Field(min_length=1, max_length=100)
+    status: Literal["open", "closed"]
+
+
 class MessageCreate(BaseModel):
     sender_type: Literal[
         "customer",

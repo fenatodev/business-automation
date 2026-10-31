@@ -410,6 +410,40 @@ footer {
   color: var(--success);
 }
 
+/* WP-141 — Bulk conversation operations */
+.conv-item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.conv-checkbox {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.conversation-item {
+  flex: 1;
+}
+.conv-bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  background: #101722;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.conv-bulk-select {
+  padding: 4px 8px;
+  font-size: 0.82rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+}
+
 /* Pagination controls — WP-079 */
 .conv-pagination {
   display: flex;

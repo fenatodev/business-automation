@@ -14,7 +14,7 @@ from app.dependencies import (
     require_operator_company,
 )
 from app.models import Company, Conversation, Customer, Lead, Message
-from app.schemas import AgentRequest, ConversationCreate, ConversationUpdate, MessageCreate
+from app.schemas import AgentRequest, ConversationBulkStatus, ConversationCreate, ConversationUpdate, MessageCreate
 from app.services.agent import AgentServiceError, generate_agent_reply
 
 
@@ -283,6 +283,40 @@ def count_company_conversations(
 
     total = db.scalar(stmt)
     return {"total": total}
+
+
+@router.post("/conversations/bulk-status")
+def bulk_update_conversation_status(
+    data: ConversationBulkStatus,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Bulk update status for multiple conversations (tenant-isolated)."""
+    conversations = db.scalars(
+        select(Conversation).where(
+            Conversation.id.in_(data.conversation_ids),
+            Conversation.company_id == identity.company_id,
+        )
+    ).all()
+
+    updated = []
+    skipped = []
+
+    for conv in conversations:
+        conv.status = data.status
+        updated.append(conv.id)
+
+    for cid in data.conversation_ids:
+        if cid not in updated:
+            skipped.append(cid)
+
+    db.commit()
+
+    return {
+        "updated": len(updated),
+        "updated_ids": updated,
+        "skipped": skipped,
+    }
 
 
 @router.post("/conversations")
