@@ -2064,6 +2064,43 @@
     hideLeadDetail();
   });
 
+  // WP-176 — Create conversation from lead detail
+  $("lead-new-conv").addEventListener("click", () => {
+    if (currentLeadId) {
+      createConversationFromLead(currentLeadId);
+    }
+  });
+
+  async function createConversationFromLead(leadId) {
+    if (!bearer) return;
+    const company = opportunities.length > 0 ? opportunities[0].company_id : null;
+    if (!company) {notify("Não é possível determinar a company.", true); return;}
+    const channel = prompt("Canal da conversa (whatsapp, instagram, web, telegram, email):");
+    if (!channel) return;
+    const allowedChannels = ["whatsapp", "instagram", "web", "telegram", "email"];
+    if (!allowedChannels.includes(channel.trim().toLowerCase())) {
+      notify("Canal inválido.", true);
+      return;
+    }
+    const res = await fetch("/conversations", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + bearer,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        company_id: company,
+        channel: channel.trim().toLowerCase(),
+        lead_id: leadId,
+      }),
+    });
+    if (res.status === 403) {disconnect("Permissão de operador necessária."); return;}
+    if (res.status === 409) {notify("Conversa já existe.", true); return;}
+    if (!res.ok) {console.error("[createConversationFromLead] Erro:", res.status); return;}
+    notify("Conversa criada.");
+    await showLeadDetail(leads.find((l) => l.id === leadId) || {id: leadId});
+  }
+
   async function updateLeadStatus(leadId, status) {
     const path = "/leads/" + leadId;
     const allowed = path.startsWith("/leads/");
