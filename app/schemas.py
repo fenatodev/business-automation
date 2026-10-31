@@ -17,6 +17,13 @@ class AgentRequest(BaseModel):
     system_prompt: str | None = None  # WP-202 — optional custom system prompt
     temperature: float | None = None  # WP-203 — optional temperature (0.0-2.0)
 
+    @field_validator("temperature")
+    @classmethod
+    def temperature_range(cls, v: float | None) -> float | None:
+        if v is not None and (v < 0.0 or v > 2.0):
+            raise ValueError("temperature must be between 0.0 and 2.0")
+        return v
+
 
 class ConversationCreate(BaseModel):
     company_id: int
@@ -111,6 +118,13 @@ class CompanyAgentConfig(BaseModel):
     """Per-company agent configuration."""
     system_prompt: str | None = None
     temperature: float | None = None
+
+    @field_validator("temperature")
+    @classmethod
+    def temperature_range(cls, v: float | None) -> float | None:
+        if v is not None and (v < 0.0 or v > 2.0):
+            raise ValueError("temperature must be between 0.0 and 2.0")
+        return v
 
 
 

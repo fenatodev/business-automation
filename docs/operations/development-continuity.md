@@ -967,3 +967,12 @@ Seção "12 / AGENTE IA" com campos de prompt e temperatura, botão salvar
 com feedback visual. `loadAgentConfig()` carrega ao conectar.
 
 **2529 testes passaram** (20 novos); compileall, diff-check: PASS.
+
+### WP-207 — Validação de temperatura do agente
+
+O agente aceitava qualquer valor de temperatura sem validação.
+`AgentRequest` e `CompanyAgentConfig` agora validam que temperature
+está entre 0.0 e 2.0. Valores fora desse intervalo são rejeitados no
+nível do schema, impedindo valores inválidos de chegarem à API do Ollama.
+
+**2558 testes passaram** (29 novos); compileall, diff-check: PASS.
