@@ -1838,6 +1838,7 @@
         refreshConversations().catch(() => {});
         refreshLeads().catch(() => {});
         refreshCustomers().catch(() => {});
+        refreshTasks().catch(() => {});
         workspaceObserver.disconnect();
       }
     }
@@ -1954,6 +1955,154 @@
         await refreshCustomers();
       }
     });
+  });
+
+  // WP-120 — Internal tasks
+  let taskOffset = 0;
+  const taskPageSize = 50;
+  let taskTotal = 0;
+
+  async function taskApi(path, method = "GET", body) {
+    if (!bearer) throw new Error("Conecte um operador.");
+    if (!/^\/internal-tasks(\/|$|\?)/.test(path)) {
+      throw new Error("Rota de tarefas não permitida.");
+    }
+    const epoch = sessionEpoch;
+    const headers = {Authorization: "Bearer " + bearer};
+    if (body !== undefined) headers["Content-Type"] = "application/json";
+    const response = await fetch(path, {method, headers, body: body === undefined ? undefined : JSON.stringify(body),
+      credentials: "omit", cache: "no-store", redirect: "error", referrerPolicy: "no-referrer"});
+    if (epoch !== sessionEpoch) throw new Error("Sessão encerrada.");
+    if (response.status === 401) {
+      disconnect("Credencial inválida.");
+      throw new ApiFailure(401);
+    }
+    if (!response.ok) throw new ApiFailure(response.status);
+    return response.json();
+  }
+
+  function buildTaskUrl() {
+    const params = new URLSearchParams();
+    params.set("limit", taskPageSize);
+    params.set("offset", taskOffset);
+    params.set("sort", $("task-sort").value);
+    const status = $("task-status-filter").value;
+    if (status) params.set("status", status);
+    return "/internal-tasks/?" + params.toString();
+  }
+
+  async function refreshTasks() {
+    if (!bearer) return;
+    try {
+      const [tasks, count] = await Promise.all([
+        taskApi(buildTaskUrl()),
+        taskApi("/internal-tasks/count" + ($("task-status-filter").value ? "?status=" + $("task-status-filter").value : "")),
+      ]);
+      taskTotal = count;
+      renderTasks(tasks);
+      updateTaskPagination();
+    } catch (e) {
+      if (e instanceof ApiFailure && e.status !== 401) {
+        notify("Falha ao carregar tarefas.", true);
+      }
+    }
+  }
+
+  function renderTasks(tasks) {
+    const list = $("tasks-list");
+    while (list.firstChild) list.removeChild(list.firstChild);
+    if (!tasks.length) {
+      const empty = document.createElement("p");
+      empty.className = "small";
+      empty.textContent = "Nenhuma tarefa encontrada.";
+      list.appendChild(empty);
+      return;
+    }
+    const statusLabels = {queued: "Fila", running: "Executando", succeeded: "Sucesso", failed: "Falha"};
+    for (const task of tasks) {
+      const item = document.createElement("div");
+      item.className = "task-item";
+      const header = document.createElement("div");
+      header.className = "task-item-header";
+      const name = document.createElement("strong");
+      name.textContent = "#" + task.id + " · " + (task.event_id || "—");
+      const statusTag = document.createElement("span");
+      statusTag.className = "task-status-badge task-status-" + (task.status || "unknown");
+      statusTag.textContent = statusLabels[task.status] || task.status || "—";
+      header.append(name, statusTag);
+      item.appendChild(header);
+      const meta = document.createElement("div");
+      meta.className = "task-meta small";
+      meta.textContent = "Tentativas: " + (task.attempts || 0) + " · " + (task.created_at || "—");
+      item.appendChild(meta);
+      if (task.error_code) {
+        const err = document.createElement("div");
+        err.className = "task-error small";
+        err.textContent = "Erro: " + task.error_code;
+        item.appendChild(err);
+      }
+      if (task.status === "failed") {
+        const retryBtn = document.createElement("button");
+        retryBtn.type = "button";
+        retryBtn.className = "secondary task-retry-btn";
+        retryBtn.textContent = "Retry";
+        retryBtn.addEventListener("click", () => {
+          withButton(retryBtn, async () => {
+            try {
+              await taskApi("/internal-tasks/" + task.id + "/retry", "POST");
+              notify("Tarefa #" + task.id + " em retry.");
+              await refreshTasks();
+            } catch (e) {
+              notify("Falha ao retry.", true);
+            }
+          });
+        });
+        item.appendChild(retryBtn);
+      }
+      list.appendChild(item);
+    }
+  }
+
+  function updateTaskPagination() {
+    const pag = $("tasks-pagination");
+    if (taskTotal <= taskPageSize) {
+      pag.hidden = true;
+      return;
+    }
+    pag.hidden = false;
+    const page = Math.floor(taskOffset / taskPageSize) + 1;
+    const totalPages = Math.ceil(taskTotal / taskPageSize);
+    $("tasks-page-info").textContent = "Página " + page + " de " + totalPages;
+    $("tasks-prev-page").disabled = taskOffset === 0;
+    $("tasks-next-page").disabled = taskOffset + taskPageSize >= taskTotal;
+  }
+
+  $("tasks-refresh").addEventListener("click", () => {
+    refreshTasks();
+  });
+
+  $("task-status-filter").addEventListener("change", () => {
+    taskOffset = 0;
+    refreshTasks();
+  });
+
+  $("task-sort").addEventListener("change", () => {
+    taskOffset = 0;
+    refreshTasks();
+  });
+
+  $("tasks-prev-page").addEventListener("click", () => {
+    if (taskOffset > 0) {
+      taskOffset -= taskPageSize;
+      refreshTasks();
+    }
+  });
+
+  $("tasks-next-page").addEventListener("click", () => {
+    if (taskOffset + taskPageSize < taskTotal) {
+      taskOffset += taskPageSize;
+      refreshTasks();
+    }
   });
 
   // WP-112 — Create lead manually

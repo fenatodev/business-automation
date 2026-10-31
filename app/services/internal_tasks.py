@@ -25,12 +25,25 @@ def get_task(db: Session, task_id: int, company_id: int):
     ))
 
 
-def list_tasks(db: Session, company_id: int, *, status=None, limit=50, offset=0):
+def list_tasks(db: Session, company_id: int, *, status=None, limit=50, offset=0, sort="created_at"):
     query = select(InternalTask).where(InternalTask.company_id == company_id)
     if status is not None:
         query = query.where(InternalTask.status == status)
-    return db.scalars(query.order_by(InternalTask.created_at.desc(), InternalTask.id.desc())
+    sort_col = {
+        "id": InternalTask.id,
+        "created_at": InternalTask.created_at,
+        "status": InternalTask.status,
+        "attempts": InternalTask.attempts,
+    }.get(sort, InternalTask.created_at)
+    return db.scalars(query.order_by(sort_col.desc(), InternalTask.id.desc())
                       .offset(offset).limit(limit)).all()
+
+
+def task_count(db: Session, company_id: int, *, status=None):
+    query = select(func.count(InternalTask.id)).where(InternalTask.company_id == company_id)
+    if status is not None:
+        query = query.where(InternalTask.status == status)
+    return db.scalar(query) or 0
 
 
 def task_summary(db: Session, company_id: int, *, now=None):

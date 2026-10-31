@@ -581,6 +581,48 @@
           </dl>
         </div>
       </section>
+
+      <!-- WP-120 — Internal tasks section -->
+      <section class="panel" aria-labelledby="tasks-title">
+        <div class="panel-heading">
+          <div>
+            <span class="section-index">10 / TAREFAS INTERNAS</span>
+            <h2 id="tasks-title">Tarefas internas</h2>
+          </div>
+          <button id="tasks-refresh" type="button">Atualizar</button>
+        </div>
+        <p class="small">Tarefas sintéticas de processamento comercial com retry e retenção.</p>
+
+        <div class="task-filters">
+          <div class="task-filter-group">
+            <label for="task-status-filter">Status</label>
+            <select id="task-status-filter">
+              <option value="">Todos</option>
+              <option value="queued">Fila</option>
+              <option value="running">Executando</option>
+              <option value="succeeded">Sucesso</option>
+              <option value="failed">Falha</option>
+            </select>
+          </div>
+          <div class="task-filter-group">
+            <label for="task-sort">Ordenar</label>
+            <select id="task-sort">
+              <option value="created_at">Data</option>
+              <option value="id">ID</option>
+              <option value="status">Status</option>
+              <option value="attempts">Tentativas</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="tasks-list" class="task-list"></div>
+
+        <div id="tasks-pagination" class="task-pagination" hidden>
+          <button id="tasks-prev-page" type="button" class="secondary">Anterior</button>
+          <span id="tasks-page-info" class="small"></span>
+          <button id="tasks-next-page" type="button" class="secondary">Próxima</button>
+        </div>
+      </section>
     </main>
 
     <footer>Operação interna · dados e permissões pertencem à API · sem envio automático de propostas</footer>

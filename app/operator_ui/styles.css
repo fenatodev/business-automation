@@ -942,3 +942,74 @@ footer {
 .lead-status-lost { background: #3a0a0a; color: #f06060; }
 .lead-status-won { background: #0a3a10; color: #40f060; }
 .lead-status-unknown { background: #2a2a2a; color: #808080; }
+
+/* WP-120 — Internal tasks */
+.task-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.task-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.task-filter-group label {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.task-filter-group select {
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+}
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.task-item {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-alt);
+}
+.task-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.task-meta {
+  color: var(--muted);
+}
+.task-error {
+  color: #f06060;
+  margin-top: 4px;
+}
+.task-retry-btn {
+  margin-top: 6px;
+  padding: 4px 10px;
+}
+.task-pagination {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+.task-status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 8px;
+}
+.task-status-queued { background: #3a2700; color: #f0c040; }
+.task-status-running { background: #1a2740; color: #60b0f0; }
+.task-status-succeeded { background: #0a3a20; color: #40d080; }
+.task-status-failed { background: #3a0a0a; color: #f06060; }
+.task-status-unknown { background: #2a2a2a; color: #808080; }

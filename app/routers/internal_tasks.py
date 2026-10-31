@@ -10,6 +10,7 @@ from app.dependencies import get_db, require_operator
 from app.models import Conversation, Lead, Opportunity, ReviewQueueItem
 from app.schemas import InternalTaskOut, ReviewQueueTrigger
 from app.services import internal_tasks as tasks
+from app.services.internal_tasks import task_count as task_count_svc
 
 router = APIRouter(prefix="/internal-tasks", tags=["internal-tasks"])
 
@@ -17,12 +18,22 @@ router = APIRouter(prefix="/internal-tasks", tags=["internal-tasks"])
 @router.get("/", response_model=list[InternalTaskOut])
 def list_internal_tasks(
     status: Literal["queued", "running", "succeeded", "failed"] | None = None,
+    sort: Literal["id", "created_at", "status", "attempts"] = "created_at",
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    return tasks.list_tasks(db, identity.company_id, status=status, limit=limit, offset=offset)
+    return tasks.list_tasks(db, identity.company_id, status=status, limit=limit, offset=offset, sort=sort)
+
+
+@router.get("/count", response_model=int)
+def count_internal_tasks(
+    status: Literal["queued", "running", "succeeded", "failed"] | None = None,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    return task_count_svc(db, identity.company_id, status=status)
 
 
 @router.get("/summary", response_model=dict[str, int])
