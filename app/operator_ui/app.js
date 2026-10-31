@@ -24,6 +24,7 @@
   let convFilterChannel = "";
   let convFilterStatus = "";
   let convFilterQuery = "";
+  let convFilterCustomerId = "";
   let convFilterSort = "last_message";
   let convFilterFromDate = "";
   let convFilterToDate = "";
@@ -153,12 +154,14 @@
     convFilterChannel = "";
     convFilterStatus = "";
     convFilterQuery = "";
+    convFilterCustomerId = "";
     convFilterSort = "last_message";
     convOffset = 0;
     convTotal = 0;
     msgOffset = 0;
     msgTotal = 0;
     oppPipelineFilter = "all";
+    convCustomerFilterPopulated = false;
     stopDashboardRefresh();
     stopNotificationRefresh();
     notify(message);
@@ -1221,6 +1224,7 @@
     if (convFilterChannel) params.set("channel", convFilterChannel);
     if (convFilterStatus) params.set("status", convFilterStatus);
     if (convFilterQuery) params.set("q", convFilterQuery);
+    if (convFilterCustomerId) params.set("customer_id", convFilterCustomerId);
     if (convFilterFromDate) params.set("from_date", convFilterFromDate);
     if (convFilterToDate) params.set("to_date", convFilterToDate);
     params.set("sort", convFilterSort);
@@ -1234,6 +1238,7 @@
     if (convFilterChannel) params.set("channel", convFilterChannel);
     if (convFilterStatus) params.set("status", convFilterStatus);
     if (convFilterQuery) params.set("q", convFilterQuery);
+    if (convFilterCustomerId) params.set("customer_id", convFilterCustomerId);
     if (convFilterFromDate) params.set("from_date", convFilterFromDate);
     if (convFilterToDate) params.set("to_date", convFilterToDate);
     const query = params.toString();
@@ -1467,6 +1472,30 @@
     showConversationList();
   });
 
+  // WP-195 — Populate customer filter dropdown
+  let convCustomerFilterPopulated = false;
+  async function populateCustomerFilter() {
+    if (convCustomerFilterPopulated) return;
+    try {
+      const custs = await customerApi("/customers?limit=100&offset=0", "GET");
+      const select = $("conv-filter-customer");
+      select.replaceChildren();
+      const allOpt = document.createElement("option");
+      allOpt.value = "";
+      allOpt.textContent = "Todos os customers";
+      select.appendChild(allOpt);
+      for (const c of (custs || [])) {
+        const opt = document.createElement("option");
+        opt.value = String(c.id);
+        opt.textContent = c.name || "Sem nome";
+        select.appendChild(opt);
+      }
+      convCustomerFilterPopulated = true;
+    } catch (e) {
+      // Silently fail — filter still works without dropdown
+    }
+  }
+
   async function refreshConversations() {
     try {
       const company = opportunities.length > 0 ? opportunities[0].company_id : null;
@@ -1490,6 +1519,8 @@
       conversations = [];
       convTotal = 0;
     }
+    // WP-195 — Populate customer dropdown on first refresh
+    populateCustomerFilter().catch(() => {});
     showConversationList();
     updateConversationPagination();
     if (selectedConvId !== null && conversations.some((c) => c.id === selectedConvId)) {
@@ -1528,12 +1559,14 @@
     convFilterChannel = "";
     convFilterStatus = "";
     convFilterQuery = "";
+    convFilterCustomerId = "";
     convFilterSort = "last_message";
     convFilterFromDate = "";
     convFilterToDate = "";
     convOffset = 0;
     $("conv-filter-channel").value = "";
     $("conv-filter-status").value = "";
+    $("conv-filter-customer").value = "";
     $("conv-search-q").value = "";
     $("conv-filter-sort").value = "last_message";
     $("conv-from-date").value = "";
@@ -1550,6 +1583,13 @@
 
   $("conv-filter-status").addEventListener("change", (e) => {
     convFilterStatus = e.target.value;
+    convOffset = 0;
+    refreshConversations().catch(() => {});
+  });
+
+  // WP-195 — Filter conversations by customer
+  $("conv-filter-customer").addEventListener("change", (e) => {
+    convFilterCustomerId = e.target.value;
     convOffset = 0;
     refreshConversations().catch(() => {});
   });

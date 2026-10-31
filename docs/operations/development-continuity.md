@@ -895,3 +895,11 @@ para navegar até a seção relevante. Adicionado scroll suave ao clicar
 em cada item, com tooltip e feedback visual (hover).
 
 **2412 testes passaram** (10 novos); compileall, diff-check: PASS.
+
+### WP-195 — Filtro de conversas por customer na UI
+
+O backend de conversas já suportava `?customer_id=` (list, count, export),
+mas a UI não expunha essa funcionalidade. Adicionado dropdown "Customer"
+na seção de filtros que carrega os customers e filtra as conversas.
+
+**2425 testes passaram** (13 novos); compileall, diff-check: PASS.
