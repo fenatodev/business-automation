@@ -302,3 +302,19 @@ telefone e email. Ordenação por `sort` (id, created_at, name). Paginação
 com `limit`/`offset` e novo `GET /customers/count`. UI com campo de busca,
 dropdown "Ordenar" e controles Anterior/Próxima.
 **1572 testes passaram** (17 novos); compileall, diff-check: PASS.
+
+## WP-113 — Notas em oportunidades (31/10/2026)
+
+**Problema:** O operador só podia salvar notas junto com triagem.
+
+**Solução:** `triage_note` em `OpportunityUpdate`; painel standalone no detalhe; PATCH com `exclude_unset`.
+
+**Changes:**
+- `schemas.py`: `triage_note` opcional em `OpportunityUpdate`.
+- `opportunities.py`: PATCH com `exclude_unset`, rejeição de corpo vazio.
+- `index.html`: Painel `opp-note-panel` com textarea e botão.
+- `app.js`: Handler `save-opp-note`; sync com `triage-note`.
+- `tests/test_opportunity_note.py`: 8 testes backend.
+- `tests/test_wp113_opportunity_note_ui.py`: 13 testes UI.
+
+**Validation:** 1593 testes passaram. compileall ✓, diff-check ✓.

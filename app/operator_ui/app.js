@@ -310,6 +310,8 @@
     text("selected-requirements", record.requirements);
     $("next-action").value = record.next_action;
     $("triage-note").value = record.triage_note || "";
+    // WP-113 — populate standalone note editor
+    $("opp-note").value = record.triage_note || "";
     $("brief-status").textContent = "Carregando";
     showList();
 
@@ -398,6 +400,31 @@
     oppOffset += oppPageSize;
     await refreshList();
   }));
+
+  // WP-113 — Save opportunity note independently
+  $("save-opp-note").addEventListener("click", async () => {
+    if (selectedId === null) return;
+    const triageNote = $("opp-note").value;
+    try {
+      const updated = await api("/opportunities/" + selectedId, {
+        method: "PATCH",
+        body: { triage_note: triageNote.trim() || null },
+      });
+      const idx = opportunities.findIndex((o) => o.id === selectedId);
+      if (idx !== -1) {
+        opportunities[idx] = updated;
+      }
+      $("triage-note").value = updated.triage_note || "";
+      $("opp-note").value = updated.triage_note || "";
+      notify("Nota salva.");
+    } catch (error) {
+      if (error instanceof ApiFailure) {
+        notify(error.message, true);
+      } else {
+        notify("Falha ao salvar nota.", true);
+      }
+    }
+  });
 
   // WP-093 — Save opportunity title/description edit
   $("save-edit-button").addEventListener("click", async () => {

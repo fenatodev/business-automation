@@ -583,6 +583,36 @@ footer {
   margin-top: 8px;
 }
 
+/* WP-113 — Opportunity note panel */
+.opp-note-panel {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+}
+.opp-note-panel label {
+  display: block;
+  font-size: 0.82rem;
+  margin-bottom: 4px;
+  color: var(--muted);
+}
+.opp-note-panel textarea {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.opp-note-panel button {
+  margin-top: 8px;
+}
+
 /* Leads — Notes textarea — WP-088 */
 .lead-notes {
   margin-top: 8px;

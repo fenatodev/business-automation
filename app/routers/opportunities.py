@@ -226,17 +226,26 @@ def update_opportunity(
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    """Update opportunity title and/or description (tenant-isolated)."""
+    """Update opportunity title, description and/or triage note (tenant-isolated)."""
     opportunity = _get_tenant_opportunity(
         db,
         opportunity_id,
         identity.company_id,
     )
 
-    if data.title is not None:
-        opportunity.title = data.title
-    if data.description is not None:
-        opportunity.description = data.description
+    changed = data.model_dump(exclude_unset=True)
+    if not changed:
+        raise HTTPException(
+            status_code=400,
+            detail="No fields to update",
+        )
+
+    if "title" in changed:
+        opportunity.title = changed["title"]
+    if "description" in changed:
+        opportunity.description = changed["description"]
+    if "triage_note" in changed:
+        opportunity.triage_note = changed["triage_note"]
 
     db.commit()
     db.refresh(opportunity)
