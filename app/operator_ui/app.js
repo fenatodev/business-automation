@@ -2941,6 +2941,16 @@
     refreshTasks();
   });
 
+  // WP-164 — Clear all task filters
+  $("task-clear-filters").addEventListener("click", () => {
+    $("task-status-filter").value = "";
+    $("task-sort").value = "id";
+    $("task-from-date").value = "";
+    $("task-to-date").value = "";
+    taskOffset = 0;
+    refreshTasks();
+  });
+
   $("tasks-prev-page").addEventListener("click", () => {
     if (taskOffset > 0) {
       taskOffset -= taskPageSize;
