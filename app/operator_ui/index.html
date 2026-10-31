@@ -459,7 +459,6 @@
             <h2 id="leads-title">Leads</h2>
           </div>
           <div class="panel-actions">
-            <button id="leads-export-csv" type="button" class="secondary">Exportar CSV</button>
             <button id="leads-import-csv" type="button" class="secondary">Importar CSV</button>
             <button id="leads-refresh" type="button">Atualizar</button>
             <button id="show-create-lead" type="button" class="secondary">+ Novo lead</button>
@@ -530,6 +529,12 @@
               <option value="created_at">Data</option>
               <option value="status">Status</option>
             </select>
+          </div>
+          <div class="lead-filter-group" style="align-self:flex-end;">
+            <button id="leads-export-csv" type="button" class="secondary">Exportar CSV</button>
+          </div>
+          <div class="lead-filter-group" style="align-self:flex-end;">
+            <button id="lead-clear-filters" type="button" class="secondary">Limpar filtros</button>
           </div>
         </div>
 
@@ -614,6 +619,9 @@
               <option value="created_at">Data</option>
               <option value="name">Nome</option>
             </select>
+          </div>
+          <div class="customer-filter-group" style="align-self:flex-end;">
+            <button id="customer-clear-filters" type="button" class="secondary">Limpar filtros</button>
           </div>
         </div>
 

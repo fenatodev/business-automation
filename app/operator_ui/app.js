@@ -2074,6 +2074,17 @@
     refreshLeads().catch(() => {});
   });
 
+  // WP-165 — Clear all lead filters
+  $("lead-clear-filters").addEventListener("click", () => {
+    $("lead-filter-status").value = "";
+    $("lead-search").value = "";
+    $("lead-from-date").value = "";
+    $("lead-to-date").value = "";
+    $("lead-sort").value = "id";
+    leadOffset = 0;
+    refreshLeads().catch(() => {});
+  });
+
   // Customers — WP-086, WP-104
 
   // Customer detail state — WP-087
@@ -2413,6 +2424,16 @@
     refreshCustomers().catch(() => {});
   });
   $("customer-to-date").addEventListener("change", () => {
+    customerOffset = 0;
+    refreshCustomers().catch(() => {});
+  });
+
+  // WP-165 — Clear all customer filters
+  $("customer-clear-filters").addEventListener("click", () => {
+    $("customer-search").value = "";
+    $("customer-from-date").value = "";
+    $("customer-to-date").value = "";
+    $("customer-sort").value = "id";
     customerOffset = 0;
     refreshCustomers().catch(() => {});
   });
