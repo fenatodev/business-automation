@@ -293,3 +293,12 @@ obsoletos substituídos pela versão unificada (WP-077), adiciona filtro
 corrige `test_client0_simulation.py` para usar `/approve` dedicado e
 atualiza `test_operator_ui.py` para refletir botões approve/reject.
 **1555 testes passaram**; compileall, diff-check: PASS.
+
+## WP-104 — Busca, ordenação e paginação de customers (31/10/2026)
+
+O módulo de customers não tinha busca, ordenação configurável nem paginação.
+Adicionado `?q=` em `GET /customers` com busca case-insensitive em nome,
+telefone e email. Ordenação por `sort` (id, created_at, name). Paginação
+com `limit`/`offset` e novo `GET /customers/count`. UI com campo de busca,
+dropdown "Ordenar" e controles Anterior/Próxima.
+**1572 testes passaram** (17 novos); compileall, diff-check: PASS.
