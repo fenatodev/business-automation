@@ -1618,3 +1618,36 @@ footer {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* WP-205 — Agent configuration */
+.agent-config-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 600px;
+}
+.agent-config-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.agent-config-field label {
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.agent-config-field textarea,
+.agent-config-field input {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-input);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+.agent-config-field textarea:focus,
+.agent-config-field input:focus {
+  outline: none;
+  border-color: var(--accent);
+}

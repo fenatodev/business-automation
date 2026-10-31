@@ -4011,4 +4011,50 @@
   // Load briefs on workspace visible
   workspaceObserver.observe($("briefs-list") ? $("briefs-list").closest(".panel") : null, {attributes: true});
 
+  // WP-205 — Agent configuration
+  async function loadAgentConfig() {
+    if (!bearer || !company) return;
+    try {
+      const res = await api(`/companies/${company}/agent-config`);
+      $("agent-system-prompt").value = res.system_prompt || "";
+      $("agent-temperature").value = res.temperature ?? "";
+    } catch {
+      // config not set yet
+    }
+  }
+
+  $("agent-config-save")?.addEventListener("click", async () => {
+    if (!bearer || !company) return;
+    const body: Record<string, unknown> = {};
+    const prompt = $("agent-system-prompt").value.trim();
+    const temp = $("agent-temperature").value;
+    if (prompt) body.system_prompt = prompt;
+    if (temp !== "") body.temperature = parseFloat(temp);
+
+    try {
+      await api(`/companies/${company}/agent-config`, "PUT", body);
+      $("agent-config-status").textContent = "✓ Salvo com sucesso";
+      $("agent-config-status").style.color = "var(--success)";
+    } catch (e) {
+      $("agent-config-status").textContent = "Erro ao salvar";
+      $("agent-config-status").style.color = "var(--danger)";
+    }
+  });
+
+  // Load agent config on connect
+  const origConnect = connect;
+  // (connect is defined above, we hook into workspaceObserver instead)
+  workspaceObserver.observe($("agent-config-title") ? $("agent-config-title").closest(".panel") : null, {attributes: true});
+
+  // Load config when workspace becomes visible
+  const origRefreshList = refreshList;
+  // Load agent config after initial connection
+  const loadAgentConfigOnConnect = () => {
+    if (bearer && company) {
+      loadAgentConfig();
+    }
+  };
+  // Call after a short delay to ensure connection is established
+  setTimeout(loadAgentConfigOnConnect, 1000);
+
 })();

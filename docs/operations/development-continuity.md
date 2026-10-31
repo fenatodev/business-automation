@@ -958,3 +958,12 @@ com tenant isolation. O `POST /agent-reply` usa a config da company como
 padrão, com parâmetros explícitos da requisição tendo precedência.
 
 **2509 testes passaram** (20 novos); compileall, diff-check: PASS.
+
+### WP-205 — Interface de configuração do agente no operador
+
+O operador não podia visualizar ou editar as configurações do agente
+(system_prompt, temperature) configuradas por Company (WP-204).
+Seção "12 / AGENTE IA" com campos de prompt e temperatura, botão salvar
+com feedback visual. `loadAgentConfig()` carrega ao conectar.
+
+**2529 testes passaram** (20 novos); compileall, diff-check: PASS.

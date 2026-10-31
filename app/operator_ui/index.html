@@ -970,6 +970,29 @@
           <button id="briefs-next-page" type="button" class="secondary">Próxima</button>
         </div>
       </section>
+
+      <!-- WP-205 — Agent configuration -->
+      <section class="panel" aria-labelledby="agent-config-title">
+        <div class="panel-heading">
+          <div><span class="section-index">12 / AGENTE IA</span><h2 id="agent-config-title">Configuração do agente</h2></div>
+          <div class="panel-actions">
+            <button id="agent-config-save" type="button" class="primary">Salvar</button>
+          </div>
+        </div>
+        <p class="small">Configure o prompt e a temperatura do agente de IA para esta empresa.</p>
+        <div class="agent-config-form">
+          <div class="agent-config-field">
+            <label for="agent-system-prompt">Prompt do sistema</label>
+            <textarea id="agent-system-prompt" rows="4" placeholder="Deixe vazio para usar o padrão..."></textarea>
+          </div>
+          <div class="agent-config-field">
+            <label for="agent-temperature">Temperatura (0.0–2.0)</label>
+            <input type="number" id="agent-temperature" min="0" max="2" step="0.1" placeholder="Deixe vazio para usar o padrão (0.8)">
+          </div>
+          <div id="agent-config-status" class="small" style="margin-top:8px;"></div>
+        </div>
+      </section>
+
     </main>
 
     <footer>Operação interna · dados e permissões pertencem à API · sem envio automático de propostas · <span class="small">Atalhos: Ctrl+K (buscar) · Ctrl+N (novo lead) · Ctrl+L (leads) · Ctrl+Shift+C (customers) · / (buscar) · Esc (limpar)</span></footer>
