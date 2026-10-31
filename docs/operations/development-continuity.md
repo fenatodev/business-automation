@@ -431,3 +431,34 @@ conflitos de merge sequencial. Branch consolidada que combina
 manualmente todas as mudanças das 4 WPs em um único commit.
 **1822 testes passaram**; compileall, diff-check: PASS.
 PR #208: https://github.com/fenatodev/business-automation/pull/208
+
+## WP-130 — Fonte configurável na captura manual (31/10/2026)
+
+O formulário de captura manual tinha a fonte hardcodeada como "99freelas".
+Adicionado dropdown com opções: manual, 99freelas, intake, review_queue.
+**1839 testes passaram**; compileall, diff-check: PASS.
+PR #209: https://github.com/fenatodev/business-automation/pull/209
+
+## WP-131 — Filtro e ordenação na review queue (31/10/2026)
+
+A review queue só listava itens pendentes. Adicionado filtro por status
+e ordenação configurável (id, created_at, status). Novo endpoint /count.
+**1853 testes passaram**; compileall, diff-check: PASS.
+PR #210: https://github.com/fenatodev/business-automation/pull/210
+
+## WP-132 — Paginação de mensagens em conversas (31/10/2026)
+
+O endpoint GET /conversations/{id}/messages carregava todas as mensagens
+de uma vez. Adicionado limit (default 50, max 100) e offset (default 0).
+Novo endpoint /count para controles de paginação.
+**1863 testes passaram** (10 novos); compileall, diff-check: PASS.
+PR #211: https://github.com/fenatodev/business-automation/pull/211
+
+## WP-133 — Validação de transições de status (31/10/2026)
+
+O endpoint de triagem permitia qualquer transição de status. Adicionado
+_VALID_TRANSITIONS definindo o ciclo F2: done/lost/ignore são estados
+terminais; in_progress é obrigatório antes de done/lost. Bulk triage
+pula oportunidades com transição inválida.
+**1874 testes passaram** (11 novos); compileall, diff-check: PASS.
+PR #212: https://github.com/fenatodev/business-automation/pull/212
