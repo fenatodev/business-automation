@@ -80,6 +80,7 @@ class OpportunityTriageUpdate(BaseModel):
         "ignore",
         "follow",
         "prepare_proposal",
+        "in_progress",
     ]
     triage_note: str | None = None
 
@@ -110,6 +111,7 @@ class ProposalBriefUpdate(BaseModel):
     status: Literal[
         "draft",
         "ready_for_review",
+        "approved",
     ]
 
 
