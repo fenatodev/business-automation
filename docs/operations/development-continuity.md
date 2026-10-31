@@ -302,3 +302,17 @@ telefone e email. Ordenação por `sort` (id, created_at, name). Paginação
 com `limit`/`offset` e novo `GET /customers/count`. UI com campo de busca,
 dropdown "Ordenar" e controles Anterior/Próxima.
 **1572 testes passaram** (17 novos); compileall, diff-check: PASS.
+
+## WP-114 — Detalhes expandidos de lead (31/10/2026)
+
+**Problema:** Leads sem painel de detalhes.
+
+**Solução:** Painel clicável com info completa e conversas associadas.
+
+**Changes:**
+- `index.html`: Painel `lead-detail`.
+- `app.js`: `showLeadDetail()`, `hideLeadDetail()`, click listener.
+- `styles.css`: Estilos do painel.
+- `tests/test_wp114_lead_detail_ui.py`: 18 testes UI.
+
+**Validation:** 1590 testes passaram. compileall ✓, diff-check ✓.

@@ -1195,8 +1195,82 @@
       item.appendChild(notesArea);
 
       list.appendChild(item);
+
+      // WP-114 — Click to show detail
+      item.style.cursor = "pointer";
+      item.addEventListener("click", (e) => {
+        if (e.target.tagName === "SELECT" || e.target.tagName === "BUTTON" || e.target.tagName === "TEXTAREA") return;
+        showLeadDetail(lead);
+      });
     }
   }
+
+  // WP-114 — Lead detail panel
+  let currentLeadId = null;
+
+  async function showLeadDetail(lead) {
+    currentLeadId = lead.id;
+    $("leads-list").hidden = true;
+    $("leads-pagination").hidden = true;
+    $("lead-detail").hidden = false;
+    $("lead-detail-name").textContent = lead.name || "Sem nome";
+    $("lead-detail-status").textContent = leadStatusLabels[lead.status] || lead.status;
+
+    const info = $("lead-detail-info");
+    info.replaceChildren();
+    const fields = [
+      ["Telefone", lead.phone],
+      ["E-mail", lead.email],
+      ["Fonte", lead.source],
+      ["Interesse", lead.interest],
+      ["Criado em", lead.created_at],
+    ];
+    for (const [label, value] of fields) {
+      if (value) {
+        const dt = document.createElement("dt");
+        dt.textContent = label;
+        info.appendChild(dt);
+        const dd = document.createElement("dd");
+        dd.textContent = value;
+        info.appendChild(dd);
+      }
+    }
+
+    const convList = $("lead-conversations-list");
+    convList.replaceChildren();
+    try {
+      const convs = await api("/companies/" + company + "/conversations?limit=50");
+      const leadConvs = (convs || []).filter((c) => c.lead_id === lead.id);
+      if (!leadConvs.length) {
+        const p = document.createElement("p");
+        p.className = "small";
+        p.textContent = "Nenhuma conversa associada.";
+        convList.appendChild(p);
+      } else {
+        for (const conv of leadConvs) {
+          const div = document.createElement("div");
+          div.className = "conv-item small";
+          div.textContent = "#" + conv.id + " · " + (conv.channel || "web") + " · " + conv.status;
+          convList.appendChild(div);
+        }
+      }
+    } catch (e) {
+      console.error("[showLeadDetail] Falha ao carregar conversas:", e);
+    }
+  }
+
+  function hideLeadDetail() {
+    currentLeadId = null;
+    $("leads-list").hidden = false;
+    $("lead-detail").hidden = true;
+    if (leadTotal > leadPageSize) {
+      $("leads-pagination").hidden = false;
+    }
+  }
+
+  $("lead-detail-back").addEventListener("click", () => {
+    hideLeadDetail();
+  });
 
   async function updateLeadStatus(leadId, status) {
     const path = "/leads/" + leadId;

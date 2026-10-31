@@ -771,3 +771,41 @@ footer {
   margin-left: 0;
   color: var(--text);
 }
+
+/* WP-114 — Lead detail panel */
+.lead-detail {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #101722;
+}
+.lead-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.lead-detail-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+.lead-detail-info {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  font-size: 0.88rem;
+  margin-bottom: 14px;
+}
+.lead-detail-info dt {
+  color: var(--muted);
+  font-weight: 600;
+}
+.lead-detail-info dd {
+  margin: 0;
+  color: var(--text);
+}
+.lead-conv-list {
+  display: grid;
+  gap: 6px;
+}
