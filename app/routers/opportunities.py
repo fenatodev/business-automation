@@ -7,6 +7,7 @@ from app.auth import AccessIdentity
 from app.dependencies import get_db, require_operator
 from app.models import Company, Opportunity, ProposalBrief
 from app.schemas import (
+    OpportunityBulkTriage,
     OpportunityCreate,
     OpportunityTriageUpdate,
     OpportunityUpdate,
@@ -264,6 +265,43 @@ def triage_opportunity(
     db.refresh(opportunity)
 
     return opportunity
+
+
+@router.post("/opportunities/bulk-triage")
+def bulk_triage_opportunities(
+    data: OpportunityBulkTriage,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Apply the same triage action to multiple opportunities at once.
+
+    Only opportunities belonging to the authenticated tenant are updated.
+    Opportunities that don't exist or belong to another tenant are skipped.
+    The response includes counts of updated and skipped opportunities.
+    """
+    opportunities = db.scalars(
+        select(Opportunity).where(
+            Opportunity.id.in_(data.opportunity_ids),
+            Opportunity.company_id == identity.company_id,
+        )
+    ).all()
+
+    updated_ids = []
+    skipped_count = len(data.opportunity_ids) - len(opportunities)
+
+    for opportunity in opportunities:
+        opportunity.next_action = data.next_action
+        opportunity.triage_note = data.triage_note
+        updated_ids.append(opportunity.id)
+
+    db.commit()
+
+    return {
+        "updated": len(updated_ids),
+        "updated_ids": updated_ids,
+        "skipped": skipped_count,
+        "next_action": data.next_action,
+    }
 
 
 

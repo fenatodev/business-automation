@@ -129,6 +129,24 @@ class OpportunityTriageUpdate(BaseModel):
     triage_note: str | None = None
 
 
+class OpportunityBulkTriage(BaseModel):
+    """Apply the same triage action to multiple opportunities at once."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    opportunity_ids: list[int] = Field(min_length=1, max_length=100)
+    next_action: Literal[
+        "pending",
+        "ignore",
+        "follow",
+        "prepare_proposal",
+        "in_progress",
+        "done",
+        "lost",
+    ]
+    triage_note: str | None = Field(default=None, max_length=2000)
+
+
 
 class ProposalBriefCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")

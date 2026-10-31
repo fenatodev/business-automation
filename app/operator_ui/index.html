@@ -142,6 +142,21 @@
                 </label>
               </div>
             </div>
+            <div id="bulk-triage-bar" class="bulk-triage-bar" hidden>
+              <span id="bulk-selected-count" class="small">0 selecionadas</span>
+              <select id="bulk-triage-action" class="bulk-triage-select">
+                <option value="pending">Pendente</option>
+                <option value="follow">Acompanhar</option>
+                <option value="ignore">Ignorar</option>
+                <option value="prepare_proposal">Preparar proposta</option>
+                <option value="in_progress">Em andamento</option>
+                <option value="done">Concluída</option>
+                <option value="lost">Perdida</option>
+              </select>
+              <input type="text" id="bulk-triage-note" class="bulk-triage-note" placeholder="Nota (opcional)">
+              <button id="bulk-triage-apply" type="button" class="primary">Aplicar</button>
+              <button id="bulk-triage-clear" type="button" class="secondary">Limpar seleção</button>
+            </div>
             <div id="opportunity-list" class="opportunity-list" aria-label="Lista de oportunidades"></div>
             <div id="opp-pagination" class="opp-pagination" hidden>
               <button id="opp-prev" type="button" class="secondary" disabled>Anterior</button>

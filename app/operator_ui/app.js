@@ -14,6 +14,7 @@
   let oppOffset = 0;
   const oppPageSize = 50;
   let oppTotal = 0;
+  const selectedOpportunityIds = new Set();
   let activeBrief = null;
   let selectionVersion = 0;
   let conversations = [];
@@ -198,6 +199,7 @@
     target.replaceChildren();
     const ordered = [...opportunities].sort((a, b) => b.id - a.id);
     $("list-meta").textContent = ordered.length + " oportunidade(s) da sua empresa.";
+    updateBulkTriageBar();
     if (!ordered.length) {
       const empty = document.createElement("p");
       empty.className = "small";
@@ -206,21 +208,39 @@
       return;
     }
     for (const opportunity of ordered) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "opp-item-row";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "opp-checkbox";
+      checkbox.checked = selectedOpportunityIds.has(opportunity.id);
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) {
+          selectedOpportunityIds.add(opportunity.id);
+        } else {
+          selectedOpportunityIds.delete(opportunity.id);
+        }
+        updateBulkTriageBar();
+      });
       const button = document.createElement("button");
       button.type = "button";
       button.className = "opportunity-item";
       button.classList.toggle("active", opportunity.id === selectedId);
+      button.style.flex = "1";
+      button.style.textAlign = "left";
       const title = document.createElement("strong");
       title.textContent = "#" + opportunity.id + " · " + opportunity.title;
       const stage = document.createElement("span");
       stage.textContent = actionLabels[opportunity.next_action] || "Estado desconhecido";
       button.append(title, stage);
-      button.addEventListener("click", () => {
+      button.addEventListener("click", (e) => {
+        if (e.target === checkbox) return;
         selectOpportunity(opportunity.id).catch(() => {
           notify("Falha ao consultar o brief desta oportunidade.", true);
         });
       });
-      target.append(button);
+      wrapper.append(checkbox, button);
+      target.append(wrapper);
     }
   }
 
@@ -1644,4 +1664,40 @@
     }
   });
   workspaceObserver.observe($("workspace"), {attributes: true});
+
+  // WP-105 — Bulk triage
+  function updateBulkTriageBar() {
+    const bar = $("bulk-triage-bar");
+    const count = selectedOpportunityIds.size;
+    $("bulk-selected-count").textContent = count + " selecionada(s)";
+    bar.hidden = count === 0;
+  }
+
+  $("bulk-triage-clear").addEventListener("click", () => {
+    selectedOpportunityIds.clear();
+    showList();
+  });
+
+  $("bulk-triage-apply").addEventListener("click", () => {
+    const button = $("bulk-triage-apply");
+    withButton(button, async () => {
+      const ids = Array.from(selectedOpportunityIds);
+      if (!ids.length) {notify("Nenhuma oportunidade selecionada.", true); return;}
+      const action = $("bulk-triage-action").value;
+      const note = $("bulk-triage-note").value.trim() || null;
+      const result = await api("/opportunities/bulk-triage", {
+        method: "POST",
+        body: JSON.stringify({
+          opportunity_ids: ids,
+          next_action: action,
+          triage_note: note,
+        }),
+      });
+      selectedOpportunityIds.clear();
+      $("bulk-triage-note").value = "";
+      notify(result.updated + " oportunidade(s) atualizada(s). " + result.skipped + " ignorada(s).");
+      await refreshList();
+      showList();
+    });
+  });
 })();

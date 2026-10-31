@@ -302,3 +302,12 @@ telefone e email. Ordenação por `sort` (id, created_at, name). Paginação
 com `limit`/`offset` e novo `GET /customers/count`. UI com campo de busca,
 dropdown "Ordenar" e controles Anterior/Próxima.
 **1572 testes passaram** (17 novos); compileall, diff-check: PASS.
+
+## WP-105 — Triagem em massa de oportunidades (31/10/2026)
+
+O operador só podia triar uma oportunidade de cada vez. Novo endpoint
+`POST /opportunities/bulk-triage` aceita múltiplos IDs e aplica a mesma
+ação de triagem de uma vez. UI com checkboxes na lista de oportunidades
+e barra de triagem em massa com seletor de ação, nota opcional e botão
+aplicar. Tenant-isolado: oportunidades de outro tenant são ignoradas.
+**1588 testes passaram** (16 novos); compileall, diff-check: PASS.

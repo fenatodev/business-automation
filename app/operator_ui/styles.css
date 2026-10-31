@@ -771,3 +771,51 @@ footer {
   margin-left: 0;
   color: var(--text);
 }
+
+/* WP-105 — Bulk triage */
+.opp-item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.opp-checkbox {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.bulk-triage-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin: 10px 0;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: #15332e;
+  flex-wrap: wrap;
+}
+.bulk-triage-bar .small {
+  font-weight: 600;
+  color: var(--accent);
+  margin: 0;
+}
+.bulk-triage-select {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 0.85rem;
+}
+.bulk-triage-note {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 0.85rem;
+  flex: 1;
+  min-width: 150px;
+}
