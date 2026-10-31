@@ -187,7 +187,7 @@ def apply_decision(
     company_id: int,
     decision: str,
     operator_note: str | None = None,
-) -> ReviewQueueItem:
+) -> tuple[ReviewQueueItem, Opportunity | None]:
     """Apply an operator decision (approve/reject) to a review queue item.
 
     When approved, automatically creates an Opportunity for follow-up.
@@ -200,7 +200,7 @@ def apply_decision(
         operator_note: Optional operator comment.
 
     Returns:
-        Updated ReviewQueueItem.
+        Tuple of (Updated ReviewQueueItem, created Opportunity or None).
 
     Raises:
         ValueError: If item not found, wrong tenant, or already decided.
@@ -226,17 +226,18 @@ def apply_decision(
             raise ValueError("Review queue item not found")
         raise ValueError(f"Item already decided: status={existing}")
 
+    created_opportunity: Opportunity | None = None
     # WP-097: create opportunity on approve
     if decision == "approve":
         item = db.get(ReviewQueueItem, item_id)
         if item is not None:
-            _create_opportunity_from_review(db, item, company_id)
+            created_opportunity = _create_opportunity_from_review(db, item, company_id)
     else:
         db.commit()
 
     item = db.get(ReviewQueueItem, item_id)
     db.refresh(item)
-    return item
+    return item, created_opportunity
 
 
 def list_pending_items(

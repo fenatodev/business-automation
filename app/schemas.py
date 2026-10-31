@@ -237,6 +237,25 @@ class ReviewQueueItemOut(BaseModel):
     updated_at: datetime
 
 
+class ReviewQueueDecisionResponse(BaseModel):
+    """Response for review queue decision, includes opportunity_id when created."""
+
+    id: int
+    company_id: int
+    event_id: str
+    channel: str
+    message: str
+    intent: str | None = None
+    draft_reply: str | None = None
+    status: str
+    operator_note: str | None = None
+    needs_human_review: bool
+    flags_json: dict[str, Any] | None = None
+    created_at: datetime
+    updated_at: datetime
+    opportunity_id: int | None = None
+
+
 class InternalTaskOut(BaseModel):
     """Operational status only: no message, payload, worker token or raw error."""
 

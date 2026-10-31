@@ -255,3 +255,11 @@ fluxo review → opportunity. Modificado `apply_decision` em
 aprovar, com deduplicação por event_id e isolamento de tenant.
 Rejeitar não cria oportunidade. Schema com source "review_queue".
 **1484 testes passaram**; compileall, diff-check: PASS.
+
+## WP-098 — Feedback de oportunidade na review queue (31/10/2026)
+
+Aprovar um item na review queue criava oportunidade automaticamente (WP-097),
+mas não informava ao operador qual foi criada. Modificado `apply_decision`
+para retornar a `opportunity_id` criada, e a UI agora mostra a oportunidade
+criada e atualiza a lista automaticamente. Rejeitar retorna `opportunity_id: null`.
+**1494 testes passaram**; compileall, diff-check: PASS.

@@ -507,10 +507,15 @@
         button.className = decision === "approve" ? "primary" : "secondary";
         button.textContent = decision === "approve" ? "Aprovar internamente" : "Rejeitar";
         button.addEventListener("click", () => withButton(button, async () => {
-          await reviewApi("/review-queue/" + item.id + "/decision", "PATCH",
+          const result = await reviewApi("/review-queue/" + item.id + "/decision", "PATCH",
             {decision, operator_note: note.value.trim() || null});
           await refreshReviewQueue();
-          notify("Decisão registrada. Nenhuma mensagem enviada.");
+          if (result.opportunity_id) {
+            await refreshList(result.opportunity_id);
+            notify("Decisão registrada. Oportunidade #" + result.opportunity_id + " criada.");
+          } else {
+            notify("Decisão registrada. Nenhuma mensagem enviada.");
+          }
         }));
         actions.append(button);
       }
