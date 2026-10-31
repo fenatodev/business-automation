@@ -689,3 +689,11 @@ A seção de tarefas internas tinha filtros (status, data, ordenação) mas sem
 botão para limpar todos de uma vez. Adicionado botão "Limpar filtros" seguindo
 o padrão dos outros módulos.
 **2168 testes passaram** (10 novos); compileall, diff-check: PASS.
+
+### WP-165 — Botão "Limpar filtros" em leads e customers
+
+Os módulos de leads e customers tinham filtros (status, busca, data, ordenação)
+mas sem botão para limpar todos de uma vez. Adicionado botão "Limpar filtros"
+completando a paridade com os outros 4 módulos. Export CSV de leads movido para
+a barra de filtros para consistência visual.
+**2191 testes passaram** (23 novos); compileall, diff-check: PASS.
