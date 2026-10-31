@@ -1,7 +1,8 @@
 import csv
 import io
+from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
 from fastapi.responses import Response
 from sqlalchemy import desc, func, select
 from sqlalchemy.exc import IntegrityError
@@ -119,6 +120,110 @@ def create_opportunity(
 
     db.refresh(opportunity)
     return opportunity
+
+
+@router.post("/opportunities/import.csv")
+def import_opportunities_csv(
+    file: UploadFile,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Import opportunities from a CSV file.
+
+    Expected columns: Título, Descrição, URL (optional), Orçamento (optional),
+    Prazo (optional), Requisitos (optional).
+    Duplicate external_url values are skipped. Max 500 rows per import.
+    Returns: {imported, skipped, errors}
+    """
+    if file.content_type not in ("text/csv", "application/csv", None):
+        raise HTTPException(
+            status_code=400,
+            detail="Apenas arquivos CSV são aceitos",
+        )
+
+    content = file.file.read().decode("utf-8-sig")
+    reader = csv.DictReader(io.StringIO(content))
+
+    # Validate header
+    if reader.fieldnames is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Arquivo CSV vazio ou inválido",
+        )
+
+    required_columns = {"Título", "Descrição"}
+    available = set(reader.fieldnames or [])
+    if not required_columns.issubset(available):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Colunas obrigatórias ausentes: {required_columns - available}",
+        )
+
+    # Load existing external URLs for deduplication
+    existing_urls = {
+        row[0]
+        for row in db.execute(
+            select(Opportunity.external_url).where(
+                Opportunity.company_id == identity.company_id
+            )
+        ).fetchall()
+    }
+
+    imported = 0
+    skipped = 0
+    errors = 0
+    max_rows = 500
+    row_count = 0
+    now = datetime.now()
+
+    for row in reader:
+        if row_count >= max_rows:
+            break
+        row_count += 1
+
+        title = (row.get("Título") or "").strip()
+        description = (row.get("Descrição") or "").strip()
+        external_url = (row.get("URL") or "").strip()
+        budget = (row.get("Orçamento") or "").strip() or None
+        deadline = (row.get("Prazo") or "").strip() or None
+        requirements = (row.get("Requisitos") or "").strip() or None
+
+        if not title or not description:
+            errors += 1
+            continue
+
+        # Generate a unique external_url if not provided
+        if not external_url:
+            external_url = f"import-{row_count}-{imported}"
+
+        if external_url in existing_urls:
+            skipped += 1
+            continue
+
+        opportunity = Opportunity(
+            company_id=identity.company_id,
+            source="import",
+            external_url=external_url,
+            title=title,
+            description=description,
+            budget=budget,
+            deadline=deadline,
+            requirements=requirements,
+            captured_at=now,
+            next_action="pending",
+        )
+        db.add(opportunity)
+        existing_urls.add(external_url)
+        imported += 1
+
+    db.commit()
+
+    return {
+        "imported": imported,
+        "skipped": skipped,
+        "errors": errors,
+        "total_processed": row_count,
+    }
 
 
 @router.get("/opportunities")

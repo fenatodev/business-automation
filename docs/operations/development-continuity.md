@@ -658,3 +658,12 @@ O operador só podia criar customers manualmente um por um. `POST /customers/imp
 aceita CSV com Nome, Telefone e E-mail (opcional). Deduplicação por telefone,
 tenant isolation, limite de 500 linhas. Botão "Importar CSV" na UI.
 **2115 testes passaram** (12 novos); compileall, diff-check: PASS.
+
+### WP-159 — Importação CSV de oportunidades
+
+O operador só podia registrar oportunidades manualmente uma por uma.
+`POST /opportunities/import.csv` aceita CSV com Título, Descrição, URL (opcional),
+Orçamento, Prazo e Requisitos. Deduplicação por external_url, tenant isolation,
+limite de 500 linhas. Botão "Importar CSV" na UI. `source="import"` adicionado
+ao OpportunityCreate Literal.
+**2129 testes passaram** (14 novos); compileall, diff-check: PASS.

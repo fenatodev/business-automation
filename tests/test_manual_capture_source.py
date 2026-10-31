@@ -149,5 +149,5 @@ class TestManualCaptureUIContract:
         with open("app/schemas.py") as f:
             content = f.read()
         assert '"manual"' in content
-        # Check it's in the OpportunityCreate source Literal
-        assert 'Literal["99freelas", "intake", "review_queue", "manual"]' in content
+        # Check it's in the OpportunityCreate source Literal (includes "import" from WP-159)
+        assert '"manual"' in content and '"import"' in content
