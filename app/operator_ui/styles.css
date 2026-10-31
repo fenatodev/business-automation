@@ -1480,3 +1480,49 @@ footer {
   color: var(--accent);
   margin: 0;
 }
+
+/* WP-178 — Brief list view */
+.briefs-filters {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.briefs-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.briefs-filter-group label {
+  font-size: 0.8em;
+  color: var(--muted);
+}
+.briefs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.brief-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+.brief-item-title {
+  font-weight: 600;
+  flex: 1 1 200px;
+  min-width: 120px;
+}
+.brief-item-ref {
+  color: var(--muted);
+  flex: 0 0 auto;
+}
+.brief-item-date {
+  margin-left: auto;
+  color: var(--muted);
+  flex: 0 0 auto;
+}

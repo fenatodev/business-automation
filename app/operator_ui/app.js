@@ -3450,4 +3450,86 @@
     });
   });
 
+  // WP-178 — Brief list view
+  const briefStatusLabels = {
+    draft: "Rascunho",
+    ready_for_review: "Pronto para revisão",
+    approved: "Aprovado",
+  };
+
+  async function briefApi(path, method, body) {
+    const allowed = path === "/proposal-briefs" || path === "/proposal-briefs/count" || path.startsWith("/proposal-briefs?");
+    if (!allowed) throw new Error("Path não permitido: " + path);
+    const url = path + (path.includes("?") ? "&" : "?") + "t=" + Date.now();
+    const res = await fetch(url, {
+      method: method || "GET",
+      headers: {
+        "Authorization": "Bearer " + bearer,
+        "Content-Type": "application/json",
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (res.status === 403) {disconnect("Permissão necessária."); throw new Error("403");}
+    if (!res.ok) throw new Error(res.status);
+    return res.json();
+  }
+
+  async function refreshBriefs() {
+    if (!bearer) return;
+    const status = $("briefs-status-filter") ? $("briefs-status-filter").value : "";
+    try {
+      const params = [];
+      if (status) params.push("status=" + encodeURIComponent(status));
+      const path = "/proposal-briefs" + (params.length ? "?" + params.join("&") : "");
+      const briefs = await briefApi(path);
+      renderBriefs(briefs);
+    } catch (e) {
+      console.error("[refreshBriefs]", e);
+    }
+  }
+
+  function renderBriefs(briefs) {
+    const list = $("briefs-list");
+    while (list.firstChild) list.removeChild(list.firstChild);
+    if (!briefs || briefs.length === 0) {
+      const p = document.createElement("p");
+      p.className = "small";
+      p.textContent = "Nenhum brief encontrado.";
+      list.appendChild(p);
+      return;
+    }
+    briefs.forEach((brief) => {
+      const item = document.createElement("div");
+      item.className = "brief-item";
+      const title = document.createElement("span");
+      title.className = "brief-item-title";
+      title.textContent = brief.opportunity_title || "Sem título";
+      const ref = document.createElement("span");
+      ref.className = "brief-item-ref small";
+      ref.textContent = brief.offer_reference || "";
+      const status = document.createElement("span");
+      status.className = "status-pill";
+      status.textContent = briefStatusLabels[brief.status] || brief.status;
+      const date = document.createElement("span");
+      date.className = "brief-item-date small";
+      date.textContent = brief.created_at ? new Date(brief.created_at).toLocaleDateString("pt-BR") : "";
+      item.appendChild(title);
+      item.appendChild(ref);
+      item.appendChild(status);
+      item.appendChild(date);
+      list.appendChild(item);
+    });
+  }
+
+  $("briefs-refresh").addEventListener("click", () => withButton($("briefs-refresh"), async () => {
+    await refreshBriefs();
+  }));
+
+  $("briefs-status-filter").addEventListener("change", () => {
+    refreshBriefs().catch(() => {});
+  });
+
+  // Load briefs on workspace visible
+  workspaceObserver.observe($("briefs-list") ? $("briefs-list").closest(".panel") : null, {attributes: true});
+
 })();

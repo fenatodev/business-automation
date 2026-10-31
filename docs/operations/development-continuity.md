@@ -783,3 +783,12 @@ Adicionado `?source=` em list, count e export CSV.
 UI com dropdown "Fonte" (manual, 99freelas, intake, review_queue, import).
 
 **2304 testes passaram** (16 novos); compileall, diff-check: PASS.
+
+### WP-178 — Lista consolidada de proposal briefs
+
+O operador só via o brief da oportunidade selecionada.
+Adicionado `GET /proposal-briefs` e `GET /proposal-briefs/count`
+com tenant isolation via JOIN Opportunity → Company.
+UI com seção "11 / BRIEFS" mostrando título, referência, status e data.
+
+**2314 testes passaram** (10 novos); compileall, diff-check: PASS.
