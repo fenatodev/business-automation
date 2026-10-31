@@ -246,3 +246,12 @@ e isolamento de tenant. UI com seção "09 / INTAKE COMERCIAL" no painel
 do operador: formulário com canal, ID do evento e mensagem; exibição da
 decisão (intenção, revisão humana, flags, ID da oportunidade criada).
 **1478 testes passaram**; compileall, diff-check: PASS.
+
+## WP-097 — Review queue aprovação cria oportunidade (31/10/2026)
+
+Aprovar um item na review queue não criava oportunidade, quebrando o
+fluxo review → opportunity. Modificado `apply_decision` em
+`commercial_pipeline.py` para criar Opportunity automaticamente ao
+aprovar, com deduplicação por event_id e isolamento de tenant.
+Rejeitar não cria oportunidade. Schema com source "review_queue".
+**1484 testes passaram**; compileall, diff-check: PASS.
