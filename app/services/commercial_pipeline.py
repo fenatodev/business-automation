@@ -15,7 +15,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models import ReviewQueueItem
+from app.models import Opportunity, ReviewQueueItem
 from app.schemas import ReviewQueueTrigger
 from app.services.commercial_intake import (
     CandidateReply,
@@ -125,14 +125,72 @@ def triage_and_queue(
     return item
 
 
+def _create_opportunity_from_review(
+    db: Session,
+    item: ReviewQueueItem,
+    company_id: int,
+) -> Opportunity | None:
+    """Create an Opportunity from an approved review queue item.
+
+    Returns the created Opportunity, or None if one already exists for this event_id.
+    """
+    # Deduplication: check if opportunity already exists for this event_id
+    existing = db.scalar(
+        select(Opportunity).where(
+            Opportunity.company_id == company_id,
+            Opportunity.source == "review_queue",
+            Opportunity.external_url == f"review://{item.event_id}",
+        )
+    )
+    if existing is not None:
+        return existing
+
+    title = (
+        f"Review: {item.intent}"
+        if item.intent
+        else "Oportunidade de review"
+    )
+    description = item.message or ""
+    if item.draft_reply:
+        description += f"\n\n[Rascunho: {item.draft_reply}]"
+    if item.operator_note:
+        description += f"\n\n[Nota do operador: {item.operator_note}]"
+
+    opp = Opportunity(
+        company_id=company_id,
+        source="review_queue",
+        external_url=f"review://{item.event_id}",
+        title=title,
+        description=description[:2000],
+        captured_at=datetime.now(timezone.utc),
+    )
+    db.add(opp)
+    try:
+        db.commit()
+        db.refresh(opp)
+    except IntegrityError:
+        db.rollback()
+        existing = db.scalar(
+            select(Opportunity).where(
+                Opportunity.company_id == company_id,
+                Opportunity.source == "review_queue",
+                Opportunity.external_url == f"review://{item.event_id}",
+            )
+        )
+        return existing
+    return opp
+
+
 def apply_decision(
     db: Session,
     item_id: int,
     company_id: int,
     decision: str,
     operator_note: str | None = None,
-) -> ReviewQueueItem:
+) -> tuple[ReviewQueueItem, Opportunity | None]:
     """Apply an operator decision (approve/reject) to a review queue item.
+
+    When approved, automatically creates an Opportunity for follow-up.
 
     Args:
         db: SQLAlchemy session.
@@ -142,7 +200,7 @@ def apply_decision(
         operator_note: Optional operator comment.
 
     Returns:
-        Updated ReviewQueueItem.
+        Tuple of (Updated ReviewQueueItem, created Opportunity or None).
 
     Raises:
         ValueError: If item not found, wrong tenant, or already decided.
@@ -167,10 +225,19 @@ def apply_decision(
         if existing is None:
             raise ValueError("Review queue item not found")
         raise ValueError(f"Item already decided: status={existing}")
-    db.commit()
+
+    created_opportunity: Opportunity | None = None
+    # WP-097: create opportunity on approve
+    if decision == "approve":
+        item = db.get(ReviewQueueItem, item_id)
+        if item is not None:
+            created_opportunity = _create_opportunity_from_review(db, item, company_id)
+    else:
+        db.commit()
+
     item = db.get(ReviewQueueItem, item_id)
     db.refresh(item)
-    return item
+    return item, created_opportunity
 
 
 def list_pending_items(

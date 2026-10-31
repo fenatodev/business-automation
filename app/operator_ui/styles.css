@@ -223,6 +223,511 @@ footer {
 .review-card textarea {margin-top:12px}
 .review-actions {display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
 
-.task-card {padding:14px; border:1px solid var(--line);border-radius:9px;background:#101722;overflow-wrap:anywhere}
-.task-card strong {font-size:0.89rem}
-.task-card p {margin:6px 0 0}
+/* Conversas e filtros — WP-078 */
+.conversation-list { display: grid; gap: 9px; }
+.conversation-item {
+  text-align: left;
+  display: grid;
+  gap: 7px;
+  width: 100%;
+  padding: 14px;
+  background: #101722;
+  border-color: #3c4958;
+}
+.conversation-item strong { font-size: 0.89rem; }
+.conversation-item span { font-size: 0.78rem; color: var(--muted); }
+.conversation-item.active { border-color: var(--accent); background: #15332e; }
+
+.conv-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 14px 0 18px;
+  padding: 14px;
+  background: #101722;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.conv-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+}
+.conv-filter-group label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.conv-filter-group select {
+  padding: 6px 8px;
+  font-size: 0.85rem;
+}
+.conv-search-group { flex: 1; min-width: 220px; }
+.conv-search-inline {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+.conv-search-inline input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+}
+.conv-search-inline button {
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.conv-detail {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #101722;
+}
+.conv-detail-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.conv-detail-header-row h3 { margin: 0; }
+.conv-detail-actions { display: flex; gap: 6px; align-items: center; }
+.conv-messages {
+  display: grid;
+  gap: 10px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+.message-bubble {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel-alt);
+  font-size: 0.87rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.message-bubble.customer {
+  border-color: #2c6357;
+  background: var(--accent-dark);
+}
+.message-bubble.agent {
+  border-color: #3a5366;
+  background: #1a2636;
+}
+.message-bubble.human {
+  border-color: #515b67;
+  background: #1d2633;
+}
+.message-sender {
+  display: block;
+  font-size: 0.73rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.message-content {
+  margin: 0;
+  color: var(--text);
+}
+#human-reply-form {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+/* Pagination controls — WP-079 */
+.conv-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 14px 0 18px;
+}
+.conv-pagination button {
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+.conv-pagination .small {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+/* Dashboard — WP-082 */
+.dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+}
+.dashboard-card {
+  padding: 16px;
+  background: #101722;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.dashboard-card h3 {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.dashboard-number {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1.1;
+}
+.dashboard-details {
+  margin-top: 8px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.dashboard-details span {
+  display: inline-block;
+  background: var(--panel-alt);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin: 2px 4px 2px 0;
+  font-size: 0.78rem;
+}
+
+/* Leads — WP-083 */
+.lead-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.lead-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.lead-filter-group label {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.lead-list {
+  display: grid;
+  gap: 10px;
+}
+.lead-item {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #101722;
+}
+.lead-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.lead-item-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+.lead-item-details {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.lead-status-select {
+  padding: 4px 8px;
+  font-size: 0.82rem;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--panel-alt);
+  color: var(--text);
+}
+
+/* Leads — Convert button — WP-085 */
+.lead-convert-btn {
+  margin-top: 8px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--panel-alt);
+  color: var(--text);
+  cursor: pointer;
+}
+.lead-convert-btn:hover {
+  background: #1a2636;
+}
+
+/* Pending badge — WP-091 */
+.pending-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* Opportunity toolbar and archive toggle — WP-090 */
+.opp-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.opp-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.opp-archive-toggle {
+  font-size: 0.82rem;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+}
+.opp-archive-toggle input[type="checkbox"] {
+  cursor: pointer;
+}
+
+/* WP-094 — Opportunity search */
+.opp-search-inline {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.82rem;
+  width: 200px;
+}
+
+/* WP-095 — Opportunity sort and pagination */
+.opp-sort-select {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.opp-pagination {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0 18px;
+}
+.opp-pagination button {
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+.opp-pagination .small {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+/* WP-093 — Opportunity edit panel */
+.opp-edit-panel {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+}
+.opp-edit-panel label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-top: 8px;
+  margin-bottom: 2px;
+  color: var(--muted);
+}
+.opp-edit-panel label:first-child {
+  margin-top: 0;
+}
+.opp-edit-panel input[type="text"],
+.opp-edit-panel textarea {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+.opp-edit-panel button {
+  margin-top: 8px;
+}
+
+/* Leads — Notes textarea — WP-088 */
+.lead-notes {
+  margin-top: 8px;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: #0d1420;
+  color: var(--text);
+  resize: vertical;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+.lead-notes:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+/* WP-100 — Lead pagination */
+.lead-pagination {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0 18px;
+}
+.lead-pagination button {
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+.lead-pagination .small {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+/* Customers — WP-086 */
+.customer-list {
+  display: grid;
+  gap: 10px;
+}
+.customer-item {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #101722;
+}
+.customer-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.customer-item-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+.customer-item-details {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+/* Customer detail — WP-087 */
+.customer-detail {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #101722;
+}
+.customer-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.customer-detail-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+.customer-detail-header button {
+  padding: 4px 10px;
+  font-size: 0.82rem;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--panel-alt);
+  color: var(--text);
+  cursor: pointer;
+}
+.customer-detail-header button:hover {
+  background: #1a2636;
+}
+.customer-detail-info {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.customer-conv-list {
+  display: grid;
+  gap: 8px;
+}
+.customer-conv-item {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #0d1420;
+}
+.customer-conv-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+}
+
+/* WP-096 — Commercial intake section */
+.intake-decision {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #101722;
+}
+.intake-decision h3 {
+  margin: 0 0 10px;
+  font-size: 0.92rem;
+  color: var(--accent);
+}
+.intake-decision .metadata {
+  display: grid;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+.intake-decision .metadata dt {
+  color: var(--muted);
+  font-weight: 600;
+}
+.intake-decision .metadata dd {
+  margin-left: 0;
+  color: var(--text);
+}

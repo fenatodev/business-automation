@@ -29,6 +29,11 @@ class ConversationCreate(BaseModel):
     customer_id: int | None = None
 
 
+class ConversationUpdate(BaseModel):
+    """Update conversation status."""
+    status: Literal["open", "closed"]
+
+
 class MessageCreate(BaseModel):
     sender_type: Literal[
         "customer",
@@ -54,7 +59,8 @@ class LeadUpdate(BaseModel):
         "proposal",
         "won",
         "lost",
-    ]
+    ] | None = None
+    interest: str | None = None
 
 
 class CompanyCreate(BaseModel):
@@ -64,7 +70,7 @@ class CompanyCreate(BaseModel):
 
 
 class OpportunityCreate(BaseModel):
-    source: Literal["99freelas", "intake"]
+    source: Literal["99freelas", "intake", "review_queue"]
     external_url: str = Field(min_length=1, max_length=1000)
     title: str = Field(min_length=1, max_length=200)
     description: str = Field(min_length=1)
@@ -74,6 +80,42 @@ class OpportunityCreate(BaseModel):
     captured_at: datetime
 
 
+class IntakeCreate(BaseModel):
+    """Request body for creating an opportunity from commercial intake."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    channel: str = Field(min_length=1, max_length=30)
+    message: str = Field(min_length=1, max_length=4000)
+    event_id: str = Field(min_length=1, max_length=100)
+
+    @field_validator("channel", "message", "event_id")
+    @classmethod
+    def nonempty_printable(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("intake field cannot be blank")
+        if any(ord(char) < 32 or ord(char) == 127 for char in value):
+            raise ValueError("intake field contains control characters")
+        return value
+
+
+class IntakeCreateResponse(BaseModel):
+    """Response after evaluating and persisting a commercial intake."""
+
+    opportunity_id: int
+    event_id: str
+    intent: str
+    needs_human_review: bool
+    flags: list[str]
+
+
+class OpportunityUpdate(BaseModel):
+    """Update opportunity title and/or description."""
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    description: str | None = Field(default=None, min_length=1)
+
+
 class OpportunityTriageUpdate(BaseModel):
     next_action: Literal[
         "pending",
@@ -81,6 +123,8 @@ class OpportunityTriageUpdate(BaseModel):
         "follow",
         "prepare_proposal",
         "in_progress",
+        "done",
+        "lost",
     ]
     triage_note: str | None = None
 
@@ -111,7 +155,6 @@ class ProposalBriefUpdate(BaseModel):
     status: Literal[
         "draft",
         "ready_for_review",
-        "approved",
     ]
 
 
@@ -194,6 +237,25 @@ class ReviewQueueItemOut(BaseModel):
     updated_at: datetime
 
 
+class ReviewQueueDecisionResponse(BaseModel):
+    """Response for review queue decision, includes opportunity_id when created."""
+
+    id: int
+    company_id: int
+    event_id: str
+    channel: str
+    message: str
+    intent: str | None = None
+    draft_reply: str | None = None
+    status: str
+    operator_note: str | None = None
+    needs_human_review: bool
+    flags_json: dict[str, Any] | None = None
+    created_at: datetime
+    updated_at: datetime
+    opportunity_id: int | None = None
+
+
 class InternalTaskOut(BaseModel):
     """Operational status only: no message, payload, worker token or raw error."""
 
@@ -206,30 +268,3 @@ class InternalTaskOut(BaseModel):
     result: dict[str, int] | None = None
     error_code: str | None = None
     created_at: datetime
-
-
-class IntakeCreate(BaseModel):
-    """Request body for creating an opportunity from commercial intake."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    channel: str = Field(min_length=1, max_length=30)
-    message: str = Field(min_length=1, max_length=4000)
-    event_id: str = Field(min_length=1, max_length=100)
-
-    @field_validator("channel", "message", "event_id")
-    @classmethod
-    def nonempty_printable(cls, value: str) -> str:
-        value = value.strip()
-        if not value:
-            raise ValueError("intake field cannot be blank")
-        if any(ord(char) < 32 or ord(char) == 127 for char in value):
-            raise ValueError("intake field contains control characters")
-        return value
-
-
-class IntakeCreateResponse(BaseModel):
-    """Response for intake creation: decision + optional opportunity."""
-
-    decision: dict[str, Any]
-    opportunity_id: int | None = None

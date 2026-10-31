@@ -45,8 +45,43 @@
     </section>
 
     <main id="workspace" hidden>
+      <section class="panel" aria-labelledby="dashboard-title">
+        <div class="panel-heading">
+          <div>
+            <span class="section-index">00 / VISÃO GERAL</span>
+            <h2 id="dashboard-title">Dashboard</h2>
+          </div>
+          <button id="dashboard-refresh" type="button">Atualizar</button>
+        </div>
+        <div id="dashboard-cards" class="dashboard-cards">
+          <div class="dashboard-card">
+            <h3>Oportunidades</h3>
+            <div id="dash-opp-total" class="dashboard-number">—</div>
+            <div id="dash-opp-details" class="dashboard-details"></div>
+          </div>
+          <div class="dashboard-card">
+            <h3>Conversas</h3>
+            <div id="dash-conv-total" class="dashboard-number">—</div>
+            <div id="dash-conv-details" class="dashboard-details"></div>
+          </div>
+          <div class="dashboard-card">
+            <h3>Leads</h3>
+            <div id="dash-lead-total" class="dashboard-number">—</div>
+            <div id="dash-lead-details" class="dashboard-details"></div>
+          </div>
+          <div class="dashboard-card">
+            <h3>Tarefas</h3>
+            <div id="dash-task-details" class="dashboard-details"></div>
+          </div>
+          <div class="dashboard-card">
+            <h3>Revisão</h3>
+            <div id="dash-rq-total" class="dashboard-number">—</div>
+            <div id="dash-rq-details" class="dashboard-details"></div>
+          </div>
+        </div>
+      </section>
+
       <section class="panel" aria-labelledby="rq-title"><div class="panel-heading"><div><span class="section-index">05 / PILOTO SINTÉTICO</span><h2 id="rq-title">Fila de revisão comercial</h2></div><button id="rq-refresh" type="button">Atualizar</button></div><p class="small">Aprovações registram decisões internas. Não enviam mensagens.</p><form id="rq-form"><div class="two-col"><div><label for="rq-event">ID do evento</label><input id="rq-event" required maxlength="100" placeholder="demo-001"></div><div><label for="rq-channel">Canal simulado</label><select id="rq-channel"><option value="web">Web</option><option value="email">E-mail simulado</option><option value="whatsapp">WhatsApp simulado</option></select></div></div><label for="rq-message">Mensagem fictícia</label><textarea id="rq-message" required maxlength="4000" rows="3"></textarea><button type="submit" class="primary">Simular entrada</button></form><h3>Pendentes <span id="rq-count" class="tag">—</span></h3><p id="rq-summary" class="small" aria-live="polite">Resumo operacional indisponível.</p><p id="rq-aging" class="small" aria-live="polite">Atrasos: indisponível.</p><div id="rq-list" class="opportunity-list"></div><div class="review-actions"><button id="rq-prev" type="button" class="secondary" disabled>Anterior</button><span id="rq-page" class="small">Página 1</span><button id="rq-next" type="button" class="secondary" disabled>Próxima</button></div></section>
-      <section class="panel" aria-labelledby="it-title"><div class="panel-heading"><div><span class="section-index">06 / TAREFAS INTERNAS</span><h2 id="it-title">Tarefas internas</h2></div><button id="it-refresh" type="button">Atualizar</button></div><p class="small">Estado das tarefas de processamento interno. Apenas leitura; não altera tarefas.</p><div class="two-col"><div><label for="it-filter">Filtrar por status</label><select id="it-filter"><option value="">Todas</option><option value="queued">Aguardando</option><option value="running">Em execução</option><option value="succeeded">Concluídas</option><option value="failed">Falhas</option></select></div><div><label for="it-count">Total</label><span id="it-count" class="tag">—</span></div></div><p id="it-summary" class="small" aria-live="polite">Resumo indisponível.</p><div id="it-list" class="opportunity-list"></div></section>
       <div class="layout">
         <div class="column">
           <section class="panel" aria-labelledby="capture-title">
@@ -84,42 +119,35 @@
             </form>
           </section>
 
-          <section class="panel" aria-labelledby="pipeline-title">
+          <section class="panel" aria-labelledby="list-title">
             <div class="panel-heading">
               <div>
                 <span class="section-index">02 / CARTEIRA</span>
-                <h2 id="pipeline-title">Pipeline de oportunidades</h2>
+                <h2 id="list-title">Oportunidades <span id="pending-badge" class="pending-badge" hidden></span></h2>
               </div>
-              <button id="pipeline-refresh" type="button" class="secondary">Atualizar</button>
+              <button id="refresh-button" type="button" class="secondary">Atualizar</button>
             </div>
-            <div id="pipeline-summary" class="pipeline-summary" aria-label="Resumo do pipeline">
-              <button class="pipeline-chip" data-filter="all" aria-pressed="true">
-                <span class="pipeline-chip-label">Todas</span>
-                <span id="pipeline-all" class="pipeline-chip-count">—</span>
-              </button>
-              <button class="pipeline-chip" data-filter="pending">
-                <span class="pipeline-chip-label">Pendente</span>
-                <span id="pipeline-pending" class="pipeline-chip-count">—</span>
-              </button>
-              <button class="pipeline-chip" data-filter="follow">
-                <span class="pipeline-chip-label">Acompanhar</span>
-                <span id="pipeline-follow" class="pipeline-chip-count">—</span>
-              </button>
-              <button class="pipeline-chip" data-filter="prepare_proposal">
-                <span class="pipeline-chip-label">Proposta</span>
-                <span id="pipeline-prepare_proposal" class="pipeline-chip-count">—</span>
-              </button>
-              <button class="pipeline-chip" data-filter="in_progress">
-                <span class="pipeline-chip-label">Em andamento</span>
-                <span id="pipeline-in_progress" class="pipeline-chip-count">—</span>
-              </button>
-              <button class="pipeline-chip" data-filter="ignore">
-                <span class="pipeline-chip-label">Ignorado</span>
-                <span id="pipeline-ignore" class="pipeline-chip-count">—</span>
-              </button>
+            <div class="opp-toolbar">
+              <p id="list-meta" class="small">Nenhuma consulta realizada.</p>
+              <div class="opp-toolbar-right">
+                <input type="text" id="opp-search" class="opp-search-inline" placeholder="Buscar oportunidades...">
+                <select id="opp-sort" class="opp-sort-select">
+                  <option value="id">Ordenar: ID</option>
+                  <option value="created_at">Ordenar: Data</option>
+                  <option value="next_action">Ordenar: Status</option>
+                </select>
+                <label class="opp-archive-toggle">
+                  <input type="checkbox" id="show-archived">
+                  Exibir arquivadas
+                </label>
+              </div>
             </div>
-            <p id="list-meta" class="small">Nenhuma consulta realizada.</p>
             <div id="opportunity-list" class="opportunity-list" aria-label="Lista de oportunidades"></div>
+            <div id="opp-pagination" class="opp-pagination" hidden>
+              <button id="opp-prev" type="button" class="secondary" disabled>Anterior</button>
+              <span id="opp-page" class="small">Página 1</span>
+              <button id="opp-next" type="button" class="secondary" disabled>Próxima</button>
+            </div>
           </section>
         </div>
 
@@ -132,8 +160,14 @@
               </div>
               <span id="selected-id" class="tag"></span>
             </div>
-            <h3 id="selected-title"></h3>
-            <p id="selected-description" class="readout"></p>
+            <!-- WP-093 — Editable title and description -->
+            <div id="opp-edit-panel" class="opp-edit-panel">
+              <label for="edit-title">Título</label>
+              <input id="edit-title" type="text" maxlength="200" placeholder="Título da oportunidade">
+              <label for="edit-description">Descrição</label>
+              <textarea id="edit-description" rows="3" placeholder="Descrição da oportunidade"></textarea>
+              <button id="save-edit-button" type="button" class="primary">Salvar alterações</button>
+            </div>
             <dl class="metadata">
               <dt>Origem</dt><dd id="selected-url" class="break-word"></dd>
               <dt>Orçamento</dt><dd id="selected-budget"></dd>
@@ -147,7 +181,6 @@
                 <option value="follow">Acompanhar</option>
                 <option value="ignore">Ignorar</option>
                 <option value="prepare_proposal">Preparar proposta</option>
-                <option value="in_progress">Em andamento</option>
               </select>
               <label for="triage-note">Justificativa</label>
               <textarea id="triage-note" name="triage_note" rows="3"
@@ -186,11 +219,13 @@
                 <select id="brief-state" name="status">
                   <option value="draft">Rascunho</option>
                   <option value="ready_for_review">Pronto para revisão</option>
-                  <option value="approved">Aprovado</option>
                 </select>
               </div>
               <button id="save-brief-button" type="submit" class="primary">Criar rascunho</button>
-              <button id="approve-brief-button" type="button" class="primary" hidden>Aprovar brief e iniciar</button>
+              <div id="brief-actions" hidden>
+                <button id="brief-approve" type="button" class="primary">Aprovar brief</button>
+                <button id="brief-reject" type="button" class="secondary">Rejeitar brief</button>
+              </div>
               <p class="guardrail">“Pronto para revisão” não significa aprovado. Escopo, preço e envio dependem de autorização humana e do back-office.</p>
             </form>
           </section>
@@ -211,11 +246,182 @@
           </div>
           <button id="conv-refresh" type="button">Atualizar</button>
         </div>
-        <p class="small">Histórico de conversas por canal. Selecione uma conversa para ver as mensagens.</p>
+        <p class="small">Histórico de conversas por canal. Selecione uma conversa para ver as mensagens e responder.</p>
+
+        <div class="conv-filters">
+          <div class="conv-filter-group">
+            <label for="conv-filter-channel">Canal</label>
+            <select id="conv-filter-channel">
+              <option value="">Todos os canais</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="instagram">Instagram</option>
+              <option value="web">Web</option>
+              <option value="telegram">Telegram</option>
+              <option value="email">E-mail</option>
+            </select>
+          </div>
+          <div class="conv-filter-group">
+            <label for="conv-filter-status">Status</label>
+            <select id="conv-filter-status">
+              <option value="">Todos os status</option>
+              <option value="open">Aberta</option>
+              <option value="closed">Fechada</option>
+            </select>
+          </div>
+          <div class="conv-filter-group conv-search-group">
+            <label for="conv-search-q">Buscar</label>
+            <div class="conv-search-inline">
+              <input id="conv-search-q" type="search" placeholder="Keywords nas mensagens..." autocomplete="off">
+              <button id="conv-search-btn" type="button">Buscar</button>
+              <button id="conv-clear-filter" type="button" class="secondary">Limpar</button>
+            </div>
+          </div>
+          <div class="conv-filter-group">
+            <label for="conv-filter-sort">Ordenar</label>
+            <select id="conv-filter-sort">
+              <option value="last_message">Última mensagem</option>
+              <option value="created_at">Data de criação</option>
+              <option value="id">ID</option>
+            </select>
+          </div>
+        </div>
+
         <div id="conv-list" class="conversation-list"></div>
+        <div id="conv-pagination" class="conv-pagination" hidden>
+          <button id="conv-prev" type="button" class="secondary" disabled>Anterior</button>
+          <span id="conv-page" class="small">Página 1</span>
+          <button id="conv-next" type="button" class="secondary" disabled>Próxima</button>
+        </div>
         <div id="conv-detail" class="conv-detail" hidden>
-          <h3 id="conv-detail-header"></h3>
+          <div class="conv-detail-header-row">
+            <h3 id="conv-detail-header"></h3>
+            <div class="conv-detail-actions">
+              <button id="conv-close-toggle" type="button" class="secondary" hidden>Fechar</button>
+              <button id="conv-reply-toggle" type="button" class="secondary" hidden>Responder</button>
+            </div>
+          </div>
           <div id="conv-messages" class="conv-messages"></div>
+          <form id="human-reply-form" hidden>
+            <input id="reply-conv-id" name="conversation_id" type="hidden" readonly>
+            <label for="reply-message">Mensagem *</label>
+            <textarea id="reply-message" name="message" required maxlength="4000" rows="4"
+                      placeholder="Escreva a resposta manual"></textarea>
+            <button type="submit" class="primary">Enviar mensagem</button>
+          </form>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="leads-title">
+        <div class="panel-heading">
+          <div>
+            <span class="section-index">07 / LEADS</span>
+            <h2 id="leads-title">Leads</h2>
+          </div>
+          <button id="leads-refresh" type="button">Atualizar</button>
+        </div>
+        <p class="small">Gerencie leads: altere status para acompanhar o funil comercial.</p>
+
+        <div class="lead-filters">
+          <div class="lead-filter-group">
+            <label for="lead-filter-status">Status</label>
+            <select id="lead-filter-status">
+              <option value="">Todos os status</option>
+              <option value="new">Novo</option>
+              <option value="contacted">Contatado</option>
+              <option value="qualified">Qualificado</option>
+              <option value="proposal">Proposta</option>
+              <option value="won">Convertido</option>
+              <option value="lost">Perdido</option>
+            </select>
+          </div>
+          <div class="lead-filter-group lead-search-inline">
+            <label for="lead-search">Buscar</label>
+            <input id="lead-search" type="search" placeholder="Nome ou interesse..."
+                   autocomplete="off">
+          </div>
+          <div class="lead-filter-group">
+            <label for="lead-sort">Ordenar</label>
+            <select id="lead-sort">
+              <option value="id">ID</option>
+              <option value="created_at">Data</option>
+              <option value="status">Status</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="leads-list" class="lead-list"></div>
+
+        <div id="leads-pagination" class="lead-pagination" hidden>
+          <button id="leads-prev-page" type="button" class="secondary">Anterior</button>
+          <span id="leads-page-info" class="small"></span>
+          <button id="leads-next-page" type="button" class="secondary">Próxima</button>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="customers-title">
+        <div class="panel-heading">
+          <div>
+            <span class="section-index">08 / CUSTOMERS</span>
+            <h2 id="customers-title">Customers</h2>
+          </div>
+          <button id="customers-refresh" type="button">Atualizar</button>
+        </div>
+        <p class="small">Visualize customers ativos. Leads convertidos aparecem aqui automaticamente.</p>
+
+        <div id="customers-list" class="customer-list"></div>
+
+        <div id="customer-detail" class="customer-detail" hidden>
+          <div class="customer-detail-header">
+            <button id="customer-detail-back" type="button">← Voltar</button>
+            <h3 id="customer-detail-name"></h3>
+          </div>
+          <div id="customer-detail-info" class="customer-detail-info"></div>
+          <h4>Conversas</h4>
+          <button id="customer-new-conv" type="button" class="secondary">+ Nova conversa</button>
+          <div id="customer-conversations-list" class="customer-conv-list"></div>
+        </div>
+      </section>
+
+      <!-- WP-096 — Commercial intake section -->
+      <section class="panel" aria-labelledby="intake-title">
+        <div class="panel-heading">
+          <div>
+            <span class="section-index">09 / INTAKE COMERCIAL</span>
+            <h2 id="intake-title">Intake comercial</h2>
+          </div>
+        </div>
+        <p class="small">Avalie uma entrada comercial e crie uma oportunidade automaticamente.</p>
+        <form id="intake-form">
+          <div class="two-col">
+            <div>
+              <label for="intake-channel">Canal</label>
+              <select id="intake-channel" required>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="instagram">Instagram</option>
+                <option value="web">Web</option>
+                <option value="telegram">Telegram</option>
+                <option value="email">E-mail</option>
+              </select>
+            </div>
+            <div>
+              <label for="intake-event-id">ID do evento</label>
+              <input id="intake-event-id" type="text" required maxlength="100"
+                     placeholder="ex: intake-001">
+            </div>
+          </div>
+          <label for="intake-message">Mensagem do cliente *</label>
+          <textarea id="intake-message" required maxlength="4000" rows="4"
+                    placeholder="Cole a mensagem ou descreva a entrada comercial"></textarea>
+          <button type="submit" class="primary">Avaliar e criar oportunidade</button>
+        </form>
+        <div id="intake-decision" class="intake-decision" hidden>
+          <h3>Decisão</h3>
+          <dl class="metadata">
+            <dt>Intenção</dt><dd id="intake-decision-intent"></dd>
+            <dt>Revisão humana</dt><dd id="intake-decision-review"></dd>
+            <dt>Flags</dt><dd id="intake-decision-flags"></dd>
+            <dt>Oportunidade</dt><dd id="intake-decision-opp"></dd>
+          </dl>
         </div>
       </section>
     </main>

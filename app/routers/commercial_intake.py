@@ -1,30 +1,27 @@
-"""Private commercial intake evaluate endpoint.
+"""Private commercial intake endpoints.
 
 This router exposes the WP-035 + WP-036 intake engine as an authenticated,
-internal-only endpoint.  It does NOT persist data, send messages, call n8n,
-or publish any webhook.
+internal-only endpoint.  The evaluate endpoint is simulation-only.
+The create endpoint evaluates and persists as an Opportunity.
 """
 
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.auth import AccessIdentity
 from app.dependencies import get_db, get_intake_generator, require_operator
 from app.database import settings
-from app.models import Company, Opportunity
+from app.models import Opportunity
 from app.schemas import (
     CommercialIntakeEvaluateRequest,
     IntakeCreate,
     IntakeCreateResponse,
 )
 from app.services.commercial_intake import (
-    CandidateReply,
     CommercialIntakeEvent,
     IntakeDecision,
-    process_commercial_intake,
 )
 from app.services.intake_candidate_generator import (
     CandidateGenerator,
@@ -67,36 +64,18 @@ def evaluate_commercial_intake(
     status_code=status.HTTP_200_OK,
     include_in_schema=False,
 )
-def create_intake_opportunity(
+def create_commercial_intake(
     request: IntakeCreate,
     db: Session = Depends(get_db),
-    identity: AccessIdentity = Depends(require_operator),
+    identity: dict = Depends(require_operator),
     generator: CandidateGenerator = Depends(get_intake_generator),
 ) -> IntakeCreateResponse:
-    """Evaluate a commercial intake and persist it as an opportunity.
+    """Evaluate a commercial intake event and persist it as an Opportunity.
 
-    This endpoint is private, authenticated, and tenant-isolated.
-    It creates an Opportunity from the intake event after evaluation.
-    No external messages are sent.
+    This endpoint evaluates the intake, creates an Opportunity record,
+    and returns the decision along with the opportunity ID.
+    Deduplication is handled by event_id within the tenant.
     """
-    company = db.scalar(select(Company).where(Company.id == identity.company_id))
-    if company is None:
-        raise HTTPException(status_code=404, detail="Company not found")
-
-    # Check for duplicate by event_id
-    existing = db.scalar(
-        select(Opportunity).where(
-            Opportunity.company_id == identity.company_id,
-            Opportunity.external_url == f"intake:{request.event_id}",
-        )
-    )
-    if existing is not None:
-        raise HTTPException(
-            status_code=409,
-            detail="Intake already captured",
-        )
-
-    # Evaluate the intake
     event = CommercialIntakeEvent(
         channel=request.channel,
         message=request.message,
@@ -104,39 +83,76 @@ def create_intake_opportunity(
         event_id=request.event_id,
     )
 
-    # Get candidate reply from generator
-    candidate = generator.generate(event)
-    decision = process_commercial_intake(event, candidate)
+    decision = evaluate_intake(event, generator)
 
-    # Create opportunity from intake
-    now = datetime.now(timezone.utc)
-    title = f"Intake: {request.message[:150]}"
-    if len(request.message) > 150:
-        title = f"Intake: {request.message[:147]}..."
+    # Access company_id from AccessIdentity object
+    company_id = identity.company_id if hasattr(identity, "company_id") else identity["company_id"]
 
-    triage_note = None
-    if decision.needs_human_review:
-        triage_note = f"Flags: {', '.join(decision.flags)}"
+    # Deduplication: check if event_id already exists for this tenant
+    existing = (
+        db.query(Opportunity)
+        .filter(
+            Opportunity.company_id == company_id,
+            Opportunity.source == "intake",
+            Opportunity.external_url == f"intake://{request.event_id}",
+        )
+        .first()
+    )
+    if existing is not None:
+        return IntakeCreateResponse(
+            opportunity_id=existing.id,
+            event_id=decision.event_id,
+            intent=decision.intent,
+            needs_human_review=decision.needs_human_review,
+            flags=decision.flags,
+        )
 
-    opportunity = Opportunity(
-        company_id=identity.company_id,
-        source="intake",
-        external_url=f"intake:{request.event_id}",
-        title=title,
-        description=request.message,
-        budget=None,
-        deadline=None,
-        requirements=None,
-        captured_at=now,
-        next_action="pending",
-        triage_note=triage_note,
+    # Build opportunity title from intent and message
+    title = f"Intake: {decision.intent}" if decision.intent != "unknown" else "Intake comercial"
+    # Truncate message for description, add triage note
+    description = (
+        request.message[:1000]
+        + f"\n\n[Triage: intenção={decision.intent}, revisão={decision.needs_human_review}]"
     )
 
-    db.add(opportunity)
-    db.commit()
-    db.refresh(opportunity)
+    opp = Opportunity(
+        company_id=company_id,
+        source="intake",
+        external_url=f"intake://{request.event_id}",
+        title=title,
+        description=description,
+        captured_at=datetime.now(timezone.utc),
+    )
+    db.add(opp)
+    try:
+        db.commit()
+        db.refresh(opp)
+    except IntegrityError:
+        db.rollback()
+        # Race condition: another request created the same event_id
+        existing = (
+            db.query(Opportunity)
+            .filter(
+                Opportunity.company_id == company_id,
+                Opportunity.source == "intake",
+                Opportunity.external_url == f"intake://{request.event_id}",
+            )
+            .first()
+        )
+        if existing is not None:
+            return IntakeCreateResponse(
+                opportunity_id=existing.id,
+                event_id=decision.event_id,
+                intent=decision.intent,
+                needs_human_review=decision.needs_human_review,
+                flags=decision.flags,
+            )
+        raise HTTPException(status_code=500, detail="Falha ao criar oportunidade.")
 
     return IntakeCreateResponse(
-        decision=decision.model_dump(),
-        opportunity_id=opportunity.id,
+        opportunity_id=opp.id,
+        event_id=decision.event_id,
+        intent=decision.intent,
+        needs_human_review=decision.needs_human_review,
+        flags=decision.flags,
     )

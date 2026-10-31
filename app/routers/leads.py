@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func, select, desc
 from sqlalchemy.orm import Session
 
 from app.auth import AccessIdentity
@@ -73,14 +73,53 @@ def create_lead(
 
 @router.get("/leads")
 def list_leads(
+    status: str | None = None,
+    q: str | None = Query(default=None, description="Search keywords in name and interest"),
+    sort: str = Query(default="id", description="Sort by: id, created_at, status"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    return db.scalars(
-        select(Lead)
-        .where(Lead.company_id == identity.company_id)
-        .order_by(Lead.id)
-    ).all()
+    """List leads, optionally filtered by status and searched by keywords."""
+    query = select(Lead).where(Lead.company_id == identity.company_id)
+    if status:
+        query = query.where(Lead.status == status)
+    if q:
+        pattern = f"%{q}%"
+        query = query.where(
+            func.lower(Lead.name).like(func.lower(pattern)) |
+            func.lower(Lead.interest).like(func.lower(pattern))
+        )
+    if sort == "created_at":
+        query = query.order_by(desc(Lead.created_at), Lead.id)
+    elif sort == "status":
+        query = query.order_by(Lead.status, Lead.id)
+    else:
+        query = query.order_by(Lead.id)
+    query = query.offset(offset).limit(limit)
+    return db.scalars(query).all()
+
+
+@router.get("/leads/count")
+def count_leads(
+    status: str | None = None,
+    q: str | None = Query(default=None, description="Search keywords in name and interest"),
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Count leads, optionally filtered by status and searched by keywords."""
+    query = select(func.count()).select_from(Lead).where(Lead.company_id == identity.company_id)
+    if status:
+        query = query.where(Lead.status == status)
+    if q:
+        pattern = f"%{q}%"
+        query = query.where(
+            func.lower(Lead.name).like(func.lower(pattern)) |
+            func.lower(Lead.interest).like(func.lower(pattern))
+        )
+    total = db.scalar(query)
+    return {"total": total}
 
 
 @router.get("/leads/{lead_id}")
@@ -109,7 +148,10 @@ def update_lead(
         identity.company_id,
     )
 
-    lead.status = data.status
+    if data.status is not None:
+        lead.status = data.status
+    if data.interest is not None:
+        lead.interest = data.interest
 
     db.commit()
     db.refresh(lead)

@@ -196,11 +196,18 @@ def test_client0_piloto_sintetico(
     assert not {"price", "sent_at"} & revised.json().keys()
     # "approved" e um status valido (WP-071), mas a aprovacao deve usar
     # o endpoint dedicado /approve para atualizar atomicamente a opportunity.
-    # Via PATCH generico, "approved" e aceito como status valido.
+    # Via PATCH generico, "approved" nao e aceito — so /approve.
     approved_via_patch = client.patch(
         brief_url,
         headers=operator_a_headers,
         json={**revision, "status": "approved"},
     )
-    assert approved_via_patch.status_code == 200
-    assert approved_via_patch.json()["status"] == "approved"
+    assert approved_via_patch.status_code == 422  # "approved" not in PATCH status Literal
+
+    # Use the dedicated /approve endpoint instead
+    approved = client.patch(
+        brief_url + "/approve",
+        headers=operator_a_headers,
+    )
+    assert approved.status_code == 200
+    assert approved.json()["status"] == "approved"

@@ -102,3 +102,194 @@ opcionais `channel`, `status` e `q` (busca case-insensitive em mensagens).
 UI com dropdowns de canal/status, campo de busca e botão limpar.
 `conversationApi()` atualizada para aceitar query params via `buildConversationUrl()`.
 **1197 testes passaram**; compileall, diff-check: PASS.
+
+## WP-079 — Paginação de conversas (30/10/2026)
+
+Adiciona paginação limit/offset ao endpoint de listagem de conversas e um
+endpoint de contagem para os controles de paginação da UI.
+`GET /companies/{company_id}/conversations` aceita `limit` (default 50, max 100)
+e `offset` (default 0). `GET /companies/{company_id}/conversations/count`
+retorna `{"total": N}` respeitando os filtros existentes.
+UI com botões Anterior/Próxima e indicador de página.
+**1211 testes passaram**; compileall, diff-check: PASS.
+
+## WP-080 — Ordenação de conversas (30/10/2026)
+
+`GET /companies/{company_id}/conversations` aceita `sort` (default "last_message").
+Opções: last_message (subquery max(Message.created_at)), created_at (desc),
+id (asc). Valor inválido decai para ID. UI com dropdown "Ordenar".
+**1220 testes passaram**; compileall, diff-check: PASS.
+
+## WP-081 — Fechar conversas (30/10/2026)
+
+Novo endpoint PATCH /conversations/{id} com body {"status": "open"|"closed"}
+permite ao operador fechar e reabrir conversas. UI com botão "Fechar" que
+alterna entre open/closed. Filtro e count por status já existentes funcionam
+com o novo endpoint.
+**1229 testes passaram**; compileall, diff-check: PASS.
+
+## WP-082 — Dashboard de métricas (30/10/2026)
+
+Novo endpoint GET /internal-tasks/dashboard agrega contagens tenant-isoladas
+de oportunidades (por next_action), conversas (por status), leads (por status),
+tarefas internas e review queue. UI com cards de métricas no topo do painel
+do operador, carregada automaticamente ao conectar.
+**1240 testes passaram**; compileall, diff-check: PASS.
+
+## WP-083 — Gerenciamento de leads no operador (30/10/2026)
+
+Seção "07 / LEADS" no painel do operador com lista de leads, filtro por status
+e seletor inline para atualizar status rapidamente. Backend com filtro opcional
+`status` em `GET /leads`. `leadApi()` com allowlist estrita; renderização com
+`textContent`/`appendChild` (sem innerHTML).
+**1268 testes passaram**; compileall, diff-check: PASS.
+
+## WP-084 — Approve e reject do proposal brief (30/10/2026)
+
+Endpoints PATCH /proposal-brief/approve e /proposal-brief/reject. Approve
+é atômico (brief → approved, opportunity → in_progress). Reject volta brief
+para draft sem alterar opportunity. UI com botões "Aprovar" e "Rejeitar"
+no painel de brief, visíveis conforme status.
+**1279 testes passaram**; compileall, diff-check: PASS.
+
+## WP-085 — Converter lead em customer via UI (30/10/2026)
+
+Botão "Converter" na seção de leads do operador. Conecta ao endpoint existente
+`POST /leads/{lead_id}/convert` (customers.py). Confirmação antes da conversão;
+botão oculto para leads já convertidos (status "won"). Tratamento de 409
+(duplicata) e 403 (auth).
+**1297 testes passaram**; compileall, diff-check: PASS.
+
+## WP-086 — Lista de customers no operador (30/10/2026)
+
+Seção "08 / CUSTOMERS" no painel do operador com lista de customers ativos.
+Exibe nome, telefone, email e lead de origem. `customerApi()` com allowlist
+estrita; renderização com `textContent`/`appendChild`. Carregamento automático
+ao conectar.
+**1323 testes passaram**; compileall, diff-check: PASS.
+
+## WP-087 — Visão detalhada de customer com conversas (30/10/2026)
+
+Clicar em um customer na lista abre painel de detalhes com informações e
+conversas associadas. Backend com filtro `customer_id` em
+`GET /companies/{company_id}/conversations` e count endpoint. UI com
+`showCustomerDetail()`, `loadCustomerConversations()` e botão voltar.
+**1349 testes passaram**; compileall, diff-check: PASS.
+
+## WP-088 — Notas em leads via UI do operador (30/10/2026)
+
+Textarea "Notas" em cada lead permite ao operador registrar informações
+sobre interações. Reutiliza o campo `interest` existente (sem migration).
+`LeadUpdate` schema com `interest` e `status` opcionais; backend atualiza
+condicionalmente. Salvamento automático no evento `change`.
+**1363 testes passaram**; compileall, diff-check: PASS.
+
+## WP-089 — Criar conversa a partir de customer (30/10/2026)
+
+Botão "+ Nova conversa" no painel de detalhes do customer. Prompt para
+canal (whatsapp, instagram, web, telegram, email); validação de allowlist.
+POST /conversations com customer_id vinculado. Recarrega a lista de
+conversas após criação.
+**1377 testes passaram**; compileall, diff-check: PASS.
+
+## WP-090 — Arquivamento visual de oportunidades (30/10/2026)
+
+Toggle "Exibir arquivadas" na lista de oportunidades oculta por padrão
+as oportunidades com status `done`/`lost`. Backend com `exclude_archived`
+query param em `GET /opportunities`. Schema `OpportunityTriageUpdate`
+com `in_progress`, `done`, `lost` como opções de triagem.
+**1393 testes passaram**; compileall, diff-check: PASS.
+
+## WP-091 — Badge de pendentes no operador (30/10/2026)
+
+Badge vermelho ao lado de "Oportunidades" mostra contagem de oportunidades
+com status `pending`. Atualizado automaticamente em `refreshList()`.
+**1404 testes passaram**; compileall, diff-check: PASS.
+
+## WP-092 — Labels de status de oportunidades no operador (30/10/2026)
+
+Os status `in_progress`, `done` e `lost` foram adicionados ao backend
+(WP-073/074) mas os labels em `actionLabels` do JavaScript não foram
+atualizados, fazendo o operador ver "Estado desconhecido". Corrigido
+adicionando os três labels faltantes.
+**1414 testes passaram**; compileall, diff-check: PASS.
+
+## WP-093 — Editar título e descrição de oportunidades (30/10/2026)
+
+Painel de edição inline no painel de triagem permite ao operador alterar
+título e descrição das oportunidades. Backend com `PATCH /opportunities/{id}`
+tenant-isolado. Validação de comprimento e campos obrigatórios.
+**1436 testes passaram**; compileall, diff-check: PASS.
+
+## WP-094 — Busca de oportunidades por keywords (30/10/2026)
+
+Campo de busca na toolbar de oportunidades filtra por título e descrição
+(case-insensitive). Backend com `?q=` query param em `GET /opportunities`.
+Combina com `exclude_archived` para filtragem composta.
+**1453 testes passaram**; compileall, diff-check: PASS.
+
+## WP-095 — Ordenação e paginação de oportunidades (31/10/2026)
+
+O módulo de oportunidades não tinha ordenação configurável nem paginação,
+dificultando o trabalho com carteiras grandes. Adicionado `sort` param
+(id, created_at, next_action), `limit`/`offset` paginação e endpoint
+`GET /opportunities/count`. UI com dropdown "Ordenar" e controles
+Anterior/Próxima com indicador de página.
+**1468 testes passaram**; compileall, diff-check: PASS.
+
+## WP-096 — Persistência de intake comercial (31/10/2026)
+
+O backend de intake tinha apenas o endpoint evaluate (simulação).
+Adicionado `POST /internal/commercial-intake/create` que avalia o intake
+e persiste automaticamente como Opportunity com deduplicação por event_id
+e isolamento de tenant. UI com seção "09 / INTAKE COMERCIAL" no painel
+do operador: formulário com canal, ID do evento e mensagem; exibição da
+decisão (intenção, revisão humana, flags, ID da oportunidade criada).
+**1478 testes passaram**; compileall, diff-check: PASS.
+
+## WP-097 — Review queue aprovação cria oportunidade (31/10/2026)
+
+Aprovar um item na review queue não criava oportunidade, quebrando o
+fluxo review → opportunity. Modificado `apply_decision` em
+`commercial_pipeline.py` para criar Opportunity automaticamente ao
+aprovar, com deduplicação por event_id e isolamento de tenant.
+Rejeitar não cria oportunidade. Schema com source "review_queue".
+**1484 testes passaram**; compileall, diff-check: PASS.
+
+## WP-098 — Feedback de oportunidade na review queue (31/10/2026)
+
+Aprovar um item na review queue criava oportunidade automaticamente (WP-097),
+mas não informava ao operador qual foi criada. Modificado `apply_decision`
+para retornar a `opportunity_id` criada, e a UI agora mostra a oportunidade
+criada e atualiza a lista automaticamente. Rejeitar retorna `opportunity_id: null`.
+**1494 testes passaram**; compileall, diff-check: PASS.
+
+## WP-099 — Busca de leads por keywords (31/10/2026)
+
+O módulo de leads tinha filtro por status mas não tinha busca por keywords.
+Adicionado parâmetro `?q=` em `GET /leads` com busca case-insensitive em
+nome e interesse. UI com campo de busca inline que filtra em tempo real.
+**1503 testes passaram**; compileall, diff-check: PASS.
+
+## WP-100 — Paginação de leads no operador (31/10/2026)
+
+O módulo de leads não tinha paginação. Adicionado `limit`/`offset` em
+`GET /leads` e novo `GET /leads/count`. UI com controles Anterior/Próxima
+e indicador de página. **1527 testes passaram**; compileall, diff-check: PASS.
+
+## WP-101 — Ordenação de leads no operador (31/10/2026)
+
+O módulo de leads não tinha ordenação configurável. Adicionado parâmetro
+`sort` em `GET /leads` (id, created_at, status). UI com dropdown "Ordenar".
+**1527 testes passaram**; compileall, diff-check: PASS.
+
+## WP-103 — Consolidação da main (31/10/2026)
+
+As WPs da WP-078 à WP-101 foram merged em cadeia nas branches WP, não na
+main. A main ficou com versão antiga do código enquanto os testes antigos
+permaneciam. Esta WP consolida todas as mudanças na main: remove testes UI
+obsoletos substituídos pela versão unificada (WP-077), adiciona filtro
+`next_action` e endpoint `pipeline-summary` ao router de oportunidades,
+corrige `test_client0_simulation.py` para usar `/approve` dedicado e
+atualiza `test_operator_ui.py` para refletir botões approve/reject.
+**1555 testes passaram**; compileall, diff-check: PASS.

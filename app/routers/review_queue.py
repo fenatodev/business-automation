@@ -12,6 +12,7 @@ from app.database import settings
 from app.dependencies import get_db, require_operator
 from app.schemas import (
     ReviewQueueDecision,
+    ReviewQueueDecisionResponse,
     ReviewQueueItemOut,
     ReviewQueueTrigger,
 )
@@ -91,17 +92,20 @@ def get_review_item(
 
 @router.patch(
     "/{item_id}/decision",
-    response_model=ReviewQueueItemOut,
+    response_model=ReviewQueueDecisionResponse,
 )
 def apply_review_decision(
     item_id: int,
     decision_data: ReviewQueueDecision,
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
-) -> ReviewQueueItemOut:
-    """Apply an operator decision (approve/reject) to a review queue item."""
+) -> ReviewQueueDecisionResponse:
+    """Apply an operator decision (approve/reject) to a review queue item.
+
+    Returns the updated item along with the created opportunity_id (if approved).
+    """
     try:
-        item = pipeline.apply_decision(
+        item, created_opportunity = pipeline.apply_decision(
             db=db,
             item_id=item_id,
             company_id=identity.company_id,
@@ -118,4 +122,19 @@ def apply_review_decision(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(exc),
         )
-    return ReviewQueueItemOut.model_validate(item)
+    return ReviewQueueDecisionResponse(
+        id=item.id,
+        company_id=item.company_id,
+        event_id=item.event_id,
+        channel=item.channel,
+        message=item.message,
+        intent=item.intent,
+        draft_reply=item.draft_reply,
+        status=item.status,
+        operator_note=item.operator_note,
+        needs_human_review=item.needs_human_review,
+        flags_json=item.flags_json,
+        created_at=item.created_at,
+        updated_at=item.updated_at,
+        opportunity_id=created_opportunity.id if created_opportunity is not None else None,
+    )
