@@ -653,7 +653,7 @@
       const opportunity = await api("/opportunities", {
         method: "POST",
         body: {
-          source: "99freelas",
+          source: fields.source || "manual",
           external_url: fields.external_url.trim(),
           title: fields.title.trim(),
           description: fields.description.trim(),
