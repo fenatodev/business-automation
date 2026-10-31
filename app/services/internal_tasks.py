@@ -25,10 +25,15 @@ def get_task(db: Session, task_id: int, company_id: int):
     ))
 
 
-def list_tasks(db: Session, company_id: int, *, status=None, limit=50, offset=0, sort="created_at"):
+def list_tasks(db: Session, company_id: int, *, status=None, limit=50, offset=0, sort="created_at", from_date=None, to_date=None):
     query = select(InternalTask).where(InternalTask.company_id == company_id)
     if status is not None:
         query = query.where(InternalTask.status == status)
+    # WP-155 — date range filter
+    if from_date:
+        query = query.where(InternalTask.created_at >= from_date)
+    if to_date:
+        query = query.where(InternalTask.created_at <= to_date + "T23:59:59")
     sort_col = {
         "id": InternalTask.id,
         "created_at": InternalTask.created_at,
@@ -39,10 +44,15 @@ def list_tasks(db: Session, company_id: int, *, status=None, limit=50, offset=0,
                       .offset(offset).limit(limit)).all()
 
 
-def task_count(db: Session, company_id: int, *, status=None):
+def task_count(db: Session, company_id: int, *, status=None, from_date=None, to_date=None):
     query = select(func.count(InternalTask.id)).where(InternalTask.company_id == company_id)
     if status is not None:
         query = query.where(InternalTask.status == status)
+    # WP-155 — date range filter
+    if from_date:
+        query = query.where(InternalTask.created_at >= from_date)
+    if to_date:
+        query = query.where(InternalTask.created_at <= to_date + "T23:59:59")
     return db.scalar(query) or 0
 
 

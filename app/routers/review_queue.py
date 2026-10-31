@@ -29,6 +29,8 @@ router = APIRouter(prefix="/review-queue", tags=["review-queue"])
 @router.get("/export.csv")
 def export_review_queue_csv(
     status: str | None = Query(None, description="Filter by status"),
+    from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
+    to_date: str | None = Query(None, description="Filter created_at <= date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
@@ -36,6 +38,11 @@ def export_review_queue_csv(
     query = select(ReviewQueueItem).where(ReviewQueueItem.company_id == identity.company_id)
     if status:
         query = query.where(ReviewQueueItem.status == status)
+    # WP-154 — date range filter
+    if from_date:
+        query = query.where(ReviewQueueItem.created_at >= from_date)
+    if to_date:
+        query = query.where(ReviewQueueItem.created_at <= to_date + "T23:59:59")
     items = db.scalars(query.order_by(ReviewQueueItem.id)).all()
 
     output = io.StringIO()
@@ -95,6 +102,8 @@ def trigger_synthetic_intake(
 @router.get("/", response_model=list[ReviewQueueItemOut])
 def list_review_items(
     status: str | None = Query(None, description="Filter by status: pending, approved, rejected (default: pending)"),
+    from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
+    to_date: str | None = Query(None, description="Filter created_at <= date (YYYY-MM-DD)"),
     sort: str = Query(default="created_at", description="Sort by: id, created_at, status"),
     limit: int = Query(default=100, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -111,6 +120,11 @@ def list_review_items(
     else:
         # Default to pending for backward compatibility
         stmt = stmt.where(ReviewQueueItem.status == "pending")
+    # WP-154 — date range filter
+    if from_date:
+        stmt = stmt.where(ReviewQueueItem.created_at >= from_date)
+    if to_date:
+        stmt = stmt.where(ReviewQueueItem.created_at <= to_date + "T23:59:59")
     if sort == "created_at":
         stmt = stmt.order_by(desc(ReviewQueueItem.created_at), ReviewQueueItem.id)
     elif sort == "status":
@@ -125,15 +139,22 @@ def list_review_items(
 @router.get("/count")
 def count_review_items(
     status: str | None = Query(None, description="Filter by status"),
+    from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
+    to_date: str | None = Query(None, description="Filter created_at <= date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ) -> dict[str, int]:
-    """Count review queue items with optional status filter."""
+    """Count review queue items with optional status and date filters."""
     stmt = select(func.count()).select_from(ReviewQueueItem).where(
         ReviewQueueItem.company_id == identity.company_id
     )
     if status is not None:
         stmt = stmt.where(ReviewQueueItem.status == status)
+    # WP-154 — date range filter
+    if from_date:
+        stmt = stmt.where(ReviewQueueItem.created_at >= from_date)
+    if to_date:
+        stmt = stmt.where(ReviewQueueItem.created_at <= to_date + "T23:59:59")
     total = db.scalar(stmt)
     return {"total": total}
 

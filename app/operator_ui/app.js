@@ -724,6 +724,11 @@
     params.set("offset", reviewOffset);
     const status = $("rq-status-filter")?.value?.trim();
     if (status) params.set("status", status);
+    // WP-154 — date filter
+    const fromDate = $("rq-from-date")?.value;
+    if (fromDate) params.set("from_date", fromDate);
+    const toDate = $("rq-to-date")?.value;
+    if (toDate) params.set("to_date", toDate);
     const sort = $("rq-sort")?.value?.trim();
     if (sort) params.set("sort", sort);
     return "/review-queue/?" + params.toString();
@@ -732,6 +737,11 @@
     const params = [];
     const status = $("rq-status-filter")?.value?.trim();
     if (status) params.push("status=" + encodeURIComponent(status));
+    // WP-154 — date filter
+    const fromDate = $("rq-from-date")?.value;
+    if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
+    const toDate = $("rq-to-date")?.value;
+    if (toDate) params.push("to_date=" + encodeURIComponent(toDate));
     return "/review-queue/count" + (params.length ? "?" + params.join("&") : "");
   }
   async function refreshReviewQueue() {
@@ -825,6 +835,18 @@
   $("rq-clear-filters").addEventListener("click", () => {
     $("rq-status-filter").value = "";
     $("rq-sort").value = "created_at";
+    // WP-154 — clear date filters
+    $("rq-from-date").value = "";
+    $("rq-to-date").value = "";
+    reviewOffset = 0;
+    refreshReviewQueue();
+  });
+  // WP-154 — review queue date filter listeners
+  $("rq-from-date").addEventListener("change", () => {
+    reviewOffset = 0;
+    refreshReviewQueue();
+  });
+  $("rq-to-date").addEventListener("change", () => {
     reviewOffset = 0;
     refreshReviewQueue();
   });
@@ -2504,12 +2526,30 @@
   });
 
   $("rq-export-csv").addEventListener("click", () => {
-    downloadCsv("/review-queue/export.csv", "review-queue.csv");
+    // WP-154 — export with filters
+    const params = [];
+    const status = $("rq-status-filter")?.value?.trim();
+    if (status) params.push("status=" + encodeURIComponent(status));
+    const fromDate = $("rq-from-date")?.value;
+    if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
+    const toDate = $("rq-to-date")?.value;
+    if (toDate) params.push("to_date=" + encodeURIComponent(toDate));
+    const url = "/review-queue/export.csv" + (params.length ? "?" + params.join("&") : "");
+    downloadCsv(url, "review-queue.csv");
     notify("Exportando fila de revisão...");
   });
 
   $("tasks-export-csv").addEventListener("click", () => {
-    downloadCsv("/internal-tasks/export.csv", "internal-tasks.csv");
+    // WP-155 — export with filters
+    const params = [];
+    const status = $("task-status-filter").value;
+    if (status) params.push("status=" + encodeURIComponent(status));
+    const fromDate = $("task-from-date")?.value;
+    if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
+    const toDate = $("task-to-date")?.value;
+    if (toDate) params.push("to_date=" + encodeURIComponent(toDate));
+    const url = "/internal-tasks/export.csv" + (params.length ? "?" + params.join("&") : "");
+    downloadCsv(url, "internal-tasks.csv");
     notify("Exportando tarefas internas...");
   });
 
@@ -2594,7 +2634,24 @@
     params.set("sort", $("task-sort").value);
     const status = $("task-status-filter").value;
     if (status) params.set("status", status);
+    // WP-155 — date filter
+    const fromDate = $("task-from-date")?.value;
+    if (fromDate) params.set("from_date", fromDate);
+    const toDate = $("task-to-date")?.value;
+    if (toDate) params.set("to_date", toDate);
     return "/internal-tasks/?" + params.toString();
+  }
+
+  function buildTaskCountUrl() {
+    const params = [];
+    const status = $("task-status-filter").value;
+    if (status) params.push("status=" + encodeURIComponent(status));
+    // WP-155 — date filter
+    const fromDate = $("task-from-date")?.value;
+    if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
+    const toDate = $("task-to-date")?.value;
+    if (toDate) params.push("to_date=" + encodeURIComponent(toDate));
+    return "/internal-tasks/count" + (params.length ? "?" + params.join("&") : "");
   }
 
   async function refreshTasks() {
@@ -2602,7 +2659,7 @@
     try {
       const [tasks, count] = await Promise.all([
         taskApi(buildTaskUrl()),
-        taskApi("/internal-tasks/count" + ($("task-status-filter").value ? "?status=" + $("task-status-filter").value : "")),
+        taskApi(buildTaskCountUrl()),
       ]);
       taskTotal = count;
       renderTasks(tasks);
@@ -2693,6 +2750,16 @@
   });
 
   $("task-sort").addEventListener("change", () => {
+    taskOffset = 0;
+    refreshTasks();
+  });
+
+  // WP-155 — task date filter listeners
+  $("task-from-date").addEventListener("change", () => {
+    taskOffset = 0;
+    refreshTasks();
+  });
+  $("task-to-date").addEventListener("change", () => {
     taskOffset = 0;
     refreshTasks();
   });

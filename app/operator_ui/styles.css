@@ -1287,3 +1287,14 @@ footer {
 .task-status-succeeded { background: #0a3a20; color: #40d080; }
 .task-status-failed { background: #3a0a0a; color: #f06060; }
 .task-status-unknown { background: #2a2a2a; color: #808080; }
+
+/* WP-154/155 — Date filter inputs for review queue and tasks */
+.rq-date-filter,
+.task-date-filter {
+  padding: 4px 8px;
+  font-size: 0.82rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+}
