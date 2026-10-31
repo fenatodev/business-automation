@@ -1,7 +1,7 @@
 [project]
 name = "business-automation"
 version = "0.1.0"
-description = "Add your description here"
+description = "FastAPI backend for reusable CRM, business automation, and AI-assisted workflows"
 readme = "README.md"
 authors = [
     { name = "Fernando Nascimento", email = "fenato@outlook.com.br" }

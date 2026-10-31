@@ -1,5 +1,7 @@
 # business-automation
 
+**FastAPI backend for reusable CRM, business automation, and AI-assisted workflows.**
+
 Plataforma reutilizável de automação de negócios, CRM e IA.
 
 O projeto tem dois objetivos complementares:
@@ -7,38 +9,62 @@ O projeto tem dois objetivos complementares:
 1. estruturar e automatizar a operação da própria empresa como **Client 0**;
 2. transformar as capacidades validadas em serviços, integrações e produtos de automação reutilizáveis para outros clientes.
 
-## Papel do repositório
+## What is implemented
 
-Este é o **repositório canônico do produto**. O core deve permanecer horizontal e configurável por empresa, evitando forks por cliente ou regras específicas de nicho.
+- FastAPI application with multi-tenant CRM domain modeling;
+- SQLAlchemy models and PostgreSQL-oriented persistence with Alembic migrations;
+- Bearer token authentication with API keys (SHA-256) and tenant isolation by Company;
+- Complete commercial cycle F2: intake → opportunity → triage → proposal brief → approval → in progress → done/lost;
+- Conversation management with search, filter, pagination, and sorting;
+- Lead management with status, notes, search, and customer conversion;
+- Customer detail view with associated conversations;
+- Internal task queue with retry, lease, fencing, and 24×7 supervisor;
+- Review queue with atomic approve/reject decisions;
+- Operator UI dashboard with metrics, pipeline view, and all entity management;
+- Agent-reply flow with persisted conversation history;
+- Failure handling that preserves user messages when the agent service is unavailable (HTTP 503);
+- 1555+ pytest tests covering happy paths, invalid relationships, agent-service failures, and tenant isolation.
 
-O código atual contém uma API FastAPI com entidades e fluxos básicos para:
+## Engineering case study
 
-- Company;
-- Opportunity e triagem;
-- ProposalBrief interno;
-- Lead;
-- Customer;
-- Conversation;
-- Message;
-- integração de agente local.
+The useful part of this project is not the idea of "AI for business". It is the boundary work required to make automation reliable.
 
-A implementação existente é uma base de produto, não um contrato definitivo de arquitetura.
+| Engineering concern | Current approach |
+| --- | --- |
+| Domain modeling | Explicit Company, Opportunity, Lead, Customer, Conversation, Message, InternalTask entities. |
+| Tenant-aware data relationships | Company ownership enforced at API level; cross-company misuse returns 403. |
+| Authentication | Bearer API keys with role-based access (admin, operator). |
+| API failure behavior | Missing resources and invalid ownership return explicit client errors. |
+| AI integration failure | Customer input preserved, failed agent output not fabricated, internal details not leaked. |
+| Regression protection | 1555+ tests cover happy paths, failures, tenant isolation, and UI contracts. |
+| Product boundaries | ERP and automation engines remain external integrations. |
 
-A [Architecture Baseline v1](docs/architecture/baseline-v1.md) é a referência arquitetural oficial, adotada pelo WP-001 em 2026-10-07. A adoção e as decisões substituídas estão registradas em [Decisões](docs/DECISIONS.md). Capacidades planejadas não devem ser confundidas com funcionalidades implementadas.
+### Example evaluation mindset
+
+One tested failure path is deliberately more important than a demo-only happy path:
+
+```text
+customer message
+→ persist input
+→ call agent service
+→ agent service fails
+→ return bounded 503
+→ preserve customer message
+→ do not persist fake agent output
+→ do not leak internal endpoint/model details
+```
+
+That pattern reflects the broader engineering approach: **reproduce the failure, define the boundary, test the behavior.**
 
 ## Relação com ERP e automação
 
 O produto não pretende reimplementar um ERP completo.
 
-Para o dogfooding inicial:
-
-- **ERPNext** é o back-office padrão inicial, com implantação e integração ainda a validar;
-- **n8n ou Activepieces** podem ser usados como motor auxiliar de integração e automação, sem virar o domínio central;
+- **ERPNext** é o back-office padrão inicial, com implantação e integração a validar;
+- **n8n** pode ser usado como motor auxiliar de integração e automação, sem virar o domínio central;
 - este repositório concentra o core reutilizável de CRM, IA, automações e adapters.
 
-Propostas formais, financeiro, cobrança e gestão convencional de projetos e suporte devem aproveitar o ERP quando apropriado, com ownership explícito dos dados. Não há dependência de ambientes ou integrações antigos.
-
-**Cobrança de serviços faz parte da operação atual do Client 0**, inicialmente por processo humano e back-office. Billing de SaaS, assinaturas self-service e cobrança por uso ficam para depois, mediante demanda comprovada. Isso não implica implementar um financeiro próprio.
+**Cobrança de serviços faz parte da operação atual do Client 0**, inicialmente por processo humano e back-office.
 
 ## Segurança e dados
 
@@ -47,41 +73,64 @@ Este repositório é público. Portanto:
 - não armazenar dados reais de clientes;
 - não versionar `.env`, credenciais, tokens ou chaves;
 - não tratar `company_id` enviado pelo cliente como autorização;
-- autenticação, RBAC e isolamento real de tenant são obrigatórios antes de exposição pública;
-- configurações operacionais privadas devem ficar fora do core público.
+- autenticação Bearer e isolamento tenant por Company estão implementados para o piloto privado;
+- a API continua **não autorizada para exposição pública**.
 
-## Estado atual
+## Stack
 
-A fundação para o piloto privado Client 0 já possui:
+- Python 3.12+
+- FastAPI
+- SQLAlchemy
+- PostgreSQL / psycopg
+- Alembic
+- Pydantic Settings
+- HTTPX
+- Pytest
+- uv
+- Ollama (local AI agent, optional)
 
-- cadeia Alembic validada em PostgreSQL descartável, incluindo recovery;
-- autenticação Bearer mínima e isolamento tenant por Company;
-- backup/restore ensaiado;
-- startup loopback-only, revogação por restart e logs mínimos;
-- lifecycle operacional de dados;
-- captura manual de Opportunity e ProposalBrief interno para preparação comercial.
+## Architecture direction
 
-A API continua **não autorizada para exposição pública**. O runtime privado deve usar configuração local fora do Git, e o PostgreSQL canônico do piloto deve permanecer em loopback.
+The repository is intended to remain a reusable core rather than a monolithic ERP.
 
-Ainda permanecem fora da integração atual:
+- **Core:** CRM entities, conversations, AI-assisted workflows, reusable business rules.
+- **ERP:** ERPNext is the primary back-office integration target.
+- **Automation:** n8n may coordinate integrations without becoming the domain authority.
+- **AI runtime:** local/replaceable agent integration behind an explicit service boundary.
 
-- ERPNext;
-- motores de automação;
-- runtime definitivo de IA;
-- envio automatizado de propostas ou outros efeitos externos.
+## Current limitations
 
-## Direção imediata
+This is an active engineering project, not a production-ready SaaS.
 
-A prioridade é validar a operação real da própria empresa sem transformar o core em um ERP monolítico:
+Known gaps include:
 
-1. definir uma oferta e o fluxo de oportunidade → proposta → entrega → cobrança → pós-venda;
-2. consolidar dados, testes, acesso seguro e recuperação antes do uso operacional da API;
-3. estabelecer ownership entre core e ERPNext;
-4. validar o ciclo Client 0 com participação humana;
-5. automatizar o gargalo demonstrado e medir o que é reutilizável;
-6. atender primeiros clientes com o mesmo core; considerar SaaS somente quando justificado.
+- multi-tenant isolation needs production validation;
+- ERPNext integration is not yet implemented;
+- n8n workflow remains inactive pending authorization;
+- real backup with Restic is gated but not yet executed;
+- CI with disposable PostgreSQL is blocked by GitHub scope.
 
-A arquitetura inicial é um monólito modular, com IA desacoplada de provider e implementação em pacotes pequenos. Client 0 é a operação da própria empresa, incluindo venda, execução, cobrança e suporte.
+## Repository map
+
+```text
+app/            FastAPI application, models, routers, services, operator UI
+migrations/     Alembic migration history
+tests/          API, integration, and UI contract regression tests
+docs/           product, roadmap, architecture and decision records
+scripts/        Demo scripts, supervisor runner, utilities
+specs/          Work package specifications
+ops/            Infrastructure templates (VPS, Docker Compose)
+```
+
+## Development
+
+Install the project with `uv` and run the test suite:
+
+```bash
+uv run pytest
+```
+
+Regras operacionais e validações do repositório estão em [AGENTS.md](AGENTS.md).
 
 Consulte também:
 
@@ -90,7 +139,3 @@ Consulte também:
 - [Decisões](docs/DECISIONS.md)
 - [Arquitetura vigente](docs/ARCHITECTURE.md)
 - [Architecture Baseline v1](docs/architecture/baseline-v1.md)
-
-## Desenvolvimento
-
-Regras operacionais e validações do repositório estão em [AGENTS.md](AGENTS.md).
