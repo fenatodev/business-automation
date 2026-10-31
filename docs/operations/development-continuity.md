@@ -482,3 +482,12 @@ já estava conectado a `buildConversationUrl()` — a correção garante que a
 ordem escolhida pelo operador seja respeitada.
 **1906 testes passaram** (15 novos); compileall, diff-check: PASS.
 PR #214: https://github.com/fenatodev/business-automation/pull/214
+
+## WP-136 — Paginação de mensagens em conversas na UI (31/10/2026)
+
+selectConversation() carregava todas as mensagens de uma conversa sem
+paginação. loadMessages() agora usa limit/offset e /count em paralelo,
+segundo o padrão dos outros módulos. Controles de paginação (Anterior/Próxima)
+adicionados no detalhe da conversa. allowlist atualizada para /messages/count.
+**1923 testes passaram** (17 novos); compileall, diff-check: PASS.
+PR #215: https://github.com/fenatodev/business-automation/pull/215
