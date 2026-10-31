@@ -1100,6 +1100,9 @@
     $("conv-reply-toggle").hidden = false;
     $("conv-close-toggle").hidden = false;
     $("conv-note-section").hidden = false;
+    // WP-147 — Show create lead button
+    $("conv-create-lead").hidden = false;
+    $("conv-lead-form").hidden = true;
     $("reply-conv-id").value = id;
     const conv = conversations.find((c) => c.id === id);
     const channel = conv ? (channelLabels[conv.channel] || conv.channel) : "Conversa";
@@ -1187,6 +1190,50 @@
     }
   }));
 
+  // WP-147 — Create lead from conversation
+  $("conv-create-lead").addEventListener("click", () => {
+    $("conv-lead-form").hidden = false;
+    $("conv-create-lead").hidden = true;
+    // Pre-fill source from conversation channel
+    const conv = conversations.find((c) => c.id === selectedConvId);
+    if (conv) {
+      $("conv-lead-source").value = conv.channel || "";
+    }
+  });
+
+  $("cancel-conv-lead").addEventListener("click", () => {
+    $("conv-lead-form").hidden = true;
+    $("conv-create-lead").hidden = false;
+    $("conv-lead-name").value = "";
+    $("conv-lead-phone").value = "";
+    $("conv-lead-source").value = "";
+    $("conv-lead-interest").value = "";
+  });
+
+  $("conv-lead-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    withButton(event.submitter, async () => {
+      const name = $("conv-lead-name").value.trim();
+      const phone = $("conv-lead-phone").value.trim() || null;
+      const source = $("conv-lead-source").value.trim() || null;
+      const interest = $("conv-lead-interest").value.trim() || null;
+      if (!name) { notify("Nome é obrigatório.", true); return; }
+      try {
+        await leadApi("/leads", "POST", { name, phone, source, interest });
+        notify("Lead criado a partir da conversa.");
+        $("conv-lead-form").hidden = true;
+        $("conv-create-lead").hidden = false;
+        $("conv-lead-name").value = "";
+        $("conv-lead-phone").value = "";
+        $("conv-lead-source").value = "";
+        $("conv-lead-interest").value = "";
+        await refreshLeads();
+      } catch (error) {
+        notify("Falha ao criar lead.", true);
+      }
+    });
+  });
+
   // WP-141 — Bulk conversation status
   $("conv-bulk-apply").addEventListener("click", () => withButton($("conv-bulk-apply"), async () => {
     if (selectedConvIds.size === 0) return;
@@ -1240,6 +1287,9 @@
       $("conv-close-toggle").hidden = true;
       $("human-reply-form").hidden = true;
       $("conv-note-section").hidden = true;
+      // WP-147
+      $("conv-create-lead").hidden = true;
+      $("conv-lead-form").hidden = true;
       selectedConvIds.clear();
       updateConvBulkBar();
       showConversationList();
@@ -1379,6 +1429,9 @@
   $("conv-list").replaceChildren();
   $("conv-detail").hidden = true;
   $("conv-note-section").hidden = true;
+  // WP-147
+  $("conv-create-lead").hidden = true;
+  $("conv-lead-form").hidden = true;
   selectedConvIds.clear();
   updateConvBulkBar();
 

@@ -568,3 +568,12 @@ O operador dependia inteiramente do mouse para navegar. Adicionados atalhos
 de teclado: Ctrl+K foca o campo de busca de oportunidades; Escape limpa
 a seleção atual. Indicação dos atalhos no rodapé.
 **2016 testes passaram**; compileall, diff-check: PASS.
+
+## WP-147 — Criar lead a partir de conversa (31/10/2026)
+
+O operador via conversas mas não podia criar um lead diretamente a partir
+delas. Botão "+ Criar lead desta conversa" no painel de detalhes abre
+formulário inline com nome, telefone, fonte e interesse. A fonte é pré-
+preenchida com o canal da conversa. Após criar, a lista de leads é
+atualizada automaticamente.
+**2016 testes passaram**; compileall, diff-check: PASS.

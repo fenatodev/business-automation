@@ -402,6 +402,35 @@
             <button id="conv-note-save" type="button" class="secondary">Salvar nota</button>
             <span id="conv-note-status" class="small"></span>
           </div>
+          <!-- WP-147 — Create lead from conversation -->
+          <button id="conv-create-lead" type="button" class="secondary" hidden>+ Criar lead desta conversa</button>
+          <form id="conv-lead-form" class="conv-lead-form" hidden>
+            <h4>Criar lead a partir desta conversa</h4>
+            <div class="two-col">
+              <div>
+                <label for="conv-lead-name">Nome *</label>
+                <input id="conv-lead-name" type="text" required maxlength="120">
+              </div>
+              <div>
+                <label for="conv-lead-phone">Telefone</label>
+                <input id="conv-lead-phone" type="text" maxlength="30">
+              </div>
+            </div>
+            <div class="two-col">
+              <div>
+                <label for="conv-lead-source">Fonte</label>
+                <input id="conv-lead-source" type="text" maxlength="50" placeholder="Ex.: conversa, indicação...">
+              </div>
+              <div>
+                <label for="conv-lead-interest">Interesse</label>
+                <input id="conv-lead-interest" type="text" maxlength="200">
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button type="submit" class="primary">Criar lead</button>
+              <button type="button" id="cancel-conv-lead" class="secondary">Cancelar</button>
+            </div>
+          </form>
         </div>
       </section>
 
