@@ -3460,9 +3460,11 @@
   let briefOffset = 0;
   const briefPageSize = 50;
   let briefTotal = 0;
+  const selectedBriefIds = new Set();
 
   async function briefApi(path, method, body) {
-    const allowed = path === "/proposal-briefs" || path === "/proposal-briefs/count" || path.startsWith("/proposal-briefs?");
+    const allowed = path === "/proposal-briefs" || path === "/proposal-briefs/count" ||
+      path === "/proposal-briefs/bulk-status" || path.startsWith("/proposal-briefs?");
     if (!allowed) throw new Error("Path não permitido: " + path);
     const url = path + (path.includes("?") ? "&" : "?") + "t=" + Date.now();
     const res = await fetch(url, {
@@ -3551,6 +3553,17 @@
     briefs.forEach((brief) => {
       const item = document.createElement("div");
       item.className = "brief-item";
+      // WP-184 — Checkbox for bulk selection
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.className = "briefs-checkbox";
+      cb.dataset.id = brief.id;
+      cb.addEventListener("change", () => {
+        if (cb.checked) { selectedBriefIds.add(brief.id); }
+        else { selectedBriefIds.delete(brief.id); }
+        updateBriefBulkBar();
+      });
+      item.appendChild(cb);
       const title = document.createElement("span");
       title.className = "brief-item-title";
       title.textContent = brief.opportunity_title || "Sem título";
@@ -3570,6 +3583,47 @@
       list.appendChild(item);
     });
   }
+
+  // WP-184 — Bulk status handlers for briefs
+  function updateBriefBulkBar() {
+    const bar = $("briefs-bulk-bar");
+    const count = selectedBriefIds.size;
+    $("briefs-bulk-selected-count").textContent = count + " selecionado(s)";
+    bar.hidden = count === 0;
+  }
+
+  $("briefs-bulk-clear").addEventListener("click", () => {
+    selectedBriefIds.clear();
+    refreshBriefs().catch(() => {});
+  });
+
+  $("briefs-bulk-apply").addEventListener("click", () => {
+    const button = $("briefs-bulk-apply");
+    withButton(button, async () => {
+      const ids = Array.from(selectedBriefIds);
+      if (!ids.length) {notify("Nenhum brief selecionado.", true); return;}
+      const status = $("briefs-bulk-status").value;
+      try {
+        const result = await briefApi("/proposal-briefs/bulk-status", "POST", {
+          brief_ids: ids,
+          status: status,
+        });
+        selectedBriefIds.clear();
+        notify(result.updated + " brief(s) atualizado(s). " + result.skipped.length + " ignorado(s).");
+        await refreshBriefs();
+      } catch (e) {
+        notify("Falha ao atualizar status.", true);
+      }
+    });
+  });
+
+  // Reset brief selection on refresh
+  const origRefreshBriefs = refreshBriefs;
+  refreshBriefs = async function() {
+    selectedBriefIds.clear();
+    $("briefs-bulk-bar").hidden = true;
+    await origRefreshBriefs();
+  };
 
   $("briefs-refresh").addEventListener("click", () => withButton($("briefs-refresh"), async () => {
     briefOffset = 0;
