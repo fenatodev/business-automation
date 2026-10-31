@@ -637,3 +637,10 @@ e `to_date` em list, count e export CSV. Service layer atualizado para
 suportar os parâmetros. UI com campos de data na seção de filtros.
 Exportação CSV respeita os filtros de data.
 **2075 testes passaram** (12 novos); compileall, diff-check: PASS.
+
+### WP-156 — Exibir orçamento e descrição na lista de oportunidades
+
+A lista de oportunidades mostrava apenas ID, título e status. `renderList()`
+agora exibe descrição truncada (120 caracteres) e linha de metadados com
+orçamento (💰) e prazo (📅) quando presentes. Sem mudança no backend.
+**2091 testes passaram** (16 novos); compileall, diff-check: PASS.
