@@ -1754,6 +1754,7 @@
     }
 
     // WP-161 — Next actions summary
+    // WP-193 — Clickable next actions that scroll to section
     const nextActionsSection = $("next-actions-section");
     const nextActionsList = $("next-actions-list");
     const nextActions = data.next_actions || [];
@@ -1764,7 +1765,26 @@
         const li = document.createElement("li");
         li.className = "next-action-item";
         li.textContent = action.label;
-        li.title = "Seção: " + action.section;
+        li.title = "Clique para ir para: " + action.section;
+        li.style.cursor = "pointer";
+        li.addEventListener("click", () => {
+          // Map section names to panel headings
+          const sectionMap = {
+            "Oportunidades": "opp-title",
+            "Conversas": "conv-title",
+            "Leads": "leads-title",
+            "Tarefas internas": "tasks-title",
+            "Fila de revisão": "rq-title",
+          };
+          const headingId = sectionMap[action.section];
+          if (headingId) {
+            const heading = $(headingId);
+            if (heading) {
+              heading.scrollIntoView({behavior: "smooth", block: "start"});
+              heading.focus();
+            }
+          }
+        });
         nextActionsList.appendChild(li);
       }
     } else {

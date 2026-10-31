@@ -887,3 +887,11 @@ enquanto o customer detail já tinha (WP-167). Adicionado formulário inline
 seguindo o mesmo padrão: título, descrição, orçamento, prazo, requisitos.
 
 **2402 testes passaram** (15 novos); compileall, diff-check: PASS.
+
+### WP-193 — Próximas ações clicáveis no dashboard
+
+O dashboard mostrava as próximas ações mas não era possível clicar
+para navegar até a seção relevante. Adicionado scroll suave ao clicar
+em cada item, com tooltip e feedback visual (hover).
+
+**2412 testes passaram** (10 novos); compileall, diff-check: PASS.

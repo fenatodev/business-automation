@@ -627,6 +627,12 @@ footer {
   border-radius: 6px;
   font-size: 0.85rem;
   color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.next-action-item:hover {
+  background: #1a2636;
+  border-color: #3b82f6;
 }
 
 /* Leads — WP-083 */
