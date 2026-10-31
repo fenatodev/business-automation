@@ -94,10 +94,9 @@ e mostra leases expirados sem recuperá-los como efeito da consulta.
 Próxima WP executável: apresentar lista/resumo no `/operator`, usando somente
 os endpoints existentes, sem expor payload e sem iniciar worker automaticamente.
 
-## WP-075 — histórico de conversas no painel do operador (30/10/2026)
+## WP-076 — resposta manual do operador em conversas (30/10/2026)
 
-Seção "Conversas" adicionada ao `/operator` com lista de conversas por company
-e visualizador de mensagens. `conversationApi()` com allowlist estrita segue o
-padrão `reviewApi()`/`taskApi()`. Bolhas de mensagem distinguem cliente, agente
-e humano. Sem mudanças no backend — endpoints existentes são conectados à UI.
-**1147 testes passaram**; compileall, diff-check: PASS.
+Formulário "Responder manualmente" adicionado ao `/operator` permitindo que o
+operador envie mensagens humanas (`sender_type: "human"`) em conversas existentes.
+`replyApi()` com allowlist estrita para `POST /conversations/{id}/messages`.
+Sem mudanças no backend. **1142 testes passaram**; compileall, diff-check: PASS.
