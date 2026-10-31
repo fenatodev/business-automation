@@ -13,7 +13,8 @@ class LeadCreate(BaseModel):
 
 
 class AgentRequest(BaseModel):
-    content: str    
+    content: str
+    system_prompt: str | None = None  # WP-202 — optional custom system prompt
 
 
 class ConversationCreate(BaseModel):

@@ -89,6 +89,7 @@ def agent_reply(
         response = generate_agent_reply(
             message=data.content,
             history=history,
+            system_prompt=data.system_prompt,
         )
     except AgentServiceError:
         raise HTTPException(

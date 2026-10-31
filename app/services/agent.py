@@ -7,22 +7,28 @@ class AgentServiceError(RuntimeError):
     pass
 
 
+_DEFAULT_SYSTEM_PROMPT = (
+    "Você é um agente de atendimento comercial. "
+    "Responda em português brasileiro de forma objetiva, "
+    "profissional e natural. "
+    "Seu objetivo é entender a necessidade do cliente, "
+    "tirar dúvidas e qualificar o lead. "
+    "Não invente preços, serviços, prazos ou informações."
+)
+
+
 def generate_agent_reply(
     message: str,
     history: list[dict],
+    system_prompt: str | None = None,
 ) -> str:
+    # WP-202 — Allow custom system prompt; falls back to default
+    prompt = system_prompt if system_prompt else _DEFAULT_SYSTEM_PROMPT
 
     messages = [
         {
             "role": "system",
-            "content": (
-                "Você é um agente de atendimento comercial. "
-                "Responda em português brasileiro de forma objetiva, "
-                "profissional e natural. "
-                "Seu objetivo é entender a necessidade do cliente, "
-                "tirar dúvidas e qualificar o lead. "
-                "Não invente preços, serviços, prazos ou informações."
-            ),
+            "content": prompt,
         }
     ]
 
