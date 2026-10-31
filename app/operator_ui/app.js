@@ -895,12 +895,151 @@
     notify("Dashboard atualizado.");
   }));
 
+  // Leads — WP-083
+  const leadStatusLabels = {
+    new: "Novo",
+    contacted: "Contatado",
+    qualified: "Qualificado",
+    proposal: "Proposta",
+    won: "Convertido",
+    lost: "Perdido",
+  };
+
+  const leadStatusOptions = ["new", "contacted", "qualified", "proposal", "won", "lost"];
+
+  async function leadApi(path, method, body) {
+    const allowed = [
+      "/leads",
+      "/leads/new",
+      "/leads/contacted",
+      "/leads/qualified",
+      "/leads/proposal",
+      "/leads/won",
+      "/leads/lost",
+    ];
+    if (!allowed.includes(path)) {
+      console.error("[leadApi] Rota não permitida:", path);
+      return;
+    }
+    const res = await fetch(path, {
+      method,
+      headers: {
+        "Authorization": "Bearer " + bearer,
+        "Content-Type": "application/json",
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (res.status === 403) {disconnect("Permissão de operador necessária."); return null;}
+    if (!res.ok) {console.error("[leadApi] Erro:", res.status); return null;}
+    return res.json();
+  }
+
+  async function refreshLeads() {
+    if (!bearer) return;
+    const status = $("lead-filter-status").value;
+    const path = status ? "/leads/" + status : "/leads";
+    const leads = await leadApi(path, "GET");
+    renderLeads(leads || []);
+  }
+
+  function renderLeads(leads) {
+    const list = $("leads-list");
+    list.replaceChildren();
+    if (!leads.length) {
+      const p = document.createElement("p");
+      p.className = "small";
+      p.textContent = "Nenhum lead encontrado.";
+      list.appendChild(p);
+      return;
+    }
+    for (const lead of leads) {
+      const item = document.createElement("div");
+      item.className = "lead-item";
+      const header = document.createElement("div");
+      header.className = "lead-item-header";
+      const name = document.createElement("span");
+      name.className = "lead-item-name";
+      name.textContent = lead.name || "Sem nome";
+      const statusTag = document.createElement("span");
+      statusTag.className = "tag";
+      statusTag.textContent = leadStatusLabels[lead.status] || lead.status;
+      header.appendChild(name);
+      header.appendChild(statusTag);
+      item.appendChild(header);
+
+      const details = document.createElement("div");
+      details.className = "lead-item-details";
+      if (lead.phone) {
+        const phone = document.createElement("span");
+        phone.textContent = "📞 " + lead.phone;
+        details.appendChild(phone);
+      }
+      if (lead.source) {
+        const source = document.createElement("span");
+        source.textContent = "Fonte: " + lead.source;
+        details.appendChild(source);
+      }
+      if (lead.interest) {
+        const interest = document.createElement("span");
+        interest.textContent = "Interesse: " + lead.interest;
+        details.appendChild(interest);
+      }
+      item.appendChild(details);
+
+      const select = document.createElement("select");
+      select.className = "lead-status-select";
+      for (const s of leadStatusOptions) {
+        const opt = document.createElement("option");
+        opt.value = s;
+        opt.textContent = leadStatusLabels[s];
+        if (s === lead.status) opt.selected = true;
+        select.appendChild(opt);
+      }
+      select.addEventListener("change", () => {
+        updateLeadStatus(lead.id, select.value);
+      });
+      item.appendChild(select);
+
+      list.appendChild(item);
+    }
+  }
+
+  async function updateLeadStatus(leadId, status) {
+    const path = "/leads/" + leadId;
+    const allowed = path.startsWith("/leads/");
+    if (!allowed) {
+      console.error("[leadApi] Rota não permitida:", path);
+      return;
+    }
+    const res = await fetch(path, {
+      method: "PATCH",
+      headers: {
+        "Authorization": "Bearer " + bearer,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({status}),
+    });
+    if (res.status === 403) {disconnect("Permissão de operador necessária."); return;}
+    if (!res.ok) {console.error("[updateLeadStatus] Erro:", res.status); return;}
+    notify("Lead #" + leadId + " atualizado para " + (leadStatusLabels[status] || status) + ".");
+  }
+
+  $("leads-refresh").addEventListener("click", () => withButton($("leads-refresh"), async () => {
+    await refreshLeads();
+    notify("Leads atualizados.");
+  }));
+
+  $("lead-filter-status").addEventListener("change", () => {
+    refreshLeads().catch(() => {});
+  });
+
   // Integrate conversations into the connect flow via MutationObserver.
   const workspaceObserver = new MutationObserver((records) => {
     for (const record of records) {
       if (record.attributeName === "hidden" && !$("workspace").hidden && bearer) {
         refreshDashboard().catch(() => {});
         refreshConversations().catch(() => {});
+        refreshLeads().catch(() => {});
         workspaceObserver.disconnect();
       }
     }

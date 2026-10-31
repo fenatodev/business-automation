@@ -403,3 +403,57 @@ footer {
   margin: 2px 4px 2px 0;
   font-size: 0.78rem;
 }
+
+/* Leads — WP-083 */
+.lead-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.lead-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.lead-filter-group label {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.lead-list {
+  display: grid;
+  gap: 10px;
+}
+.lead-item {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #101722;
+}
+.lead-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.lead-item-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+.lead-item-details {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.lead-status-select {
+  padding: 4px 8px;
+  font-size: 0.82rem;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--panel-alt);
+  color: var(--text);
+}
