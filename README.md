@@ -15,17 +15,17 @@ O projeto tem dois objetivos complementares:
 - SQLAlchemy models and PostgreSQL-oriented persistence with Alembic migrations;
 - Bearer token authentication with API keys (SHA-256) and tenant isolation by Company;
 - Complete commercial cycle F2: intake → opportunity → triage → proposal brief → approval → in progress → done/lost;
-- Conversation management with search, filter, pagination, sorting, and close/reopen;
-- Lead management with status, notes, search, bulk operations, and customer conversion;
-- Customer management with search, sort, pagination, edit, and detail view;
-- Opportunity management with search, sort, pagination, bulk triage, and status transitions;
-- Internal task queue with retry, lease, fencing, 24×7 supervisor, and export CSV;
-- Review queue with filters, sort, pagination, and atomic approve/reject decisions;
-- Operator UI dashboard with metrics, pipeline view, next actions summary, notifications, and CSV export;
+- Conversation management with search, filter, pagination, sorting, close/reopen, notes, bulk operations, and export CSV;
+- Lead management with status, notes, search, bulk operations, customer conversion, and export CSV;
+- Customer management with search, sort, pagination, edit, detail view, and export CSV;
+- Opportunity management with search, sort, pagination, bulk triage, status transitions, notes, and export CSV;
+- Internal task queue with retry, lease, fencing, 24×7 supervisor, filters, and export CSV;
+- Review queue with filters, sort, pagination, date filter, and export CSV;
+- Operator UI dashboard with metrics, pipeline view, next actions summary, notifications, theme toggle, and CSV export;
 - CSV import for leads, customers, and opportunities;
 - Agent-reply flow with persisted conversation history;
 - Failure handling that preserves user messages when the agent service is unavailable (HTTP 503);
-- 2138 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
+- 2191 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
 
 ## Engineering case study
 
@@ -38,7 +38,7 @@ The useful part of this project is not the idea of "AI for business". It is the 
 | Authentication | Bearer API keys with role-based access (admin, operator). |
 | API failure behavior | Missing resources and invalid ownership return explicit client errors. |
 | AI integration failure | Customer input preserved, failed agent output not fabricated, internal details not leaked. |
-| Regression protection | 2138 tests cover happy paths, failures, tenant isolation, and UI contracts. |
+| Regression protection | 2191 tests cover happy paths, failures, tenant isolation, and UI contracts. |
 | Product boundaries | ERP and automation engines remain external integrations. |
 
 ### Example evaluation mindset
