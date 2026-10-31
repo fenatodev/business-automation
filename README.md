@@ -25,7 +25,7 @@ O projeto tem dois objetivos complementares:
 - CSV import for leads, customers, and opportunities;
 - Agent-reply flow with persisted conversation history;
 - Failure handling that preserves user messages when the agent service is unavailable (HTTP 503);
-- 2191 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
+- 2262 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
 
 ## Engineering case study
 
@@ -38,7 +38,7 @@ The useful part of this project is not the idea of "AI for business". It is the 
 | Authentication | Bearer API keys with role-based access (admin, operator). |
 | API failure behavior | Missing resources and invalid ownership return explicit client errors. |
 | AI integration failure | Customer input preserved, failed agent output not fabricated, internal details not leaked. |
-| Regression protection | 2191 tests cover happy paths, failures, tenant isolation, and UI contracts. |
+| Regression protection | 2262 tests cover happy paths, failures, tenant isolation, and UI contracts. |
 | Product boundaries | ERP and automation engines remain external integrations. |
 
 ### Example evaluation mindset
