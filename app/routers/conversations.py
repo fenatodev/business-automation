@@ -86,11 +86,18 @@ def agent_reply(
     db.commit()
 
     try:
+        # WP-204 — Use company agent config as defaults
+        from app.routers.companies import _agent_config_store
+
+        company_config = _agent_config_store.get(identity.company_id, {})
+        effective_prompt = data.system_prompt or company_config.get("system_prompt")
+        effective_temp = data.temperature if data.temperature is not None else company_config.get("temperature")
+
         response = generate_agent_reply(
             message=data.content,
             history=history,
-            system_prompt=data.system_prompt,
-            temperature=data.temperature,
+            system_prompt=effective_prompt,
+            temperature=effective_temp,
         )
     except AgentServiceError:
         raise HTTPException(

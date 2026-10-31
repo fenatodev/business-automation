@@ -948,3 +948,13 @@ aceita `temperature` opcional (float 0.0-2.0), passando para o Ollama via
 preparando para configuração por Company (F3) sem migration.
 
 **2489 testes passaram** (15 novos); compileall, diff-check: PASS.
+
+### WP-204 — Configuração de agente por Company
+
+Cada Company pode agora configurar seu próprio system_prompt e temperatura
+para o agente de IA. Configuração armazenada em memória (sem migration).
+`CompanyAgentConfig` schema; endpoints GET/PUT `/companies/{id}/agent-config`
+com tenant isolation. O `POST /agent-reply` usa a config da company como
+padrão, com parâmetros explícitos da requisição tendo precedência.
+
+**2509 testes passaram** (20 novos); compileall, diff-check: PASS.
