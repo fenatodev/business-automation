@@ -382,7 +382,19 @@
         list.appendChild(empty);
         return;
       }
-      for (const conv of conversations) {
+      // WP-148 — Load message counts in parallel
+      const counts = await Promise.all(
+        conversations.map(async (conv) => {
+          try {
+            const result = await conversationApi("/conversations/" + conv.id + "/messages/count");
+            return result ? result.total || 0 : 0;
+          } catch (e) {
+            return 0;
+          }
+        })
+      );
+      for (let idx = 0; idx < conversations.length; idx++) {
+        const conv = conversations[idx];
         const item = document.createElement("div");
         item.className = "opp-conv-item";
         const title = document.createElement("strong");
@@ -390,10 +402,9 @@
         const meta = document.createElement("span");
         meta.className = "small";
         const status = conv.status === "open" ? "Aberta" : "Fechada";
-        meta.textContent = " " + status;
+        meta.textContent = " " + status + " · " + counts[idx] + " msg";
         item.append(title, meta);
         item.addEventListener("click", () => {
-          // Navigate to the conversations section and select this conversation
           workspaceObserver.disconnect();
           selectedConvId = conv.id;
           refreshConversations().catch(() => {});
@@ -402,7 +413,6 @@
         list.appendChild(item);
       }
     } catch (error) {
-      // Silently fail — conversations are supplementary info
       $("opp-conv-list").replaceChildren();
     }
   }

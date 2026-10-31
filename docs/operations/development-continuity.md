@@ -577,3 +577,11 @@ formulário inline com nome, telefone, fonte e interesse. A fonte é pré-
 preenchida com o canal da conversa. Após criar, a lista de leads é
 atualizada automaticamente.
 **2016 testes passaram**; compileall, diff-check: PASS.
+
+## WP-148 — Contagem de mensagens nas conversas da oportunidade (31/10/2026)
+
+O painel de detalhes da oportunidade listava conversas relacionadas (WP-142)
+mas não indicava quantas mensagens cada uma tinha. `loadOpportunityConversations()`
+agora carrega contagens em paralelo via `/messages/count` e exibe "N msg"
+ao lado do status de cada conversa.
+**2016 testes passaram**; compileall, diff-check: PASS.
