@@ -863,3 +863,12 @@ Adicionado `?source=` em list, count e export CSV.
 UI com dropdown "Fonte" na toolbar.
 
 **2377 testes passaram** (6 novos); compileall, diff-check: PASS.
+
+### WP-190 — Botão limpar intake e labels de fonte
+
+O formulário de intake comercial não tinha botão para limpar após envio,
+e a fonte da oportunidade era exibida em inglês.
+Adicionado botão "Limpar" que reseta formulário e esconde decisão.
+Adicionado `sourceLabels` para exibir fonte em português.
+
+**2387 testes passaram** (10 novos); compileall, diff-check: PASS.
