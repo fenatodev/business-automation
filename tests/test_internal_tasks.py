@@ -143,3 +143,114 @@ def test_conflicting_sync_input_preserves_existing_result(companies):
         assert task.status == "queued"
         assert task.error_code == "processing_failed"
         assert task.result is None
+
+
+# -- WP-067: manual retry and retention --
+
+
+def test_manual_retry_resets_failed_task(companies):
+    with TestingSessionLocal() as db:
+        task_id = tasks.enqueue(db, trigger(), 1).id
+        now = tasks.utcnow()
+        for _ in range(3):
+            claimed = tasks.claim(db, now=now)
+            now += timedelta(seconds=61)
+            tasks.recover_expired(db, now=now)
+            now += timedelta(seconds=10)
+        task = db.get(InternalTask, task_id, populate_existing=True)
+        assert task.status == "failed"
+        assert task.attempts == 3
+        retried = tasks.manual_retry(db, task_id, 1)
+        assert retried is not None
+        assert retried.status == "queued"
+        assert retried.lease_until is None
+        assert retried.claim_token is None
+        assert retried.error_code is None
+        assert retried.result is None
+        assert retried.attempts == 3  # preserved for worker limit
+
+
+def test_manual_retry_rejects_non_failed(companies):
+    with TestingSessionLocal() as db:
+        task_id = tasks.enqueue(db, trigger(), 1).id
+        with pytest.raises(ValueError, match="Only failed"):
+            tasks.manual_retry(db, task_id, 1)
+
+
+def test_manual_retry_returns_none_for_missing_task(companies):
+    with TestingSessionLocal() as db:
+        assert tasks.manual_retry(db, 999, 1) is None
+
+
+def test_manual_retry_is_tenant_isolated(companies):
+    with TestingSessionLocal() as db:
+        task_id = tasks.enqueue(db, trigger(), 1).id
+        task = db.get(InternalTask, task_id)
+        task.status = "failed"
+        db.commit()
+        assert tasks.manual_retry(db, task_id, 2) is None
+
+
+def test_api_manual_retry(companies, client, operator_a_headers, operator_b_headers):
+    payload = trigger().model_dump()
+    resp = client.post("/internal-tasks/", json=payload, headers=operator_a_headers)
+    task_id = resp.json()["id"]
+    with TestingSessionLocal() as db:
+        task = db.get(InternalTask, task_id)
+        task.status = "failed"
+        task.error_code = "processing_failed"
+        db.commit()
+    assert client.post(f"/internal-tasks/{task_id}/retry", headers=operator_a_headers).json()["status"] == "queued"
+    assert client.post(f"/internal-tasks/{task_id}/retry", headers=operator_a_headers).status_code == 409
+    assert client.post("/internal-tasks/999/retry", headers=operator_a_headers).status_code == 404
+    assert client.post(f"/internal-tasks/{task_id}/retry", headers=operator_b_headers).status_code == 404
+
+
+def test_purge_old_tasks_removes_only_terminal(companies):
+    with TestingSessionLocal() as db:
+        old = tasks.utcnow() - timedelta(days=60)
+        tasks.enqueue(db, trigger(event="old-s"), 1)
+        t1 = db.get(InternalTask, 1)
+        t1.status = "succeeded"
+        t1.created_at = old
+        tasks.enqueue(db, trigger(event="old-f"), 1)
+        t2 = db.get(InternalTask, 2)
+        t2.status = "failed"
+        t2.created_at = old
+        tasks.enqueue(db, trigger(event="old-q"), 1)
+        t3 = db.get(InternalTask, 3)
+        t3.status = "queued"
+        t3.created_at = old
+        tasks.enqueue(db, trigger(event="new-s"), 1)
+        t4 = db.get(InternalTask, 4)
+        t4.status = "succeeded"
+        db.commit()
+    with TestingSessionLocal() as db:
+        deleted = tasks.purge_old_tasks(db, 1, older_than_days=30)
+        assert deleted == 2
+        remaining = db.scalars(select(InternalTask).where(InternalTask.company_id == 1)).all()
+        assert len(remaining) == 2
+        ids = {r.id for r in remaining}
+        assert 3 in ids  # queued preserved
+        assert 4 in ids  # recent succeeded preserved
+
+
+def test_purge_old_tasks_tenant_isolation(companies):
+    with TestingSessionLocal() as db:
+        old = tasks.utcnow() - timedelta(days=60)
+        tasks.enqueue(db, trigger(event="a-old"), 1)
+        db.get(InternalTask, 1).status = "failed"
+        db.get(InternalTask, 1).created_at = old
+        tasks.enqueue(db, trigger(event="b-old"), 2)
+        db.get(InternalTask, 2).status = "failed"
+        db.get(InternalTask, 2).created_at = old
+        db.commit()
+    with TestingSessionLocal() as db:
+        deleted = tasks.purge_old_tasks(db, 1, older_than_days=30)
+        assert deleted == 1
+        assert db.scalar(select(func.count()).select_from(InternalTask)) == 1
+
+
+def test_api_retention_endpoint(companies, client, operator_a_headers):
+    assert client.post("/internal-tasks/retention", headers=operator_a_headers).json()["deleted"] == 0
+    assert client.post("/internal-tasks/retention").status_code == 401

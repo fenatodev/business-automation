@@ -94,16 +94,32 @@ e mostra leases expirados sem recuperá-los como efeito da consulta.
 Próxima WP executável: apresentar lista/resumo no `/operator`, usando somente
 os endpoints existentes, sem expor payload e sem iniciar worker automaticamente.
 
-## WP-065 — regressão do painel corrigida (30/10/2026)
+## WP-065 — paginação segura da fila de revisão (30/10/2026)
 
-WP-064 integrada pelo [PR #147](https://github.com/fenatodev/business-automation/pull/147)
-em `b249266d8a832946ba3cac99609e98fe757c9a9b`, CI verde e revisão independente.
-Antes de estender o painel, a WP-065 corrige a conexão que rejeitava a própria
-rota paginada da fila. Spec: `specs/wp-065-review-pagination-route.md`.
+[PR #148](https://github.com/fenatodev/business-automation/pull/148),
+branch `wp/065-review-pagination-route`, commit `b14f79a`.
+A allowlist do JavaScript rejeitava `/review-queue/?limit=50&offset=0`,
+quebrando a própria paginação. Correção com validação estrita de tipo,
+caracteres de controle e regex para limit (1-100) e offset (0+).
+**1129 testes passaram**; compileall, node --check, diff-check: PASS.
+CI verde.
 
-Teste JavaScript executável reproduziu FAIL antes da correção e PASS depois:
-conexão, offsets 0→50→0, opções de fetch preservadas e rejeição de rotas inválidas
-antes da rede. **1129 testes passaram**, dois warnings preexistentes; compileall,
-node syntax e diff-check PASS. Teste usa DOM/fetch sintéticos, não navegador real.
-Node.js passa a ser necessário também para esse teste pytest, sem dependência npm.
-Próxima WP continua sendo o painel de tarefas internas, a partir da main integrada.
+## WP-066 — painel de tarefas internas (30/10/2026)
+
+[PR #149](https://github.com/fenatodev/business-automation/pull/149),
+branch `wp/066-internal-task-panel`, commit `0ac0eb5`.
+Painel "Tarefas internas" no `/operator` com lista, filtro por status,
+resumo de contagens e botão atualizar. `taskApi()` com allowlist estrita.
+**1129 testes passaram**; compileall, node --check, diff-check: PASS.
+CI verde.
+
+## WP-067 — retry manual e retenção (30/10/2026)
+
+[PR #151](https://github.com/fenatodev/business-automation/pull/151),
+branch `wp/067-task-retry-retention`.
+Retry manual de tarefas falhadas (`POST /{task_id}/retry`) e retenção
+configurável (`POST /retention`) para purgar tarefas terminadas antigas.
+Operador-only, tenant-isolado. Sem migration.
+**1136 testes passaram**; compileall, diff-check: PASS.
+
+Próximo recorte: avaliar supervisor 24×7 e integrações externas.
