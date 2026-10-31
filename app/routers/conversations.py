@@ -92,12 +92,14 @@ def agent_reply(
         company_config = _agent_config_store.get(identity.company_id, {})
         effective_prompt = data.system_prompt or company_config.get("system_prompt")
         effective_temp = data.temperature if data.temperature is not None else company_config.get("temperature")
+        effective_max_tokens = data.max_tokens if data.max_tokens is not None else company_config.get("max_tokens")
 
         response = generate_agent_reply(
             message=data.content,
             history=history,
             system_prompt=effective_prompt,
             temperature=effective_temp,
+            max_tokens=effective_max_tokens,
         )
     except AgentServiceError:
         raise HTTPException(

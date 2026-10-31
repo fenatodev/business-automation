@@ -540,7 +540,7 @@ def test_agent_reply_persists_customer_and_agent_messages(
         lead_id=lead["id"],
     )
 
-    def fake_generate_agent_reply(message, history, system_prompt=None, temperature=None):
+    def fake_generate_agent_reply(message, history, system_prompt=None, temperature=None, max_tokens=None):
         assert message == "Ola"
         assert history == []
         return "Resposta do agente"
@@ -644,7 +644,7 @@ def test_agent_reply_keeps_customer_message_when_agent_service_fails(
         lead_id=lead["id"],
     )
 
-    def fake_generate_agent_reply(message, history, system_prompt=None, temperature=None):
+    def fake_generate_agent_reply(message, history, system_prompt=None, temperature=None, max_tokens=None):
         raise AgentServiceError("Ollama unavailable")
 
     monkeypatch.setattr(
@@ -691,7 +691,7 @@ def test_agent_error_does_not_expose_internal_details(
         lead_id=lead["id"],
     )
 
-    def fake_generate_agent_reply(message, history, system_prompt=None, temperature=None):
+    def fake_generate_agent_reply(message, history, system_prompt=None, temperature=None, max_tokens=None):
         raise AgentServiceError(
             "Connection refused http://localhost:11434/api/chat qwen3:8b"
         )
