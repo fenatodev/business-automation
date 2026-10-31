@@ -928,3 +928,15 @@ endpoint `/internal-tasks/dashboard` e seção visual "📊 Fontes de lead"
 no dashboard do operador.
 
 **2449 testes passaram** (5 novos); compileall, diff-check: PASS.
+
+### WP-201 — Filtrar opções de triagem por transições válidas
+
+A UI mostrava todas as 7 opções de triagem independentemente do
+status atual da oportunidade. O backend já valida transições (WP-133)
+mas a UI não refletia isso. Agora `selectOpportunity()` filtra as
+opções do `<select>` com base no mapa `_VALID_TRANSITIONS` espelhando
+o backend. Estados terminais (done, lost, ignore) mostram apenas a
+opção atual. `clearSelection()` reseta a visibilidade para a próxima
+seleção.
+
+**2464 testes passaram** (15 novos); compileall, diff-check: PASS.
