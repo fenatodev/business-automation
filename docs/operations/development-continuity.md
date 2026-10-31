@@ -500,3 +500,12 @@ startNotificationRefresh() a cada 30s para atualizar o badge pendente.
 Ambos são parados no disconnect().
 **1938 testes passaram** (15 novos); compileall, diff-check: PASS.
 PR #216: https://github.com/fenatodev/business-automation/pull/216
+
+## WP-138 — Opções completas no select de triagem individual (31/10/2026)
+
+O formulário de triagem individual tinha apenas 4 opções (pending, follow,
+ignore, prepare_proposal), mas o backend OpportunityTriageUpdate suporta 7
+(incluindo in_progress, done, lost). O select de triagem em massa já estava
+correto. Adicionadas as 3 opções faltantes ao select individual, alinhando
+com o backend e com o bulk triage.
+**1953 testes passaram** (15 novos); compileall, diff-check: PASS.
