@@ -1288,6 +1288,37 @@
     $("customer-detail").hidden = true;
   }
 
+  // Create conversation from customer — WP-089
+  async function createConversationFromCustomer(customerId) {
+    if (!bearer) return;
+    const company = opportunities.length > 0 ? opportunities[0].company_id : null;
+    if (!company) {notify("Não é possível determinar a company.", true); return;}
+    const channel = prompt("Canal da conversa (whatsapp, instagram, web, telegram, email):");
+    if (!channel) return;
+    const allowedChannels = ["whatsapp", "instagram", "web", "telegram", "email"];
+    if (!allowedChannels.includes(channel.trim().toLowerCase())) {
+      notify("Canal inválido.", true);
+      return;
+    }
+    const res = await fetch("/conversations", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + bearer,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        company_id: company,
+        channel: channel.trim().toLowerCase(),
+        customer_id: customerId,
+      }),
+    });
+    if (res.status === 403) {disconnect("Permissão de operador necessária."); return;}
+    if (res.status === 409) {notify("Conversa já existe.", true); return;}
+    if (!res.ok) {console.error("[createConversationFromCustomer] Erro:", res.status); return;}
+    notify("Conversa criada.");
+    await loadCustomerConversations(customerId);
+  }
+
   $("customers-refresh").addEventListener("click", () => withButton($("customers-refresh"), async () => {
     await refreshCustomers();
     notify("Customers atualizados.");
@@ -1295,6 +1326,12 @@
 
   $("customer-detail-back").addEventListener("click", () => {
     hideCustomerDetail();
+  });
+
+  $("customer-new-conv").addEventListener("click", () => {
+    if (currentCustomerId) {
+      createConversationFromCustomer(currentCustomerId);
+    }
   });
 
   // Integrate conversations into the connect flow via MutationObserver.
