@@ -472,3 +472,13 @@ Limpar. buildReviewUrl() e buildReviewCountUrl() conectam os filtros
 ao backend. reviewApi allowlist atualizada para /count e query params.
 **1891 testes passaram** (17 novos); compileall, diff-check: PASS.
 PR #213: https://github.com/fenatodev/business-automation/pull/213
+
+## WP-135 — Remover ordenação client-side de conversas (31/10/2026)
+
+`showConversationList()` ordenava as conversas no navegador, ignorando a
+ordem retornada pelo backend. Removida a ordenação client-side redundante;
+a função agora preserva a ordem do backend. O dropdown `conv-filter-sort`
+já estava conectado a `buildConversationUrl()` — a correção garante que a
+ordem escolhida pelo operador seja respeitada.
+**1906 testes passaram** (15 novos); compileall, diff-check: PASS.
+PR #214: https://github.com/fenatodev/business-automation/pull/214
