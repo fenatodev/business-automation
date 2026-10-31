@@ -168,6 +168,7 @@ def import_leads_csv(
 @router.get("/leads")
 def list_leads(
     status: str | None = None,
+    source: str | None = Query(default=None, description="Filter by source"),
     q: str | None = Query(default=None, description="Search keywords in name and interest"),
     from_date: str | None = Query(default=None, description="Filter created_at >= date (YYYY-MM-DD)"),
     to_date: str | None = Query(default=None, description="Filter created_at <= date (YYYY-MM-DD)"),
@@ -177,10 +178,12 @@ def list_leads(
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    """List leads, optionally filtered by status, date range and searched by keywords."""
+    """List leads, optionally filtered by status, source, date range and searched by keywords."""
     query = select(Lead).where(Lead.company_id == identity.company_id)
     if status:
         query = query.where(Lead.status == status)
+    if source:
+        query = query.where(Lead.source == source)
     if q:
         pattern = f"%{q}%"
         query = query.where(
@@ -205,16 +208,19 @@ def list_leads(
 @router.get("/leads/count")
 def count_leads(
     status: str | None = None,
+    source: str | None = Query(default=None, description="Filter by source"),
     q: str | None = Query(default=None, description="Search keywords in name and interest"),
     from_date: str | None = Query(default=None, description="Filter created_at >= date (YYYY-MM-DD)"),
     to_date: str | None = Query(default=None, description="Filter created_at <= date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    """Count leads, optionally filtered by status, date range and searched by keywords."""
+    """Count leads, optionally filtered by status, source, date range and searched by keywords."""
     query = select(func.count()).select_from(Lead).where(Lead.company_id == identity.company_id)
     if status:
         query = query.where(Lead.status == status)
+    if source:
+        query = query.where(Lead.source == source)
     if q:
         pattern = f"%{q}%"
         query = query.where(
@@ -233,6 +239,7 @@ def count_leads(
 @router.get("/leads/export.csv")
 def export_leads_csv(
     status: str | None = Query(None, description="Filter by status"),
+    source: str | None = Query(None, description="Filter by source"),
     q: str | None = Query(None, description="Search keywords in name and interest"),
     from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
     to_date: str | None = Query(None, description="Filter created_at <= date (YYYY-MM-DD)"),
@@ -243,6 +250,8 @@ def export_leads_csv(
     query = select(Lead).where(Lead.company_id == identity.company_id)
     if status:
         query = query.where(Lead.status == status)
+    if source:
+        query = query.where(Lead.source == source)
     if q:
         pattern = f"%{q}%"
         query = query.where(

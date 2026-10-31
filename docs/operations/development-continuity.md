@@ -775,3 +775,11 @@ detalhes do lead. A conversa é criada via POST /conversations com
 lead_id vinculado, seguindo o padrão da WP-089.
 
 **2288 testes passaram** (16 novos); compileall, diff-check: PASS.
+
+### WP-177 — Filtro de leads por fonte (source)
+
+O módulo de leads tinha filtro por status, mas não por fonte.
+Adicionado `?source=` em list, count e export CSV.
+UI com dropdown "Fonte" (manual, 99freelas, intake, review_queue, import).
+
+**2304 testes passaram** (16 novos); compileall, diff-check: PASS.
