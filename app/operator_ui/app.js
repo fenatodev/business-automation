@@ -848,8 +848,8 @@
   function showConversationList() {
     const target = $("conv-list");
     target.replaceChildren();
-    const ordered = [...conversations].sort((a, b) => b.id - a.id);
-    if (!ordered.length) {
+    // Backend already returns sorted results; no client-side sort needed.
+    if (!conversations.length) {
       const empty = document.createElement("p");
       empty.className = "small";
       empty.textContent = convFilterChannel || convFilterStatus || convFilterQuery
@@ -858,7 +858,7 @@
       target.append(empty);
       return;
     }
-    for (const conv of ordered) {
+    for (const conv of conversations) {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "conversation-item";
