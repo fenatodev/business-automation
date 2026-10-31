@@ -831,3 +831,11 @@ Adicionado `POST /proposal-briefs/bulk-status` tenant-isolado com 1-100 IDs.
 UI com checkboxes e barra de ação em massa.
 
 **2355 testes passaram** (8 novos); compileall, diff-check: PASS.
+
+### WP-185 — Exclusão em massa de proposal briefs
+
+O operador não podia excluir múltiplos briefs de uma vez.
+Adicionado `POST /proposal-briefs/bulk-delete` tenant-isolado com 1-100 IDs.
+Botão "Excluir selecionados" na barra bulk existente.
+
+**2361 testes passaram** (6 novos); compileall, diff-check: PASS.

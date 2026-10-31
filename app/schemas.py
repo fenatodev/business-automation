@@ -243,6 +243,14 @@ class ProposalBriefBulkStatus(BaseModel):
     ]
 
 
+class ProposalBriefBulkDelete(BaseModel):
+    """Bulk delete multiple proposal briefs."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    brief_ids: list[int] = Field(min_length=1, max_length=100)
+
+
 class CommercialIntakeEvaluateRequest(BaseModel):
     """Request body for the private commercial intake evaluate endpoint.
 
