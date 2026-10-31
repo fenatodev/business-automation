@@ -20,22 +20,26 @@ router = APIRouter(prefix="/internal-tasks", tags=["internal-tasks"])
 @router.get("/", response_model=list[InternalTaskOut])
 def list_internal_tasks(
     status: Literal["queued", "running", "succeeded", "failed"] | None = None,
+    from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
+    to_date: str | None = Query(None, description="Filter created_at <= date (YYYY-MM-DD)"),
     sort: Literal["id", "created_at", "status", "attempts"] = "created_at",
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    return tasks.list_tasks(db, identity.company_id, status=status, limit=limit, offset=offset, sort=sort)
+    return tasks.list_tasks(db, identity.company_id, status=status, limit=limit, offset=offset, sort=sort, from_date=from_date, to_date=to_date)
 
 
 @router.get("/count", response_model=int)
 def count_internal_tasks(
     status: Literal["queued", "running", "succeeded", "failed"] | None = None,
+    from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
+    to_date: str | None = Query(None, description="Filter created_at <= date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    return task_count_svc(db, identity.company_id, status=status)
+    return task_count_svc(db, identity.company_id, status=status, from_date=from_date, to_date=to_date)
 
 
 @router.get("/summary", response_model=dict[str, int])
@@ -116,6 +120,8 @@ def get_dashboard(
 @router.get("/export.csv")
 def export_tasks_csv(
     status: Literal["queued", "running", "succeeded", "failed"] | None = Query(None, description="Filter by status"),
+    from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
+    to_date: str | None = Query(None, description="Filter created_at <= date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
@@ -123,6 +129,11 @@ def export_tasks_csv(
     query = select(InternalTask).where(InternalTask.company_id == identity.company_id)
     if status:
         query = query.where(InternalTask.status == status)
+    # WP-155 — date range filter
+    if from_date:
+        query = query.where(InternalTask.created_at >= from_date)
+    if to_date:
+        query = query.where(InternalTask.created_at <= to_date + "T23:59:59")
     task_list = db.scalars(query.order_by(InternalTask.id)).all()
 
     output = io.StringIO()

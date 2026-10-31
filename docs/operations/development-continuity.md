@@ -622,3 +622,18 @@ O módulo de customers não tinha filtro por data. Adicionado `from_date`
 e `to_date` em list, count e export CSV. UI com campos de data na seção
 de filtros. Exportação CSV respeita os filtros de data.
 **2063 testes passaram** (6 novos); compileall, diff-check: PASS.
+
+## WP-154 — Filtro de data em review queue (31/10/2026)
+
+A review queue não tinha filtro por data. Adicionado `from_date`
+e `to_date` em list, count e export CSV. UI com campos de data na seção
+de filtros. Exportação CSV respeita os filtros de data.
+**2075 testes passaram** (12 novos); compileall, diff-check: PASS.
+
+## WP-155 — Filtro de data em internal tasks (31/10/2026)
+
+O módulo de internal tasks não tinha filtro por data. Adicionado `from_date`
+e `to_date` em list, count e export CSV. Service layer atualizado para
+suportar os parâmetros. UI com campos de data na seção de filtros.
+Exportação CSV respeita os filtros de data.
+**2075 testes passaram** (12 novos); compileall, diff-check: PASS.
