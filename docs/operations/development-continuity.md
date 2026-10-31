@@ -748,3 +748,12 @@ UI com checkboxes em cada tarefa e barra de ação em massa com contador,
 botão retry e botão limpar seleção.
 
 **2262 testes passaram** (9 novos); compileall, diff-check: PASS.
+
+### WP-174 — Edição parcial do proposal brief
+
+O schema ProposalBriefUpdate exigia todos os campos obrigatórios,
+impossibilitando edições parciais. Todos os campos tornados opcionais;
+endpoint PATCH usa model_dump(exclude_unset=True) para atualizar
+apenas os campos fornecidos.
+
+**2272 testes passaram** (10 novos); compileall, diff-check: PASS.

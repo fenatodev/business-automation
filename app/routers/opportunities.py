@@ -750,6 +750,7 @@ def update_proposal_brief(
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
+    """Partially update a proposal brief. Only non-null fields are modified."""
     opportunity = _get_tenant_opportunity(
         db,
         opportunity_id,
@@ -761,14 +762,9 @@ def update_proposal_brief(
         opportunity.id,
     )
 
-    brief.offer_reference = data.offer_reference
-    brief.diagnosis = data.diagnosis
-    brief.scope = data.scope
-    brief.deliverables = data.deliverables
-    brief.acceptance_criteria = data.acceptance_criteria
-    brief.assumptions = data.assumptions
-    brief.risks = data.risks
-    brief.status = data.status
+    update_data = data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(brief, key, value)
 
     db.commit()
     db.refresh(brief)

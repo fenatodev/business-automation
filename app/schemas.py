@@ -199,19 +199,21 @@ class ProposalBriefCreate(BaseModel):
 
 
 class ProposalBriefUpdate(BaseModel):
+    """Partial update for proposal brief — all fields optional."""
+
     model_config = ConfigDict(extra="forbid")
 
-    offer_reference: str = Field(min_length=1, max_length=120)
-    diagnosis: str = Field(min_length=1)
-    scope: str = Field(min_length=1)
-    deliverables: str = Field(min_length=1)
-    acceptance_criteria: str = Field(min_length=1)
+    offer_reference: str | None = Field(default=None, min_length=1, max_length=120)
+    diagnosis: str | None = Field(default=None, min_length=1)
+    scope: str | None = Field(default=None, min_length=1)
+    deliverables: str | None = Field(default=None, min_length=1)
+    acceptance_criteria: str | None = Field(default=None, min_length=1)
     assumptions: str | None = None
     risks: str | None = None
     status: Literal[
         "draft",
         "ready_for_review",
-    ]
+    ] | None = None
 
 
 class CommercialIntakeEvaluateRequest(BaseModel):
