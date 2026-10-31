@@ -131,6 +131,11 @@
               <p id="list-meta" class="small">Nenhuma consulta realizada.</p>
               <div class="opp-toolbar-right">
                 <input type="text" id="opp-search" class="opp-search-inline" placeholder="Buscar oportunidades...">
+                <select id="opp-sort" class="opp-sort-select">
+                  <option value="id">Ordenar: ID</option>
+                  <option value="created_at">Ordenar: Data</option>
+                  <option value="next_action">Ordenar: Status</option>
+                </select>
                 <label class="opp-archive-toggle">
                   <input type="checkbox" id="show-archived">
                   Exibir arquivadas
@@ -138,6 +143,11 @@
               </div>
             </div>
             <div id="opportunity-list" class="opportunity-list" aria-label="Lista de oportunidades"></div>
+            <div id="opp-pagination" class="opp-pagination" hidden>
+              <button id="opp-prev" type="button" class="secondary" disabled>Anterior</button>
+              <span id="opp-page" class="small">Página 1</span>
+              <button id="opp-next" type="button" class="secondary" disabled>Próxima</button>
+            </div>
           </section>
         </div>
 
