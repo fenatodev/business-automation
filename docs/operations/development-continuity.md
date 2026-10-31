@@ -320,3 +320,114 @@ O operador não podia exportar dados para análise externa. Adicionado
 arquivos CSV com cabeçalhos em português. UI com botão "Exportar CSV"
 nas seções de oportunidades, leads e customers.
 **1587 testes passaram** (15 novos); compileall, diff-check: PASS.
+
+## WP-107 — Notificações visuais no operador (31/10/2026)
+
+Sino 🔔 na barra superior agrega contagens de oportunidades pendentes,
+leads novos e conversas abertas. Polling automático a cada 30 segundos.
+Tooltip detalhado ao passar o mouse.
+**1588 testes passaram**; compileall, diff-check: PASS.
+
+## WP-108 — Painel de detalhes da oportunidade (31/10/2026)
+
+`selectOpportunity()` sempre carrega o brief (independentemente do
+status). Novos metadados: fonte, capturada em, nota de triagem.
+Botão "Ver brief" com scroll suave.
+**1579 testes passaram** (18 testes UI); compileall, diff-check: PASS.
+
+## WP-109 — Exportação CSV de conversas (31/10/2026)
+
+`GET /companies/{company_id}/conversations/export.csv` tenant-isolado
+com mensagens concatenadas. Botão "Exportar CSV" na UI.
+**1590 testes passaram** (7 testes backend); compileall, diff-check: PASS.
+
+## WP-110 — Editar customer via UI (31/10/2026)
+
+`PATCH /customers/{id}` tenant-isolado com `CustomerUpdate` schema
+parcial. Formulário inline no painel de detalhes com botão "✏️ Editar".
+**1589 testes passaram** (26 testes); compileall, diff-check: PASS.
+
+## WP-111 — Criar customer manualmente (31/10/2026)
+
+Formulário "Novo customer" na seção de customers. Reusa `POST /customers`
+existente.
+**1594 testes passaram** (15 testes); compileall, diff-check: PASS.
+
+## WP-112 — Criar lead manualmente (31/10/2026)
+
+Formulário "Novo lead" na seção de leads com nome, telefone, fonte e
+interesse. Reusa `POST /leads` existente.
+**1598 testes passaram** (17 testes); compileall, diff-check: PASS.
+
+## WP-113 — Notas em oportunidades (31/10/2026)
+
+`triage_note` adicionado ao `OpportunityUpdate` schema; PATCH com
+`exclude_unset` para suporte a nulo explícito. UI com painel standalone
+no detalhe da oportunidade.
+**1580 testes passaram** (21 testes); compileall, diff-check: PASS.
+
+## WP-114 — Detalhes expandidos de lead (31/10/2026)
+
+Painel clicável mostrando nome, telefone, fonte, interesse, data e
+conversas associadas — seguindo o padrão do customer detail.
+**1585 testes passaram** (18 testes); compileall, diff-check: PASS.
+
+## WP-115 — Status em massa de leads (31/10/2026)
+
+`POST /leads/bulk-status` com 1-100 IDs tenant-isolado. UI com
+checkboxes e barra de status em massa.
+**1593 testes passaram** (8 testes); compileall, diff-check: PASS.
+
+## WP-117 — Correção do script de demonstração Client 0 (31/10/2026)
+
+O passo 14 do script demo_client0_cycle.sh estava comentado. Agora
+fecha a oportunidade como "done" completando o ciclo F2 inteiro.
+**1733 testes passaram**; compileall, diff-check: PASS.
+
+## WP-118 — Badges visuais coloridos nas oportunidades (31/10/2026)
+
+Indicadores coloridos: pendente (amarelo), acompanhar (azul), proposta
+(roxo), em andamento (verde), concluída (verde claro), perdida
+(vermelho), ignorado (cinza).
+**1742 testes passaram**; compileall, diff-check: PASS.
+
+## WP-119 — Badges visuais estendidos (31/10/2026)
+
+Badges para conversas (aberta/fechada) e leads (novo, contactado,
+qualificado, perdido, convertido).
+**1751 testes passaram** (36 novos); compileall, diff-check: PASS.
+
+## WP-120 — Seção completa de tarefas internas (31/10/2026)
+
+Seção "10 / TAREFAS INTERNAS" com lista, filtro por status, ordenação
+(id, created_at, status, attempts), paginação e botão retry para
+tarefas falhadas. Backend com `sort` em list_tasks e novo
+`GET /internal-tasks/count`.
+**1803 testes passaram** (34 testes); compileall, diff-check: PASS.
+
+## WP-121 — Exportação CSV da review queue (31/10/2026)
+
+`GET /review-queue/export.csv` tenant-isolado e botão "Exportar CSV"
+na UI.
+**1810 testes passaram** (7 testes); compileall, diff-check: PASS.
+
+## WP-122 — Exportação CSV das tarefas internas (31/10/2026)
+
+`GET /internal-tasks/export.csv` tenant-isolado e botão "Exportar CSV"
+na seção de tarefas. Completa a cobertura de exportação CSV em todos
+os módulos.
+**1815 testes passaram** (5 testes); compileall, diff-check: PASS.
+
+## WP-123 — Exportação CSV filtrada das oportunidades (31/10/2026)
+
+O endpoint `GET /opportunities/export.csv` agora respeita os mesmos
+filtros que a lista: `next_action`, `q` (busca) e `exclude_archived`.
+**1822 testes passaram** (7 testes); compileall, diff-check: PASS.
+
+## WP-124 — Consolidação de WP-120 a WP-123 (31/10/2026)
+
+4 PRs abertos (WP-120 a WP-123) criados da mesma base main teriam
+conflitos de merge sequencial. Branch consolidada que combina
+manualmente todas as mudanças das 4 WPs em um único commit.
+**1822 testes passaram**; compileall, diff-check: PASS.
+PR #208: https://github.com/fenatodev/business-automation/pull/208
