@@ -143,6 +143,39 @@ class TestTaskAuth:
         assert resp.status_code == 403
 
 
+class TestTaskExportCSV:
+    """GET /internal-tasks/export.csv endpoint."""
+
+    def test_export_csv_requires_auth(self, client):
+        resp = client.get("/internal-tasks/export.csv")
+        assert resp.status_code in (401, 403)
+
+    def test_export_csv_rejects_admin(self, companies, client, admin_headers):
+        resp = client.get("/internal-tasks/export.csv", headers=admin_headers)
+        assert resp.status_code == 403
+
+    def test_export_csv_empty(self, companies, client, operator_a_headers):
+        resp = client.get("/internal-tasks/export.csv", headers=operator_a_headers)
+        assert resp.status_code == 200
+        assert "text/csv" in resp.headers["content-type"]
+        assert "internal-tasks.csv" in resp.headers["content-disposition"]
+        assert "ID" in resp.text
+
+    def test_export_csv_with_data(self, companies, client, operator_a_headers):
+        payload = trigger().model_dump()
+        client.post("/internal-tasks/", json=payload, headers=operator_a_headers)
+        resp = client.get("/internal-tasks/export.csv", headers=operator_a_headers)
+        assert resp.status_code == 200
+        assert "evt-sort-001" in resp.text
+
+    def test_export_csv_tenant_isolation(self, companies, client, operator_a_headers, operator_b_headers):
+        payload = trigger().model_dump()
+        client.post("/internal-tasks/", json=payload, headers=operator_a_headers)
+        resp = client.get("/internal-tasks/export.csv", headers=operator_b_headers)
+        assert resp.status_code == 200
+        assert "evt-sort-001" not in resp.text
+
+
 # --- UI Contract Tests ---
 
 BASE = Path(__file__).resolve().parent.parent / "app" / "operator_ui"

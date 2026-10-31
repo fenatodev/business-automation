@@ -1912,6 +1912,11 @@
     notify("Exportando fila de revisão...");
   });
 
+  $("tasks-export-csv").addEventListener("click", () => {
+    downloadCsv("/internal-tasks/export.csv", "internal-tasks.csv");
+    notify("Exportando tarefas internas...");
+  });
+
   // WP-111 — Create customer manually
   async function createCustomer(name, phone, email) {
     if (!bearer) return null;
