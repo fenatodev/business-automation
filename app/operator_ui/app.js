@@ -27,6 +27,9 @@
   let convOffset = 0;
   const convPageSize = 50;
   let convTotal = 0;
+  let msgOffset = 0;
+  const msgPageSize = 50;
+  let msgTotal = 0;
 
   const briefFields = [
     "offer_reference",
@@ -133,6 +136,8 @@
     convFilterSort = "last_message";
     convOffset = 0;
     convTotal = 0;
+    msgOffset = 0;
+    msgTotal = 0;
     notify(message);
   }
 
@@ -773,7 +778,7 @@
           /^\/companies\/\d+\/conversations\/count($|\?)/.test(path) ||
           /^\/conversations\/$/.test(path) ||
           /^\/conversations\/\d+\/$/.test(path) ||
-          /^\/conversations\/\d+\/messages$/.test(path))) {
+          /^\/conversations\/\d+\/messages(\/count)?(\?|$)/.test(path))) {
       throw new Error("Rota de conversas não permitida.");
     }
     const epoch = sessionEpoch;
@@ -881,6 +886,7 @@
 
   async function selectConversation(id) {
     selectedConvId = id;
+    msgOffset = 0;
     showConversationList();
     $("conv-detail").hidden = false;
     $("conv-reply-toggle").hidden = false;
@@ -889,9 +895,17 @@
     const conv = conversations.find((c) => c.id === id);
     const channel = conv ? (channelLabels[conv.channel] || conv.channel) : "Conversa";
     $("conv-detail-header").textContent = channel + " · #" + id;
+    await loadMessages(id);
+  }
+
+  async function loadMessages(id) {
     try {
-      const messages = await conversationApi("/conversations/" + id + "/messages");
+      const [messages, countResult] = await Promise.all([
+        conversationApi("/conversations/" + id + "/messages?limit=" + msgPageSize + "&offset=" + msgOffset),
+        conversationApi("/conversations/" + id + "/messages/count?limit=" + msgPageSize + "&offset=" + msgOffset),
+      ]);
       if (selectedConvId !== id) return;
+      msgTotal = countResult.total || 0;
       const target = $("conv-messages");
       target.replaceChildren();
       if (!messages.length) {
@@ -899,24 +913,40 @@
         empty.className = "small";
         empty.textContent = "Nenhuma mensagem.";
         target.append(empty);
-        return;
+      } else {
+        for (const msg of messages) {
+          const bubble = document.createElement("div");
+          bubble.className = "message-bubble";
+          bubble.classList.add(msg.sender_type);
+          const header = document.createElement("span");
+          header.className = "message-sender";
+          header.textContent = senderLabels[msg.sender_type] || msg.sender_type;
+          const content = document.createElement("p");
+          content.className = "message-content";
+          content.textContent = msg.content || "";
+          bubble.append(header, content);
+          target.append(bubble);
+        }
       }
-      for (const msg of messages) {
-        const bubble = document.createElement("div");
-        bubble.className = "message-bubble";
-        bubble.classList.add(msg.sender_type);
-        const header = document.createElement("span");
-        header.className = "message-sender";
-        header.textContent = senderLabels[msg.sender_type] || msg.sender_type;
-        const content = document.createElement("p");
-        content.className = "message-content";
-        content.textContent = msg.content || "";
-        bubble.append(header, content);
-        target.append(bubble);
-      }
+      updateMessagePagination();
     } catch (error) {
       if (selectedConvId !== id) return;
       notify("Não foi possível carregar as mensagens.", true);
+    }
+  }
+
+  function updateMessagePagination() {
+    const pagination = $("msg-pagination");
+    if (!pagination) return;
+    const totalPages = Math.max(1, Math.ceil(msgTotal / msgPageSize));
+    const currentPage = Math.floor(msgOffset / msgPageSize) + 1;
+    if (msgTotal <= msgPageSize) {
+      pagination.hidden = true;
+    } else {
+      pagination.hidden = false;
+      $("msg-prev").disabled = msgOffset === 0;
+      $("msg-next").disabled = msgOffset + msgPageSize >= msgTotal;
+      $("msg-page").textContent = "Página " + currentPage + " de " + totalPages + " (" + msgTotal + ")";
     }
   }
 
@@ -1037,6 +1067,19 @@
   $("conv-reply-toggle").addEventListener("click", () => {
     const form = $("human-reply-form");
     form.hidden = !form.hidden;
+  });
+
+  // WP-136 — Message pagination
+  $("msg-prev").addEventListener("click", () => {
+    if (msgOffset >= msgPageSize) {
+      msgOffset -= msgPageSize;
+      loadMessages(selectedConvId).catch(() => {});
+    }
+  });
+
+  $("msg-next").addEventListener("click", () => {
+    msgOffset += msgPageSize;
+    loadMessages(selectedConvId).catch(() => {});
   });
 
   $("conv-close-toggle").addEventListener("click", () => withButton($("conv-close-toggle"), async () => {
