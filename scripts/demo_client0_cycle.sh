@@ -317,16 +317,9 @@ curl_step PATCH "/opportunities/$OPP_ID/triage" "Triage: done" \
     -H "Authorization: Bearer $OPERATOR_TOKEN" \
     -H "Content-Type: application/json" \
     -d '{
-        "next_action": "in_progress",
-        "triage_note": "Projeto em execução. Instalação agendada para próxima semana."
+        "next_action": "done",
+        "triage_note": "Projeto concluído com sucesso. Taxa de defeitos: 0.3%."
     }'
-
-# Nota: O schema atual não tem "done" no OpportunityTriageUpdate.
-# Se "done" estiver disponível, descomentar:
-# curl_step PATCH "/opportunities/$OPP_ID/triage" "Triage: done" \
-#     -H "Authorization: Bearer $OPERATOR_TOKEN" \
-#     -H "Content-Type: application/json" \
-#     -d '{"next_action": "done", "triage_note": "Projeto concluído com sucesso. Taxa de defeitos: 0.3%."}'
 
 # =============================================================================
 # PASSO 15: Dashboard de Métricas
@@ -351,9 +344,9 @@ echo -e "  ${GREEN}Lead:${NC}        ID $LEAD_ID — Joia Automação Ltda → c
 echo -e "  ${GREEN}Customer:${NC}    ID $CUSTOMER_ID — Joia Automação Ltda"
 echo -e "  ${GREEN}Conversation:${NC} ID $CONV_ID — WhatsApp, $MSG_COUNT mensagens"
 echo -e "  ${GREEN}Conversation:${NC} ID $CONV2_ID — Email, follow-up"
-echo -e "  ${GREEN}Opportunity:${NC} ID $OPP_ID — Intake → Triage → Brief → Aprovado → In Progress"
+echo -e "  ${GREEN}Opportunity:${NC} ID $OPP_ID — Intake → Triage → Brief → Aprovado → In Progress → Concluída"
 echo ""
-echo -e "  ${GREEN}Fluxo completo:${NC} Intake → Opportunity → Triage → Brief → Approve → In Progress"
+echo -e "  ${GREEN}Fluxo completo:${NC} Intake → Opportunity → Triage → Brief → Approve → In Progress → Done"
 echo -e "  ${GREEN}Lead flow:${NC}    Lead → Convert → Customer → Conversation"
 echo ""
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
