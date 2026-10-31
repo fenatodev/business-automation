@@ -11,6 +11,9 @@
   const reviewPageSize = 50;
   let opportunities = [];
   let selectedId = null;
+  let oppOffset = 0;
+  const oppPageSize = 50;
+  let oppTotal = 0;
   let activeBrief = null;
   let selectionVersion = 0;
   let conversations = [];
@@ -100,6 +103,8 @@
     bearer = null;
     reviewEpoch += 1;
     reviewOffset = 0;
+    oppOffset = 0;
+    oppTotal = 0;
     $("rq-list").replaceChildren();
     $("rq-count").textContent = "—";
     $("rq-summary").textContent = "Resumo operacional indisponível.";
@@ -134,8 +139,10 @@
     // Somente caminhos internos fixos. Não aceitar URLs de anúncio como destino de fetch.
     // WP-093 — allow PATCH /opportunities/{id} for title/description edit
     // WP-094 — allow ?q= search param
-    if (!/^\/(opportunities)(\?[^&]*&[^&]*)?$/.test(path) &&
-        !/^\/(opportunities)(\/\d+(\/(triage|proposal-brief))?)?$/.test(path)) {
+    // WP-095 — allow /opportunities/count and sort/limit/offset params
+    if (!/^\/opportunities(\?[^"]*)?$/.test(path) &&
+        !/^\/opportunities\/count(\?[^"]*)?$/.test(path) &&
+        !/^\/opportunities\/\d+(\/(triage|proposal-brief)(\/approve|\/reject)?)?$/.test(path)) {
       throw new Error("Rota não permitida nesta interface.");
     }
     const epoch = sessionEpoch;
@@ -319,15 +326,24 @@
     const showArchived = $("show-archived").checked;
     // WP-094 — opportunity search
     const searchQuery = $("opp-search").value.trim();
+    // WP-095 — opportunity sort and pagination
+    const sort = $("opp-sort").value;
     const params = [];
     if (!showArchived) params.push("exclude_archived=true");
     if (searchQuery) params.push("q=" + encodeURIComponent(searchQuery));
-    const query = params.length ? "?" + params.join("&") : "";
-    const result = await api("/opportunities" + query);
+    params.push("sort=" + encodeURIComponent(sort));
+    params.push("limit=" + oppPageSize);
+    params.push("offset=" + oppOffset);
+    const query = "?" + params.join("&");
+    const [result, countResult] = await Promise.all([
+      api("/opportunities" + query),
+      api("/opportunities/count" + (showArchived ? "" : "?exclude_archived=true") + (searchQuery ? "&q=" + encodeURIComponent(searchQuery) : "")),
+    ]);
     if (!Array.isArray(result)) {
       throw new Error("Resposta de listagem inválida.");
     }
     opportunities = result;
+    oppTotal = countResult.total || 0;
     // WP-091 — pending badge
     const pending = result.filter((o) => o.next_action === "pending").length;
     const badge = $("pending-badge");
@@ -336,6 +352,16 @@
       badge.textContent = pending;
     } else {
       badge.hidden = true;
+    }
+    // WP-095 — update pagination controls
+    const pagination = $("opp-pagination");
+    if (oppTotal > oppPageSize) {
+      pagination.hidden = false;
+      $("opp-prev").disabled = oppOffset === 0;
+      $("opp-next").disabled = oppOffset + result.length >= oppTotal;
+      $("opp-page").textContent = "Página " + (Math.floor(oppOffset / oppPageSize) + 1) + " de " + Math.ceil(oppTotal / oppPageSize);
+    } else {
+      pagination.hidden = true;
     }
     if (preferId !== null && opportunities.some((item) => item.id === preferId)) {
       await selectOpportunity(preferId);
@@ -347,13 +373,31 @@
 
   // WP-090 — Archive toggle
   $("show-archived").addEventListener("change", () => {
+    oppOffset = 0;
     refreshList();
   });
 
   // WP-094 — Opportunity search
   $("opp-search").addEventListener("input", () => {
+    oppOffset = 0;
     refreshList();
   });
+
+  // WP-095 — Opportunity sort
+  $("opp-sort").addEventListener("change", () => {
+    oppOffset = 0;
+    refreshList();
+  });
+
+  // WP-095 — Opportunity pagination
+  $("opp-prev").addEventListener("click", () => withButton($("opp-prev"), async () => {
+    oppOffset = Math.max(0, oppOffset - oppPageSize);
+    await refreshList();
+  }));
+  $("opp-next").addEventListener("click", () => withButton($("opp-next"), async () => {
+    oppOffset += oppPageSize;
+    await refreshList();
+  }));
 
   // WP-093 — Save opportunity title/description edit
   $("save-edit-button").addEventListener("click", async () => {

@@ -523,6 +523,32 @@ footer {
   width: 200px;
 }
 
+/* WP-095 — Opportunity sort and pagination */
+.opp-sort-select {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.opp-pagination {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0 18px;
+}
+.opp-pagination button {
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+.opp-pagination .small {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
 /* WP-093 — Opportunity edit panel */
 .opp-edit-panel {
   margin: 12px 0;

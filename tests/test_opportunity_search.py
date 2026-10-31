@@ -104,7 +104,7 @@ class TestOpportunitySearchBackend:
         """Verify the backend code has the q parameter."""
         import pathlib
         code = (pathlib.Path("app/routers/opportunities.py")).read_text()
-        assert "q: str | None = None" in code
+        assert "q: str | None" in code
         assert "func.lower" in code
 
 

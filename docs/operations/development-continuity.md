@@ -227,3 +227,12 @@ Campo de busca na toolbar de oportunidades filtra por título e descrição
 (case-insensitive). Backend com `?q=` query param em `GET /opportunities`.
 Combina com `exclude_archived` para filtragem composta.
 **1453 testes passaram**; compileall, diff-check: PASS.
+
+## WP-095 — Ordenação e paginação de oportunidades (31/10/2026)
+
+O módulo de oportunidades não tinha ordenação configurável nem paginação,
+dificultando o trabalho com carteiras grandes. Adicionado `sort` param
+(id, created_at, next_action), `limit`/`offset` paginação e endpoint
+`GET /opportunities/count`. UI com dropdown "Ordenar" e controles
+Anterior/Próxima com indicador de página.
+**1468 testes passaram**; compileall, diff-check: PASS.

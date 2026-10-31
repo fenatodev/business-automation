@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func, select
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import desc, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -119,11 +119,14 @@ def create_opportunity(
 @router.get("/opportunities")
 def list_opportunities(
     exclude_archived: bool = False,
-    q: str | None = None,
+    q: str | None = Query(None, description="Search keywords in title and description"),
+    sort: str = Query(default="id", description="Sort by: id, created_at, next_action"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    """List opportunities with optional archive filter and keyword search."""
+    """List opportunities with optional archive filter, search, sort, and pagination."""
     stmt = (
         select(Opportunity)
         .where(Opportunity.company_id == identity.company_id)
@@ -139,8 +142,43 @@ def list_opportunities(
             func.lower(Opportunity.description).like(func.lower(pattern))
         )
 
-    stmt = stmt.order_by(Opportunity.id)
+    if sort == "created_at":
+        stmt = stmt.order_by(desc(Opportunity.created_at), desc(Opportunity.id))
+    elif sort == "next_action":
+        stmt = stmt.order_by(Opportunity.next_action, Opportunity.id)
+    else:
+        stmt = stmt.order_by(Opportunity.id)
+
+    stmt = stmt.offset(offset).limit(limit)
     return db.scalars(stmt).all()
+
+
+@router.get("/opportunities/count")
+def count_opportunities(
+    exclude_archived: bool = False,
+    q: str | None = Query(None, description="Search keywords in title and description"),
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Count opportunities with optional archive filter and search."""
+    stmt = (
+        select(func.count())
+        .select_from(Opportunity)
+        .where(Opportunity.company_id == identity.company_id)
+    )
+
+    if exclude_archived:
+        stmt = stmt.where(Opportunity.next_action.notin_(["done", "lost"]))
+
+    if q:
+        pattern = f"%{q}%"
+        stmt = stmt.where(
+            func.lower(Opportunity.title).like(func.lower(pattern)) |
+            func.lower(Opportunity.description).like(func.lower(pattern))
+        )
+
+    total = db.scalar(stmt)
+    return {"total": total}
 
 
 @router.get("/opportunities/{opportunity_id}")
