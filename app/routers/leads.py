@@ -1,4 +1,8 @@
+import csv
+import io
+
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import Response
 from sqlalchemy import func, select, desc
 from sqlalchemy.orm import Session
 
@@ -120,6 +124,44 @@ def count_leads(
         )
     total = db.scalar(query)
     return {"total": total}
+
+
+@router.get("/leads/export.csv")
+def export_leads_csv(
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Export all tenant leads as a CSV file."""
+    leads = db.scalars(
+        select(Lead)
+        .where(Lead.company_id == identity.company_id)
+        .order_by(Lead.id)
+    ).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "ID", "Nome", "Telefone", "E-mail", "Fonte", "Interesse",
+        "Status", "Criado em",
+    ])
+    for lead in leads:
+        writer.writerow([
+            lead.id,
+            lead.name,
+            lead.phone or "",
+            lead.source or "",
+            lead.interest or "",
+            lead.status or "",
+            lead.created_at.isoformat() if lead.created_at else "",
+        ])
+
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=leads.csv",
+        },
+    )
 
 
 @router.get("/leads/{lead_id}")

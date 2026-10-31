@@ -1,4 +1,8 @@
+import csv
+import io
+
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -115,6 +119,43 @@ def count_customers(
 
     total = db.scalar(stmt)
     return {"total": total}
+
+
+@router.get("/customers/export.csv")
+def export_customers_csv(
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Export all tenant customers as a CSV file."""
+    customers = db.scalars(
+        select(Customer)
+        .where(Customer.company_id == identity.company_id)
+        .order_by(Customer.id)
+    ).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "ID", "Nome", "Telefone", "E-mail", "Lead origem",
+        "Criado em",
+    ])
+    for customer in customers:
+        writer.writerow([
+            customer.id,
+            customer.name,
+            customer.phone or "",
+            customer.email or "",
+            customer.lead_id or "",
+            customer.created_at.isoformat() if customer.created_at else "",
+        ])
+
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=customers.csv",
+        },
+    )
 
 
 @router.get("/customers/{customer_id}")

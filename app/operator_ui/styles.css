@@ -771,3 +771,10 @@ footer {
   margin-left: 0;
   color: var(--text);
 }
+
+/* WP-106 — Panel actions (export buttons) */
+.panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

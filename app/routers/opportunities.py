@@ -1,4 +1,8 @@
+import csv
+import io
+
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import Response
 from sqlalchemy import desc, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -206,6 +210,49 @@ def pipeline_summary(
     return {row[0]: row[1] for row in rows}
 
 
+@router.get("/opportunities/export.csv")
+def export_opportunities_csv(
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Export all tenant opportunities as a CSV file."""
+    opportunities = db.scalars(
+        select(Opportunity)
+        .where(Opportunity.company_id == identity.company_id)
+        .order_by(Opportunity.id)
+    ).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "ID", "Titulo", "Descricao", "Status", "Orçamento",
+        "Prazo", "Requisitos", "URL", "Fonte", "Nota triagem",
+        "Capturada em",
+    ])
+    for opp in opportunities:
+        writer.writerow([
+            opp.id,
+            opp.title,
+            opp.description or "",
+            opp.next_action or "",
+            opp.budget or "",
+            opp.deadline or "",
+            opp.requirements or "",
+            opp.external_url or "",
+            opp.source or "",
+            opp.triage_note or "",
+            opp.captured_at.isoformat() if opp.captured_at else "",
+        ])
+
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=opportunities.csv",
+        },
+    )
+
+
 @router.get("/opportunities/{opportunity_id}")
 def get_opportunity(
     opportunity_id: int,
@@ -264,7 +311,6 @@ def triage_opportunity(
     db.refresh(opportunity)
 
     return opportunity
-
 
 
 def _get_proposal_brief(

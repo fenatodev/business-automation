@@ -1644,4 +1644,30 @@
     }
   });
   workspaceObserver.observe($("workspace"), {attributes: true});
+
+  // WP-106 — Export CSV buttons
+  function downloadCsv(url, filename) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  $("opp-export-csv").addEventListener("click", () => {
+    downloadCsv("/opportunities/export.csv", "opportunities.csv");
+    notify("Exportando oportunidades...");
+  });
+
+  $("leads-export-csv").addEventListener("click", () => {
+    downloadCsv("/leads/export.csv", "leads.csv");
+    notify("Exportando leads...");
+  });
+
+  $("customers-export-csv").addEventListener("click", () => {
+    downloadCsv("/customers/export.csv", "customers.csv");
+    notify("Exportando customers...");
+  });
 })();
