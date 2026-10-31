@@ -293,6 +293,16 @@ class ReviewQueueItemOut(BaseModel):
     updated_at: datetime
 
 
+class ReviewQueueBulkDecision(BaseModel):
+    """Bulk decision for multiple review queue items."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    item_ids: list[int] = Field(min_length=1, max_length=100)
+    decision: Literal["approve", "reject"]
+    operator_note: str | None = Field(default=None, max_length=2000)
+
+
 class ReviewQueueDecisionResponse(BaseModel):
     """Response for review queue decision, includes opportunity_id when created."""
 

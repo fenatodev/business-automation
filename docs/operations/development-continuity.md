@@ -730,3 +730,12 @@ tenant-isolados, com 1-100 IDs. UI com checkboxes em cada item e barra
 de ação em massa com contador, botão excluir e botão limpar seleção.
 
 **2241 testes passaram** (15 novos); compileall, diff-check: PASS.
+
+### WP-171 — Decisão em massa na review queue
+
+O operador só podia aprovar/rejeitar um item de cada vez na review queue.
+Adicionado `POST /review-queue/bulk-decision`, tenant-isolado, com 1-100 IDs.
+UI com checkboxes em cada item e barra de ação em massa com contador,
+botão aprovar, botão rejeitar e botão limpar seleção.
+
+**2253 testes passaram** (12 novos); compileall, diff-check: PASS.

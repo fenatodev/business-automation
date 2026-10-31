@@ -15,6 +15,7 @@ from app.auth import AccessIdentity
 from app.database import settings
 from app.dependencies import get_db, require_operator
 from app.schemas import (
+    ReviewQueueBulkDecision,
     ReviewQueueDecision,
     ReviewQueueDecisionResponse,
     ReviewQueueItemOut,
@@ -241,3 +242,39 @@ def apply_review_decision(
         updated_at=item.updated_at,
         opportunity_id=created_opportunity.id if created_opportunity is not None else None,
     )
+
+
+@router.post("/bulk-decision")
+def bulk_apply_review_decision(
+    bulk_data: ReviewQueueBulkDecision,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+) -> dict[str, object]:
+    """Apply the same decision (approve/reject) to multiple review queue items.
+
+    Tenant-isolated. Returns counts of applied and skipped items.
+    Items that are already decided or don't belong to the tenant are skipped.
+    """
+    applied = 0
+    applied_ids = []
+    skipped = []
+
+    for item_id in bulk_data.item_ids:
+        try:
+            item, _ = pipeline.apply_decision(
+                db=db,
+                item_id=item_id,
+                company_id=identity.company_id,
+                decision=bulk_data.decision,
+                operator_note=bulk_data.operator_note,
+            )
+            applied += 1
+            applied_ids.append(item.id)
+        except ValueError:
+            skipped.append(item_id)
+
+    return {
+        "applied": applied,
+        "applied_ids": sorted(applied_ids),
+        "skipped": sorted(skipped),
+    }
