@@ -666,6 +666,39 @@
           <h4>Conversas</h4>
           <button id="customer-new-conv" type="button" class="secondary">+ Nova conversa</button>
           <div id="customer-conversations-list" class="customer-conv-list"></div>
+
+          <!-- WP-167 — Create opportunity from customer -->
+          <h4>Oportunidades</h4>
+          <button id="customer-new-opp" type="button" class="secondary">+ Nova oportunidade</button>
+          <form id="customer-opp-form" class="customer-opp-form" hidden>
+            <h4>Nova oportunidade</h4>
+            <div>
+              <label for="customer-opp-title">Título *</label>
+              <input id="customer-opp-title" type="text" required maxlength="200" placeholder="Título da oportunidade">
+            </div>
+            <div>
+              <label for="customer-opp-description">Descrição *</label>
+              <textarea id="customer-opp-description" required rows="3" placeholder="Descreva a oportunidade"></textarea>
+            </div>
+            <div class="two-col">
+              <div>
+                <label for="customer-opp-budget">Orçamento</label>
+                <input id="customer-opp-budget" type="text" maxlength="120" placeholder="Não informado">
+              </div>
+              <div>
+                <label for="customer-opp-deadline">Prazo</label>
+                <input id="customer-opp-deadline" type="text" maxlength="120" placeholder="Não informado">
+              </div>
+            </div>
+            <div>
+              <label for="customer-opp-requirements">Requisitos</label>
+              <textarea id="customer-opp-requirements" rows="2" placeholder="Requisitos técnicos"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button type="submit" class="primary">Criar</button>
+              <button type="button" id="cancel-customer-opp" class="secondary">Cancelar</button>
+            </div>
+          </form>
         </div>
       </section>
 
