@@ -96,9 +96,16 @@
                 <span class="section-index">01 / ENTRADA</span>
                 <h2 id="capture-title">Registrar oportunidade</h2>
               </div>
-              <span class="tag">Origem: 99Freelas</span>
+              <span class="tag">Captura manual</span>
             </div>
             <form id="capture-form">
+              <label for="capture-source">Fonte *</label>
+              <select id="capture-source" name="source" required>
+                <option value="manual">Captura manual</option>
+                <option value="99freelas">99Freelas</option>
+                <option value="intake">Intake comercial</option>
+                <option value="review_queue">Review queue</option>
+              </select>
               <label for="capture-title-field">Título *</label>
               <input id="capture-title-field" name="title" required maxlength="200"
                      placeholder="Ex.: Integrar pedidos ao CRM">
