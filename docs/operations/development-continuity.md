@@ -792,3 +792,11 @@ com tenant isolation via JOIN Opportunity → Company.
 UI com seção "11 / BRIEFS" mostrando título, referência, status e data.
 
 **2314 testes passaram** (10 novos); compileall, diff-check: PASS.
+
+### WP-180 — Exclusão em massa de oportunidades e conversas
+
+Oportunidades e conversas não tinham exclusão em massa.
+Adicionado `POST /opportunities/bulk-delete` e `POST /conversations/bulk-delete`,
+tenant-isolados, seguindo o padrão de leads/customers.
+
+**2322 testes passaram** (8 novos); compileall, diff-check: PASS.

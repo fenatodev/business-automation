@@ -14,7 +14,14 @@ from app.dependencies import (
     require_operator_company,
 )
 from app.models import Company, Conversation, Customer, Lead, Message
-from app.schemas import AgentRequest, ConversationBulkStatus, ConversationCreate, ConversationUpdate, MessageCreate
+from app.schemas import (
+    AgentRequest,
+    ConversationBulkDelete,
+    ConversationBulkStatus,
+    ConversationCreate,
+    ConversationUpdate,
+    MessageCreate,
+)
 from app.services.agent import AgentServiceError, generate_agent_reply
 
 
@@ -564,3 +571,38 @@ def export_conversations_csv(
             "Content-Disposition": "attachment; filename=conversations.csv",
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# WP-180 — Bulk delete conversations
+# ---------------------------------------------------------------------------
+
+
+@router.post("/conversations/bulk-delete")
+def bulk_delete_conversations(
+    data: ConversationBulkDelete,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Bulk delete multiple conversations (tenant-isolated)."""
+    conversations = db.scalars(
+        select(Conversation).where(
+            Conversation.id.in_(data.conversation_ids),
+            Conversation.company_id == identity.company_id,
+        )
+    ).all()
+
+    deleted_ids = []
+    for conv in conversations:
+        db.delete(conv)
+        deleted_ids.append(conv.id)
+
+    db.commit()
+
+    skipped = set(data.conversation_ids) - set(deleted_ids)
+
+    return {
+        "deleted": len(deleted_ids),
+        "deleted_ids": sorted(deleted_ids),
+        "skipped": sorted(skipped),
+    }

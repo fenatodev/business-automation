@@ -12,6 +12,7 @@ from app.auth import AccessIdentity
 from app.dependencies import get_db, require_operator
 from app.models import Company, Opportunity, ProposalBrief
 from app.schemas import (
+    OpportunityBulkDelete,
     OpportunityBulkTriage,
     OpportunityCreate,
     OpportunityTriageUpdate,
@@ -910,3 +911,38 @@ def count_proposal_briefs(
 
     count = db.execute(query).scalar_one()
     return {"count": count}
+
+
+# ---------------------------------------------------------------------------
+# WP-180 — Bulk delete opportunities
+# ---------------------------------------------------------------------------
+
+
+@router.post("/opportunities/bulk-delete")
+def bulk_delete_opportunities(
+    data: OpportunityBulkDelete,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Bulk delete multiple opportunities (tenant-isolated)."""
+    opportunities = db.scalars(
+        select(Opportunity).where(
+            Opportunity.id.in_(data.opportunity_ids),
+            Opportunity.company_id == identity.company_id,
+        )
+    ).all()
+
+    deleted_ids = []
+    for opp in opportunities:
+        db.delete(opp)
+        deleted_ids.append(opp.id)
+
+    db.commit()
+
+    skipped = set(data.opportunity_ids) - set(deleted_ids)
+
+    return {
+        "deleted": len(deleted_ids),
+        "deleted_ids": sorted(deleted_ids),
+        "skipped": sorted(skipped),
+    }
