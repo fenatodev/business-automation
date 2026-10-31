@@ -9,6 +9,7 @@
   let reviewEpoch = 0;
   let reviewOffset = 0;
   const reviewPageSize = 50;
+  let taskFilter = "";
   let opportunities = [];
   let selectedId = null;
   let activeBrief = null;
@@ -84,11 +85,16 @@
     bearer = null;
     reviewEpoch += 1;
     reviewOffset = 0;
+    taskFilter = "";
     $("rq-list").replaceChildren();
     $("rq-count").textContent = "—";
     $("rq-summary").textContent = "Resumo operacional indisponível.";
     $("rq-aging").textContent = "Atrasos: indisponível.";
     $("rq-form").reset();
+    $("it-list").replaceChildren();
+    $("it-count").textContent = "—";
+    $("it-summary").textContent = "Resumo indisponível.";
+    $("it-filter").value = "";
     opportunities = [];
     clearSelection();
     $("workspace").hidden = true;
@@ -398,6 +404,75 @@
       notify("Entrada sintética processada; sem envio externo.");
     });
   });
+
+  // Internal tasks panel — read-only view of internal task state.
+  const taskStatusLabels = {queued: "Aguardando", running: "Em execução", succeeded: "Concluída", failed: "Falha"};
+  async function taskApi(path) {
+    if (!bearer) throw new Error("Conecte um operador.");
+    if (typeof path !== "string" || /[\u0000-\u0020\u007f]/.test(path) ||
+        !(/^\/internal-tasks\/(?:\?status=(?:queued|running|succeeded|failed))?$/.test(path) ||
+          /^\/internal-tasks\/summary$/.test(path))) {
+      throw new Error("Rota de tarefas não permitida.");
+    }
+    const epoch = sessionEpoch;
+    const headers = {Authorization: "Bearer " + bearer};
+    const response = await fetch(path, {method: "GET", headers,
+      credentials: "omit", cache: "no-store", redirect: "error", referrerPolicy: "no-referrer"});
+    if (epoch !== sessionEpoch) throw new Error("Sessão encerrada.");
+    if (response.status === 401) {
+      disconnect("Credencial inválida.");
+      throw new ApiFailure(401);
+    }
+    if (!response.ok) throw new ApiFailure(response.status);
+    return response.json();
+  }
+  async function refreshInternalTasks() {
+    const [items, summary] = await Promise.all([
+      taskApi("/internal-tasks/" + (taskFilter ? "?status=" + taskFilter : "")),
+      taskApi("/internal-tasks/summary"),
+    ]);
+    if (!Array.isArray(items)) throw new Error("Lista de tarefas inválida.");
+    const counts = [
+      "Aguardando: " + (summary.queued || 0),
+      "Executando: " + (summary.running || 0),
+      "Concluídas: " + (summary.succeeded || 0),
+      "Falhas: " + (summary.failed || 0),
+    ];
+    if (summary.overdue_queued > 0) counts.push("Atrasadas: " + summary.overdue_queued);
+    if (summary.expired_running > 0) counts.push("Lease expirado: " + summary.expired_running);
+    $("it-summary").textContent = counts.join(" · ");
+    $("it-count").textContent = items.length + " tarefa(s)";
+    const list = $("it-list");
+    list.replaceChildren();
+    for (const task of items) {
+      const card = document.createElement("article");
+      card.className = "task-card";
+      const heading = document.createElement("strong");
+      heading.textContent = "#" + task.id + " · " + (taskStatusLabels[task.status] || task.status);
+      const meta = document.createElement("p");
+      meta.className = "small";
+      const parts = ["Evento: " + (task.event_id || "—")];
+      if (task.error_code) parts.push("Erro: " + task.error_code);
+      if (task.created_at) parts.push("Criada: " + new Date(task.created_at).toLocaleString("pt-BR"));
+      meta.textContent = parts.join(" · ");
+      card.append(heading, meta);
+      list.append(card);
+    }
+    if (!items.length) {
+      const p = document.createElement("p");
+      p.className = "small";
+      p.textContent = "Nenhuma tarefa" + (taskFilter ? " com status '" + taskFilter + "'" : "") + ".";
+      list.append(p);
+    }
+  }
+  $("it-refresh").addEventListener("click", () => withButton($("it-refresh"), refreshInternalTasks));
+  $("it-filter").addEventListener("change", () => {
+    taskFilter = $("it-filter").value;
+    refreshInternalTasks().catch(() => {
+      notify("Falha ao atualizar tarefas.", true);
+    });
+  });
+
   $("access-form").addEventListener("submit", (event) => {
     event.preventDefault();
     withButton($("connect-button"), async () => {
@@ -411,7 +486,7 @@
       sessionEpoch += 1;
       bearer = secret;
       try {
-        await Promise.all([refreshList(null), refreshReviewQueue()]);
+        await Promise.all([refreshList(null), refreshReviewQueue(), refreshInternalTasks()]);
         $("workspace").hidden = false;
         $("access-status").textContent = "Conectado";
         $("access-status").classList.add("connected");
