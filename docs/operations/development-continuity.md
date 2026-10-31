@@ -302,3 +302,12 @@ telefone e email. Ordenação por `sort` (id, created_at, name). Paginação
 com `limit`/`offset` e novo `GET /customers/count`. UI com campo de busca,
 dropdown "Ordenar" e controles Anterior/Próxima.
 **1572 testes passaram** (17 novos); compileall, diff-check: PASS.
+
+## WP-108 — Painel de detalhes da oportunidade (31/10/2026)
+
+O operador não podia ver o proposal brief quando a opportunity estava em
+status diferente de `prepare_proposal` (ex: `in_progress`, `done`, `lost`).
+`selectOpportunity()` agora sempre carrega o brief associado. Adicionados
+campos de metadados: fonte (source), capturada em (captured_at) e nota de
+triagem (triage_note). Botão "Ver brief" rola até o painel do brief.
+**1590 testes passaram** (18 novos); compileall, diff-check: PASS.

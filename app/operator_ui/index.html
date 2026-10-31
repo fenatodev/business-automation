@@ -169,11 +169,17 @@
               <button id="save-edit-button" type="button" class="primary">Salvar alterações</button>
             </div>
             <dl class="metadata">
+              <dt>Fonte</dt><dd id="selected-source"></dd>
               <dt>Origem</dt><dd id="selected-url" class="break-word"></dd>
               <dt>Orçamento</dt><dd id="selected-budget"></dd>
               <dt>Prazo</dt><dd id="selected-deadline"></dd>
               <dt>Requisitos</dt><dd id="selected-requirements" class="break-word"></dd>
+              <dt>Capturada em</dt><dd id="selected-captured-at"></dd>
+              <dt>Nota de triagem</dt><dd id="selected-triage-note" class="break-word"></dd>
             </dl>
+            <div id="opp-detail-actions" class="opp-detail-actions">
+              <button id="view-brief-button" type="button" class="secondary">Ver brief</button>
+            </div>
             <form id="triage-form">
               <label for="next-action">Próxima ação *</label>
               <select id="next-action" name="next_action">

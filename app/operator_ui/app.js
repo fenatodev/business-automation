@@ -86,8 +86,9 @@
     $("brief-form").reset();
     $("triage-form").reset();
     for (const id of (
-      ["selected-id", "selected-url",
-        "selected-budget", "selected-deadline", "selected-requirements"]
+      ["selected-id", "selected-source", "selected-url",
+        "selected-budget", "selected-deadline", "selected-requirements",
+        "selected-captured-at", "selected-triage-note"]
     )) {
       $(id).textContent = "";
     }
@@ -304,22 +305,21 @@
     // WP-093 — populate edit fields
     $("edit-title").value = record.title;
     $("edit-description").value = record.description;
+    text("selected-source", record.source || "");
     text("selected-url", record.external_url);
     text("selected-budget", record.budget);
     text("selected-deadline", record.deadline);
     text("selected-requirements", record.requirements);
+    text("selected-captured-at", record.captured_at
+      ? new Date(record.captured_at).toLocaleString("pt-BR") : "");
+    text("selected-triage-note", record.triage_note || "");
     $("next-action").value = record.next_action;
     $("triage-note").value = record.triage_note || "";
     $("brief-status").textContent = "Carregando";
     showList();
 
-    if (record.next_action === "prepare_proposal") {
-      await loadBrief(id, version);
-    } else {
-      $("brief-status").textContent = "Não aplicável";
-      $("brief-guide").textContent =
-        "Registre 'Preparar proposta' na triagem para habilitar o brief.";
-    }
+    // WP-108 — always attempt to load brief, regardless of status
+    await loadBrief(id, version);
   }
 
   async function refreshList(preferId = selectedId) {
@@ -672,6 +672,15 @@
     await refreshList(id);
     notify("Brief rejeitado. Voltado para rascunho.");
   }));
+
+  // WP-108 — View brief button scrolls to brief panel
+  $("view-brief-button").addEventListener("click", () => {
+    const panel = $("brief-panel");
+    if (panel) {
+      panel.hidden = false;
+      panel.scrollIntoView({behavior: "smooth", block: "start"});
+    }
+  });
 
   // Conversations — strict allowlist, same pattern as reviewApi/taskApi.
   async function conversationApi(path, method = "GET", body) {

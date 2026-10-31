@@ -771,3 +771,13 @@ footer {
   margin-left: 0;
   color: var(--text);
 }
+
+/* WP-108 — Opportunity detail actions */
+.opp-detail-actions {
+  margin: 12px 0;
+  display: flex;
+  gap: 8px;
+}
+.opp-detail-actions button {
+  font-size: 0.85rem;
+}
