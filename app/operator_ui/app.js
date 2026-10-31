@@ -1993,8 +1993,13 @@
   function buildCustomerUrl() {
     const params = new URLSearchParams();
     const q = $("customer-search")?.value?.trim();
+    // WP-153 — date filter
+    const fromDate = $("customer-from-date")?.value;
+    const toDate = $("customer-to-date")?.value;
     const sort = $("customer-sort")?.value;
     if (q) params.set("q", q);
+    if (fromDate) params.set("from_date", fromDate);
+    if (toDate) params.set("to_date", toDate);
     if (sort) params.set("sort", sort);
     params.set("limit", String(customerPageSize));
     params.set("offset", String(customerOffset));
@@ -2005,7 +2010,12 @@
   function buildCustomerCountUrl() {
     const params = new URLSearchParams();
     const q = $("customer-search")?.value?.trim();
+    // WP-153 — date filter
+    const fromDate = $("customer-from-date")?.value;
+    const toDate = $("customer-to-date")?.value;
     if (q) params.set("q", q);
+    if (fromDate) params.set("from_date", fromDate);
+    if (toDate) params.set("to_date", toDate);
     const search = params.toString();
     return "/customers/count" + (search ? "?" + search : "");
   }
@@ -2303,6 +2313,16 @@
     refreshCustomers().catch(() => {});
   });
 
+  // WP-153 — Customer date filter
+  $("customer-from-date").addEventListener("change", () => {
+    customerOffset = 0;
+    refreshCustomers().catch(() => {});
+  });
+  $("customer-to-date").addEventListener("change", () => {
+    customerOffset = 0;
+    refreshCustomers().catch(() => {});
+  });
+
   $("customers-prev-page").addEventListener("click", () => {
     if (customerOffset > 0) {
       customerOffset -= customerPageSize;
@@ -2469,8 +2489,17 @@
     notify("Exportando leads...");
   });
 
+  // WP-153 — Export CSV with current filters
   $("customers-export-csv").addEventListener("click", () => {
-    downloadCsv("/customers/export.csv", "customers.csv");
+    const params = [];
+    const q = $("customer-search")?.value?.trim();
+    if (q) params.push("q=" + encodeURIComponent(q));
+    const fromDate = $("customer-from-date")?.value;
+    if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
+    const toDate = $("customer-to-date")?.value;
+    if (toDate) params.push("to_date=" + encodeURIComponent(toDate));
+    const url = "/customers/export.csv" + (params.length ? "?" + params.join("&") : "");
+    downloadCsv(url, "customers.csv");
     notify("Exportando customers...");
   });
 

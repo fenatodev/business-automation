@@ -615,3 +615,10 @@ O módulo de leads não tinha filtro por data. Adicionado `from_date`
 e `to_date` em list, count e export CSV. UI com campos de data na seção
 de filtros. Exportação CSV respeita os filtros de data.
 **2057 testes passaram** (8 novos); compileall, diff-check: PASS.
+
+## WP-153 — Filtro de data em customers (31/10/2026)
+
+O módulo de customers não tinha filtro por data. Adicionado `from_date`
+e `to_date` em list, count e export CSV. UI com campos de data na seção
+de filtros. Exportação CSV respeita os filtros de data.
+**2063 testes passaram** (6 novos); compileall, diff-check: PASS.
