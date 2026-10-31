@@ -45,7 +45,8 @@ def test_conversations_router_passes_system_prompt():
     """The agent-reply endpoint passes system_prompt to generate_agent_reply."""
     with open("app/routers/conversations.py") as f:
         code = f.read()
-    assert "system_prompt=data.system_prompt" in code
+    # WP-204 changed to use effective_prompt with company config fallback
+    assert "system_prompt=effective_prompt" in code or "system_prompt=data.system_prompt" in code
 
 
 def test_agent_service_uses_custom_prompt():

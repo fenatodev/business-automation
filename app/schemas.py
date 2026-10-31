@@ -107,6 +107,12 @@ class CompanyCreate(BaseModel):
     slug: str
 
 
+class CompanyAgentConfig(BaseModel):
+    """Per-company agent configuration."""
+    system_prompt: str | None = None
+    temperature: float | None = None
+
+
 
 class OpportunityCreate(BaseModel):
     source: Literal["99freelas", "intake", "review_queue", "manual", "import"]

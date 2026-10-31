@@ -45,7 +45,8 @@ def test_conversations_router_passes_temperature():
     """The agent-reply endpoint passes temperature to generate_agent_reply."""
     with open("app/routers/conversations.py") as f:
         code = f.read()
-    assert "temperature=data.temperature" in code
+    # WP-204 changed to use effective_temp with company config fallback
+    assert "temperature=effective_temp" in code or "temperature=data.temperature" in code
 
 
 def test_agent_service_uses_temperature():
