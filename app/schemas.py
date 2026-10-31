@@ -231,6 +231,18 @@ class ProposalBriefUpdate(BaseModel):
     ] | None = None
 
 
+class ProposalBriefBulkStatus(BaseModel):
+    """Bulk update status for multiple proposal briefs."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    brief_ids: list[int] = Field(min_length=1, max_length=100)
+    status: Literal[
+        "draft",
+        "ready_for_review",
+    ]
+
+
 class CommercialIntakeEvaluateRequest(BaseModel):
     """Request body for the private commercial intake evaluate endpoint.
 

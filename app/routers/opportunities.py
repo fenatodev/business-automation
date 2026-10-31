@@ -17,6 +17,7 @@ from app.schemas import (
     OpportunityCreate,
     OpportunityTriageUpdate,
     OpportunityUpdate,
+    ProposalBriefBulkStatus,
     ProposalBriefCreate,
     ProposalBriefUpdate,
 )
@@ -1049,5 +1050,42 @@ def bulk_delete_opportunities(
     return {
         "deleted": len(deleted_ids),
         "deleted_ids": sorted(deleted_ids),
+        "skipped": sorted(skipped),
+    }
+
+
+# ---------------------------------------------------------------------------
+# WP-184 — Bulk status update for proposal briefs
+# ---------------------------------------------------------------------------
+
+
+@router.post("/proposal-briefs/bulk-status")
+def bulk_update_brief_status(
+    data: ProposalBriefBulkStatus,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Bulk update status for multiple proposal briefs (tenant-isolated)."""
+    briefs = db.scalars(
+        select(ProposalBrief)
+        .join(Opportunity, ProposalBrief.opportunity_id == Opportunity.id)
+        .where(
+            ProposalBrief.id.in_(data.brief_ids),
+            Opportunity.company_id == identity.company_id,
+        )
+    ).all()
+
+    updated_ids = []
+    for brief in briefs:
+        brief.status = data.status
+        updated_ids.append(brief.id)
+
+    db.commit()
+
+    skipped = set(data.brief_ids) - set(updated_ids)
+
+    return {
+        "updated": len(updated_ids),
+        "updated_ids": sorted(updated_ids),
         "skipped": sorted(skipped),
     }

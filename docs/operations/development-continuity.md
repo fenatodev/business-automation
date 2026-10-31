@@ -823,3 +823,11 @@ O módulo de briefs não tinha filtro por data. Adicionado \`from_date\`/ \`to_d
 em list, count e export CSV, completando a paridade com os outros módulos.
 
 **2347 testes passaram** (6 novos); compileall, diff-check: PASS.
+
+### WP-184 — Status em massa de proposal briefs
+
+O operador só podia atualizar o status de um brief de cada vez.
+Adicionado `POST /proposal-briefs/bulk-status` tenant-isolado com 1-100 IDs.
+UI com checkboxes e barra de ação em massa.
+
+**2355 testes passaram** (8 novos); compileall, diff-check: PASS.

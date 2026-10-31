@@ -887,6 +887,16 @@
             <button id="briefs-clear-filters" type="button" class="secondary">Limpar filtros</button>
           </div>
         </div>
+        <!-- WP-184 — Bulk status bar -->
+        <div id="briefs-bulk-bar" class="briefs-bulk-bar" hidden>
+          <span id="briefs-bulk-selected-count" class="small">0 selecionados</span>
+          <select id="briefs-bulk-status">
+            <option value="draft">Rascunho</option>
+            <option value="ready_for_review">Pronto para revisão</option>
+          </select>
+          <button id="briefs-bulk-apply" type="button" class="primary">Atualizar status</button>
+          <button id="briefs-bulk-clear" type="button" class="secondary">Limpar seleção</button>
+        </div>
         <div id="briefs-list" class="briefs-list"></div>
         <div id="briefs-pagination" class="briefs-pagination" hidden>
           <button id="briefs-prev-page" type="button" class="secondary">Anterior</button>
