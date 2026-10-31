@@ -28,15 +28,15 @@ router = APIRouter(prefix="/review-queue", tags=["review-queue"])
 
 @router.get("/export.csv")
 def export_review_queue_csv(
+    status: str | None = Query(None, description="Filter by status"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    """Export all review queue items for the authenticated tenant as CSV."""
-    items = db.scalars(
-        select(ReviewQueueItem)
-        .where(ReviewQueueItem.company_id == identity.company_id)
-        .order_by(ReviewQueueItem.id)
-    ).all()
+    """Export review queue items for the authenticated tenant as CSV, respecting filters."""
+    query = select(ReviewQueueItem).where(ReviewQueueItem.company_id == identity.company_id)
+    if status:
+        query = query.where(ReviewQueueItem.status == status)
+    items = db.scalars(query.order_by(ReviewQueueItem.id)).all()
 
     output = io.StringIO()
     writer = csv.writer(output)

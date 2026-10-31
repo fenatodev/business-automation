@@ -115,15 +115,15 @@ def get_dashboard(
 
 @router.get("/export.csv")
 def export_tasks_csv(
+    status: Literal["queued", "running", "succeeded", "failed"] | None = Query(None, description="Filter by status"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    """Export all tenant internal tasks as a CSV file."""
-    task_list = db.scalars(
-        select(InternalTask)
-        .where(InternalTask.company_id == identity.company_id)
-        .order_by(InternalTask.id)
-    ).all()
+    """Export tenant internal tasks as a CSV file, respecting filters."""
+    query = select(InternalTask).where(InternalTask.company_id == identity.company_id)
+    if status:
+        query = query.where(InternalTask.status == status)
+    task_list = db.scalars(query.order_by(InternalTask.id)).all()
 
     output = io.StringIO()
     writer = csv.writer(output)
