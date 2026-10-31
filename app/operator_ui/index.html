@@ -362,6 +362,49 @@
           <div id="customer-conversations-list" class="customer-conv-list"></div>
         </div>
       </section>
+
+      <!-- WP-096 — Commercial intake section -->
+      <section class="panel" aria-labelledby="intake-title">
+        <div class="panel-heading">
+          <div>
+            <span class="section-index">09 / INTAKE COMERCIAL</span>
+            <h2 id="intake-title">Intake comercial</h2>
+          </div>
+        </div>
+        <p class="small">Avalie uma entrada comercial e crie uma oportunidade automaticamente.</p>
+        <form id="intake-form">
+          <div class="two-col">
+            <div>
+              <label for="intake-channel">Canal</label>
+              <select id="intake-channel" required>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="instagram">Instagram</option>
+                <option value="web">Web</option>
+                <option value="telegram">Telegram</option>
+                <option value="email">E-mail</option>
+              </select>
+            </div>
+            <div>
+              <label for="intake-event-id">ID do evento</label>
+              <input id="intake-event-id" type="text" required maxlength="100"
+                     placeholder="ex: intake-001">
+            </div>
+          </div>
+          <label for="intake-message">Mensagem do cliente *</label>
+          <textarea id="intake-message" required maxlength="4000" rows="4"
+                    placeholder="Cole a mensagem ou descreva a entrada comercial"></textarea>
+          <button type="submit" class="primary">Avaliar e criar oportunidade</button>
+        </form>
+        <div id="intake-decision" class="intake-decision" hidden>
+          <h3>Decisão</h3>
+          <dl class="metadata">
+            <dt>Intenção</dt><dd id="intake-decision-intent"></dd>
+            <dt>Revisão humana</dt><dd id="intake-decision-review"></dd>
+            <dt>Flags</dt><dd id="intake-decision-flags"></dd>
+            <dt>Oportunidade</dt><dd id="intake-decision-opp"></dd>
+          </dl>
+        </div>
+      </section>
     </main>
 
     <footer>Operação interna · dados e permissões pertencem à API · sem envio automático de propostas</footer>

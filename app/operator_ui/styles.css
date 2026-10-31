@@ -687,3 +687,30 @@ footer {
   gap: 8px;
   font-size: 0.82rem;
 }
+
+/* WP-096 — Commercial intake section */
+.intake-decision {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #101722;
+}
+.intake-decision h3 {
+  margin: 0 0 10px;
+  font-size: 0.92rem;
+  color: var(--accent);
+}
+.intake-decision .metadata {
+  display: grid;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+.intake-decision .metadata dt {
+  color: var(--muted);
+  font-weight: 600;
+}
+.intake-decision .metadata dd {
+  margin-left: 0;
+  color: var(--text);
+}

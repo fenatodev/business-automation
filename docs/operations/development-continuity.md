@@ -236,3 +236,13 @@ dificultando o trabalho com carteiras grandes. Adicionado `sort` param
 `GET /opportunities/count`. UI com dropdown "Ordenar" e controles
 Anterior/Próxima com indicador de página.
 **1468 testes passaram**; compileall, diff-check: PASS.
+
+## WP-096 — Persistência de intake comercial (31/10/2026)
+
+O backend de intake tinha apenas o endpoint evaluate (simulação).
+Adicionado `POST /internal/commercial-intake/create` que avalia o intake
+e persiste automaticamente como Opportunity com deduplicação por event_id
+e isolamento de tenant. UI com seção "09 / INTAKE COMERCIAL" no painel
+do operador: formulário com canal, ID do evento e mensagem; exibição da
+decisão (intenção, revisão humana, flags, ID da oportunidade criada).
+**1478 testes passaram**; compileall, diff-check: PASS.

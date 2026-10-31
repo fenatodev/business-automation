@@ -70,7 +70,7 @@ class CompanyCreate(BaseModel):
 
 
 class OpportunityCreate(BaseModel):
-    source: Literal["99freelas"]
+    source: Literal["99freelas", "intake"]
     external_url: str = Field(min_length=1, max_length=1000)
     title: str = Field(min_length=1, max_length=200)
     description: str = Field(min_length=1)
@@ -78,6 +78,36 @@ class OpportunityCreate(BaseModel):
     deadline: str | None = Field(default=None, max_length=120)
     requirements: str | None = None
     captured_at: datetime
+
+
+class IntakeCreate(BaseModel):
+    """Request body for creating an opportunity from commercial intake."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    channel: str = Field(min_length=1, max_length=30)
+    message: str = Field(min_length=1, max_length=4000)
+    event_id: str = Field(min_length=1, max_length=100)
+
+    @field_validator("channel", "message", "event_id")
+    @classmethod
+    def nonempty_printable(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("intake field cannot be blank")
+        if any(ord(char) < 32 or ord(char) == 127 for char in value):
+            raise ValueError("intake field contains control characters")
+        return value
+
+
+class IntakeCreateResponse(BaseModel):
+    """Response after evaluating and persisting a commercial intake."""
+
+    opportunity_id: int
+    event_id: str
+    intent: str
+    needs_human_review: bool
+    flags: list[str]
 
 
 class OpportunityUpdate(BaseModel):

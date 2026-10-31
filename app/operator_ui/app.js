@@ -1452,6 +1452,53 @@
     }
   });
 
+  // WP-096 — Commercial intake API and form handler
+  async function intakeApi(path, method, body) {
+    if (!bearer) throw new Error("Conecte um operador.");
+    if (!(/^\/internal\/commercial-intake\/create$/.test(path))) {
+      throw new Error("Rota de intake não permitida.");
+    }
+    const epoch = sessionEpoch;
+    const headers = {Authorization: "Bearer " + bearer};
+    if (body !== undefined) headers["Content-Type"] = "application/json";
+    const response = await fetch(path, {method, headers, body: body === undefined ? undefined : JSON.stringify(body),
+      credentials: "omit", cache: "no-store", redirect: "error", referrerPolicy: "no-referrer"});
+    if (epoch !== sessionEpoch) throw new Error("Sessão encerrada.");
+    if (response.status === 401) {
+      disconnect("Credencial inválida.");
+      throw new ApiFailure(401);
+    }
+    if (!response.ok) throw new ApiFailure(response.status);
+    return response.json();
+  }
+
+  $("intake-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const button = $("intake-form").querySelector('button[type="submit"]');
+    withButton(button, async () => {
+      const channel = $("intake-channel").value;
+      const eventId = $("intake-event-id").value.trim();
+      const message = $("intake-message").value.trim();
+      if (!eventId || !message) {notify("Preencha os campos obrigatórios.", true); return;}
+      const result = await intakeApi("/internal/commercial-intake/create", "POST", {
+        channel,
+        event_id: eventId,
+        message,
+      });
+      // Display decision
+      $("intake-decision").hidden = false;
+      $("intake-decision-intent").textContent = result.intent || "Desconhecida";
+      $("intake-decision-review").textContent = result.needs_human_review ? "Sim" : "Não";
+      $("intake-decision-flags").textContent = result.flags && result.flags.length
+        ? result.flags.join(", ")
+        : "Nenhuma";
+      $("intake-decision-opp").textContent = "#" + result.opportunity_id;
+      // Refresh opportunity list to show the new intake opportunity
+      await refreshList(result.opportunity_id);
+      notify("Intake avaliado. Oportunidade #" + result.opportunity_id + " criada.");
+    });
+  });
+
   // Integrate conversations into the connect flow via MutationObserver.
   const workspaceObserver = new MutationObserver((records) => {
     for (const record of records) {
