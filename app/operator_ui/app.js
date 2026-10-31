@@ -1855,6 +1855,8 @@
   async function refreshLeads() {
     if (!bearer) return;
     const status = $("lead-filter-status").value;
+    // WP-177 — source filter
+    const source = $("lead-filter-source") ? $("lead-filter-source").value : "";
     const q = $("lead-search") ? $("lead-search").value.trim() : "";
     // WP-152 — date filter
     const fromDate = $("lead-from-date") ? $("lead-from-date").value : "";
@@ -1863,6 +1865,7 @@
     let path = "/leads";
     const params = [];
     if (status) params.push("status=" + encodeURIComponent(status));
+    if (source) params.push("source=" + encodeURIComponent(source));
     if (q) params.push("q=" + encodeURIComponent(q));
     if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
     if (toDate) params.push("to_date=" + encodeURIComponent(toDate));
@@ -1873,6 +1876,7 @@
     // Count params
     const countParams = [];
     if (status) countParams.push("status=" + encodeURIComponent(status));
+    if (source) countParams.push("source=" + encodeURIComponent(source));
     if (q) countParams.push("q=" + encodeURIComponent(q));
     if (fromDate) countParams.push("from_date=" + encodeURIComponent(fromDate));
     if (toDate) countParams.push("to_date=" + encodeURIComponent(toDate));
@@ -2191,6 +2195,12 @@
     refreshLeads().catch(() => {});
   });
 
+  // WP-177 — Lead source filter
+  $("lead-filter-source").addEventListener("change", () => {
+    leadOffset = 0;
+    refreshLeads().catch(() => {});
+  });
+
   $("leads-prev-page").addEventListener("click", () => withButton($("leads-prev-page"), async () => {
     leadOffset = Math.max(0, leadOffset - leadPageSize);
     await refreshLeads();
@@ -2220,6 +2230,7 @@
   // WP-165 — Clear all lead filters
   $("lead-clear-filters").addEventListener("click", () => {
     $("lead-filter-status").value = "";
+    $("lead-filter-source").value = "";
     $("lead-search").value = "";
     $("lead-from-date").value = "";
     $("lead-to-date").value = "";
@@ -2831,6 +2842,9 @@
     const params = [];
     const status = $("lead-filter-status").value;
     if (status) params.push("status=" + encodeURIComponent(status));
+    // WP-177 — source filter
+    const source = $("lead-filter-source") ? $("lead-filter-source").value : "";
+    if (source) params.push("source=" + encodeURIComponent(source));
     const q = $("lead-search") ? $("lead-search").value.trim() : "";
     if (q) params.push("q=" + encodeURIComponent(q));
     const fromDate = $("lead-from-date") ? $("lead-from-date").value : "";
