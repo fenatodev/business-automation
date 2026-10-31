@@ -703,3 +703,13 @@ a barra de filtros para consistência visual.
 README atualizado com 2191 testes e lista completa de funcionalidades:
 paridade de filtros em todos os 6 módulos, tema claro/escuro, notas em
 conversas, bulk operations, exportação CSV completa e filtros de data.
+
+### WP-167 — Criar oportunidade a partir de customer
+
+O painel de detalhes do customer não tinha botão para criar uma nova
+oportunidade vinculada ao customer. Adicionado formulário inline com
+título, descrição, orçamento, prazo e requisitos. A oportunidade é
+criada via POST /opportunities com source "manual" e external_url
+referenciando o customer.
+
+**2212 testes passaram** (21 novos); compileall, diff-check: PASS.

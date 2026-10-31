@@ -2462,6 +2462,51 @@
     }
   });
 
+  // WP-167 — Create opportunity from customer detail
+  $("customer-new-opp").addEventListener("click", () => {
+    $("customer-opp-form").hidden = false;
+    $("customer-opp-title").focus();
+  });
+
+  $("cancel-customer-opp").addEventListener("click", () => {
+    $("customer-opp-form").hidden = true;
+    $("customer-opp-form").reset();
+  });
+
+  $("customer-opp-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const button = $("customer-opp-form").querySelector('button[type="submit"]');
+    withButton(button, async () => {
+      const title = $("customer-opp-title").value.trim();
+      const description = $("customer-opp-description").value.trim();
+      const budget = $("customer-opp-budget").value.trim() || null;
+      const deadline = $("customer-opp-deadline").value.trim() || null;
+      const requirements = $("customer-opp-requirements").value.trim() || null;
+      if (!title || !description) {
+        notify("Preencha título e descrição.", true);
+        return;
+      }
+      const opp = await api("/opportunities", {
+        method: "POST",
+        body: JSON.stringify({
+          company_id: opportunities.length > 0 ? opportunities[0].company_id : null,
+          source: "manual",
+          external_url: "customer-" + currentCustomerId,
+          title,
+          description,
+          budget,
+          deadline,
+          requirements,
+          captured_at: new Date().toISOString(),
+        }),
+      });
+      $("customer-opp-form").hidden = true;
+      $("customer-opp-form").reset();
+      notify("Oportunidade #" + opp.id + " criada.");
+      await refreshList(opp.id);
+    });
+  });
+
   // WP-096 — Commercial intake API and form handler
   async function intakeApi(path, method, body) {
     if (!bearer) throw new Error("Conecte um operador.");
