@@ -107,3 +107,25 @@ def task_status(task_id: int, db: Session = Depends(get_db),
     if task is None:
         raise HTTPException(404, "Task not found")
     return task
+
+
+@router.post("/{task_id}/retry", response_model=InternalTaskOut)
+def retry_task(task_id: int, db: Session = Depends(get_db),
+               identity: AccessIdentity = Depends(require_operator)):
+    try:
+        task = tasks.manual_retry(db, task_id, identity.company_id)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc))
+    if task is None:
+        raise HTTPException(404, "Task not found")
+    return task
+
+
+@router.post("/retention", response_model=dict[str, int])
+def run_retention(
+    older_than_days: int = Query(default=30, ge=1, le=365),
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    deleted = tasks.purge_old_tasks(db, identity.company_id, older_than_days=older_than_days)
+    return {"deleted": deleted}

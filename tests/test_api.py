@@ -1058,7 +1058,7 @@ def test_proposal_brief_create_get_update_and_status_validation(
     assert update_response.json()["diagnosis"] == "Revised diagnosis."
 
     invalid_status = dict(update_payload)
-    invalid_status["status"] = "approved"
+    invalid_status["status"] = "invalid_status"
 
     invalid_response = client.patch(
         f"/opportunities/{opportunity['id']}/proposal-brief",
@@ -1076,7 +1076,7 @@ def test_proposal_brief_requires_prepare_proposal(
     create_company(client, admin_headers)
 
     for index, state in enumerate(
-        ["pending", "ignore", "follow"],
+        ["pending", "ignore", "follow", "in_progress"],
         start=1,
     ):
         opportunity = create_opportunity(

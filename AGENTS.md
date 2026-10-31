@@ -211,6 +211,27 @@ e relatório de falha, nunca inventar sucesso nem implementar substituto.
 `testes (contagem real)`, `verificações`, `bloqueio (se houver)`.
 Sem segredos, logs integrais, dados reais nem explicações prolixas.
 
+## GitHub CLI
+
+O GitHub CLI (`gh`) está configurado no ambiente Ubuntu e deve ser usado para
+gerenciar branches, PRs, issues e verificar o CI.
+
+- Executável: `/home/fenatodev/.local/bin/gh` (pode não estar no PATH padrão).
+- Conta: `fenatodev`, com permissões administrativas no repositório.
+- Credencial armazenada no keyring do sistema; não registrar tokens ou segredos.
+- Scopes ativos: `gist`, `read:org`, `repo`.
+
+Uso comum:
+
+- Verificar autenticação: `gh auth status`
+- Criar PR: `gh pr create --title "..." --body "..." --head <branch> --base main`
+- Verificar CI: `gh pr view <number> --json statusCheckRollup`
+- Listar PRs abertos: `gh pr list --state open`
+- Comentar em PR/issue: `gh pr comment <number> --body "..."`
+
+Não solicitar tokens nem criar novas credenciais sem verificar primeiro a
+autenticação existente com `gh auth status`.
+
 ## Workflow dos agentes
 
 - Ler AGENTS.md antes de mudanças.

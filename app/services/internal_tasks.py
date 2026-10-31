@@ -175,6 +175,49 @@ def fail_claim(db: Session, task_id: int, token: str, *, now=None):
     return result.rowcount == 1
 
 
+def manual_retry(db: Session, task_id: int, company_id: int):
+    """Operator-initiated retry: reset a failed task to queued.
+
+    Allows retry even when MAX_ATTEMPTS is reached (explicit operator override),
+    but preserves the attempt counter so the worker still respects the limit.
+    """
+    task = get_task(db, task_id, company_id)
+    if task is None:
+        return None
+    if task.status != "failed":
+        raise ValueError("Only failed tasks can be retried")
+    task.status = "queued"
+    task.available_at = utcnow()
+    task.lease_until = None
+    task.claim_token = None
+    task.error_code = None
+    task.result = None
+    db.commit()
+    return task
+
+
+def purge_old_tasks(db: Session, company_id: int, *, older_than_days: int = 30):
+    """Remove completed tasks older than the retention window.
+
+    Only terminal states (succeeded/failed) are eligible.
+    Returns the number of deleted rows.
+    """
+    cutoff = (utcnow() - timedelta(days=older_than_days)).replace(
+        microsecond=0
+    )
+    from sqlalchemy import delete
+
+    result = db.execute(
+        delete(InternalTask).where(
+            InternalTask.company_id == company_id,
+            InternalTask.status.in_(("succeeded", "failed")),
+            InternalTask.created_at < cutoff,
+        )
+    )
+    db.commit()
+    return result.rowcount
+
+
 def run_once(session_factory, service_context: str):
     with session_factory() as db:
         recover_expired(db)
