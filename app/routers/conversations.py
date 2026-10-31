@@ -343,9 +343,12 @@ def create_message(
 @router.get("/conversations/{conversation_id}/messages")
 def list_messages(
     conversation_id: int,
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
+    """List messages for a conversation with pagination."""
     conversation = _get_tenant_conversation(
         db,
         conversation_id,
@@ -356,7 +359,30 @@ def list_messages(
         select(Message)
         .where(Message.conversation_id == conversation.id)
         .order_by(Message.id)
+        .offset(offset)
+        .limit(limit)
     ).all()
+
+
+@router.get("/conversations/{conversation_id}/messages/count")
+def count_messages(
+    conversation_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Count messages for a conversation."""
+    conversation = _get_tenant_conversation(
+        db,
+        conversation_id,
+        identity.company_id,
+    )
+
+    total = db.scalar(
+        select(func.count())
+        .select_from(Message)
+        .where(Message.conversation_id == conversation.id)
+    )
+    return {"total": total}
 
 
 @router.get("/companies/{company_id}/conversations/export.csv")
