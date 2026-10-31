@@ -3465,6 +3465,7 @@
   async function briefApi(path, method, body) {
     const allowed = path === "/proposal-briefs" || path === "/proposal-briefs/count" ||
       path === "/proposal-briefs/bulk-status" || path === "/proposal-briefs/bulk-delete" ||
+      /^\/proposal-briefs\/\d+\/conversations$/.test(path) ||
       /^\/proposal-briefs\/\d+$/.test(path) ||
       path.startsWith("/proposal-briefs?");
     if (!allowed) throw new Error("Path não permitido: " + path);
@@ -3607,7 +3608,10 @@
     const content = $("brief-detail-content");
     if (content) content.textContent = "Carregando...";
     try {
-      const brief = await briefApi("/proposal-briefs/" + briefId);
+      const [brief, convs] = await Promise.all([
+        briefApi("/proposal-briefs/" + briefId),
+        briefApi("/proposal-briefs/" + briefId + "/conversations").catch(() => []),
+      ]);
       if (content) {
         while (content.firstChild) content.removeChild(content.firstChild);
         const fields = [
@@ -3632,6 +3636,27 @@
           row.appendChild(valueEl);
           content.appendChild(row);
         });
+        // WP-188 — Related conversations
+        if (convs && convs.length > 0) {
+          const convHeader = document.createElement("div");
+          convHeader.className = "detail-field";
+          convHeader.style.marginTop = "10px";
+          const convLabel = document.createElement("span");
+          convLabel.className = "detail-field-label";
+          convLabel.textContent = "Conversas relacionadas:";
+          convHeader.appendChild(convLabel);
+          content.appendChild(convHeader);
+          convs.forEach((c) => {
+            const convRow = document.createElement("div");
+            convRow.className = "detail-field";
+            convRow.style.paddingLeft = "10px";
+            const convText = document.createElement("span");
+            convText.className = "detail-field-value";
+            convText.textContent = c.channel + " — " + c.status;
+            convRow.appendChild(convText);
+            content.appendChild(convRow);
+          });
+        }
       }
     } catch (e) {
       if (content) content.textContent = "Falha ao carregar brief.";

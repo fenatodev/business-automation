@@ -847,3 +847,11 @@ Adicionado `GET /proposal-briefs/{id}` retornando todos os campos (diagnóstico,
 escopo, entregáveis, critérios de aceitação). Painel clicável na UI.
 
 **2366 testes passaram** (5 novos); compileall, diff-check: PASS.
+
+### WP-188 — Conversas relacionadas ao proposal brief
+
+O painel de detalhes do brief não mostrava o contexto de conversas.
+Adicionado `GET /proposal-briefs/{id}/conversations` retornando as conversas
+da mesma company. UI carrega conversas em paralelo com os dados do brief.
+
+**2371 testes passaram** (5 novos); compileall, diff-check: PASS.
