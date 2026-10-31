@@ -766,3 +766,12 @@ e "Conversas" (contagem de conversas abertas).
 Polling de notificações atualiza os 3 badges em paralelo.
 
 **2272 testes passaram**; compileall, diff-check: PASS.
+
+### WP-176 — Criar conversa a partir de lead
+
+O operador podia criar conversas a partir de customers (WP-089),
+mas não de leads. Adicionado botão "+ Nova conversa" no painel de
+detalhes do lead. A conversa é criada via POST /conversations com
+lead_id vinculado, seguindo o padrão da WP-089.
+
+**2288 testes passaram** (16 novos); compileall, diff-check: PASS.
