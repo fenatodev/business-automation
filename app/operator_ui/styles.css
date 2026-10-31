@@ -771,3 +771,38 @@ footer {
   margin-left: 0;
   color: var(--text);
 }
+
+/* WP-107 — Notification bell */
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.notification-bell {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.4rem;
+  padding: 4px 8px;
+  position: relative;
+  color: var(--text);
+  line-height: 1;
+}
+.notification-bell:hover {
+  opacity: 0.8;
+}
+.notification-count {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #e74c3c;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  line-height: 18px;
+  border-radius: 9px;
+  text-align: center;
+  padding: 0 4px;
+}

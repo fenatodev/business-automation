@@ -129,6 +129,9 @@
     convFilterSort = "last_message";
     convOffset = 0;
     convTotal = 0;
+    // WP-107 — stop notification polling on disconnect
+    stopNotificationPolling();
+    $("notification-bell").hidden = true;
     notify(message);
   }
 
@@ -1639,9 +1642,77 @@
         refreshConversations().catch(() => {});
         refreshLeads().catch(() => {});
         refreshCustomers().catch(() => {});
+        startNotificationPolling();
         workspaceObserver.disconnect();
       }
     }
   });
   workspaceObserver.observe($("workspace"), {attributes: true});
+
+  // WP-107 — Notification bell
+  let notificationPolling = null;
+
+  async function updateNotificationBell() {
+    if (!bearer) return;
+    try {
+      const [oppCount, leadCount, convCount] = await Promise.all([
+        api("/opportunities/count", {
+          headers: {Authorization: "Bearer " + bearer},
+        }).catch(() => ({total: 0})),
+        api("/leads/count", {
+          headers: {Authorization: "Bearer " + bearer},
+        }).catch(() => ({total: 0})),
+        api("/companies/" + company + "/conversations/count", {
+          headers: {Authorization: "Bearer " + bearer},
+        }).catch(() => ({total: 0})),
+      ]);
+      // Count pending opportunities, new leads, and open conversations
+      const opportunities = await api("/opportunities?limit=1&next_action=pending", {
+        headers: {Authorization: "Bearer " + bearer},
+      }).catch(() => []);
+      const leads = await api("/leads?limit=1&status=new", {
+        headers: {Authorization: "Bearer " + bearer},
+      }).catch(() => []);
+      const pendingOpps = oppCount.total || 0;
+      const newLeads = leadCount.total || 0;
+      const openConvs = convCount.total || 0;
+      const total = pendingOpps + newLeads + openConvs;
+      const bell = $("notification-bell");
+      const count = $("notification-count");
+      bell.hidden = false;
+      if (total > 0) {
+        count.hidden = false;
+        count.textContent = total > 99 ? "99+" : total;
+        bell.title = total + " notificação(ões): " +
+          pendingOpps + " oportunidade(s) pendente(s), " +
+          newLeads + " lead(s) novo(s), " +
+          openConvs + " conversa(s) aberta(s)";
+      } else {
+        count.hidden = true;
+        bell.title = "Nenhuma notificação";
+      }
+    } catch (e) {
+      // Silently fail — notifications are non-critical
+    }
+  }
+
+  $("notification-bell").addEventListener("click", () => {
+    updateNotificationBell().catch(() => {});
+  });
+
+  // Start polling every 30 seconds after connecting
+  function startNotificationPolling() {
+    stopNotificationPolling();
+    updateNotificationBell().catch(() => {});
+    notificationPolling = setInterval(() => {
+      updateNotificationBell().catch(() => {});
+    }, 30000);
+  }
+
+  function stopNotificationPolling() {
+    if (notificationPolling) {
+      clearInterval(notificationPolling);
+      notificationPolling = null;
+    }
+  }
 })();

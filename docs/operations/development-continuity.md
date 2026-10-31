@@ -302,3 +302,28 @@ telefone e email. Ordenação por `sort` (id, created_at, name). Paginação
 com `limit`/`offset` e novo `GET /customers/count`. UI com campo de busca,
 dropdown "Ordenar" e controles Anterior/Próxima.
 **1572 testes passaram** (17 novos); compileall, diff-check: PASS.
+
+## WP-105 — Triagem em massa de oportunidades (31/10/2026)
+
+O operador só podia triar uma oportunidade de cada vez. Adicionado
+`POST /opportunities/bulk-triage` que aceita múltiplos IDs (1-100) e
+aplica a mesma ação de triagem tenant-isolada. UI com checkboxes em
+cada oportunidade, barra de triagem em massa com contador, seletor de
+ação, nota opcional e botões aplicar/limpar.
+**1588 testes passaram** (16 novos); compileall, diff-check: PASS.
+
+## WP-106 — Exportação CSV de dados do operador (31/10/2026)
+
+O operador não podia exportar dados para análise externa. Adicionado
+`GET /opportunities/export.csv`, `GET /leads/export.csv` e
+`GET /customers/export.csv` — endpoints tenant-isolados que retornam
+arquivos CSV com cabeçalhos em português. UI com botão "Exportar CSV"
+nas seções de oportunidades, leads e customers.
+**1587 testes passaram** (15 novos); compileall, diff-check: PASS.
+
+## WP-107 — Notificações visuais no operador (31/10/2026)
+
+Sino de notificações na barra superior agrega contagens de oportunidades
+pendentes, leads novos e conversas abertas. Atualização automática a cada
+30 segundos via polling. Tooltip detalhado ao passar o mouse.
+**1572 testes passaram**; compileall, diff-check: PASS.
