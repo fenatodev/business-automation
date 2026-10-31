@@ -713,3 +713,11 @@ criada via POST /opportunities com source "manual" e external_url
 referenciando o customer.
 
 **2212 testes passaram** (21 novos); compileall, diff-check: PASS.
+
+### WP-168 — Mais atalhos de teclado no operador
+
+Além de Ctrl+K e Escape, adicionados: Ctrl+N (novo lead), Ctrl+L
+(busca leads), Ctrl+Shift+C (busca customers) e / (busca
+oportunidades). Rodapé atualizado com lista completa de atalhos.
+
+**2226 testes passaram** (14 novos); compileall, diff-check: PASS.
