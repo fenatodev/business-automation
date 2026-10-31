@@ -14,7 +14,7 @@ from app.dependencies import (
     require_operator_company,
 )
 from app.models import Company, Customer, Lead
-from app.schemas import CustomerCreate, CustomerUpdate
+from app.schemas import CustomerBulkDelete, CustomerCreate, CustomerUpdate
 
 
 router = APIRouter()
@@ -411,3 +411,33 @@ def convert_lead_to_customer(
     db.refresh(customer)
 
     return customer
+
+
+@router.post("/customers/bulk-delete")
+def bulk_delete_customers(
+    data: CustomerBulkDelete,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Bulk delete multiple customers (tenant-isolated)."""
+    customers = db.scalars(
+        select(Customer).where(
+            Customer.id.in_(data.customer_ids),
+            Customer.company_id == identity.company_id,
+        )
+    ).all()
+
+    deleted_ids = []
+    for customer in customers:
+        db.delete(customer)
+        deleted_ids.append(customer.id)
+
+    db.commit()
+
+    skipped = set(data.customer_ids) - set(deleted_ids)
+
+    return {
+        "deleted": len(deleted_ids),
+        "deleted_ids": sorted(deleted_ids),
+        "skipped": sorted(skipped),
+    }

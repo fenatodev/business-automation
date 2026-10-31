@@ -14,7 +14,7 @@ from app.dependencies import (
     require_operator_company,
 )
 from app.models import Company, Lead
-from app.schemas import LeadBulkStatus, LeadCreate, LeadUpdate
+from app.schemas import LeadBulkDelete, LeadBulkStatus, LeadCreate, LeadUpdate
 
 
 router = APIRouter()
@@ -368,5 +368,35 @@ def bulk_update_lead_status(
     return {
         "updated": len(updated_ids),
         "updated_ids": sorted(updated_ids),
+        "skipped": sorted(skipped),
+    }
+
+
+@router.post("/leads/bulk-delete")
+def bulk_delete_leads(
+    data: LeadBulkDelete,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Bulk delete multiple leads (tenant-isolated)."""
+    leads = db.scalars(
+        select(Lead).where(
+            Lead.id.in_(data.lead_ids),
+            Lead.company_id == identity.company_id,
+        )
+    ).all()
+
+    deleted_ids = []
+    for lead in leads:
+        db.delete(lead)
+        deleted_ids.append(lead.id)
+
+    db.commit()
+
+    skipped = set(data.lead_ids) - set(deleted_ids)
+
+    return {
+        "deleted": len(deleted_ids),
+        "deleted_ids": sorted(deleted_ids),
         "skipped": sorted(skipped),
     }

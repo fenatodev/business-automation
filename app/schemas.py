@@ -65,6 +65,11 @@ class CustomerUpdate(BaseModel):
     email: str | None = Field(default=None, max_length=120)
 
 
+class CustomerBulkDelete(BaseModel):
+    """Bulk delete multiple customers."""
+    customer_ids: list[int] = Field(min_length=1, max_length=100)
+
+
 class LeadUpdate(BaseModel):
     status: Literal[
         "new",
@@ -88,6 +93,11 @@ class LeadBulkStatus(BaseModel):
         "won",
         "lost",
     ]
+
+
+class LeadBulkDelete(BaseModel):
+    """Bulk delete multiple leads."""
+    lead_ids: list[int] = Field(min_length=1, max_length=100)
 
 
 class CompanyCreate(BaseModel):
