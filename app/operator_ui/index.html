@@ -773,7 +773,10 @@
           <label for="intake-message">Mensagem do cliente *</label>
           <textarea id="intake-message" required maxlength="4000" rows="4"
                     placeholder="Cole a mensagem ou descreva a entrada comercial"></textarea>
-          <button type="submit" class="primary">Avaliar e criar oportunidade</button>
+          <div style="display:flex;gap:8px;">
+            <button type="submit" class="primary">Avaliar e criar oportunidade</button>
+            <button type="button" id="intake-clear" class="secondary">Limpar</button>
+          </div>
         </form>
         <div id="intake-decision" class="intake-decision" hidden>
           <h3>Decisão</h3>

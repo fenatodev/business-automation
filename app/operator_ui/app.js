@@ -71,6 +71,14 @@
     done: "Concluída",
     lost: "Perdida",
   };
+  // WP-190 — sourceLabels for opportunity sources
+  const sourceLabels = {
+    manual: "Manual",
+    intake: "Intake comercial",
+    review_queue: "Fila de revisão",
+    import: "Importação CSV",
+    "99freelas": "99Freelas",
+  };
 
   class ApiFailure extends Error {
     constructor(status) {
@@ -385,7 +393,7 @@
     // WP-093 — populate edit fields
     $("edit-title").value = record.title;
     $("edit-description").value = record.description;
-    text("selected-source", record.source || "");
+    text("selected-source", sourceLabels[record.source] || record.source || "");
     text("selected-captured-at", record.captured_at
       ? new Date(record.captured_at).toLocaleString("pt-BR") : "");
     text("selected-triage-note", record.triage_note || "");
@@ -2734,6 +2742,12 @@
       await refreshList(result.opportunity_id);
       notify("Intake avaliado. Oportunidade #" + result.opportunity_id + " criada.");
     });
+  });
+
+  // WP-190 — Clear intake form and hide decision
+  $("intake-clear").addEventListener("click", () => {
+    $("intake-form").reset();
+    $("intake-decision").hidden = true;
   });
 
   // Integrate conversations into the connect flow via MutationObserver.
