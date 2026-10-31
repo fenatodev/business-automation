@@ -94,11 +94,11 @@ e mostra leases expirados sem recuperá-los como efeito da consulta.
 Próxima WP executável: apresentar lista/resumo no `/operator`, usando somente
 os endpoints existentes, sem expor payload e sem iniciar worker automaticamente.
 
-## WP-074 — fechar oportunidades como concluída ou perdida (30/10/2026)
+## WP-078 — Busca e filtro de conversas (30/10/2026)
 
-`done` e `lost` adicionados ao `OpportunityTriageUpdate` como estados finais do
-ciclo comercial. O operador pode fechar uma oportunidade como "Concluída" ou
-"Perdida" via triagem, completando o fluxo F2: intake → opportunity → triage →
-brief → aprovação → in_progress → done/lost. `in_progress` também adicionado
-(com WP-073) para completar a cadeia de estados. Estados finais bloqueiam a
-criação de proposal brief. **1146 testes passaram**; compileall, diff-check: PASS.
+Adiciona filtros por canal, status e busca por keywords nas conversas do
+operador. `GET /companies/{company_id}/conversations` aceita parâmetros
+opcionais `channel`, `status` e `q` (busca case-insensitive em mensagens).
+UI com dropdowns de canal/status, campo de busca e botão limpar.
+`conversationApi()` atualizada para aceitar query params via `buildConversationUrl()`.
+**1197 testes passaram**; compileall, diff-check: PASS.
