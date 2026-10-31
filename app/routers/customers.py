@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.auth import AccessIdentity
@@ -60,14 +60,61 @@ def _get_tenant_lead(
 
 @router.get("/customers")
 def list_customers(
+    q: str | None = Query(None, description="Search keywords in name, phone, and email"),
+    sort: str = Query(default="id", description="Sort by: id, created_at, name"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    return db.scalars(
+    """List customers with optional search, sort, and pagination."""
+    stmt = (
         select(Customer)
         .where(Customer.company_id == identity.company_id)
-        .order_by(Customer.id)
-    ).all()
+    )
+
+    if q:
+        pattern = f"%{q}%"
+        stmt = stmt.where(
+            Customer.name.like(pattern)
+            | Customer.phone.like(pattern)
+            | Customer.email.like(pattern)
+        )
+
+    if sort == "name":
+        stmt = stmt.order_by(Customer.name)
+    elif sort == "created_at":
+        stmt = stmt.order_by(Customer.created_at.desc())
+    else:
+        stmt = stmt.order_by(Customer.id)
+
+    stmt = stmt.offset(offset).limit(limit)
+    return db.scalars(stmt).all()
+
+
+@router.get("/customers/count")
+def count_customers(
+    q: str | None = Query(None, description="Search keywords in name, phone, and email"),
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Count customers with optional search filter."""
+    stmt = (
+        select(func.count())
+        .select_from(Customer)
+        .where(Customer.company_id == identity.company_id)
+    )
+
+    if q:
+        pattern = f"%{q}%"
+        stmt = stmt.where(
+            Customer.name.like(pattern)
+            | Customer.phone.like(pattern)
+            | Customer.email.like(pattern)
+        )
+
+    total = db.scalar(stmt)
+    return {"total": total}
 
 
 @router.get("/customers/{customer_id}")

@@ -619,7 +619,47 @@ footer {
   color: var(--muted);
 }
 
-/* Customers — WP-086 */
+/* Customers — WP-086, WP-104 */
+.customer-filters {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.customer-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.customer-filter-group label {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.customer-search-inline input {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  min-width: 200px;
+}
+.customer-filter-group select {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+}
+.customer-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
 .customer-list {
   display: grid;
   gap: 10px;

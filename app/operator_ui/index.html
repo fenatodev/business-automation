@@ -368,7 +368,29 @@
         </div>
         <p class="small">Visualize customers ativos. Leads convertidos aparecem aqui automaticamente.</p>
 
+        <div class="customer-filters">
+          <div class="customer-filter-group customer-search-inline">
+            <label for="customer-search">Buscar</label>
+            <input id="customer-search" type="search" placeholder="Nome, telefone ou e-mail..."
+                   autocomplete="off">
+          </div>
+          <div class="customer-filter-group">
+            <label for="customer-sort">Ordenar</label>
+            <select id="customer-sort">
+              <option value="id">ID</option>
+              <option value="created_at">Data</option>
+              <option value="name">Nome</option>
+            </select>
+          </div>
+        </div>
+
         <div id="customers-list" class="customer-list"></div>
+
+        <div id="customers-pagination" class="customer-pagination" hidden>
+          <button id="customers-prev-page" type="button" class="secondary">Anterior</button>
+          <span id="customers-page-info" class="small"></span>
+          <button id="customers-next-page" type="button" class="secondary">Próxima</button>
+        </div>
 
         <div id="customer-detail" class="customer-detail" hidden>
           <div class="customer-detail-header">

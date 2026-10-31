@@ -1304,15 +1304,40 @@
     refreshLeads().catch(() => {});
   });
 
-  // Customers — WP-086
+  // Customers — WP-086, WP-104
 
   // Customer detail state — WP-087
   let currentCustomerId = null;
 
+  // WP-104 — Customer pagination state
+  let customerOffset = 0;
+  const customerPageSize = 50;
+  let customerTotal = 0;
+
+  function buildCustomerUrl() {
+    const params = new URLSearchParams();
+    const q = $("customer-search")?.value?.trim();
+    const sort = $("customer-sort")?.value;
+    if (q) params.set("q", q);
+    if (sort) params.set("sort", sort);
+    params.set("limit", String(customerPageSize));
+    params.set("offset", String(customerOffset));
+    const search = params.toString();
+    return "/customers" + (search ? "?" + search : "");
+  }
+
+  function buildCustomerCountUrl() {
+    const params = new URLSearchParams();
+    const q = $("customer-search")?.value?.trim();
+    if (q) params.set("q", q);
+    const search = params.toString();
+    return "/customers/count" + (search ? "?" + search : "");
+  }
+
   async function customerApi(path, method, body) {
     if (!bearer) throw new Error("Conecte um operador.");
-    const allowed = ["/customers"];
-    if (!allowed.includes(path)) {
+    const allowedPattern = /^\/customers(\/count)?(\?.*)?$/;
+    if (!allowedPattern.test(path.split("#")[0])) {
       console.error("[customerApi] Rota não permitida:", path);
       return;
     }
@@ -1331,8 +1356,29 @@
 
   async function refreshCustomers() {
     if (!bearer) return;
-    const customers = await customerApi("/customers", "GET");
+    const [customers, countData] = await Promise.all([
+      customerApi(buildCustomerUrl(), "GET"),
+      customerApi(buildCustomerCountUrl(), "GET"),
+    ]);
+    customerTotal = countData?.total || 0;
     renderCustomers(customers || []);
+    updateCustomerPagination();
+  }
+
+  function updateCustomerPagination() {
+    const paginationEl = $("customers-pagination");
+    const pageInfo = $("customers-page-info");
+    if (!paginationEl || !pageInfo) return;
+    if (customerTotal <= customerPageSize) {
+      paginationEl.hidden = true;
+      return;
+    }
+    paginationEl.hidden = false;
+    const page = Math.floor(customerOffset / customerPageSize) + 1;
+    const totalPages = Math.ceil(customerTotal / customerPageSize);
+    pageInfo.textContent = `Página ${page} de ${totalPages} (${customerTotal} customers)`;
+    $("customers-prev-page").disabled = customerOffset === 0;
+    $("customers-next-page").disabled = customerOffset + customerPageSize >= customerTotal;
   }
 
   function renderCustomers(customers) {
@@ -1498,9 +1544,35 @@
   }
 
   $("customers-refresh").addEventListener("click", () => withButton($("customers-refresh"), async () => {
+    customerOffset = 0;
     await refreshCustomers();
     notify("Customers atualizados.");
   }));
+
+  // WP-104 — Customer search, sort, pagination
+  $("customer-search").addEventListener("input", () => {
+    customerOffset = 0;
+    refreshCustomers().catch(() => {});
+  });
+
+  $("customer-sort").addEventListener("change", () => {
+    customerOffset = 0;
+    refreshCustomers().catch(() => {});
+  });
+
+  $("customers-prev-page").addEventListener("click", () => {
+    if (customerOffset > 0) {
+      customerOffset -= customerPageSize;
+      refreshCustomers().catch(() => {});
+    }
+  });
+
+  $("customers-next-page").addEventListener("click", () => {
+    if (customerOffset + customerPageSize < customerTotal) {
+      customerOffset += customerPageSize;
+      refreshCustomers().catch(() => {});
+    }
+  });
 
   $("customer-detail-back").addEventListener("click", () => {
     hideCustomerDetail();
