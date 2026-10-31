@@ -307,6 +307,65 @@ def get_opportunity_conversations(
     return conversations
 
 
+@router.get("/opportunities/{opportunity_id}/timeline")
+def get_opportunity_timeline(
+    opportunity_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Return an activity timeline for the opportunity derived from existing data.
+
+    Events include: creation, triage changes, brief status changes.
+    No migration required — all data comes from existing models.
+    """
+    opportunity = _get_tenant_opportunity(
+        db,
+        opportunity_id,
+        identity.company_id,
+    )
+
+    events = []
+
+    # Creation event
+    events.append({
+        "type": "created",
+        "timestamp": opportunity.created_at.isoformat(),
+        "detail": f"Oportunidade capturada da fonte '{opportunity.source}'",
+    })
+
+    # Triage event if triage_note exists
+    if opportunity.triage_note:
+        events.append({
+            "type": "triage",
+            "timestamp": opportunity.updated_at.isoformat(),
+            "detail": f"Triagem: {opportunity.next_action} — {opportunity.triage_note}",
+        })
+
+    # Brief events
+    brief = db.scalar(
+        select(ProposalBrief).where(
+            ProposalBrief.opportunity_id == opportunity_id,
+        )
+    )
+    if brief is not None:
+        events.append({
+            "type": "brief_created",
+            "timestamp": brief.created_at.isoformat(),
+            "detail": f"ProposalBrief criado ({brief.offer_reference})",
+        })
+        if brief.status != "draft":
+            events.append({
+                "type": "brief_status",
+                "timestamp": brief.updated_at.isoformat(),
+                "detail": f"ProposalBrief → {brief.status}",
+            })
+
+    # Sort by timestamp descending
+    events.sort(key=lambda e: e["timestamp"], reverse=True)
+
+    return events
+
+
 @router.patch("/opportunities/{opportunity_id}")
 def update_opportunity(
     opportunity_id: int,

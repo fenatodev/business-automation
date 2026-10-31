@@ -157,10 +157,11 @@
     // WP-095 — allow /opportunities/count and sort/limit/offset params
     // WP-139 — allow /opportunities/pipeline-summary
     // WP-142 — allow /opportunities/{id}/conversations
+    // WP-143 — allow /opportunities/{id}/timeline
     if (!/^\/opportunities(\?[^"]*)?$/.test(path) &&
         !/^\/opportunities\/count(\?[^"]*)?$/.test(path) &&
         !/^\/opportunities\/pipeline-summary$/.test(path) &&
-        !/^\/opportunities\/\d+(\/(triage|proposal-brief|conversations)(\/approve|\/reject)?)?$/.test(path)) {
+        !/^\/opportunities\/\d+(\/(triage|proposal-brief|conversations|timeline)(\/approve|\/reject)?)?$/.test(path)) {
       throw new Error("Rota não permitida nesta interface.");
     }
     const epoch = sessionEpoch;
@@ -361,6 +362,8 @@
     await loadBrief(id, version);
     // WP-142 — load related conversations
     await loadOpportunityConversations(id);
+    // WP-143 — load activity timeline
+    await loadOpportunityTimeline(id);
   }
 
   // WP-142 — Load conversations related to the selected opportunity
@@ -398,6 +401,36 @@
     } catch (error) {
       // Silently fail — conversations are supplementary info
       $("opp-conv-list").replaceChildren();
+    }
+  }
+
+  // WP-143 — Load activity timeline for the selected opportunity
+  async function loadOpportunityTimeline(id) {
+    try {
+      const events = await api("/opportunities/" + id + "/timeline");
+      const list = $("opp-timeline-list");
+      list.replaceChildren();
+      if (!events || !events.length) {
+        const empty = document.createElement("p");
+        empty.className = "small";
+        empty.textContent = "Nenhuma atividade registrada.";
+        list.appendChild(empty);
+        return;
+      }
+      for (const event of events) {
+        const item = document.createElement("div");
+        item.className = "opp-timeline-item";
+        const detail = document.createElement("span");
+        detail.textContent = event.detail;
+        const time = document.createElement("span");
+        time.className = "small";
+        time.textContent = new Date(event.timestamp).toLocaleString("pt-BR");
+        item.append(detail, time);
+        list.appendChild(item);
+      }
+    } catch (error) {
+      // Silently fail — timeline is supplementary info
+      $("opp-timeline-list").replaceChildren();
     }
   }
 
