@@ -831,6 +831,7 @@
       const title = document.createElement("strong");
       title.textContent = "#" + conv.id + " · " + channel;
       const meta = document.createElement("span");
+      meta.className = "conv-status-badge conv-status-" + (conv.status || "unknown");
       meta.textContent = conv.status || "—";
       button.append(title, meta);
       button.addEventListener("click", () => {
@@ -1189,7 +1190,7 @@
       name.className = "lead-item-name";
       name.textContent = lead.name || "Sem nome";
       const statusTag = document.createElement("span");
-      statusTag.className = "tag";
+      statusTag.className = "lead-status-badge lead-status-" + (lead.status || "unknown");
       statusTag.textContent = leadStatusLabels[lead.status] || lead.status;
       header.appendChild(name);
       header.appendChild(statusTag);
