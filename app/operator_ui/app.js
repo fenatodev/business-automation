@@ -15,6 +15,7 @@
   let oppOffset = 0;
   const oppPageSize = 50;
   let oppTotal = 0;
+  let oppPipelineFilter = "all";
   const selectedOpportunityIds = new Set();
   let activeBrief = null;
   let selectionVersion = 0;
@@ -139,6 +140,7 @@
     convTotal = 0;
     msgOffset = 0;
     msgTotal = 0;
+    oppPipelineFilter = "all";
     stopDashboardRefresh();
     stopNotificationRefresh();
     notify(message);
@@ -152,8 +154,10 @@
     // WP-093 — allow PATCH /opportunities/{id} for title/description edit
     // WP-094 — allow ?q= search param
     // WP-095 — allow /opportunities/count and sort/limit/offset params
+    // WP-139 — allow /opportunities/pipeline-summary
     if (!/^\/opportunities(\?[^"]*)?$/.test(path) &&
         !/^\/opportunities\/count(\?[^"]*)?$/.test(path) &&
+        !/^\/opportunities\/pipeline-summary$/.test(path) &&
         !/^\/opportunities\/\d+(\/(triage|proposal-brief)(\/approve|\/reject)?)?$/.test(path)) {
       throw new Error("Rota não permitida nesta interface.");
     }
@@ -363,15 +367,30 @@
     const sort = $("opp-sort").value;
     const params = [];
     if (!showArchived) params.push("exclude_archived=true");
+    if (oppPipelineFilter !== "all") params.push("next_action=" + encodeURIComponent(oppPipelineFilter));
     if (searchQuery) params.push("q=" + encodeURIComponent(searchQuery));
     params.push("sort=" + encodeURIComponent(sort));
     params.push("limit=" + oppPageSize);
     params.push("offset=" + oppOffset);
     const query = "?" + params.join("&");
-    const [result, countResult] = await Promise.all([
+    const countParams = [];
+    if (!showArchived) countParams.push("exclude_archived=true");
+    if (oppPipelineFilter !== "all") countParams.push("next_action=" + encodeURIComponent(oppPipelineFilter));
+    if (searchQuery) countParams.push("q=" + encodeURIComponent(searchQuery));
+    const [result, countResult, pipelineResult] = await Promise.all([
       api("/opportunities" + query),
-      api("/opportunities/count" + (showArchived ? "" : "?exclude_archived=true") + (searchQuery ? "&q=" + encodeURIComponent(searchQuery) : "")),
+      api("/opportunities/count" + (countParams.length ? "?" + countParams.join("&") : "")),
+      api("/opportunities/pipeline-summary"),
     ]);
+    // WP-139 — update pipeline counts
+    for (const [status, count] of Object.entries(pipelineResult || {})) {
+      const countEl = document.querySelector('[data-count="' + status + '"]');
+      if (countEl) countEl.textContent = count;
+    }
+    // Highlight active chip
+    document.querySelectorAll('.opp-pipeline-chip').forEach((chip) => {
+      chip.classList.toggle('active', chip.getAttribute('data-pipeline') === oppPipelineFilter);
+    });
     if (!Array.isArray(result)) {
       throw new Error("Resposta de listagem inválida.");
     }
@@ -420,6 +439,15 @@
   $("opp-sort").addEventListener("change", () => {
     oppOffset = 0;
     refreshList();
+  });
+
+  // WP-139 — Pipeline filter chips
+  document.querySelectorAll('.opp-pipeline-chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      oppPipelineFilter = chip.getAttribute('data-pipeline');
+      oppOffset = 0;
+      refreshList();
+    });
   });
 
   // WP-108 — View brief button scrolls to brief panel

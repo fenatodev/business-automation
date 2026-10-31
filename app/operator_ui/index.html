@@ -158,6 +158,15 @@
                 </label>
               </div>
             </div>
+            <div id="opp-pipeline" class="opp-pipeline">
+              <button type="button" class="opp-pipeline-chip" data-pipeline="all">Todas</button>
+              <button type="button" class="opp-pipeline-chip" data-pipeline="pending">Pendente <span class="opp-pipeline-count" data-count="pending">—</span></button>
+              <button type="button" class="opp-pipeline-chip" data-pipeline="follow">Acompanhar <span class="opp-pipeline-count" data-count="follow">—</span></button>
+              <button type="button" class="opp-pipeline-chip" data-pipeline="prepare_proposal">Proposta <span class="opp-pipeline-count" data-count="prepare_proposal">—</span></button>
+              <button type="button" class="opp-pipeline-chip" data-pipeline="in_progress">Em andamento <span class="opp-pipeline-count" data-count="in_progress">—</span></button>
+              <button type="button" class="opp-pipeline-chip" data-pipeline="done">Concluída <span class="opp-pipeline-count" data-count="done">—</span></button>
+              <button type="button" class="opp-pipeline-chip" data-pipeline="lost">Perdida <span class="opp-pipeline-count" data-count="lost">—</span></button>
+            </div>
             <div id="bulk-triage-bar" class="bulk-triage-bar" hidden>
               <span id="bulk-selected-count" class="small">0 selecionadas</span>
               <select id="bulk-triage-action" class="bulk-triage-select">

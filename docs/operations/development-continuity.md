@@ -509,3 +509,12 @@ ignore, prepare_proposal), mas o backend OpportunityTriageUpdate suporta 7
 correto. Adicionadas as 3 opções faltantes ao select individual, alinhando
 com o backend e com o bulk triage.
 **1953 testes passaram** (15 novos); compileall, diff-check: PASS.
+
+## WP-139 — Filtro de pipeline visual no operador (31/10/2026)
+
+A funcionalidade de pipeline summary (WP-072) foi perdida na consolidação.
+Adicionados chips clicáveis de pipeline na toolbar de oportunidades: cada
+chip mostra status e contagem via /opportunities/pipeline-summary. Ao clicar,
+o filtro next_action é aplicado à lista. 7 chips: Todas, Pendente, Acompanhar,
+Proposta, Em andamento, Concluída, Perdida.
+**1972 testes passaram** (19 novos); compileall, diff-check: PASS.
