@@ -123,15 +123,20 @@ def count_customers(
 
 @router.get("/customers/export.csv")
 def export_customers_csv(
+    q: str | None = Query(None, description="Search keywords in name, phone, and email"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    """Export all tenant customers as a CSV file."""
-    customers = db.scalars(
-        select(Customer)
-        .where(Customer.company_id == identity.company_id)
-        .order_by(Customer.id)
-    ).all()
+    """Export tenant customers as a CSV file, respecting filters."""
+    stmt = select(Customer).where(Customer.company_id == identity.company_id)
+    if q:
+        pattern = f"%{q}%"
+        stmt = stmt.where(
+            Customer.name.like(pattern)
+            | Customer.phone.like(pattern)
+            | Customer.email.like(pattern)
+        )
+    customers = db.scalars(stmt.order_by(Customer.id)).all()
 
     output = io.StringIO()
     writer = csv.writer(output)

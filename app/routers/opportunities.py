@@ -213,15 +213,33 @@ def pipeline_summary(
 
 @router.get("/opportunities/export.csv")
 def export_opportunities_csv(
+    exclude_archived: bool = False,
+    next_action: str | None = Query(None, description="Filter by next_action status"),
+    q: str | None = Query(None, description="Search keywords in title and description"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    """Export all tenant opportunities as a CSV file."""
-    opportunities = db.scalars(
+    """Export tenant opportunities as a CSV file, respecting the same filters as the list."""
+    stmt = (
         select(Opportunity)
         .where(Opportunity.company_id == identity.company_id)
-        .order_by(Opportunity.id)
-    ).all()
+    )
+
+    if exclude_archived:
+        stmt = stmt.where(Opportunity.next_action.notin_(["done", "lost"]))
+
+    if next_action is not None:
+        stmt = stmt.where(Opportunity.next_action == next_action)
+
+    if q:
+        pattern = f"%{q}%"
+        stmt = stmt.where(
+            func.lower(Opportunity.title).like(func.lower(pattern)) |
+            func.lower(Opportunity.description).like(func.lower(pattern))
+        )
+
+    stmt = stmt.order_by(Opportunity.id)
+    opportunities = db.scalars(stmt).all()
 
     output = io.StringIO()
     writer = csv.writer(output)

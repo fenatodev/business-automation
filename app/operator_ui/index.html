@@ -87,7 +87,7 @@
         </div>
       </section>
 
-      <section class="panel" aria-labelledby="rq-title"><div class="panel-heading"><div><span class="section-index">05 / PILOTO SINTÉTICO</span><h2 id="rq-title">Fila de revisão comercial</h2></div><button id="rq-refresh" type="button">Atualizar</button></div><p class="small">Aprovações registram decisões internas. Não enviam mensagens.</p><form id="rq-form"><div class="two-col"><div><label for="rq-event">ID do evento</label><input id="rq-event" required maxlength="100" placeholder="demo-001"></div><div><label for="rq-channel">Canal simulado</label><select id="rq-channel"><option value="web">Web</option><option value="email">E-mail simulado</option><option value="whatsapp">WhatsApp simulado</option></select></div></div><label for="rq-message">Mensagem fictícia</label><textarea id="rq-message" required maxlength="4000" rows="3"></textarea><button type="submit" class="primary">Simular entrada</button></form><h3>Pendentes <span id="rq-count" class="tag">—</span></h3><p id="rq-summary" class="small" aria-live="polite">Resumo operacional indisponível.</p><p id="rq-aging" class="small" aria-live="polite">Atrasos: indisponível.</p><div id="rq-list" class="opportunity-list"></div><div class="review-actions"><button id="rq-prev" type="button" class="secondary" disabled>Anterior</button><span id="rq-page" class="small">Página 1</span><button id="rq-next" type="button" class="secondary" disabled>Próxima</button></div></section>
+      <section class="panel" aria-labelledby="rq-title"><div class="panel-heading"><div><span class="section-index">05 / PILOTO SINTÉTICO</span><h2 id="rq-title">Fila de revisão comercial</h2></div><div class="panel-actions"><button id="rq-export-csv" type="button" class="secondary">Exportar CSV</button><button id="rq-refresh" type="button" class="secondary">Atualizar</button></div></div><p class="small">Aprovações registram decisões internas. Não enviam mensagens.</p><form id="rq-form"><div class="two-col"><div><label for="rq-event">ID do evento</label><input id="rq-event" required maxlength="100" placeholder="demo-001"></div><div><label for="rq-channel">Canal simulado</label><select id="rq-channel"><option value="web">Web</option><option value="email">E-mail simulado</option><option value="whatsapp">WhatsApp simulado</option></select></div></div><label for="rq-message">Mensagem fictícia</label><textarea id="rq-message" required maxlength="4000" rows="3"></textarea><button type="submit" class="primary">Simular entrada</button></form><h3>Pendentes <span id="rq-count" class="tag">—</span></h3><p id="rq-summary" class="small" aria-live="polite">Resumo operacional indisponível.</p><p id="rq-aging" class="small" aria-live="polite">Atrasos: indisponível.</p><div id="rq-list" class="opportunity-list"></div><div class="review-actions"><button id="rq-prev" type="button" class="secondary" disabled>Anterior</button><span id="rq-page" class="small">Página 1</span><button id="rq-next" type="button" class="secondary" disabled>Próxima</button></div></section>
       <div class="layout">
         <div class="column">
           <section class="panel" aria-labelledby="capture-title">
@@ -579,6 +579,51 @@
             <dt>Flags</dt><dd id="intake-decision-flags"></dd>
             <dt>Oportunidade</dt><dd id="intake-decision-opp"></dd>
           </dl>
+        </div>
+      </section>
+
+      <!-- WP-120 — Internal tasks section -->
+      <section class="panel" aria-labelledby="tasks-title">
+        <div class="panel-heading">
+          <div>
+            <span class="section-index">10 / TAREFAS INTERNAS</span>
+            <h2 id="tasks-title">Tarefas internas</h2>
+          </div>
+          <button id="tasks-refresh" type="button">Atualizar</button>
+        </div>
+        <p class="small">Tarefas sintéticas de processamento comercial com retry e retenção.</p>
+
+        <div class="task-filters">
+          <div class="task-filter-group">
+            <label for="task-status-filter">Status</label>
+            <select id="task-status-filter">
+              <option value="">Todos</option>
+              <option value="queued">Fila</option>
+              <option value="running">Executando</option>
+              <option value="succeeded">Sucesso</option>
+              <option value="failed">Falha</option>
+            </select>
+          </div>
+          <div class="task-filter-group">
+            <label for="task-sort">Ordenar</label>
+            <select id="task-sort">
+              <option value="created_at">Data</option>
+              <option value="id">ID</option>
+              <option value="status">Status</option>
+              <option value="attempts">Tentativas</option>
+            </select>
+          </div>
+          <div class="task-filter-group" style="align-self:flex-end;">
+            <button id="tasks-export-csv" type="button" class="secondary">Exportar CSV</button>
+          </div>
+        </div>
+
+        <div id="tasks-list" class="task-list"></div>
+
+        <div id="tasks-pagination" class="task-pagination" hidden>
+          <button id="tasks-prev-page" type="button" class="secondary">Anterior</button>
+          <span id="tasks-page-info" class="small"></span>
+          <button id="tasks-next-page" type="button" class="secondary">Próxima</button>
         </div>
       </section>
     </main>
