@@ -21,10 +21,11 @@ O projeto tem dois objetivos complementares:
 - Opportunity management with search, sort, pagination, bulk triage, and status transitions;
 - Internal task queue with retry, lease, fencing, 24×7 supervisor, and export CSV;
 - Review queue with filters, sort, pagination, and atomic approve/reject decisions;
-- Operator UI dashboard with metrics, pipeline view, notifications, and CSV export;
+- Operator UI dashboard with metrics, pipeline view, next actions summary, notifications, and CSV export;
+- CSV import for leads, customers, and opportunities;
 - Agent-reply flow with persisted conversation history;
 - Failure handling that preserves user messages when the agent service is unavailable (HTTP 503);
-- 1891 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
+- 2138 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
 
 ## Engineering case study
 
@@ -37,7 +38,7 @@ The useful part of this project is not the idea of "AI for business". It is the 
 | Authentication | Bearer API keys with role-based access (admin, operator). |
 | API failure behavior | Missing resources and invalid ownership return explicit client errors. |
 | AI integration failure | Customer input preserved, failed agent output not fabricated, internal details not leaked. |
-| Regression protection | 1891 tests cover happy paths, failures, tenant isolation, and UI contracts. |
+| Regression protection | 2138 tests cover happy paths, failures, tenant isolation, and UI contracts. |
 | Product boundaries | ERP and automation engines remain external integrations. |
 
 ### Example evaluation mindset
