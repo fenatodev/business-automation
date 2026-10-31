@@ -21,6 +21,7 @@ def generate_agent_reply(
     message: str,
     history: list[dict],
     system_prompt: str | None = None,
+    temperature: float | None = None,
 ) -> str:
     # WP-202 — Allow custom system prompt; falls back to default
     prompt = system_prompt if system_prompt else _DEFAULT_SYSTEM_PROMPT
@@ -57,14 +58,21 @@ def generate_agent_reply(
         }
     )
 
+    # Build request body
+    body: dict[str, object] = {
+        "model": settings.ollama_model,
+        "messages": messages,
+        "stream": False,
+    }
+
+    # WP-203 — Pass temperature to Ollama if specified
+    if temperature is not None:
+        body["options"] = {"temperature": temperature}
+
     try:
         response = httpx.post(
             f"{settings.ollama_url}/api/chat",
-            json={
-                "model": settings.ollama_model,
-                "messages": messages,
-                "stream": False,
-            },
+            json=body,
             timeout=120,
         )
 
