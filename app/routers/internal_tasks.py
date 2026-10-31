@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.auth import AccessIdentity
 from app.dependencies import get_db, require_operator
 from app.models import Conversation, InternalTask, Lead, Opportunity, ReviewQueueItem
-from app.schemas import InternalTaskOut, ReviewQueueTrigger
+from app.schemas import InternalTaskBulkRetry, InternalTaskOut, ReviewQueueTrigger
 from app.services import internal_tasks as tasks
 from app.services.internal_tasks import task_count as task_count_svc
 
@@ -230,3 +230,36 @@ def run_retention(
 ):
     deleted = tasks.purge_old_tasks(db, identity.company_id, older_than_days=older_than_days)
     return {"deleted": deleted}
+
+
+@router.post("/bulk-retry")
+def bulk_retry_tasks(
+    bulk_data: InternalTaskBulkRetry,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+) -> dict[str, object]:
+    """Bulk retry multiple failed internal tasks.
+
+    Tenant-isolated. Returns counts of retried and skipped tasks.
+    Tasks that cannot be retried are skipped.
+    """
+    retried = 0
+    retried_ids = []
+    skipped = []
+
+    for task_id in bulk_data.task_ids:
+        try:
+            task = tasks.manual_retry(db, task_id, identity.company_id)
+            if task is not None:
+                retried += 1
+                retried_ids.append(task.id)
+            else:
+                skipped.append(task_id)
+        except ValueError:
+            skipped.append(task_id)
+
+    return {
+        "retried": retried,
+        "retried_ids": sorted(retried_ids),
+        "skipped": sorted(skipped),
+    }

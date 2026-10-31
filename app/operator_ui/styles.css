@@ -1456,3 +1456,27 @@ footer {
   color: var(--accent);
   margin: 0;
 }
+
+/* WP-172 — Bulk retry bar for internal tasks */
+.task-checkbox {
+  margin: 0 8px 0 0;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+.task-bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin: 10px 0;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--accent-bg);
+  flex-wrap: wrap;
+}
+.task-bulk-bar .small {
+  font-weight: 600;
+  color: var(--accent);
+  margin: 0;
+}

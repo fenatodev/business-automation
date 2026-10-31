@@ -322,6 +322,14 @@ class ReviewQueueDecisionResponse(BaseModel):
     opportunity_id: int | None = None
 
 
+class InternalTaskBulkRetry(BaseModel):
+    """Bulk retry multiple failed internal tasks."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    task_ids: list[int] = Field(min_length=1, max_length=100)
+
+
 class InternalTaskOut(BaseModel):
     """Operational status only: no message, payload, worker token or raw error."""
 

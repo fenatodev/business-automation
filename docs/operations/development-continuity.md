@@ -739,3 +739,12 @@ UI com checkboxes em cada item e barra de ação em massa com contador,
 botão aprovar, botão rejeitar e botão limpar seleção.
 
 **2253 testes passaram** (12 novos); compileall, diff-check: PASS.
+
+### WP-172 — Retry em massa das tarefas internas
+
+O operador só podia retryar uma tarefa de cada vez.
+Adicionado `POST /internal-tasks/bulk-retry`, tenant-isolado, com 1-100 IDs.
+UI com checkboxes em cada tarefa e barra de ação em massa com contador,
+botão retry e botão limpar seleção.
+
+**2262 testes passaram** (9 novos); compileall, diff-check: PASS.

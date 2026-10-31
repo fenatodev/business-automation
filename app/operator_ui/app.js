@@ -40,6 +40,8 @@
   const selectedCustomerIds = new Set();
   // WP-171 — Bulk decision state for review queue
   const selectedRqIds = new Set();
+  // WP-172 — Bulk retry state for internal tasks
+  const selectedTaskIds = new Set();
 
   const briefFields = [
     "offer_reference",
@@ -2944,7 +2946,9 @@
 
   async function taskApi(path, method = "GET", body) {
     if (!bearer) throw new Error("Conecte um operador.");
-    if (!/^\/internal-tasks(\/|$|\?)/.test(path)) {
+    const route = path.split("#")[0];
+    if (!(/^\/internal-tasks(\/|$|\?)/.test(route) ||
+          /^\/internal-tasks\/bulk-retry$/.test(route))) {
       throw new Error("Rota de tarefas não permitida.");
     }
     const epoch = sessionEpoch;
@@ -2990,6 +2994,9 @@
 
   async function refreshTasks() {
     if (!bearer) return;
+    // WP-172 — Reset bulk selection on refresh
+    selectedTaskIds.clear();
+    $("task-bulk-bar").hidden = true;
     try {
       const [tasks, count] = await Promise.all([
         taskApi(buildTaskUrl()),
@@ -3019,6 +3026,20 @@
     for (const task of tasks) {
       const item = document.createElement("div");
       item.className = "task-item";
+      // WP-172 — Checkbox for bulk retry
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "task-checkbox";
+      checkbox.checked = selectedTaskIds.has(task.id);
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) {
+          selectedTaskIds.add(task.id);
+        } else {
+          selectedTaskIds.delete(task.id);
+        }
+        updateTaskBulkBar();
+      });
+      item.appendChild(checkbox);
       const header = document.createElement("div");
       header.className = "task-item-header";
       const name = document.createElement("strong");
@@ -3268,6 +3289,35 @@
     await origRefreshCustomers();
     $("customer-bulk-bar").hidden = true;
   };
+
+  // WP-172 — Bulk retry handlers for internal tasks
+  function updateTaskBulkBar() {
+    const bar = $("task-bulk-bar");
+    const count = selectedTaskIds.size;
+    $("task-bulk-selected-count").textContent = count + " selecionado(s)";
+    bar.hidden = count === 0;
+  }
+
+  $("task-bulk-clear").addEventListener("click", () => {
+    selectedTaskIds.clear();
+    refreshTasks();
+  });
+
+  $("task-bulk-retry").addEventListener("click", () => {
+    const button = $("task-bulk-retry");
+    withButton(button, async () => {
+      const ids = Array.from(selectedTaskIds);
+      if (!ids.length) {notify("Nenhuma tarefa selecionada.", true); return;}
+      try {
+        const result = await taskApi("/internal-tasks/bulk-retry", "POST", {task_ids: ids});
+        selectedTaskIds.clear();
+        notify(result.retried + " tarefa(s) em retry. " + result.skipped.length + " ignorado(s).");
+        await refreshTasks();
+      } catch (e) {
+        notify("Falha ao retry.", true);
+      }
+    });
+  });
 
   // WP-171 — Bulk decision handlers for review queue
   function updateRqBulkBar() {
