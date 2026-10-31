@@ -721,3 +721,12 @@ Além de Ctrl+K e Escape, adicionados: Ctrl+N (novo lead), Ctrl+L
 oportunidades). Rodapé atualizado com lista completa de atalhos.
 
 **2226 testes passaram** (14 novos); compileall, diff-check: PASS.
+
+### WP-169/170 — Exclusão em massa de customers e leads
+
+O operador não podia excluir múltiplos customers ou leads de uma vez.
+Adicionado `POST /customers/bulk-delete` e `POST /leads/bulk-delete`,
+tenant-isolados, com 1-100 IDs. UI com checkboxes em cada item e barra
+de ação em massa com contador, botão excluir e botão limpar seleção.
+
+**2241 testes passaram** (15 novos); compileall, diff-check: PASS.

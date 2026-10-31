@@ -35,6 +35,9 @@
   const msgPageSize = 50;
   let msgTotal = 0;
   let dashboardIntervalId = null;
+  // WP-169/170 — Bulk delete state
+  const selectedLeadIds = new Set();
+  const selectedCustomerIds = new Set();
 
   const briefFields = [
     "offer_reference",
@@ -1851,6 +1854,20 @@
     for (const lead of leads) {
       const item = document.createElement("div");
       item.className = "lead-item";
+      // WP-170 — Checkbox for bulk delete
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "lead-checkbox";
+      checkbox.checked = selectedLeadIds.has(lead.id);
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) {
+          selectedLeadIds.add(lead.id);
+        } else {
+          selectedLeadIds.delete(lead.id);
+        }
+        updateLeadBulkBar();
+      });
+      item.appendChild(checkbox);
       const header = document.createElement("div");
       header.className = "lead-item-header";
       const name = document.createElement("span");
@@ -2224,8 +2241,23 @@
     for (const cust of customers) {
       const item = document.createElement("div");
       item.className = "customer-item";
+      // WP-169 — Checkbox for bulk delete
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "customer-checkbox";
+      checkbox.checked = selectedCustomerIds.has(cust.id);
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) {
+          selectedCustomerIds.add(cust.id);
+        } else {
+          selectedCustomerIds.delete(cust.id);
+        }
+        updateCustomerBulkBar();
+      });
+      item.appendChild(checkbox);
       item.style.cursor = "pointer";
-      item.addEventListener("click", () => {
+      item.addEventListener("click", (e) => {
+        if (e.target.tagName === "INPUT") return;
         showCustomerDetail(cust);
       });
 
@@ -3122,4 +3154,99 @@
       }
     });
   });
+
+  // WP-169/170 — Bulk delete handlers
+  function updateLeadBulkBar() {
+    const bar = $("lead-bulk-bar");
+    const count = selectedLeadIds.size;
+    $("lead-bulk-selected-count").textContent = count + " selecionado(s)";
+    bar.hidden = count === 0;
+  }
+
+  function updateCustomerBulkBar() {
+    const bar = $("customer-bulk-bar");
+    const count = selectedCustomerIds.size;
+    $("customer-bulk-selected-count").textContent = count + " selecionado(s)";
+    bar.hidden = count === 0;
+  }
+
+  $("lead-bulk-clear").addEventListener("click", () => {
+    selectedLeadIds.clear();
+    refreshLeads();
+  });
+
+  $("customer-bulk-clear").addEventListener("click", () => {
+    selectedCustomerIds.clear();
+    refreshCustomers();
+  });
+
+  $("lead-bulk-delete").addEventListener("click", () => {
+    const button = $("lead-bulk-delete");
+    withButton(button, async () => {
+      const ids = Array.from(selectedLeadIds);
+      if (!ids.length) {notify("Nenhum lead selecionado.", true); return;}
+      try {
+        const res = await fetch("/leads/bulk-delete", {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + bearer,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({lead_ids: ids}),
+        });
+        if (res.status === 403) {disconnect("Permissão de operador necessária."); return;}
+        if (!res.ok) throw new ApiFailure(res.status);
+        const result = await res.json();
+        selectedLeadIds.clear();
+        notify(result.deleted + " lead(s) excluído(s). " + result.skipped.length + " ignorado(s).");
+        await refreshLeads();
+      } catch (e) {
+        if (e instanceof ApiFailure) {notify(e.message, true);}
+        else {notify("Falha ao excluir leads.", true);}
+      }
+    });
+  });
+
+  $("customer-bulk-delete").addEventListener("click", () => {
+    const button = $("customer-bulk-delete");
+    withButton(button, async () => {
+      const ids = Array.from(selectedCustomerIds);
+      if (!ids.length) {notify("Nenhum customer selecionado.", true); return;}
+      try {
+        const res = await fetch("/customers/bulk-delete", {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + bearer,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({customer_ids: ids}),
+        });
+        if (res.status === 403) {disconnect("Permissão de operador necessária."); return;}
+        if (!res.ok) throw new ApiFailure(res.status);
+        const result = await res.json();
+        selectedCustomerIds.clear();
+        notify(result.deleted + " customer(s) excluído(s). " + result.skipped.length + " ignorado(s).");
+        await refreshCustomers();
+      } catch (e) {
+        if (e instanceof ApiFailure) {notify(e.message, true);}
+        else {notify("Falha ao excluir customers.", true);}
+      }
+    });
+  });
+
+  // WP-169/170 — Reset selections on refresh
+  const origRefreshLeads = refreshLeads;
+  refreshLeads = async function(targetId) {
+    selectedLeadIds.clear();
+    await origRefreshLeads(targetId);
+    $("lead-bulk-bar").hidden = true;
+  };
+
+  const origRefreshCustomers = refreshCustomers;
+  refreshCustomers = async function() {
+    selectedCustomerIds.clear();
+    await origRefreshCustomers();
+    $("customer-bulk-bar").hidden = true;
+  };
+
 })();
