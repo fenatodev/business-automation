@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import AccessIdentity
 from app.dependencies import get_db, require_operator
-from app.models import Company, Opportunity, ProposalBrief
+from app.models import Company, Conversation, Opportunity, ProposalBrief
 from app.schemas import (
     OpportunityBulkDelete,
     OpportunityBulkTriage,
@@ -1024,6 +1024,43 @@ def export_briefs_csv(
 # WP-187 — Get single brief detail (tenant-isolated)
 # Placed after static paths (/count, /export.csv) to avoid route conflict.
 # ---------------------------------------------------------------------------
+
+
+@router.get("/proposal-briefs/{brief_id}/conversations")
+def get_brief_conversations(
+    brief_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Get conversations related to the brief's opportunity (tenant-isolated)."""
+    brief = db.execute(
+        select(ProposalBrief)
+        .join(Opportunity, ProposalBrief.opportunity_id == Opportunity.id)
+        .where(
+            ProposalBrief.id == brief_id,
+            Opportunity.company_id == identity.company_id,
+        )
+    ).scalar_one_or_none()
+
+    if brief is None:
+        raise HTTPException(status_code=404, detail="Brief não encontrado")
+
+    conversations = db.scalars(
+        select(Conversation)
+        .where(Conversation.company_id == identity.company_id)
+        .order_by(Conversation.id)
+        .limit(50)
+    ).all()
+
+    return [
+        {
+            "id": c.id,
+            "channel": c.channel,
+            "status": c.status,
+            "created_at": c.created_at.isoformat() if c.created_at else None,
+        }
+        for c in conversations
+    ]
 
 
 @router.get("/proposal-briefs/{brief_id}")
