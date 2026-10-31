@@ -285,6 +285,28 @@ def get_opportunity(
     )
 
 
+@router.get("/opportunities/{opportunity_id}/conversations")
+def get_opportunity_conversations(
+    opportunity_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Return conversations belonging to the same company as the opportunity (tenant-isolated)."""
+    _get_tenant_opportunity(
+        db,
+        opportunity_id,
+        identity.company_id,
+    )
+    from app.models import Conversation
+    conversations = db.scalars(
+        select(Conversation)
+        .where(Conversation.company_id == identity.company_id)
+        .order_by(desc(Conversation.id))
+        .limit(50)
+    ).all()
+    return conversations
+
+
 @router.patch("/opportunities/{opportunity_id}")
 def update_opportunity(
     opportunity_id: int,

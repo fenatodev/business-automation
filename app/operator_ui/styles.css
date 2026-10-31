@@ -1026,6 +1026,33 @@ footer {
   padding: 6px 12px;
 }
 
+/* WP-142 — Opportunity related conversations */
+.opp-conv-section {
+  margin: 10px 0;
+  padding: 10px;
+  background: var(--panel-alt);
+  border-radius: 6px;
+}
+.opp-conv-section h3 {
+  font-size: 0.9rem;
+  margin: 0 0 8px 0;
+  color: var(--muted);
+}
+.opp-conv-item {
+  padding: 6px 8px;
+  margin: 4px 0;
+  background: var(--bg);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.opp-conv-item:hover {
+  background: var(--hover);
+}
+.opp-conv-item .small {
+  color: var(--muted);
+}
+
 /* WP-118 — Opportunity status badges */
 .opp-status-badge {
   display: inline-block;
