@@ -4,7 +4,11 @@ Provides endpoints for the human operator to manage the commercial review queue:
 trigger synthetic intake events, list pending items, and make approve/reject decisions.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+import csv
+import io
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.auth import AccessIdentity
@@ -16,9 +20,53 @@ from app.schemas import (
     ReviewQueueItemOut,
     ReviewQueueTrigger,
 )
+from app.models import ReviewQueueItem
 from app.services import commercial_pipeline as pipeline
 
 router = APIRouter(prefix="/review-queue", tags=["review-queue"])
+
+
+@router.get("/export.csv")
+def export_review_queue_csv(
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Export all review queue items for the authenticated tenant as CSV."""
+    items = db.scalars(
+        select(ReviewQueueItem)
+        .where(ReviewQueueItem.company_id == identity.company_id)
+        .order_by(ReviewQueueItem.id)
+    ).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "ID", "Evento", "Canal", "Mensagem", "Intenção",
+        "Rascunho", "Status", "Nota operador", "Revisão humana",
+        "Flags", "Criada em",
+    ])
+    for item in items:
+        writer.writerow([
+            item.id,
+            item.event_id,
+            item.channel or "",
+            item.message or "",
+            item.intent or "",
+            item.draft_reply or "",
+            item.status,
+            item.operator_note or "",
+            item.needs_human_review,
+            item.flags_json or "",
+            item.created_at.isoformat() if item.created_at else "",
+        ])
+
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=review-queue.csv",
+        },
+    )
 
 
 @router.post(

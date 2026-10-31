@@ -1,15 +1,18 @@
 """Operator-only creation/status for internal synthetic intake tasks."""
+import csv
+import io
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.auth import AccessIdentity
 from app.dependencies import get_db, require_operator
-from app.models import Conversation, Lead, Opportunity, ReviewQueueItem
+from app.models import Conversation, InternalTask, Lead, Opportunity, ReviewQueueItem
 from app.schemas import InternalTaskOut, ReviewQueueTrigger
 from app.services import internal_tasks as tasks
+from app.services.internal_tasks import task_count as task_count_svc
 
 router = APIRouter(prefix="/internal-tasks", tags=["internal-tasks"])
 
@@ -17,12 +20,22 @@ router = APIRouter(prefix="/internal-tasks", tags=["internal-tasks"])
 @router.get("/", response_model=list[InternalTaskOut])
 def list_internal_tasks(
     status: Literal["queued", "running", "succeeded", "failed"] | None = None,
+    sort: Literal["id", "created_at", "status", "attempts"] = "created_at",
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    return tasks.list_tasks(db, identity.company_id, status=status, limit=limit, offset=offset)
+    return tasks.list_tasks(db, identity.company_id, status=status, limit=limit, offset=offset, sort=sort)
+
+
+@router.get("/count", response_model=int)
+def count_internal_tasks(
+    status: Literal["queued", "running", "succeeded", "failed"] | None = None,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    return task_count_svc(db, identity.company_id, status=status)
 
 
 @router.get("/summary", response_model=dict[str, int])
@@ -98,6 +111,44 @@ def get_dashboard(
         "tasks": task_summary,
         "review_queue": review_queue,
     }
+
+
+@router.get("/export.csv")
+def export_tasks_csv(
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Export all tenant internal tasks as a CSV file."""
+    task_list = db.scalars(
+        select(InternalTask)
+        .where(InternalTask.company_id == identity.company_id)
+        .order_by(InternalTask.id)
+    ).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "ID", "Evento", "Status", "Tentativas", "Erro",
+        "Disponível em", "Criada em",
+    ])
+    for task in task_list:
+        writer.writerow([
+            task.id,
+            task.event_id,
+            task.status,
+            task.attempts,
+            task.error_code or "",
+            task.available_at.isoformat() if task.available_at else "",
+            task.created_at.isoformat() if task.created_at else "",
+        ])
+
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=internal-tasks.csv",
+        },
+    )
 
 
 @router.get("/{task_id}", response_model=InternalTaskOut)
