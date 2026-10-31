@@ -894,3 +894,49 @@ footer {
 .opp-detail-actions button {
   padding: 6px 12px;
 }
+
+/* WP-118 — Opportunity status badges */
+.opp-status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 8px;
+}
+.opp-status-pending {
+  background: #3a2700;
+  color: #f0c040;
+}
+.opp-status-follow_up {
+  background: #1a2740;
+  color: #60b0f0;
+}
+.opp-status-propose {
+  background: #2a1a40;
+  color: #b080f0;
+}
+.opp-status-prepare_proposal {
+  background: #2a1a40;
+  color: #b080f0;
+}
+.opp-status-in_progress {
+  background: #0a3a20;
+  color: #40d080;
+}
+.opp-status-done {
+  background: #0a3a10;
+  color: #40f060;
+}
+.opp-status-lost {
+  background: #3a0a0a;
+  color: #f06060;
+}
+.opp-status-ignore {
+  background: #2a2a2a;
+  color: #808080;
+}
+.opp-status-unknown {
+  background: #2a2a2a;
+  color: #808080;
+}
