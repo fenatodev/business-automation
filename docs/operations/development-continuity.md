@@ -608,3 +608,10 @@ arquivadas, pipeline). Exportação CSV respeita os filtros de data.
 O módulo de conversas não tinha filtro por data. Adicionado `from_date`
 e `to_date` em list, count e export CSV. UI com campos de data na seção
 de filtros. **2049 testes passaram** (7 novos); compileall, diff-check: PASS.
+
+## WP-152 — Filtro de data em leads (31/10/2026)
+
+O módulo de leads não tinha filtro por data. Adicionado `from_date`
+e `to_date` em list, count e export CSV. UI com campos de data na seção
+de filtros. Exportação CSV respeita os filtros de data.
+**2057 testes passaram** (8 novos); compileall, diff-check: PASS.

@@ -551,6 +551,16 @@ footer {
   font-size: 0.78rem;
   color: var(--muted);
 }
+/* WP-152 — Lead date filter */
+.lead-date-filter {
+  padding: 4px 8px;
+  font-size: 0.82rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
 .lead-list {
   display: grid;
   gap: 10px;
