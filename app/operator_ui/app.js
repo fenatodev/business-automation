@@ -14,6 +14,8 @@
   let selectedId = null;
   let activeBrief = null;
   let selectionVersion = 0;
+  let conversations = [];
+  let selectedConvId = null;
 
   const briefFields = [
     "offer_reference",
@@ -96,6 +98,8 @@
     $("it-summary").textContent = "Resumo indisponível.";
     $("it-filter").value = "";
     opportunities = [];
+    conversations = [];
+    selectedConvId = null;
     clearSelection();
     $("workspace").hidden = true;
     $("access-status").textContent = "Desconectado";
@@ -572,4 +576,161 @@
       );
     });
   });
+
+  // Conversations — strict allowlist, same pattern as reviewApi/taskApi.
+  async function conversationApi(path, method = "GET", body) {
+    if (!bearer) throw new Error("Conecte um operador.");
+    if (!(/^\/companies\/\d+\/conversations$/.test(path) ||
+          /^\/conversations\/$/.test(path) ||
+          /^\/conversations\/\d+\/$/.test(path) ||
+          /^\/conversations\/\d+\/messages$/.test(path))) {
+      throw new Error("Rota de conversas não permitida.");
+    }
+    const epoch = sessionEpoch;
+    const headers = {Authorization: "Bearer " + bearer};
+    if (body !== undefined) headers["Content-Type"] = "application/json";
+    const response = await fetch(path, {method, headers, body: body === undefined ? undefined : JSON.stringify(body),
+      credentials: "omit", cache: "no-store", redirect: "error", referrerPolicy: "no-referrer"});
+    if (epoch !== sessionEpoch) throw new Error("Sessão encerrada.");
+    if (response.status === 401) {
+      disconnect("Credencial inválida.");
+      throw new ApiFailure(401);
+    }
+    if (!response.ok) throw new ApiFailure(response.status);
+    return response.json();
+  }
+
+  const channelLabels = {
+    whatsapp: "WhatsApp",
+    instagram: "Instagram",
+    web: "Web",
+    telegram: "Telegram",
+    email: "E-mail",
+  };
+
+  const senderLabels = {
+    customer: "Cliente",
+    agent: "Agente",
+    human: "Humano",
+    system: "Sistema",
+  };
+
+  function showConversationList() {
+    const target = $("conv-list");
+    target.replaceChildren();
+    const ordered = [...conversations].sort((a, b) => b.id - a.id);
+    if (!ordered.length) {
+      const empty = document.createElement("p");
+      empty.className = "small";
+      empty.textContent = "Nenhuma conversa registrada.";
+      target.append(empty);
+      return;
+    }
+    for (const conv of ordered) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "conversation-item";
+      button.classList.toggle("active", conv.id === selectedConvId);
+      const channel = channelLabels[conv.channel] || conv.channel;
+      const title = document.createElement("strong");
+      title.textContent = "#" + conv.id + " · " + channel;
+      const meta = document.createElement("span");
+      meta.textContent = conv.status || "—";
+      button.append(title, meta);
+      button.addEventListener("click", () => {
+        selectConversation(conv.id).catch(() => {
+          notify("Falha ao carregar mensagens desta conversa.", true);
+        });
+      });
+      target.append(button);
+    }
+  }
+
+  async function selectConversation(id) {
+    selectedConvId = id;
+    showConversationList();
+    $("conv-detail").hidden = false;
+    const conv = conversations.find((c) => c.id === id);
+    const channel = conv ? (channelLabels[conv.channel] || conv.channel) : "Conversa";
+    $("conv-detail-header").textContent = channel + " · #" + id;
+    try {
+      const messages = await conversationApi("/conversations/" + id + "/messages");
+      if (selectedConvId !== id) return;
+      const target = $("conv-messages");
+      target.replaceChildren();
+      if (!messages.length) {
+        const empty = document.createElement("p");
+        empty.className = "small";
+        empty.textContent = "Nenhuma mensagem.";
+        target.append(empty);
+        return;
+      }
+      for (const msg of messages) {
+        const bubble = document.createElement("div");
+        bubble.className = "message-bubble";
+        bubble.classList.add(msg.sender_type);
+        const header = document.createElement("span");
+        header.className = "message-sender";
+        header.textContent = senderLabels[msg.sender_type] || msg.sender_type;
+        const content = document.createElement("p");
+        content.className = "message-content";
+        content.textContent = msg.content || "";
+        bubble.append(header, content);
+        target.append(bubble);
+      }
+    } catch (error) {
+      if (selectedConvId !== id) return;
+      notify("Não foi possível carregar as mensagens.", true);
+    }
+  }
+
+  async function refreshConversations() {
+    try {
+      const company = opportunities.length > 0 ? opportunities[0].company_id : null;
+      if (company) {
+        conversations = await conversationApi("/companies/" + company + "/conversations");
+      } else {
+        conversations = [];
+      }
+    } catch (error) {
+      conversations = [];
+    }
+    showConversationList();
+    if (selectedConvId !== null && conversations.some((c) => c.id === selectedConvId)) {
+      await selectConversation(selectedConvId);
+    } else if (selectedConvId !== null) {
+      selectedConvId = null;
+      $("conv-detail").hidden = true;
+      showConversationList();
+    }
+  }
+
+  $("conv-refresh").addEventListener("click", () => {
+    withButton($("conv-refresh"), async () => {
+      await refreshConversations();
+      notify("Conversas atualizadas.");
+    });
+  });
+
+  $("conv-list").replaceChildren();
+  $("conv-detail").hidden = true;
+
+  // Integrate conversations into the connect flow.
+  const _origAccessSubmit = $("access-form").onsubmit;
+  $("access-form").addEventListener("submit", async (event) => {
+    // The original handler runs first; we intercept after workspace is shown.
+    // Use a MutationObserver to detect when workspace.hidden becomes false.
+  }, true);
+  // Simpler: just patch the connect success path by wrapping the existing behavior.
+  // The access-form submit handler sets workspace.hidden = false on success.
+  // We observe that change and load conversations.
+  const workspaceObserver = new MutationObserver((records) => {
+    for (const record of records) {
+      if (record.attributeName === "hidden" && !$("workspace").hidden && bearer) {
+        refreshConversations().catch(() => {});
+        workspaceObserver.disconnect();
+      }
+    }
+  });
+  workspaceObserver.observe($("workspace"), {attributes: true});
 })();

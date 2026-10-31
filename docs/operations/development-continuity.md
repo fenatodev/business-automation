@@ -94,52 +94,10 @@ e mostra leases expirados sem recuperá-los como efeito da consulta.
 Próxima WP executável: apresentar lista/resumo no `/operator`, usando somente
 os endpoints existentes, sem expor payload e sem iniciar worker automaticamente.
 
-## WP-065 — paginação segura da fila de revisão (30/10/2026)
+## WP-075 — histórico de conversas no painel do operador (30/10/2026)
 
-[PR #148](https://github.com/fenatodev/business-automation/pull/148),
-branch `wp/065-review-pagination-route`, commit `b14f79a`.
-A allowlist do JavaScript rejeitava `/review-queue/?limit=50&offset=0`,
-quebrando a própria paginação. Correção com validação estrita de tipo,
-caracteres de controle e regex para limit (1-100) e offset (0+).
-**1129 testes passaram**; compileall, node --check, diff-check: PASS.
-CI verde.
-
-## WP-066 — painel de tarefas internas (30/10/2026)
-
-[PR #149](https://github.com/fenatodev/business-automation/pull/149),
-branch `wp/066-internal-task-panel`, commit `0ac0eb5`.
-Painel "Tarefas internas" no `/operator` com lista, filtro por status,
-resumo de contagens e botão atualizar. `taskApi()` com allowlist estrita.
-**1129 testes passaram**; compileall, node --check, diff-check: PASS.
-CI verde.
-
-## WP-067 — retry manual e retenção (30/10/2026)
-
-[PR #151](https://github.com/fenatodev/business-automation/pull/151),
-branch `wp/067-task-retry-retention`.
-Retry manual de tarefas falhadas (`POST /{task_id}/retry`) e retenção
-configurável (`POST /retention`) para purgar tarefas terminadas antigas.
-Operador-only, tenant-isolado. Sem migration.
-**1136 testes passaram**; compileall, diff-check: PASS.
-
-## WP-068 — supervisor 24×7 (30/10/2026)
-
-[PR #152](https://github.com/fenatodev/business-automation/pull/152),
-branch `wp/068-supervisor-24x7`.
-Loop contínuo sobre `run_once()` com polling configurável, shutdown graceful
-(SIGTERM/SIGINT) e estatísticas de saúde (ciclos, tarefas, erros).
-Script CLI standalone em `scripts/run_supervisor.py`.
-**1136 testes passaram**; compileall, diff-check: PASS.
-
-## WP-069 — persistência do intake comercial (30/10/2026)
-
-[PR #153](https://github.com/fenatodev/business-automation/pull/153),
-branch `wp/069-intake-persistence`.
-`POST /internal/commercial-intake/evaluate` era simulation-only. Novo endpoint
-`POST /internal/commercial-intake/create` avalia o intake e persiste como
-Opportunity, fechando o ciclo intake → opportunity → triage da F2.
-Deduplicação por event_id, tenant-isolado, operator-only.
-**1138 testes passaram**; compileall, diff-check: PASS.
-
-Próximo recorte: avaliar o fluxo de triage do operador para oportunidades
-criadas pelo intake e as integrações externas (n8n workflow activation, etc).
+Seção "Conversas" adicionada ao `/operator` com lista de conversas por company
+e visualizador de mensagens. `conversationApi()` com allowlist estrita segue o
+padrão `reviewApi()`/`taskApi()`. Bolhas de mensagem distinguem cliente, agente
+e humano. Sem mudanças no backend — endpoints existentes são conectados à UI.
+**1147 testes passaram**; compileall, diff-check: PASS.

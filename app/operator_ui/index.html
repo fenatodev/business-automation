@@ -173,6 +173,22 @@
           </section>
         </div>
       </div>
+
+      <section class="panel" aria-labelledby="conversations-title">
+        <div class="panel-heading">
+          <div>
+            <span class="section-index">06 / COMUNICAÇÃO</span>
+            <h2 id="conversations-title">Conversas</h2>
+          </div>
+          <button id="conv-refresh" type="button">Atualizar</button>
+        </div>
+        <p class="small">Histórico de conversas por canal. Selecione uma conversa para ver as mensagens.</p>
+        <div id="conv-list" class="conversation-list"></div>
+        <div id="conv-detail" class="conv-detail" hidden>
+          <h3 id="conv-detail-header"></h3>
+          <div id="conv-messages" class="conv-messages"></div>
+        </div>
+      </section>
     </main>
 
     <footer>Operação interna · dados e permissões pertencem à API · sem envio automático de propostas</footer>
