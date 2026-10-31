@@ -15,6 +15,7 @@ class LeadCreate(BaseModel):
 class AgentRequest(BaseModel):
     content: str
     system_prompt: str | None = None  # WP-202 — optional custom system prompt
+    temperature: float | None = None  # WP-203 — optional temperature (0.0-2.0)
 
 
 class ConversationCreate(BaseModel):

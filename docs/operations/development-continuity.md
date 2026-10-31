@@ -938,3 +938,13 @@ padrão. `AgentRequest` schema com `system_prompt` opcional. O endpoint
 configuração por Company (F3) sem migration.
 
 **2459 testes passaram** (10 novos); compileall, diff-check: PASS.
+
+### WP-203 — Temperatura configurável no agente
+
+O agente de IA usava temperatura fixa do modelo. Agora `generate_agent_reply()`
+aceita `temperature` opcional (float 0.0-2.0), passando para o Ollama via
+`options` dict. `AgentRequest` schema com `temperature` opcional. O endpoint
+`POST /agent-reply` passa a temperatura. Complementa o system_prompt (WP-202)
+preparando para configuração por Company (F3) sem migration.
+
+**2489 testes passaram** (15 novos); compileall, diff-check: PASS.
