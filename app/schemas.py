@@ -185,6 +185,21 @@ class OpportunityBulkTriage(BaseModel):
     triage_note: str | None = Field(default=None, max_length=2000)
 
 
+class OpportunityBulkDelete(BaseModel):
+    """Bulk delete multiple opportunities."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    opportunity_ids: list[int] = Field(min_length=1, max_length=100)
+
+
+class ConversationBulkDelete(BaseModel):
+    """Bulk delete multiple conversations."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    conversation_ids: list[int] = Field(min_length=1, max_length=100)
+
 
 class ProposalBriefCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
