@@ -123,6 +123,11 @@
     $("edit-description").value = "";
     $("brief-guide").textContent = "";
     $("brief-status").textContent = "Sem brief";
+    // WP-201 — Reset triage option visibility for next selection
+    for (const option of $("next-action").querySelectorAll("option")) {
+      option.hidden = false;
+      option.disabled = false;
+    }
   }
 
   function disconnect(message = "Acesso desconectado.") {
@@ -404,7 +409,23 @@
     text("selected-budget", record.budget);
     text("selected-deadline", record.deadline);
     text("selected-requirements", record.requirements);
-    $("next-action").value = record.next_action;
+    // WP-201 — Filter triage options based on valid transitions
+    const _VALID_TRANSITIONS = {
+      pending: ["pending", "follow", "ignore", "prepare_proposal", "in_progress"],
+      ignore: ["ignore"],
+      follow: ["pending", "follow", "ignore", "prepare_proposal", "in_progress"],
+      prepare_proposal: ["pending", "follow", "prepare_proposal", "in_progress"],
+      in_progress: ["in_progress", "done", "lost"],
+      done: ["done"],
+      lost: ["lost"],
+    };
+    const allowed = _VALID_TRANSITIONS[record.next_action] || [];
+    const nextActionSelect = $("next-action");
+    for (const option of nextActionSelect.querySelectorAll("option")) {
+      option.hidden = !allowed.includes(option.value);
+      option.disabled = !allowed.includes(option.value);
+    }
+    nextActionSelect.value = record.next_action;
     $("triage-note").value = record.triage_note || "";
     // WP-113 — populate standalone note editor
     $("opp-note").value = record.triage_note || "";
