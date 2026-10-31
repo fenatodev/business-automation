@@ -1540,6 +1540,15 @@ footer {
   color: var(--text);
   font-size: 0.9rem;
 }
+/* WP-183 — Brief date filter */
+.briefs-date-filter {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 0.9rem;
+}
 .briefs-pagination {
   display: flex;
   align-items: center;

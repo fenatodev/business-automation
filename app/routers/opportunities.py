@@ -855,6 +855,8 @@ def reject_proposal_brief(
 def list_proposal_briefs(
     status: str | None = Query(default=None, description="Filter by brief status"),
     q: str | None = Query(default=None, description="Search keywords in title and offer reference"),
+    from_date: str | None = Query(default=None, description="Filter created_at >= date (YYYY-MM-DD)"),
+    to_date: str | None = Query(default=None, description="Filter created_at <= date (YYYY-MM-DD)"),
     sort: str = Query(default="created_at", description="Sort by: created_at, id, status"),
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -888,6 +890,11 @@ def list_proposal_briefs(
             func.lower(ProposalBrief.offer_reference).like(func.lower(pattern))
         )
 
+    if from_date:
+        query = query.where(ProposalBrief.created_at >= from_date)
+    if to_date:
+        query = query.where(ProposalBrief.created_at <= to_date + "T23:59:59")
+
     if sort == "created_at":
         query = query.order_by(desc(ProposalBrief.created_at), desc(ProposalBrief.id))
     elif sort == "status":
@@ -914,6 +921,8 @@ def list_proposal_briefs(
 def count_proposal_briefs(
     status: str | None = Query(default=None, description="Filter by brief status"),
     q: str | None = Query(default=None, description="Search keywords in title and offer reference"),
+    from_date: str | None = Query(default=None, description="Filter created_at >= date (YYYY-MM-DD)"),
+    to_date: str | None = Query(default=None, description="Filter created_at <= date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
@@ -935,6 +944,11 @@ def count_proposal_briefs(
             func.lower(ProposalBrief.offer_reference).like(func.lower(pattern))
         )
 
+    if from_date:
+        query = query.where(ProposalBrief.created_at >= from_date)
+    if to_date:
+        query = query.where(ProposalBrief.created_at <= to_date + "T23:59:59")
+
     count = db.execute(query).scalar_one()
     return {"count": count}
 
@@ -943,6 +957,8 @@ def count_proposal_briefs(
 def export_briefs_csv(
     status: str | None = Query(default=None, description="Filter by brief status"),
     q: str | None = Query(default=None, description="Search keywords in title and offer reference"),
+    from_date: str | None = Query(default=None, description="Filter created_at >= date (YYYY-MM-DD)"),
+    to_date: str | None = Query(default=None, description="Filter created_at <= date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
@@ -970,6 +986,11 @@ def export_briefs_csv(
             func.lower(Opportunity.title).like(func.lower(pattern)) |
             func.lower(ProposalBrief.offer_reference).like(func.lower(pattern))
         )
+
+    if from_date:
+        query = query.where(ProposalBrief.created_at >= from_date)
+    if to_date:
+        query = query.where(ProposalBrief.created_at <= to_date + "T23:59:59")
 
     rows = db.execute(query).all()
 

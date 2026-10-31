@@ -3483,8 +3483,12 @@
     const status = $("briefs-status-filter") ? $("briefs-status-filter").value : "";
     const q = $("briefs-search") ? $("briefs-search").value.trim() : "";
     const sort = $("briefs-sort") ? $("briefs-sort").value : "created_at";
+    const fromDate = $("briefs-from-date") ? $("briefs-from-date").value : "";
+    const toDate = $("briefs-to-date") ? $("briefs-to-date").value : "";
     if (status) params.push("status=" + encodeURIComponent(status));
     if (q) params.push("q=" + encodeURIComponent(q));
+    if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
+    if (toDate) params.push("to_date=" + encodeURIComponent(toDate));
     params.push("sort=" + encodeURIComponent(sort));
     params.push("limit=" + briefPageSize);
     params.push("offset=" + briefOffset);
@@ -3495,8 +3499,12 @@
     const params = [];
     const status = $("briefs-status-filter") ? $("briefs-status-filter").value : "";
     const q = $("briefs-search") ? $("briefs-search").value.trim() : "";
+    const fromDate = $("briefs-from-date") ? $("briefs-from-date").value : "";
+    const toDate = $("briefs-to-date") ? $("briefs-to-date").value : "";
     if (status) params.push("status=" + encodeURIComponent(status));
     if (q) params.push("q=" + encodeURIComponent(q));
+    if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
+    if (toDate) params.push("to_date=" + encodeURIComponent(toDate));
     return "/proposal-briefs/count" + (params.length ? "?" + params.join("&") : "");
   }
 
@@ -3583,6 +3591,16 @@
     refreshBriefs().catch(() => {});
   }, 300));
 
+  $("briefs-from-date").addEventListener("change", () => {
+    briefOffset = 0;
+    refreshBriefs().catch(() => {});
+  });
+
+  $("briefs-to-date").addEventListener("change", () => {
+    briefOffset = 0;
+    refreshBriefs().catch(() => {});
+  });
+
   $("briefs-prev-page").addEventListener("click", () => {
     briefOffset = Math.max(0, briefOffset - briefPageSize);
     refreshBriefs().catch(() => {});
@@ -3597,6 +3615,8 @@
     if ($("briefs-status-filter")) $("briefs-status-filter").value = "";
     if ($("briefs-search")) $("briefs-search").value = "";
     if ($("briefs-sort")) $("briefs-sort").value = "created_at";
+    if ($("briefs-from-date")) $("briefs-from-date").value = "";
+    if ($("briefs-to-date")) $("briefs-to-date").value = "";
     briefOffset = 0;
     refreshBriefs().catch(() => {});
   });
@@ -3605,8 +3625,12 @@
     const params = [];
     const status = $("briefs-status-filter") ? $("briefs-status-filter").value : "";
     const q = $("briefs-search") ? $("briefs-search").value.trim() : "";
+    const fromDate = $("briefs-from-date") ? $("briefs-from-date").value : "";
+    const toDate = $("briefs-to-date") ? $("briefs-to-date").value : "";
     if (status) params.push("status=" + encodeURIComponent(status));
     if (q) params.push("q=" + encodeURIComponent(q));
+    if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
+    if (toDate) params.push("to_date=" + encodeURIComponent(toDate));
     const url = "/proposal-briefs/export.csv" + (params.length ? "?" + params.join("&") : "");
     downloadCsv(url, "proposal-briefs.csv");
     notify("Exportando briefs...");

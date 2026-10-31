@@ -816,3 +816,10 @@ O módulo de briefs não tinha exportação CSV. Adicionado
 completando a paridade com os outros módulos.
 
 **2341 testes passaram** (6 novos); compileall, diff-check: PASS.
+
+### WP-183 — Filtro de data em briefs
+
+O módulo de briefs não tinha filtro por data. Adicionado \`from_date\`/ \`to_date\`
+em list, count e export CSV, completando a paridade com os outros módulos.
+
+**2347 testes passaram** (6 novos); compileall, diff-check: PASS.
