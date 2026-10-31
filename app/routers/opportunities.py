@@ -119,6 +119,7 @@ def create_opportunity(
 @router.get("/opportunities")
 def list_opportunities(
     exclude_archived: bool = False,
+    next_action: str | None = Query(None, description="Filter by next_action status"),
     q: str | None = Query(None, description="Search keywords in title and description"),
     sort: str = Query(default="id", description="Sort by: id, created_at, next_action"),
     limit: int = Query(default=50, ge=1, le=100),
@@ -126,7 +127,7 @@ def list_opportunities(
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    """List opportunities with optional archive filter, search, sort, and pagination."""
+    """List opportunities with optional filters, search, sort, and pagination."""
     stmt = (
         select(Opportunity)
         .where(Opportunity.company_id == identity.company_id)
@@ -134,6 +135,9 @@ def list_opportunities(
 
     if exclude_archived:
         stmt = stmt.where(Opportunity.next_action.notin_(["done", "lost"]))
+
+    if next_action is not None:
+        stmt = stmt.where(Opportunity.next_action == next_action)
 
     if q:
         pattern = f"%{q}%"
@@ -156,11 +160,12 @@ def list_opportunities(
 @router.get("/opportunities/count")
 def count_opportunities(
     exclude_archived: bool = False,
+    next_action: str | None = Query(None, description="Filter by next_action status"),
     q: str | None = Query(None, description="Search keywords in title and description"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    """Count opportunities with optional archive filter and search."""
+    """Count opportunities with optional filters."""
     stmt = (
         select(func.count())
         .select_from(Opportunity)
@@ -169,6 +174,9 @@ def count_opportunities(
 
     if exclude_archived:
         stmt = stmt.where(Opportunity.next_action.notin_(["done", "lost"]))
+
+    if next_action is not None:
+        stmt = stmt.where(Opportunity.next_action == next_action)
 
     if q:
         pattern = f"%{q}%"
@@ -179,6 +187,23 @@ def count_opportunities(
 
     total = db.scalar(stmt)
     return {"total": total}
+
+
+@router.get("/opportunities/pipeline-summary")
+def pipeline_summary(
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Return opportunity counts grouped by next_action (tenant-isolated)."""
+    rows = db.execute(
+        select(
+            Opportunity.next_action,
+            func.count(Opportunity.id),
+        )
+        .where(Opportunity.company_id == identity.company_id)
+        .group_by(Opportunity.next_action)
+    ).all()
+    return {row[0]: row[1] for row in rows}
 
 
 @router.get("/opportunities/{opportunity_id}")

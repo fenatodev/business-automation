@@ -270,3 +270,26 @@ O módulo de leads tinha filtro por status mas não tinha busca por keywords.
 Adicionado parâmetro `?q=` em `GET /leads` com busca case-insensitive em
 nome e interesse. UI com campo de busca inline que filtra em tempo real.
 **1503 testes passaram**; compileall, diff-check: PASS.
+
+## WP-100 — Paginação de leads no operador (31/10/2026)
+
+O módulo de leads não tinha paginação. Adicionado `limit`/`offset` em
+`GET /leads` e novo `GET /leads/count`. UI com controles Anterior/Próxima
+e indicador de página. **1527 testes passaram**; compileall, diff-check: PASS.
+
+## WP-101 — Ordenação de leads no operador (31/10/2026)
+
+O módulo de leads não tinha ordenação configurável. Adicionado parâmetro
+`sort` em `GET /leads` (id, created_at, status). UI com dropdown "Ordenar".
+**1527 testes passaram**; compileall, diff-check: PASS.
+
+## WP-103 — Consolidação da main (31/10/2026)
+
+As WPs da WP-078 à WP-101 foram merged em cadeia nas branches WP, não na
+main. A main ficou com versão antiga do código enquanto os testes antigos
+permaneciam. Esta WP consolida todas as mudanças na main: remove testes UI
+obsoletos substituídos pela versão unificada (WP-077), adiciona filtro
+`next_action` e endpoint `pipeline-summary` ao router de oportunidades,
+corrige `test_client0_simulation.py` para usar `/approve` dedicado e
+atualiza `test_operator_ui.py` para refletir botões approve/reject.
+**1555 testes passaram**; compileall, diff-check: PASS.
