@@ -158,10 +158,11 @@
     // WP-139 — allow /opportunities/pipeline-summary
     // WP-142 — allow /opportunities/{id}/conversations
     // WP-143 — allow /opportunities/{id}/timeline
+    // WP-144 — allow /opportunities/{id}/leads
     if (!/^\/opportunities(\?[^"]*)?$/.test(path) &&
         !/^\/opportunities\/count(\?[^"]*)?$/.test(path) &&
         !/^\/opportunities\/pipeline-summary$/.test(path) &&
-        !/^\/opportunities\/\d+(\/(triage|proposal-brief|conversations|timeline)(\/approve|\/reject)?)?$/.test(path)) {
+        !/^\/opportunities\/\d+(\/(triage|proposal-brief|conversations|leads|timeline)(\/approve|\/reject)?)?$/.test(path)) {
       throw new Error("Rota não permitida nesta interface.");
     }
     const epoch = sessionEpoch;
@@ -364,6 +365,8 @@
     await loadOpportunityConversations(id);
     // WP-143 — load activity timeline
     await loadOpportunityTimeline(id);
+    // WP-144 — load related leads
+    await loadOpportunityLeads(id);
   }
 
   // WP-142 — Load conversations related to the selected opportunity
@@ -431,6 +434,45 @@
     } catch (error) {
       // Silently fail — timeline is supplementary info
       $("opp-timeline-list").replaceChildren();
+    }
+  }
+
+  // WP-144 — Load leads related to the selected opportunity
+  async function loadOpportunityLeads(id) {
+    try {
+      const leads = await api("/opportunities/" + id + "/leads");
+      const list = $("opp-leads-list");
+      list.replaceChildren();
+      if (!leads || !leads.length) {
+        const empty = document.createElement("p");
+        empty.className = "small";
+        empty.textContent = "Nenhum lead registrado.";
+        list.appendChild(empty);
+        return;
+      }
+      for (const lead of leads) {
+        const item = document.createElement("div");
+        item.className = "opp-lead-item";
+        const title = document.createElement("strong");
+        title.textContent = lead.name || "Sem nome";
+        const meta = document.createElement("span");
+        meta.className = "small";
+        const parts = [];
+        if (lead.phone) parts.push(lead.phone);
+        if (lead.source) parts.push("via " + lead.source);
+        if (lead.status) parts.push("(" + lead.status + ")");
+        meta.textContent = " " + parts.join(" · ");
+        item.append(title, meta);
+        item.addEventListener("click", () => {
+          // Navigate to the leads section
+          workspaceObserver.disconnect();
+          refreshLeads().catch(() => {});
+        });
+        list.appendChild(item);
+      }
+    } catch (error) {
+      // Silently fail — leads are supplementary info
+      $("opp-leads-list").replaceChildren();
     }
   }
 
