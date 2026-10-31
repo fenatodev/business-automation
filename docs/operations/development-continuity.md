@@ -920,3 +920,11 @@ oportunidades. Adicionado `opportunities_by_source` ao endpoint
 no dashboard do operador.
 
 **2444 testes passaram** (9 novos); compileall, diff-check: PASS.
+
+### WP-199 — Fontes de lead no dashboard
+
+Mesmo padrão da WP-198 aplicado aos leads: `leads_by_source` no
+endpoint `/internal-tasks/dashboard` e seção visual "📊 Fontes de lead"
+no dashboard do operador.
+
+**2449 testes passaram** (5 novos); compileall, diff-check: PASS.

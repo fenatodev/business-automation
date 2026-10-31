@@ -1809,27 +1809,50 @@
     }
 
     // WP-198 — Opportunities by source
-    const sourceSection = $("opp-source-section");
-    const sourceList = $("opp-source-list");
-    const sources = data.opportunities_by_source || {};
-    sourceList.replaceChildren();
-    const sourceLabels = {
+    const oppSourceSection = $("opp-source-section");
+    const oppSourceList = $("opp-source-list");
+    const oppSources = data.opportunities_by_source || {};
+    oppSourceList.replaceChildren();
+    const oppSourceLabels = {
       "manual": "Manual",
       "intake": "Intake comercial",
       "review_queue": "Fila de revisão",
       "import": "Importação CSV",
       "99freelas": "99Freelas",
     };
-    let hasSources = false;
-    for (const [k, v] of Object.entries(sources)) {
+    let hasOppSources = false;
+    for (const [k, v] of Object.entries(oppSources)) {
       if (k === "total") continue;
-      hasSources = true;
+      hasOppSources = true;
       const li = document.createElement("li");
       li.className = "next-action-item";
-      li.textContent = (sourceLabels[k] || k) + ": " + v;
-      sourceList.appendChild(li);
+      li.textContent = (oppSourceLabels[k] || k) + ": " + v;
+      oppSourceList.appendChild(li);
     }
-    sourceSection.hidden = !hasSources;
+    oppSourceSection.hidden = !hasOppSources;
+
+    // WP-199 — Leads by source
+    const leadSourceSection = $("lead-source-section");
+    const leadSourceList = $("lead-source-list");
+    const leadSources = data.leads_by_source || {};
+    leadSourceList.replaceChildren();
+    const leadSourceLabels = {
+      "site": "Site",
+      "manual": "Manual",
+      "intake": "Intake comercial",
+      "99freelas": "99Freelas",
+      "import": "Importação CSV",
+    };
+    let hasLeadSources = false;
+    for (const [k, v] of Object.entries(leadSources)) {
+      if (k === "total") continue;
+      hasLeadSources = true;
+      const li = document.createElement("li");
+      li.className = "next-action-item";
+      li.textContent = (leadSourceLabels[k] || k) + ": " + v;
+      leadSourceList.appendChild(li);
+    }
+    leadSourceSection.hidden = !hasLeadSources;
 
     // WP-161 — Next actions summary
     // WP-193 — Clickable next actions that scroll to section

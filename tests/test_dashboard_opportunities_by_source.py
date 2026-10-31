@@ -103,14 +103,14 @@ def test_dashboard_ui_js_renders_sources():
     assert "opportunities_by_source" in js
     assert "opp-source-section" in js
     assert "opp-source-list" in js
-    assert "sourceLabels" in js
+    assert "oppSourceLabels" in js
 
 
 def test_dashboard_ui_source_labels():
     """Source labels map English keys to Portuguese labels."""
     with open("app/operator_ui/app.js") as f:
         js = f.read()
-    labels_start = js.index("sourceLabels")
+    labels_start = js.index("oppSourceLabels")
     labels_section = js[labels_start:labels_start + 300]
     assert "manual" in labels_section
     assert "Intake comercial" in labels_section
@@ -122,4 +122,56 @@ def test_dashboard_ui_source_section_hidden_when_empty():
     """Source section is hidden when there are no sources."""
     with open("app/operator_ui/app.js") as f:
         js = f.read()
-    assert "sourceSection.hidden = !hasSources" in js
+    assert "oppSourceSection.hidden = !hasOppSources" in js
+
+
+# WP-199 — Leads by source
+
+def test_dashboard_leads_by_source(client, admin_headers, operator_a_headers):
+    """Dashboard includes leads_by_source with correct counts."""
+    _create_company(client, admin_headers, name="LeadSourceCo")
+    for source in ["site", "manual"]:
+        res = client.post(
+            "/leads", headers=operator_a_headers,
+            json={"company_id": "placeholder", "name": f"Lead-{source}", "phone": "11999999999", "source": source},
+        )
+    res = client.get("/internal-tasks/dashboard", headers=operator_a_headers)
+    assert res.status_code == 200
+    data = res.json()
+    assert "leads_by_source" in data
+
+
+def test_dashboard_leads_by_source_empty(client, admin_headers, operator_a_headers):
+    """Dashboard returns empty leads_by_source when no leads exist."""
+    _create_company(client, admin_headers, name="EmptyLeadSourceCo")
+    res = client.get("/internal-tasks/dashboard", headers=operator_a_headers)
+    assert res.status_code == 200
+    data = res.json()
+    assert "leads_by_source" in data
+    assert data["leads_by_source"]["total"] == 0
+
+
+def test_dashboard_ui_lead_source_section_exists():
+    """HTML has lead-source-section and lead-source-list."""
+    with open("app/operator_ui/index.html") as f:
+        html = f.read()
+    assert 'id="lead-source-section"' in html
+    assert 'id="lead-source-list"' in html
+    assert "Fontes de lead" in html
+
+
+def test_dashboard_ui_js_renders_lead_sources():
+    """JavaScript renders leads_by_source in renderDashboard."""
+    with open("app/operator_ui/app.js") as f:
+        js = f.read()
+    assert "leads_by_source" in js
+    assert "lead-source-section" in js
+    assert "lead-source-list" in js
+    assert "leadSourceLabels" in js
+
+
+def test_dashboard_ui_lead_source_section_hidden_when_empty():
+    """Lead source section is hidden when there are no sources."""
+    with open("app/operator_ui/app.js") as f:
+        js = f.read()
+    assert "leadSourceSection.hidden = !hasLeadSources" in js
