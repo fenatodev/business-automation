@@ -1456,6 +1456,11 @@
         ]);
         conversations = convs;
         convTotal = countResult.total || 0;
+        // WP-175 — update open conversations badge
+        const openConvs = convs.filter((c) => c.status === "open").length;
+        const convBadge = $("conv-open-badge");
+        if (openConvs > 0) { convBadge.hidden = false; convBadge.textContent = openConvs; }
+        else { convBadge.hidden = true; }
       } else {
         conversations = [];
         convTotal = 0;
@@ -1758,20 +1763,38 @@
   async function updateNotifications() {
     if (!bearer) return;
     try {
-      const res = await fetch("/opportunities", {
-        headers: {"Authorization": "Bearer " + bearer},
-      });
-      if (res.status === 403) return;
-      if (!res.ok) return;
-      const result = await res.json();
-      if (!Array.isArray(result)) return;
-      const pending = result.filter((o) => o.next_action === "pending").length;
-      const badge = $("pending-badge");
-      if (pending > 0) {
-        badge.hidden = false;
-        badge.textContent = pending;
-      } else {
-        badge.hidden = true;
+      const [oppRes, leadsRes, convRes] = await Promise.all([
+        fetch("/opportunities", {headers: {"Authorization": "Bearer " + bearer}}),
+        fetch("/leads?status=new&limit=100", {headers: {"Authorization": "Bearer " + bearer}}),
+        fetch("/companies/1/conversations?status=open&limit=100", {headers: {"Authorization": "Bearer " + bearer}}),
+      ]);
+      // Opportunities pending badge
+      if (oppRes.ok) {
+        const opps = await oppRes.json();
+        if (Array.isArray(opps)) {
+          const pending = opps.filter((o) => o.next_action === "pending").length;
+          const badge = $("pending-badge");
+          if (pending > 0) { badge.hidden = false; badge.textContent = pending; }
+          else { badge.hidden = true; }
+        }
+      }
+      // Leads new badge
+      if (leadsRes.ok) {
+        const leads = await leadsRes.json();
+        if (Array.isArray(leads)) {
+          const badge = $("lead-new-badge");
+          if (leads.length > 0) { badge.hidden = false; badge.textContent = leads.length; }
+          else { badge.hidden = true; }
+        }
+      }
+      // Conversations open badge — use count endpoint
+      if (convRes.ok) {
+        const convs = await convRes.json();
+        if (Array.isArray(convs)) {
+          const badge = $("conv-open-badge");
+          if (convs.length > 0) { badge.hidden = false; badge.textContent = convs.length; }
+          else { badge.hidden = true; }
+        }
       }
     } catch (_e) {
       // Silently ignore background notification errors
@@ -1859,6 +1882,11 @@
     ]);
     leadTotal = countResult ? countResult.total || 0 : 0;
     leadListLength = (leads || []).length;
+    // WP-175 — update new leads badge
+    const newLeads = (leads || []).filter((l) => l.status === "new").length;
+    const leadBadge = $("lead-new-badge");
+    if (newLeads > 0) { leadBadge.hidden = false; leadBadge.textContent = newLeads; }
+    else { leadBadge.hidden = true; }
     renderLeads(leads || []);
     updateLeadPagination();
   }
