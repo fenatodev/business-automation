@@ -502,3 +502,59 @@ footer {
   font-size: 0.82rem;
   color: var(--muted);
 }
+
+/* Customer detail — WP-087 */
+.customer-detail {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #101722;
+}
+.customer-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.customer-detail-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+.customer-detail-header button {
+  padding: 4px 10px;
+  font-size: 0.82rem;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--panel-alt);
+  color: var(--text);
+  cursor: pointer;
+}
+.customer-detail-header button:hover {
+  background: #1a2636;
+}
+.customer-detail-info {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.customer-conv-list {
+  display: grid;
+  gap: 8px;
+}
+.customer-conv-item {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #0d1420;
+}
+.customer-conv-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+}

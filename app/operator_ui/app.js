@@ -1101,6 +1101,9 @@
 
   // Customers — WP-086
 
+  // Customer detail state — WP-087
+  let currentCustomerId = null;
+
   async function customerApi(path, method, body) {
     if (!bearer) throw new Error("Conecte um operador.");
     const allowed = ["/customers"];
@@ -1140,6 +1143,11 @@
     for (const cust of customers) {
       const item = document.createElement("div");
       item.className = "customer-item";
+      item.style.cursor = "pointer";
+      item.addEventListener("click", () => {
+        showCustomerDetail(cust);
+      });
+
       const header = document.createElement("div");
       header.className = "customer-item-header";
       const name = document.createElement("span");
@@ -1171,10 +1179,96 @@
     }
   }
 
+  // Customer detail view — WP-087
+  async function showCustomerDetail(cust) {
+    currentCustomerId = cust.id;
+    $("customers-list").hidden = true;
+    $("customer-detail").hidden = false;
+    $("customer-detail-name").textContent = cust.name || "Sem nome";
+
+    const info = $("customer-detail-info");
+    info.replaceChildren();
+    if (cust.phone) {
+      const phone = document.createElement("span");
+      phone.textContent = "📞 " + cust.phone;
+      info.appendChild(phone);
+    }
+    if (cust.email) {
+      const email = document.createElement("span");
+      email.textContent = "✉️ " + cust.email;
+      info.appendChild(email);
+    }
+    if (cust.lead_id) {
+      const lead = document.createElement("span");
+      lead.textContent = "Lead #" + cust.lead_id;
+      info.appendChild(lead);
+    }
+
+    // Load conversations for this customer
+    await loadCustomerConversations(cust.id);
+  }
+
+  async function loadCustomerConversations(customerId) {
+    if (!bearer) return;
+    const convList = $("customer-conversations-list");
+    convList.replaceChildren();
+
+    try {
+      const company = opportunities.length > 0 ? opportunities[0].company_id : null;
+      if (!company) {
+        const p = document.createElement("p");
+        p.className = "small";
+        p.textContent = "Não é possível determinar a company.";
+        convList.appendChild(p);
+        return;
+      }
+      const params = new URLSearchParams();
+      params.set("customer_id", customerId);
+      const url = "/companies/" + company + "/conversations?" + params.toString();
+      const convs = await conversationApi(url);
+      if (!convs || !convs.length) {
+        const p = document.createElement("p");
+        p.className = "small";
+        p.textContent = "Nenhuma conversa encontrada.";
+        convList.appendChild(p);
+        return;
+      }
+
+      for (const conv of convs) {
+        const item = document.createElement("div");
+        item.className = "customer-conv-item";
+        const header = document.createElement("div");
+        header.className = "customer-conv-header";
+        const channel = document.createElement("span");
+        channel.className = "conv-channel-badge";
+        channel.textContent = conv.channel || "N/A";
+        header.appendChild(channel);
+        const status = document.createElement("span");
+        status.className = "conv-status-badge";
+        status.textContent = conv.status === "open" ? "Aberta" : "Fechada";
+        header.appendChild(status);
+        item.appendChild(header);
+        convList.appendChild(item);
+      }
+    } catch (e) {
+      console.error("[loadCustomerConversations] Erro:", e);
+    }
+  }
+
+  function hideCustomerDetail() {
+    currentCustomerId = null;
+    $("customers-list").hidden = false;
+    $("customer-detail").hidden = true;
+  }
+
   $("customers-refresh").addEventListener("click", () => withButton($("customers-refresh"), async () => {
     await refreshCustomers();
     notify("Customers atualizados.");
   }));
+
+  $("customer-detail-back").addEventListener("click", () => {
+    hideCustomerDetail();
+  });
 
   // Integrate conversations into the connect flow via MutationObserver.
   const workspaceObserver = new MutationObserver((records) => {
