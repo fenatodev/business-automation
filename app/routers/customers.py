@@ -65,13 +65,15 @@ def _get_tenant_lead(
 @router.get("/customers")
 def list_customers(
     q: str | None = Query(None, description="Search keywords in name, phone, and email"),
+    from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
+    to_date: str | None = Query(None, description="Filter created_at <= date (YYYY-MM-DD)"),
     sort: str = Query(default="id", description="Sort by: id, created_at, name"),
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    """List customers with optional search, sort, and pagination."""
+    """List customers with optional search, date filter, sort, and pagination."""
     stmt = (
         select(Customer)
         .where(Customer.company_id == identity.company_id)
@@ -84,6 +86,11 @@ def list_customers(
             | Customer.phone.like(pattern)
             | Customer.email.like(pattern)
         )
+    # WP-153 — date range filter
+    if from_date:
+        stmt = stmt.where(Customer.created_at >= from_date)
+    if to_date:
+        stmt = stmt.where(Customer.created_at <= to_date + "T23:59:59")
 
     if sort == "name":
         stmt = stmt.order_by(Customer.name)
@@ -99,10 +106,12 @@ def list_customers(
 @router.get("/customers/count")
 def count_customers(
     q: str | None = Query(None, description="Search keywords in name, phone, and email"),
+    from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
+    to_date: str | None = Query(None, description="Filter created_at <= date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    """Count customers with optional search filter."""
+    """Count customers with optional search and date filter."""
     stmt = (
         select(func.count())
         .select_from(Customer)
@@ -116,6 +125,11 @@ def count_customers(
             | Customer.phone.like(pattern)
             | Customer.email.like(pattern)
         )
+    # WP-153 — date range filter
+    if from_date:
+        stmt = stmt.where(Customer.created_at >= from_date)
+    if to_date:
+        stmt = stmt.where(Customer.created_at <= to_date + "T23:59:59")
 
     total = db.scalar(stmt)
     return {"total": total}
@@ -124,6 +138,8 @@ def count_customers(
 @router.get("/customers/export.csv")
 def export_customers_csv(
     q: str | None = Query(None, description="Search keywords in name, phone, and email"),
+    from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
+    to_date: str | None = Query(None, description="Filter created_at <= date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
@@ -136,6 +152,11 @@ def export_customers_csv(
             | Customer.phone.like(pattern)
             | Customer.email.like(pattern)
         )
+    # WP-153 — date range filter
+    if from_date:
+        stmt = stmt.where(Customer.created_at >= from_date)
+    if to_date:
+        stmt = stmt.where(Customer.created_at <= to_date + "T23:59:59")
     customers = db.scalars(stmt.order_by(Customer.id)).all()
 
     output = io.StringIO()
