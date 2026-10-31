@@ -362,10 +362,14 @@ def list_messages(
 @router.get("/companies/{company_id}/conversations/export.csv")
 def export_conversations_csv(
     company_id: int,
+    channel: str | None = Query(None, description="Filter by channel"),
+    status: str | None = Query(None, description="Filter by status"),
+    q: str | None = Query(None, description="Search keywords in messages"),
+    customer_id: int | None = Query(None, description="Filter by customer"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator_company),
 ):
-    """Export all tenant conversations with their messages as CSV."""
+    """Export tenant conversations with their messages as CSV, respecting filters."""
     company = db.scalar(
         select(Company).where(Company.id == identity.company_id)
     )
@@ -376,11 +380,27 @@ def export_conversations_csv(
             detail="Company not found",
         )
 
-    conversations = db.scalars(
-        select(Conversation)
-        .where(Conversation.company_id == company_id)
-        .order_by(Conversation.id)
-    ).all()
+    stmt = select(Conversation).where(Conversation.company_id == company_id)
+
+    if channel is not None:
+        stmt = stmt.where(Conversation.channel == channel)
+
+    if status is not None:
+        stmt = stmt.where(Conversation.status == status)
+
+    if customer_id is not None:
+        stmt = stmt.where(Conversation.customer_id == customer_id)
+
+    if q is not None:
+        stmt = stmt.where(
+            Conversation.id.in_(
+                select(Message.conversation_id).where(
+                    func.lower(Message.content).like(f"%{q.lower()}%")
+                )
+            )
+        )
+
+    conversations = db.scalars(stmt.order_by(Conversation.id)).all()
 
     output = io.StringIO()
     writer = csv.writer(output)

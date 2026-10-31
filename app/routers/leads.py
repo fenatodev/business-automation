@@ -128,15 +128,22 @@ def count_leads(
 
 @router.get("/leads/export.csv")
 def export_leads_csv(
+    status: str | None = Query(None, description="Filter by status"),
+    q: str | None = Query(None, description="Search keywords in name and interest"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    """Export all tenant leads as a CSV file."""
-    leads = db.scalars(
-        select(Lead)
-        .where(Lead.company_id == identity.company_id)
-        .order_by(Lead.id)
-    ).all()
+    """Export tenant leads as a CSV file, respecting filters."""
+    query = select(Lead).where(Lead.company_id == identity.company_id)
+    if status:
+        query = query.where(Lead.status == status)
+    if q:
+        pattern = f"%{q}%"
+        query = query.where(
+            func.lower(Lead.name).like(func.lower(pattern)) |
+            func.lower(Lead.interest).like(func.lower(pattern))
+        )
+    leads = db.scalars(query.order_by(Lead.id)).all()
 
     output = io.StringIO()
     writer = csv.writer(output)
