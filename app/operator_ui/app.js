@@ -2543,6 +2543,41 @@
     notify("Exportando leads...");
   });
 
+  // WP-157 — Import CSV
+  $("leads-import-csv").addEventListener("click", () => {
+    $("leads-import-file").click();
+  });
+
+  $("leads-import-file").addEventListener("change", async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (!bearer) {notify("Não conectado.", true); return;}
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch("/leads/import.csv", {
+        method: "POST",
+        headers: {"Authorization": "Bearer " + bearer},
+        body: formData,
+      });
+      if (res.status === 403) {disconnect("Permissão de operador necessária."); return;}
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        notify("Falha ao importar: " + (data.detail || "erro desconhecido"), true);
+        return;
+      }
+      const data = await res.json();
+      notify(
+        "Importação concluída: " + data.imported + " importado(s), " +
+        data.skipped + " duplicata(s), " + data.errors + " erro(s)."
+      );
+      await refreshLeads();
+    } catch (err) {
+      notify("Falha ao importar CSV.", true);
+    }
+    event.target.value = "";
+  });
+
   // WP-153 — Export CSV with current filters
   $("customers-export-csv").addEventListener("click", () => {
     const params = [];

@@ -644,3 +644,10 @@ A lista de oportunidades mostrava apenas ID, título e status. `renderList()`
 agora exibe descrição truncada (120 caracteres) e linha de metadados com
 orçamento (💰) e prazo (📅) quando presentes. Sem mudança no backend.
 **2091 testes passaram** (16 novos); compileall, diff-check: PASS.
+
+### WP-157 — Importação CSV de leads
+
+O operador só podia criar leads manualmente um por um. `POST /leads/import.csv`
+aceita CSV com Nome, Telefone, Fonte e Interesse. Deduplicação por telefone,
+tenant isolation, limite de 500 linhas. Botão "Importar CSV" na UI.
+**2103 testes passaram** (12 novos); compileall, diff-check: PASS.
