@@ -302,3 +302,19 @@ telefone e email. Ordenação por `sort` (id, created_at, name). Paginação
 com `limit`/`offset` e novo `GET /customers/count`. UI com campo de busca,
 dropdown "Ordenar" e controles Anterior/Próxima.
 **1572 testes passaram** (17 novos); compileall, diff-check: PASS.
+
+## WP-110 — Editar customer via UI (31/10/2026)
+
+**Problema:** Não havia forma de editar um customer após a criação.
+
+**Solução:** `CustomerUpdate` schema parcial; `PATCH /customers/{id}` tenant-isolado; formulário inline no painel de detalhes com botão "Editar".
+
+**Changes:**
+- `schemas.py`: `CustomerUpdate` com name, phone, email opcionais.
+- `customers.py`: `PATCH /customers/{customer_id}` com `exclude_unset=True`.
+- `index.html`: Formulário `customer-edit-form` com nome, telefone, e-mail.
+- `app.js`: `showCustomerEditForm()`, `hideCustomerEditForm()`, `updateCustomer()`.
+- `tests/test_customer_update.py`: 10 testes backend.
+- `tests/test_wp110_customer_edit_ui.py`: 16 testes UI.
+
+**Validation:** 1598 testes passaram, 26 novos. compileall ✓, diff-check ✓.

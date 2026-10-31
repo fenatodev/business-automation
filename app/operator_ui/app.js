@@ -1326,6 +1326,35 @@
     return "/customers" + (search ? "?" + search : "");
   }
 
+  // WP-110 — Edit customer
+  async function showCustomerEditForm(cust) {
+    $("customer-edit-form").hidden = false;
+    $("customer-edit-name").value = cust.name || "";
+    $("customer-edit-phone").value = cust.phone || "";
+    $("customer-edit-email").value = cust.email || "";
+  }
+
+  function hideCustomerEditForm() {
+    $("customer-edit-form").hidden = true;
+  }
+
+  async function updateCustomer(customerId, data) {
+    if (!bearer) return;
+    const path = "/customers/" + customerId;
+    const res = await fetch(path, {
+      method: "PATCH",
+      headers: {
+        "Authorization": "Bearer " + bearer,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+    if (res.status === 403) {disconnect("Permissão de operador necessária."); return null;}
+    if (res.status === 404) {notify("Customer não encontrado.", true); return null;}
+    if (!res.ok) {notify("Falha ao atualizar customer.", true); return null;}
+    return res.json();
+  }
+
   function buildCustomerCountUrl() {
     const params = new URLSearchParams();
     const q = $("customer-search")?.value?.trim();
@@ -1430,7 +1459,7 @@
     }
   }
 
-  // Customer detail view — WP-087
+  // Customer detail view — WP-087, WP-110
   async function showCustomerDetail(cust) {
     currentCustomerId = cust.id;
     $("customers-list").hidden = true;
@@ -1454,6 +1483,18 @@
       lead.textContent = "Lead #" + cust.lead_id;
       info.appendChild(lead);
     }
+
+    // WP-110 — Add edit button
+    const editBtn = document.createElement("button");
+    editBtn.id = "customer-edit-btn";
+    editBtn.type = "button";
+    editBtn.className = "secondary";
+    editBtn.textContent = "✏️ Editar";
+    editBtn.style.marginTop = "8px";
+    editBtn.addEventListener("click", () => showCustomerEditForm(cust));
+    info.appendChild(editBtn);
+
+    hideCustomerEditForm();
 
     // Load conversations for this customer
     await loadCustomerConversations(cust.id);
@@ -1582,6 +1623,35 @@
     if (currentCustomerId) {
       createConversationFromCustomer(currentCustomerId);
     }
+  });
+
+  // WP-110 — Edit customer form handlers
+  $("customer-edit-cancel").addEventListener("click", () => {
+    hideCustomerEditForm();
+  });
+
+  $("customer-edit-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const name = $("customer-edit-name").value.trim();
+    const phone = $("customer-edit-phone").value.trim() || null;
+    const email = $("customer-edit-email").value.trim() || null;
+    if (!name) {notify("Nome é obrigatório.", true); return;}
+
+    const data = {name};
+    if (phone !== null) data.phone = phone;
+    if (email !== null) data.email = email;
+
+    const button = $("customer-edit-form").querySelector('button[type="submit"]');
+    withButton(button, async () => {
+      const updated = await updateCustomer(currentCustomerId, data);
+      if (updated) {
+        hideCustomerEditForm();
+        $("customer-detail-name").textContent = updated.name;
+        notify("Customer atualizado.");
+        await refreshCustomers();
+        showCustomerDetail(updated);
+      }
+    });
   });
 
   // WP-096 — Commercial intake API and form handler

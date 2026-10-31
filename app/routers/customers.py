@@ -10,7 +10,7 @@ from app.dependencies import (
     require_operator_company,
 )
 from app.models import Company, Customer, Lead
-from app.schemas import CustomerCreate
+from app.schemas import CustomerCreate, CustomerUpdate
 
 
 router = APIRouter()
@@ -183,6 +183,39 @@ def create_customer(
     db.refresh(new_customer)
 
     return new_customer
+
+
+@router.patch("/customers/{customer_id}")
+def update_customer(
+    customer_id: int,
+    update: CustomerUpdate,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Update customer name, phone, and/or email. Tenant-isolated."""
+    customer = _get_tenant_customer(
+        db,
+        customer_id,
+        identity.company_id,
+    )
+
+    data = update.model_dump(exclude_unset=True)
+    if not data:
+        raise HTTPException(
+            status_code=400,
+            detail="No fields to update",
+        )
+
+    if "name" in data:
+        customer.name = data["name"]
+    if "phone" in data:
+        customer.phone = data["phone"]
+    if "email" in data:
+        customer.email = data["email"]
+
+    db.commit()
+    db.refresh(customer)
+    return customer
 
 
 @router.post("/leads/{lead_id}/convert")

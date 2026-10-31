@@ -48,7 +48,14 @@ class CustomerCreate(BaseModel):
     company_id: int
     name: str
     phone: str
-    email: str | None = None    
+    email: str | None = None
+
+
+class CustomerUpdate(BaseModel):
+    """Update customer name, phone, and/or email."""
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    phone: str | None = Field(default=None, max_length=30)
+    email: str | None = Field(default=None, max_length=120)
 
 
 class LeadUpdate(BaseModel):

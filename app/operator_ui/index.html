@@ -398,6 +398,30 @@
             <h3 id="customer-detail-name"></h3>
           </div>
           <div id="customer-detail-info" class="customer-detail-info"></div>
+
+          <!-- WP-110 — Edit customer inline form -->
+          <form id="customer-edit-form" hidden>
+            <h4>Editar customer</h4>
+            <div class="two-col">
+              <div>
+                <label for="customer-edit-name">Nome</label>
+                <input id="customer-edit-name" type="text" required maxlength="120">
+              </div>
+              <div>
+                <label for="customer-edit-phone">Telefone</label>
+                <input id="customer-edit-phone" type="text" maxlength="30">
+              </div>
+            </div>
+            <div>
+              <label for="customer-edit-email">E-mail</label>
+              <input id="customer-edit-email" type="email" maxlength="120">
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button type="submit" class="primary">Salvar</button>
+              <button type="button" id="customer-edit-cancel" class="secondary">Cancelar</button>
+            </div>
+          </form>
+
           <h4>Conversas</h4>
           <button id="customer-new-conv" type="button" class="secondary">+ Nova conversa</button>
           <div id="customer-conversations-list" class="customer-conv-list"></div>
