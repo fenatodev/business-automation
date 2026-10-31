@@ -19,14 +19,14 @@ O projeto tem dois objetivos complementares:
 - Lead management with status, notes, search, source filter, bulk operations, customer conversion, date filter, and export CSV;
 - Customer management with search, sort, pagination, edit, detail view, date filter, and export CSV;
 - Opportunity management with search, sort, pagination, bulk triage, status transitions, notes, date filter, and export CSV;
-- Proposal briefs with consolidated list view, status filter, and partial updates;
-- Internal task queue with retry, lease, fencing, 24×7 supervisor, filters, and export CSV;
-- Review queue with filters, sort, pagination, date filter, and export CSV;
+- Proposal briefs with consolidated list view, search, sort, pagination, date filter, bulk status, bulk delete, and export CSV;
+- Internal task queue with retry, lease, fencing, 24×7 supervisor, filters, bulk retry, and export CSV;
+- Review queue with filters, sort, pagination, date filter, bulk decision, and export CSV;
 - Operator UI dashboard with metrics, pipeline view, next actions summary, notifications, theme toggle, and CSV export;
 - CSV import for leads, customers, and opportunities;
 - Agent-reply flow with persisted conversation history;
 - Failure handling that preserves user messages when the agent service is unavailable (HTTP 503);
-- 2314 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
+- 2361 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
 
 ## Engineering case study
 
@@ -39,7 +39,7 @@ The useful part of this project is not the idea of "AI for business". It is the 
 | Authentication | Bearer API keys with role-based access (admin, operator). |
 | API failure behavior | Missing resources and invalid ownership return explicit client errors. |
 | AI integration failure | Customer input preserved, failed agent output not fabricated, internal details not leaked. |
-| Regression protection | 2314 tests cover happy paths, failures, tenant isolation, and UI contracts. |
+| Regression protection | 2361 tests cover happy paths, failures, tenant isolation, and UI contracts. |
 | Product boundaries | ERP and automation engines remain external integrations. |
 
 ### Example evaluation mindset
