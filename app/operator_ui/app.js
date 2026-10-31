@@ -232,6 +232,7 @@
       const title = document.createElement("strong");
       title.textContent = "#" + opportunity.id + " · " + opportunity.title;
       const stage = document.createElement("span");
+      stage.className = "opp-status-badge opp-status-" + (opportunity.next_action || "unknown");
       stage.textContent = actionLabels[opportunity.next_action] || "Estado desconhecido";
       button.append(title, stage);
       button.addEventListener("click", (e) => {
