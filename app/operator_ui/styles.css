@@ -673,6 +673,21 @@ footer {
   color: var(--muted);
 }
 
+/* WP-150 — Opportunity date filter */
+.opp-date-filter {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.opp-clear-filters-btn {
+  font-size: 0.82rem;
+  padding: 4px 10px;
+}
+
 /* WP-139 — Pipeline filter chips */
 .opp-pipeline {
   display: flex;

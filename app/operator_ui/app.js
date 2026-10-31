@@ -492,10 +492,15 @@
     const searchQuery = $("opp-search").value.trim();
     // WP-095 — opportunity sort and pagination
     const sort = $("opp-sort").value;
+    // WP-150 — date filter
+    const fromDate = $("opp-from-date").value || null;
+    const toDate = $("opp-to-date").value || null;
     const params = [];
     if (!showArchived) params.push("exclude_archived=true");
     if (oppPipelineFilter !== "all") params.push("next_action=" + encodeURIComponent(oppPipelineFilter));
     if (searchQuery) params.push("q=" + encodeURIComponent(searchQuery));
+    if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
+    if (toDate) params.push("to_date=" + encodeURIComponent(toDate));
     params.push("sort=" + encodeURIComponent(sort));
     params.push("limit=" + oppPageSize);
     params.push("offset=" + oppOffset);
@@ -504,6 +509,8 @@
     if (!showArchived) countParams.push("exclude_archived=true");
     if (oppPipelineFilter !== "all") countParams.push("next_action=" + encodeURIComponent(oppPipelineFilter));
     if (searchQuery) countParams.push("q=" + encodeURIComponent(searchQuery));
+    if (fromDate) countParams.push("from_date=" + encodeURIComponent(fromDate));
+    if (toDate) countParams.push("to_date=" + encodeURIComponent(toDate));
     const [result, countResult, pipelineResult] = await Promise.all([
       api("/opportunities" + query),
       api("/opportunities/count" + (countParams.length ? "?" + countParams.join("&") : "")),
@@ -564,6 +571,31 @@
 
   // WP-095 — Opportunity sort
   $("opp-sort").addEventListener("change", () => {
+    oppOffset = 0;
+    refreshList();
+  });
+
+  // WP-150 — Date filter
+  $("opp-from-date").addEventListener("change", () => {
+    oppOffset = 0;
+    refreshList();
+  });
+  $("opp-to-date").addEventListener("change", () => {
+    oppOffset = 0;
+    refreshList();
+  });
+
+  // WP-150 — Clear all filters
+  $("opp-clear-filters").addEventListener("click", () => {
+    $("opp-search").value = "";
+    $("opp-from-date").value = "";
+    $("opp-to-date").value = "";
+    $("opp-sort").value = "id";
+    $("show-archived").checked = false;
+    oppPipelineFilter = "all";
+    document.querySelectorAll('.opp-pipeline-chip').forEach((chip) => {
+      chip.classList.toggle('active', chip.getAttribute('data-pipeline') === "all");
+    });
     oppOffset = 0;
     refreshList();
   });
@@ -2361,7 +2393,19 @@
   }
 
   $("opp-export-csv").addEventListener("click", () => {
-    downloadCsv("/opportunities/export.csv", "opportunities.csv");
+    // WP-123/150 — Export CSV with current filters
+    const params = [];
+    const showArchived = $("show-archived").checked;
+    if (!showArchived) params.push("exclude_archived=true");
+    if (oppPipelineFilter !== "all") params.push("next_action=" + encodeURIComponent(oppPipelineFilter));
+    const searchQuery = $("opp-search").value.trim();
+    if (searchQuery) params.push("q=" + encodeURIComponent(searchQuery));
+    const fromDate = $("opp-from-date").value;
+    if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
+    const toDate = $("opp-to-date").value;
+    if (toDate) params.push("to_date=" + encodeURIComponent(toDate));
+    const url = "/opportunities/export.csv" + (params.length ? "?" + params.join("&") : "");
+    downloadCsv(url, "opportunities.csv");
     notify("Exportando oportunidades...");
   });
 

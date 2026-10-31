@@ -147,6 +147,8 @@
               <p id="list-meta" class="small">Nenhuma consulta realizada.</p>
               <div class="opp-toolbar-right">
                 <input type="text" id="opp-search" class="opp-search-inline" placeholder="Buscar oportunidades...">
+                <input type="date" id="opp-from-date" class="opp-date-filter" title="Data de início">
+                <input type="date" id="opp-to-date" class="opp-date-filter" title="Data de fim">
                 <select id="opp-sort" class="opp-sort-select">
                   <option value="id">Ordenar: ID</option>
                   <option value="created_at">Ordenar: Data</option>
@@ -156,6 +158,7 @@
                   <input type="checkbox" id="show-archived">
                   Exibir arquivadas
                 </label>
+                <button id="opp-clear-filters" type="button" class="secondary opp-clear-filters-btn">Limpar filtros</button>
               </div>
             </div>
             <div id="opp-pipeline" class="opp-pipeline">

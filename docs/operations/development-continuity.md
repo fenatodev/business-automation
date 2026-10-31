@@ -593,3 +593,12 @@ e `to_date` query params em `GET /opportunities`, `GET /opportunities/count`
 e `GET /opportunities/export.csv`. Usa comparação de strings ISO 8601
 (`captured_at >= from_date`) compatível com SQLite e PostgreSQL.
 **2024 testes passaram** (8 novos); compileall, diff-check: PASS.
+
+## WP-150 — Filtro de data em oportunidades na UI (31/10/2026)
+
+A WP-149 adicionou `from_date`/`to_date` ao backend, mas a UI não tinha
+campos para usá-los. Adicionados dois campos de data (de/até) na toolbar
+de oportunidades, conectados a `refreshList()` e count endpoint. Botão
+"Limpar filtros" reseta todos os filtros (busca, data, ordenação,
+arquivadas, pipeline). Exportação CSV respeita os filtros de data.
+**2042 testes passaram** (18 novos); compileall, diff-check: PASS.
