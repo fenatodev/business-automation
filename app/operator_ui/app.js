@@ -3601,6 +3601,17 @@
     refreshBriefs().catch(() => {});
   });
 
+  $("briefs-export-csv").addEventListener("click", () => {
+    const params = [];
+    const status = $("briefs-status-filter") ? $("briefs-status-filter").value : "";
+    const q = $("briefs-search") ? $("briefs-search").value.trim() : "";
+    if (status) params.push("status=" + encodeURIComponent(status));
+    if (q) params.push("q=" + encodeURIComponent(q));
+    const url = "/proposal-briefs/export.csv" + (params.length ? "?" + params.join("&") : "");
+    downloadCsv(url, "proposal-briefs.csv");
+    notify("Exportando briefs...");
+  });
+
   // Reset brief offset on disconnect
   const origDisconnect = disconnect;
   // (disconnect already handles interval cleanup)
