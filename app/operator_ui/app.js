@@ -948,14 +948,53 @@
     });
   })();
 
-  // WP-146 — Keyboard shortcuts
+  // WP-146, WP-168 — Keyboard shortcuts
   document.addEventListener("keydown", (e) => {
     // Don't trigger shortcuts when typing in inputs
     const tag = e.target.tagName;
     const isInput = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
 
-    // Ctrl+K / Cmd+K: focus search
+    // Ctrl+K / Cmd+K: focus opportunity search
     if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+      e.preventDefault();
+      const searchInput = $("opp-search");
+      if (searchInput) {
+        searchInput.focus();
+        searchInput.select();
+      }
+    }
+
+    // WP-168 — Ctrl+N: show create lead form
+    if ((e.ctrlKey || e.metaKey) && e.key === "n" && !isInput) {
+      e.preventDefault();
+      const createBtn = $("show-create-lead");
+      if (createBtn) {
+        createBtn.click();
+      }
+    }
+
+    // WP-168 — Ctrl+L: focus lead search
+    if ((e.ctrlKey || e.metaKey) && e.key === "l" && !isInput) {
+      e.preventDefault();
+      const leadSearch = $("lead-search");
+      if (leadSearch) {
+        leadSearch.focus();
+        leadSearch.select();
+      }
+    }
+
+    // WP-168 — Ctrl+Shift+C: focus customer search
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "C" && !isInput) {
+      e.preventDefault();
+      const custSearch = $("customer-search");
+      if (custSearch) {
+        custSearch.focus();
+        custSearch.select();
+      }
+    }
+
+    // WP-168 — / : focus opportunity search (when not in input)
+    if (e.key === "/" && !isInput) {
       e.preventDefault();
       const searchInput = $("opp-search");
       if (searchInput) {
