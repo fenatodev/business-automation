@@ -30,8 +30,9 @@ class ConversationCreate(BaseModel):
 
 
 class ConversationUpdate(BaseModel):
-    """Update conversation status."""
-    status: Literal["open", "closed"]
+    """Update conversation status and/or internal note."""
+    status: Literal["open", "closed"] | None = None
+    note: str | None = Field(default=None, max_length=2000)
 
 
 class MessageCreate(BaseModel):

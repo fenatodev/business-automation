@@ -130,11 +130,55 @@ def update_conversation(
         identity.company_id,
     )
 
-    conversation.status = data.status
+    if data.status is not None:
+        conversation.status = data.status
+
+    if data.note is not None:
+        note_msg = Message(
+            conversation_id=conversation.id,
+            sender_type="system",
+            content="📝 Nota interna: " + data.note,
+        )
+        db.add(note_msg)
+
     db.commit()
     db.refresh(conversation)
 
     return conversation
+
+
+@router.get("/conversations/{conversation_id}/note")
+def get_conversation_note(
+    conversation_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Get the most recent internal note for a conversation."""
+    _get_tenant_conversation(
+        db,
+        conversation_id,
+        identity.company_id,
+    )
+
+    note = db.scalar(
+        select(Message)
+        .where(
+            Message.conversation_id == conversation_id,
+            Message.sender_type == "system",
+            Message.content.like("📝 Nota interna:%"),
+        )
+        .order_by(desc(Message.id))
+        .limit(1)
+    )
+
+    if note is None:
+        return {"note": None}
+
+    # Strip the prefix to return just the note content
+    content = note.content
+    if content.startswith("📝 Nota interna: "):
+        content = content[len("📝 Nota interna: "):]
+    return {"note": content}
 
 
 @router.get("/companies/{company_id}/conversations")

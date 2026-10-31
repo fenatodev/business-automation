@@ -811,7 +811,8 @@
           /^\/companies\/\d+\/conversations\/count($|\?)/.test(path) ||
           /^\/conversations\/$/.test(path) ||
           /^\/conversations\/\d+\/$/.test(path) ||
-          /^\/conversations\/\d+\/messages(\/count)?(\?|$)/.test(path))) {
+          /^\/conversations\/\d+\/messages(\/count)?(\?|$)/.test(path) ||
+          /^\/conversations\/\d+\/note$/.test(path))) {
       throw new Error("Rota de conversas não permitida.");
     }
     const epoch = sessionEpoch;
@@ -924,11 +925,14 @@
     $("conv-detail").hidden = false;
     $("conv-reply-toggle").hidden = false;
     $("conv-close-toggle").hidden = false;
+    $("conv-note-section").hidden = false;
     $("reply-conv-id").value = id;
     const conv = conversations.find((c) => c.id === id);
     const channel = conv ? (channelLabels[conv.channel] || conv.channel) : "Conversa";
     $("conv-detail-header").textContent = channel + " · #" + id;
     await loadMessages(id);
+    // WP-140 — Load internal note
+    await loadConversationNote(id);
   }
 
   async function loadMessages(id) {
@@ -983,6 +987,32 @@
     }
   }
 
+  // WP-140 — Conversation internal notes
+  async function loadConversationNote(id) {
+    try {
+      const result = await conversationApi("/conversations/" + id + "/note");
+      if (selectedConvId !== id) return;
+      $("conv-note-text").value = result.note || "";
+      $("conv-note-status").textContent = "";
+    } catch (error) {
+      $("conv-note-text").value = "";
+      $("conv-note-status").textContent = "";
+    }
+  }
+
+  $("conv-note-save").addEventListener("click", () => withButton($("conv-note-save"), async () => {
+    if (selectedConvId === null) return;
+    const note = $("conv-note-text").value;
+    try {
+      await conversationApi("/conversations/" + selectedConvId, "PATCH", { note });
+      $("conv-note-status").textContent = "Nota salva.";
+      $("conv-note-status").style.color = "var(--success)";
+      setTimeout(() => { $("conv-note-status").textContent = ""; }, 3000);
+    } catch (error) {
+      notify("Falha ao salvar nota.", true);
+    }
+  }));
+
   async function refreshConversations() {
     try {
       const company = opportunities.length > 0 ? opportunities[0].company_id : null;
@@ -1011,6 +1041,7 @@
       $("conv-reply-toggle").hidden = true;
       $("conv-close-toggle").hidden = true;
       $("human-reply-form").hidden = true;
+      $("conv-note-section").hidden = true;
       showConversationList();
     }
   }
@@ -1147,6 +1178,7 @@
 
   $("conv-list").replaceChildren();
   $("conv-detail").hidden = true;
+  $("conv-note-section").hidden = true;
 
   const DASHBOARD_REFRESH_MS = 60000;
 
