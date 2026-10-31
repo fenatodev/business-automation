@@ -840,6 +840,29 @@
           <button id="tasks-next-page" type="button" class="secondary">Próxima</button>
         </div>
       </section>
+
+      <!-- WP-178 — Brief list view -->
+      <section class="panel" aria-labelledby="briefs-title">
+        <div class="panel-heading">
+          <div><span class="section-index">11 / BRIEFS</span><h2 id="briefs-title">Proposal Briefs</h2></div>
+          <div class="panel-actions">
+            <button id="briefs-refresh" type="button" class="secondary">Atualizar</button>
+          </div>
+        </div>
+        <p class="small">Lista consolidada de todos os briefs da sua empresa.</p>
+        <div class="briefs-filters">
+          <div class="briefs-filter-group">
+            <label for="briefs-status-filter">Status</label>
+            <select id="briefs-status-filter">
+              <option value="">Todos</option>
+              <option value="draft">Rascunho</option>
+              <option value="ready_for_review">Pronto para revisão</option>
+              <option value="approved">Aprovado</option>
+            </select>
+          </div>
+        </div>
+        <div id="briefs-list" class="briefs-list"></div>
+      </section>
     </main>
 
     <footer>Operação interna · dados e permissões pertencem à API · sem envio automático de propostas · <span class="small">Atalhos: Ctrl+K (buscar) · Ctrl+N (novo lead) · Ctrl+L (leads) · Ctrl+Shift+C (customers) · / (buscar) · Esc (limpar)</span></footer>

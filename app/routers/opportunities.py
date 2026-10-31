@@ -843,3 +843,70 @@ def reject_proposal_brief(
     db.refresh(brief)
 
     return brief
+
+
+# ---------------------------------------------------------------------------
+# WP-178 — Brief list view (tenant-isolated)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/proposal-briefs")
+def list_proposal_briefs(
+    status: str | None = Query(default=None, description="Filter by brief status"),
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """List all proposal briefs for the authenticated tenant company.
+
+    Returns briefs joined with opportunity data for context.
+    """
+    query = (
+        select(
+            ProposalBrief.id,
+            ProposalBrief.opportunity_id,
+            ProposalBrief.offer_reference,
+            ProposalBrief.status,
+            ProposalBrief.created_at,
+            Opportunity.title.label("opportunity_title"),
+        )
+        .join(Opportunity, ProposalBrief.opportunity_id == Opportunity.id)
+        .where(Opportunity.company_id == identity.company_id)
+        .order_by(desc(ProposalBrief.created_at))
+    )
+
+    if status:
+        query = query.where(ProposalBrief.status == status)
+
+    rows = db.execute(query).all()
+    return [
+        {
+            "id": row.id,
+            "opportunity_id": row.opportunity_id,
+            "opportunity_title": row.opportunity_title,
+            "offer_reference": row.offer_reference,
+            "status": row.status,
+            "created_at": row.created_at.isoformat(),
+        }
+        for row in rows
+    ]
+
+
+@router.get("/proposal-briefs/count")
+def count_proposal_briefs(
+    status: str | None = Query(default=None, description="Filter by brief status"),
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Count proposal briefs for the authenticated tenant company."""
+    query = (
+        select(func.count())
+        .select_from(ProposalBrief)
+        .join(Opportunity, ProposalBrief.opportunity_id == Opportunity.id)
+        .where(Opportunity.company_id == identity.company_id)
+    )
+
+    if status:
+        query = query.where(ProposalBrief.status == status)
+
+    count = db.execute(query).scalar_one()
+    return {"count": count}
