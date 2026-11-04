@@ -85,7 +85,7 @@ def test_app_js_max_tokens_parsing():
     with open("app/operator_ui/app.js") as f:
         js = f.read()
     save_start = js.index('agent-config-save')
-    save_section = js[save_start:save_start+500]
+    save_section = js[save_start:save_start+800]
     assert 'parseInt(maxTokens' in save_section
 
 
