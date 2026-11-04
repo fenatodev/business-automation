@@ -134,6 +134,32 @@ def set_agent_config(
     )
 
 
+@router.get("/agent-models-available")
+def get_agent_models_available():
+    """WP-221 — List available Ollama models for configuration.
+
+    Returns a static list of common Ollama models. This endpoint does not
+    require authentication as it returns only public model metadata.
+    """
+    from app.database import settings
+
+    # Build list of available models, always including the default
+    models = [
+        {"name": "qwen3:8b", "label": "Qwen3 8B (padrão)"},
+        {"name": "qwen2.5:7b", "label": "Qwen2.5 7B"},
+        {"name": "llama3.1:8b", "label": "Llama 3.1 8B"},
+        {"name": "mistral:7b", "label": "Mistral 7B"},
+        {"name": "gemma2:9b", "label": "Gemma2 9B"},
+    ]
+
+    # Mark the default model
+    default_model = settings.ollama_model
+    for m in models:
+        m["is_default"] = m["name"] == default_model
+
+    return {"models": models, "default": default_model}
+
+
 @router.get("/companies/{company_id}/agent-usage")
 def get_agent_usage(
     company_id: int,

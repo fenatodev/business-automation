@@ -33,6 +33,18 @@ class AgentRequest(BaseModel):
             raise ValueError("max_tokens must be at least 1")
         return v
 
+    @field_validator("model")
+    @classmethod
+    def model_not_empty(cls, v: str | None) -> str | None:
+        """WP-219 — Reject empty or overly long model names."""
+        if v is not None:
+            v = v.strip()
+            if not v:
+                raise ValueError("model cannot be empty")
+            if len(v) > 100:
+                raise ValueError("model name is too long (max 100 chars)")
+        return v
+
 
 class ConversationCreate(BaseModel):
     company_id: int
@@ -144,6 +156,17 @@ class CompanyAgentConfig(BaseModel):
             raise ValueError("max_tokens must be at least 1")
         return v
 
+    @field_validator("model")
+    @classmethod
+    def model_not_empty(cls, v: str | None) -> str | None:
+        """WP-219 — Reject empty or overly long model names."""
+        if v is not None:
+            v = v.strip()
+            if not v:
+                raise ValueError("model cannot be empty")
+            if len(v) > 100:
+                raise ValueError("model name is too long (max 100 chars)")
+        return v
 
 
 class OpportunityCreate(BaseModel):

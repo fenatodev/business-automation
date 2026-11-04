@@ -86,7 +86,21 @@ def generate_agent_reply(
 
         response.raise_for_status()
     except httpx.HTTPError as exc:
-        raise AgentServiceError("Ollama request failed") from exc
+        # WP-220 — If model-specific request fails and we used a custom model,
+        # fall back to the default model once.
+        if model and model != settings.ollama_model:
+            body["model"] = settings.ollama_model
+            try:
+                response = httpx.post(
+                    f"{settings.ollama_url}/api/chat",
+                    json=body,
+                    timeout=120,
+                )
+                response.raise_for_status()
+            except httpx.HTTPError as fallback_exc:
+                raise AgentServiceError("Ollama request failed") from fallback_exc
+        else:
+            raise AgentServiceError("Ollama request failed") from exc
 
     try:
         data = response.json()

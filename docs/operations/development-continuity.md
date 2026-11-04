@@ -1055,3 +1055,28 @@ README atualizado com 2686 testes e novas funcionalidades:
 rastreamento de uso do agente e métricas no dashboard.
 
 **2686 testes passaram**; compileall, diff-check: PASS.
+
+### WP-219 — Validação de modelo no agente
+
+O schema aceitava qualquer string para `model`. Adicionado validador
+`model_not_empty` em `CompanyAgentConfig` e `AgentRequest` que rejeita
+strings vazias, apenas espaços e nomes com mais de 100 caracteres.
+
+**2705 testes passaram** (16 novos); compileall, diff-check: PASS.
+
+### WP-220 — Fallback de modelo quando não existe no Ollama
+
+Quando uma company configura um modelo que não existe no servidor Ollama,
+o agente faz fallback para o modelo padrão (`settings.ollama_model`) em vez
+de falhar. O fallback ocorre apenas uma vez; se o modelo padrão também falhar,
+o erro é propagado normalmente.
+
+**2712 testes passaram** (7 novos); compileall, diff-check: PASS.
+
+### WP-221 — Endpoint de modelos disponíveis
+
+`GET /agent-models-available` retorna lista estática de modelos Ollama
+configuráveis (qwen3:8b, qwen2.5:7b, llama3.1:8b, mistral:7b, gemma2:9b)
+com marcação do modelo padrão. Sem autenticação, útil para o dropdown da UI.
+
+**2719 testes passaram** (10 novos); compileall, diff-check: PASS.
