@@ -2077,9 +2077,36 @@
     await refreshConversations();
   }));
 
-  $("conv-reply-toggle").addEventListener("click", () => {
+  // WP-252 — Auto-suggest reply when opening the reply form
+  $("conv-reply-toggle").addEventListener("click", async () => {
     const form = $("human-reply-form");
     form.hidden = !form.hidden;
+    if (!form.hidden) {
+      // Auto-load suggestion when form is shown
+      const convId = $("reply-conv-id").value;
+      if (convId) {
+        const id = parseInt(convId, 10);
+        try {
+          const res = await fetch("/conversations/" + id + "/suggest-reply", {
+            method: "POST",
+            headers: {
+              "Authorization": "Bearer " + bearer,
+              "Content-Type": "application/json",
+            },
+          });
+          if (res.status === 400 || res.status === 503) {
+            // Silently ignore — no customer message or agent unavailable
+            return;
+          }
+          if (res.ok) {
+            const data = await res.json();
+            $("reply-message").value = data.suggestion;
+          }
+        } catch (_e) {
+          // Silently ignore auto-suggest errors
+        }
+      }
+    }
   });
 
   // WP-226 — Suggest agent reply
