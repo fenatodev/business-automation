@@ -272,6 +272,31 @@ class OpportunityTriageSuggestion(BaseModel):
     confidence: float | None = None
 
 
+class OpportunityBulkTriageSuggestion(BaseModel):
+    """Request for AI-assisted bulk triage suggestion."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    opportunity_ids: list[int] = Field(min_length=1, max_length=100)
+
+
+class OpportunityBulkTriageSuggestionResponse(BaseModel):
+    """Response from AI-assisted bulk triage suggestion."""
+
+    suggested_action: Literal[
+        "pending",
+        "ignore",
+        "follow",
+        "prepare_proposal",
+        "in_progress",
+        "done",
+        "lost",
+    ]
+    reasoning: str
+    matching_count: int
+    total_count: int
+
+
 class ConversationBulkDelete(BaseModel):
     """Bulk delete multiple conversations."""
 

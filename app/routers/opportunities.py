@@ -14,6 +14,8 @@ from app.models import Company, Conversation, Opportunity, ProposalBrief
 from app.schemas import (
     OpportunityBulkDelete,
     OpportunityBulkTriage,
+    OpportunityBulkTriageSuggestion,
+    OpportunityBulkTriageSuggestionResponse,
     OpportunityCreate,
     OpportunityTriageSuggestion,
     OpportunityTriageUpdate,
@@ -1463,6 +1465,109 @@ def suggest_triage(
         "suggested_action": action,
         "reasoning": reasoning,
         "confidence": confidence,
+    }
+
+
+@router.post("/opportunities/bulk-suggest-triage", response_model=OpportunityBulkTriageSuggestionResponse)
+def bulk_suggest_triage(
+    data: OpportunityBulkTriageSuggestion,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Suggest the best triage action for a group of selected opportunities using AI.
+
+    Analyzes all selected opportunities and returns a single suggested action
+    that applies to the majority, along with reasoning and matching count.
+    Returns 503 if the agent service is unavailable.
+    """
+    from app.services.agent import AgentServiceError, generate_agent_reply
+
+    # Fetch tenant-isolated opportunities
+    opportunities = db.scalars(
+        select(Opportunity).where(
+            Opportunity.id.in_(data.opportunity_ids),
+            Opportunity.company_id == identity.company_id,
+        )
+    ).all()
+
+    if not opportunities:
+        raise HTTPException(
+            status_code=404,
+            detail="Nenhuma oportunidade encontrada",
+        )
+
+    total_count = len(opportunities)
+
+    # Build a combined prompt with all opportunity summaries
+    summaries = []
+    for opp in opportunities:
+        summaries.append(
+            f"#{opp.id}: {opp.title} | Status: {opp.next_action} | "
+            f"Prazo: {opp.deadline or '(nenhum)'} | "
+            f"Orçamento: {opp.budget or '(nenhum)'} | "
+            f"Fonte: {opp.source or '(desconhecida)'}"
+        )
+    prompt = (
+        f"Analise estas {total_count} oportunidades e sugira a melhor ação de triagem "
+        f"que se aplica à maioria:\n\n"
+        + "\n".join(summaries)
+    )
+
+    # Load company agent config for defaults
+    from app.routers.companies import _agent_config_store
+    config = _agent_config_store.get(identity.company_id)
+    system_prompt = (config.get("system_prompt") if config else None) or _TRIAGE_SYSTEM_PROMPT
+    temperature = config.get("temperature") if config else None
+    max_tokens = config.get("max_tokens") if config else None
+    model = config.get("model") if config else None
+
+    try:
+        reply = generate_agent_reply(
+            message=prompt,
+            history=[],
+            system_prompt=system_prompt,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            model=model,
+        )
+    except AgentServiceError:
+        raise HTTPException(
+            status_code=503,
+            detail="Serviço de agente indisponível",
+        )
+
+    # Parse JSON response from agent
+    import json as json_module
+
+    try:
+        parsed = json_module.loads(reply)
+        action = parsed.get("action", "pending")
+        reasoning = parsed.get("reasoning", "Sem justificativa")
+        matching = parsed.get("matching_count", total_count)
+    except (json_module.JSONDecodeError, AttributeError):
+        return {
+            "suggested_action": "pending",
+            "reasoning": reply[:500] if isinstance(reply, str) else str(reply)[:500],
+            "matching_count": total_count,
+            "total_count": total_count,
+        }
+
+    valid_actions = {"pending", "ignore", "follow", "prepare_proposal", "in_progress", "done", "lost"}
+    if action not in valid_actions:
+        action = "pending"
+
+    # Count how many opportunities can actually transition to the suggested action
+    matching_count = 0
+    for opp in opportunities:
+        allowed = _VALID_TRANSITIONS.get(opp.next_action, set())
+        if action in allowed:
+            matching_count += 1
+
+    return {
+        "suggested_action": action,
+        "reasoning": reasoning,
+        "matching_count": matching_count,
+        "total_count": total_count,
     }
 
 
