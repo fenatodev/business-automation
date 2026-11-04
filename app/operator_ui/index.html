@@ -240,7 +240,17 @@
               </select>
               <input type="text" id="bulk-triage-note" class="bulk-triage-note" placeholder="Nota (opcional)">
               <button id="bulk-triage-apply" type="button" class="primary">Aplicar</button>
+              <button id="bulk-suggest-triage" type="button" class="secondary">🤖 Sugerir ação</button>
               <button id="bulk-triage-clear" type="button" class="secondary">Limpar seleção</button>
+            </div>
+            <!-- WP-249 — Bulk triage suggestion result -->
+            <div id="bulk-suggestion-panel" class="triage-suggestion-panel" hidden>
+              <h4>🤖 Sugestão para grupo</h4>
+              <div id="bulk-suggestion-content"></div>
+              <div style="display:flex;gap:8px;margin-top:8px;">
+                <button id="apply-bulk-suggestion" type="button" class="primary">Aplicar sugestão</button>
+                <button id="dismiss-bulk-suggestion" type="button" class="secondary">Descartar</button>
+              </div>
             </div>
             <div id="opportunity-list" class="opportunity-list" aria-label="Lista de oportunidades"></div>
             <div id="opp-pagination" class="opp-pagination" hidden>

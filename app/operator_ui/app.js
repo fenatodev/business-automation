@@ -135,6 +135,9 @@
     // WP-241 — Hide brief suggestion panel
     $("brief-suggestion-panel").hidden = true;
     briefSuggestion = null;
+    // WP-249 — Hide bulk suggestion panel
+    $("bulk-suggestion-panel").hidden = true;
+    bulkTriageSuggestion = null;
   }
 
   function disconnect(message = "Acesso desconectado.") {
@@ -196,10 +199,12 @@
     // WP-144 — allow /opportunities/{id}/leads
     // WP-238 — allow POST /opportunities/{id}/suggest-triage
     // WP-241 — allow POST /opportunities/{id}/suggest-brief
+    // WP-247 — allow POST /opportunities/bulk-suggest-triage
     if (!/^\/opportunities(\?[^"]*)?$/.test(path) &&
         !/^\/opportunities\/count(\?[^"]*)?$/.test(path) &&
         !/^\/opportunities\/pipeline-summary$/.test(path) &&
         !/^\/opportunities\/priority(\?[^"]*)?$/.test(path) &&
+        !/^\/opportunities\/(bulk-triage|bulk-delete|bulk-suggest-triage|import\.csv)$/.test(path) &&
         !/^\/opportunities\/\d+(\/(triage|proposal-brief|conversations|leads|timeline|suggest-triage|suggest-brief)(\/approve|\/reject)?)?$/.test(path)) {
       throw new Error("Rota não permitida nesta interface.");
     }
@@ -3503,6 +3508,67 @@
       await refreshList();
       showList();
     });
+  });
+
+  // WP-249 — AI-assisted bulk triage suggestion
+  let bulkTriageSuggestion = null;
+
+  $("bulk-suggest-triage").addEventListener("click", () => withButton($("bulk-suggest-triage"), async () => {
+    const ids = Array.from(selectedOpportunityIds);
+    if (!ids.length) {notify("Selecione oportunidades primeiro.", true); return;}
+    try {
+      const result = await api("/opportunities/bulk-suggest-triage", {
+        method: "POST",
+        body: JSON.stringify({opportunity_ids: ids}),
+      });
+      bulkTriageSuggestion = result;
+      renderBulkSuggestion();
+      $("bulk-suggestion-panel").hidden = false;
+      $("bulk-suggestion-panel").scrollIntoView({behavior: "smooth"});
+    } catch (err) {
+      if (err.status === 503) {
+        notify("Serviço de agente indisponível.", true);
+      } else {
+        notify("Falha ao obter sugestão.", true);
+      }
+    }
+  }));
+
+  function renderBulkSuggestion() {
+    const content = $("bulk-suggestion-content");
+    content.textContent = "";
+    if (!bulkTriageSuggestion) return;
+    const actionLabels = {
+      pending: "Pendente",
+      follow: "Acompanhar",
+      ignore: "Ignorar",
+      prepare_proposal: "Preparar proposta",
+      in_progress: "Em andamento",
+      done: "Concluída",
+      lost: "Perdida",
+    };
+    const action = document.createElement("p");
+    action.textContent = "Ação sugerida: " + (actionLabels[bulkTriageSuggestion.suggested_action] || bulkTriageSuggestion.suggested_action);
+    content.appendChild(action);
+    const reasoning = document.createElement("p");
+    reasoning.textContent = "Motivo: " + bulkTriageSuggestion.reasoning;
+    content.appendChild(reasoning);
+    const match = document.createElement("p");
+    match.textContent = bulkTriageSuggestion.matching_count + "/" + bulkTriageSuggestion.total_count + " oportunidades compatíveis";
+    content.appendChild(match);
+  }
+
+  $("apply-bulk-suggestion").addEventListener("click", () => {
+    if (!bulkTriageSuggestion) return;
+    $("bulk-triage-action").value = bulkTriageSuggestion.suggested_action;
+    $("bulk-suggestion-panel").hidden = true;
+    bulkTriageSuggestion = null;
+    notify("Ação definida no seletor. Clique 'Aplicar' para confirmar.");
+  });
+
+  $("dismiss-bulk-suggestion").addEventListener("click", () => {
+    $("bulk-suggestion-panel").hidden = true;
+    bulkTriageSuggestion = null;
   });
 
   // WP-106 — Export CSV buttons
