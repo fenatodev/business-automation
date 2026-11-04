@@ -2283,6 +2283,24 @@
       agentDetails.appendChild(span);
     }
 
+    // WP-244 — Briefs by status
+    const briefs = data.briefs || {};
+    $("dash-brief-total").textContent = briefs.total || 0;
+    const briefDetails = $("dash-brief-details");
+    briefDetails.replaceChildren();
+    const briefLabels = {
+      draft: "Rascunho",
+      ready_for_review: "Em revisão",
+      approved: "Aprovado",
+      rejected: "Rejeitado",
+    };
+    for (const [k, v] of Object.entries(briefs)) {
+      if (k === "total") continue;
+      const span = document.createElement("span");
+      span.textContent = (briefLabels[k] || k) + ": " + v;
+      briefDetails.appendChild(span);
+    }
+
     // WP-198 — Opportunities by source
     const oppSourceSection = $("opp-source-section");
     const oppSourceList = $("opp-source-list");

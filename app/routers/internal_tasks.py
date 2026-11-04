@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import AccessIdentity
 from app.dependencies import get_db, require_operator
-from app.models import Conversation, InternalTask, Lead, Opportunity, ReviewQueueItem
+from app.models import Conversation, InternalTask, Lead, Opportunity, ProposalBrief, ReviewQueueItem
 from app.schemas import InternalTaskBulkRetry, InternalTaskOut, ReviewQueueTrigger
 from app.services import internal_tasks as tasks
 from app.services.internal_tasks import task_count as task_count_svc
@@ -109,6 +109,17 @@ def get_dashboard(
     review_queue = {"total": sum(c for _, c in rq_rows)}
     for status, count in rq_rows:
         review_queue[status] = int(count)
+
+    # WP-244 — Briefs by status (tenant-isolated via JOIN with Opportunity)
+    brief_rows = db.execute(
+        select(ProposalBrief.status, func.count(ProposalBrief.id))
+        .join(Opportunity, ProposalBrief.opportunity_id == Opportunity.id)
+        .where(Opportunity.company_id == company_id)
+        .group_by(ProposalBrief.status)
+    ).all()
+    briefs = {"total": sum(c for _, c in brief_rows)}
+    for status, count in brief_rows:
+        briefs[status] = int(count)
 
     # WP-198 — Opportunities by source
     opp_source_rows = db.execute(
@@ -251,6 +262,7 @@ def get_dashboard(
             "successful_calls": agent_usage["successful_calls"],
             "failed_calls": agent_usage["failed_calls"],
         },
+        "briefs": briefs,
         "high_priority_opportunities": high_priority_opportunities,
         "recent_activities": recent_activities,
     }
