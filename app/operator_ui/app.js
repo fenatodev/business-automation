@@ -3519,7 +3519,7 @@
   // WP-096 — Commercial intake API and form handler
   async function intakeApi(path, method, body) {
     if (!bearer) throw new Error("Conecte um operador.");
-    if (!(/^\/internal\/commercial-intake\/create$/.test(path))) {
+    if (!(/^\/internal\/commercial-intake\/(create|suggest)$/.test(path))) {
       throw new Error("Rota de intake não permitida.");
     }
     const epoch = sessionEpoch;
@@ -3567,6 +3567,39 @@
   $("intake-clear").addEventListener("click", () => {
     $("intake-form").reset();
     $("intake-decision").hidden = true;
+    $("intake-suggestion").hidden = true;
+  });
+
+  // WP-259 — AI-assisted intake suggestion
+  $("intake-suggest").addEventListener("click", () => {
+    const button = $("intake-suggest");
+    withButton(button, async () => {
+      const channel = $("intake-channel").value;
+      const eventId = $("intake-event-id").value.trim();
+      const message = $("intake-message").value.trim();
+      if (!eventId || !message) {
+        notify("Preencha ID e mensagem para sugerir.", true);
+        return;
+      }
+      try {
+        const result = await intakeApi("/internal/commercial-intake/suggest", "POST", {
+          channel,
+          event_id: eventId,
+          message,
+        });
+        $("intake-suggestion").hidden = false;
+        $("intake-decision").hidden = true;
+        $("intake-suggest-intent").textContent = result.suggested_intent || "Desconhecida";
+        $("intake-suggest-category").textContent = result.suggested_category || "N/A";
+        $("intake-suggest-reasoning").textContent = result.reasoning || "";
+      } catch (err) {
+        if (err.message && err.message.includes("503")) {
+          notify("Agente IA indisponível. Use o botão normal para criar.", true);
+        } else {
+          notify("Erro ao sugerir: " + err.message, true);
+        }
+      }
+    });
   });
 
   // Integrate conversations into the connect flow via MutationObserver.

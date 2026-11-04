@@ -962,9 +962,20 @@
                     placeholder="Cole a mensagem ou descreva a entrada comercial"></textarea>
           <div style="display:flex;gap:8px;">
             <button type="submit" class="primary">Avaliar e criar oportunidade</button>
+            <button type="button" id="intake-suggest" class="secondary">🤖 Sugerir</button>
             <button type="button" id="intake-clear" class="secondary">Limpar</button>
           </div>
         </form>
+        <!-- WP-259 — Intake suggestion panel -->
+        <div id="intake-suggestion" class="intake-decision" hidden>
+          <h3>Sugestão da IA</h3>
+          <dl class="metadata">
+            <dt>Intenção sugerida</dt><dd id="intake-suggest-intent"></dd>
+            <dt>Categoria</dt><dd id="intake-suggest-category"></dd>
+            <dt>Raciocínio</dt><dd id="intake-suggest-reasoning"></dd>
+          </dl>
+          <p class="small">Revise a sugestão antes de criar a oportunidade.</p>
+        </div>
         <div id="intake-decision" class="intake-decision" hidden>
           <h3>Decisão</h3>
           <dl class="metadata">
