@@ -1040,3 +1040,11 @@ foram feitas por company e quantas falharam. Adicionado rastreamento
 in-memory de chamadas bem-sucedidas e falhas, com endpoint de consulta.
 
 **2676 testes passaram** (14 novos); compileall, diff-check: PASS.
+
+### WP-217 — Métricas do agente no dashboard
+
+O dashboard do operador não mostrava o uso do agente IA. Adicionado
+card "🤖 Agente IA" com contagem total de chamadas, sucesso e falha,
+alimentado pelo endpoint /dashboard que agora inclui agent_usage.
+
+**2686 testes passaram** (10 novos); compileall, diff-check: PASS.
