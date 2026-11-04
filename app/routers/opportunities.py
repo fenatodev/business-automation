@@ -392,9 +392,10 @@ def export_opportunities_csv(
     writer.writerow([
         "ID", "Titulo", "Descricao", "Status", "Orçamento",
         "Prazo", "Requisitos", "URL", "Fonte", "Nota triagem",
-        "Capturada em",
+        "Capturada em", "Prioridade", "Nível prioridade",
     ])
     for opp in opportunities:
+        priority = _calculate_priority_score(opp)
         writer.writerow([
             opp.id,
             opp.title,
@@ -407,6 +408,8 @@ def export_opportunities_csv(
             opp.source or "",
             opp.triage_note or "",
             opp.captured_at.isoformat() if opp.captured_at else "",
+            priority["score"],
+            priority["level"],
         ])
 
     return Response(
