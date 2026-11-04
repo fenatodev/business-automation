@@ -869,6 +869,7 @@ def reject_proposal_brief(
 def list_proposal_briefs(
     status: str | None = Query(default=None, description="Filter by brief status"),
     q: str | None = Query(default=None, description="Search keywords in title and offer reference"),
+    opportunity_id: int | None = Query(default=None, description="Filter by opportunity"),
     from_date: str | None = Query(default=None, description="Filter created_at >= date (YYYY-MM-DD)"),
     to_date: str | None = Query(default=None, description="Filter created_at <= date (YYYY-MM-DD)"),
     sort: str = Query(default="created_at", description="Sort by: created_at, id, status"),
@@ -896,6 +897,9 @@ def list_proposal_briefs(
 
     if status:
         query = query.where(ProposalBrief.status == status)
+
+    if opportunity_id is not None:
+        query = query.where(ProposalBrief.opportunity_id == opportunity_id)
 
     if q:
         pattern = f"%{q}%"
@@ -935,6 +939,7 @@ def list_proposal_briefs(
 def count_proposal_briefs(
     status: str | None = Query(default=None, description="Filter by brief status"),
     q: str | None = Query(default=None, description="Search keywords in title and offer reference"),
+    opportunity_id: int | None = Query(default=None, description="Filter by opportunity"),
     from_date: str | None = Query(default=None, description="Filter created_at >= date (YYYY-MM-DD)"),
     to_date: str | None = Query(default=None, description="Filter created_at <= date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
@@ -950,6 +955,9 @@ def count_proposal_briefs(
 
     if status:
         query = query.where(ProposalBrief.status == status)
+
+    if opportunity_id is not None:
+        query = query.where(ProposalBrief.opportunity_id == opportunity_id)
 
     if q:
         pattern = f"%{q}%"
@@ -971,6 +979,7 @@ def count_proposal_briefs(
 def export_briefs_csv(
     status: str | None = Query(default=None, description="Filter by brief status"),
     q: str | None = Query(default=None, description="Search keywords in title and offer reference"),
+    opportunity_id: int | None = Query(default=None, description="Filter by opportunity"),
     from_date: str | None = Query(default=None, description="Filter created_at >= date (YYYY-MM-DD)"),
     to_date: str | None = Query(default=None, description="Filter created_at <= date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
@@ -993,6 +1002,9 @@ def export_briefs_csv(
 
     if status:
         query = query.where(ProposalBrief.status == status)
+
+    if opportunity_id is not None:
+        query = query.where(ProposalBrief.opportunity_id == opportunity_id)
 
     if q:
         pattern = f"%{q}%"
