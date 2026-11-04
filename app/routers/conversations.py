@@ -287,6 +287,7 @@ def list_company_conversations(
     status: str | None = Query(None, description="Filter by status"),
     q: str | None = Query(None, description="Search keywords in messages"),
     customer_id: int | None = Query(None, description="Filter by customer"),
+    lead_id: int | None = Query(None, description="Filter by lead"),
     from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
     to_date: str | None = Query(None, description="Filter created_at <= date (YYYY-MM-DD)"),
     sort: str = Query(default="last_message", description="Sort by: id, last_message, created_at"),
@@ -315,6 +316,9 @@ def list_company_conversations(
 
     if customer_id is not None:
         stmt = stmt.where(Conversation.customer_id == customer_id)
+
+    if lead_id is not None:
+        stmt = stmt.where(Conversation.lead_id == lead_id)
 
     if q is not None:
         stmt = stmt.where(
@@ -355,6 +359,7 @@ def count_company_conversations(
     status: str | None = Query(None, description="Filter by status"),
     q: str | None = Query(None, description="Search keywords in messages"),
     customer_id: int | None = Query(None, description="Filter by customer"),
+    lead_id: int | None = Query(None, description="Filter by lead"),
     from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
     to_date: str | None = Query(None, description="Filter created_at <= date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
@@ -380,6 +385,9 @@ def count_company_conversations(
 
     if customer_id is not None:
         stmt = stmt.where(Conversation.customer_id == customer_id)
+
+    if lead_id is not None:
+        stmt = stmt.where(Conversation.lead_id == lead_id)
 
     if q is not None:
         stmt = stmt.where(
@@ -585,6 +593,7 @@ def export_conversations_csv(
     status: str | None = Query(None, description="Filter by status"),
     q: str | None = Query(None, description="Search keywords in messages"),
     customer_id: int | None = Query(None, description="Filter by customer"),
+    lead_id: int | None = Query(None, description="Filter by lead"),
     from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
     to_date: str | None = Query(None, description="Filter created_at <= date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
@@ -611,6 +620,9 @@ def export_conversations_csv(
 
     if customer_id is not None:
         stmt = stmt.where(Conversation.customer_id == customer_id)
+
+    if lead_id is not None:
+        stmt = stmt.where(Conversation.lead_id == lead_id)
 
     if q is not None:
         stmt = stmt.where(

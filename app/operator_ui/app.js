@@ -25,6 +25,7 @@
   let convFilterStatus = "";
   let convFilterQuery = "";
   let convFilterCustomerId = "";
+  let convFilterLeadId = "";
   let convFilterSort = "last_message";
   let convFilterFromDate = "";
   let convFilterToDate = "";
@@ -160,6 +161,7 @@
     convFilterStatus = "";
     convFilterQuery = "";
     convFilterCustomerId = "";
+    convFilterLeadId = "";
     convFilterSort = "last_message";
     convOffset = 0;
     convTotal = 0;
@@ -167,6 +169,7 @@
     msgTotal = 0;
     oppPipelineFilter = "all";
     convCustomerFilterPopulated = false;
+    convLeadFilterPopulated = false;
     stopDashboardRefresh();
     stopNotificationRefresh();
     notify(message);
@@ -1260,6 +1263,7 @@
     if (convFilterStatus) params.set("status", convFilterStatus);
     if (convFilterQuery) params.set("q", convFilterQuery);
     if (convFilterCustomerId) params.set("customer_id", convFilterCustomerId);
+    if (convFilterLeadId) params.set("lead_id", convFilterLeadId);
     if (convFilterFromDate) params.set("from_date", convFilterFromDate);
     if (convFilterToDate) params.set("to_date", convFilterToDate);
     params.set("sort", convFilterSort);
@@ -1274,6 +1278,7 @@
     if (convFilterStatus) params.set("status", convFilterStatus);
     if (convFilterQuery) params.set("q", convFilterQuery);
     if (convFilterCustomerId) params.set("customer_id", convFilterCustomerId);
+    if (convFilterLeadId) params.set("lead_id", convFilterLeadId);
     if (convFilterFromDate) params.set("from_date", convFilterFromDate);
     if (convFilterToDate) params.set("to_date", convFilterToDate);
     const query = params.toString();
@@ -1533,6 +1538,30 @@
     }
   }
 
+  // WP-232 — Populate lead filter dropdown
+  let convLeadFilterPopulated = false;
+  async function populateLeadFilter() {
+    if (convLeadFilterPopulated) return;
+    try {
+      const leads = await leadApi("/leads?limit=100&offset=0", "GET");
+      const select = $("conv-filter-lead");
+      select.replaceChildren();
+      const allOpt = document.createElement("option");
+      allOpt.value = "";
+      allOpt.textContent = "Todos os leads";
+      select.appendChild(allOpt);
+      for (const l of (leads || [])) {
+        const opt = document.createElement("option");
+        opt.value = String(l.id);
+        opt.textContent = l.name || "Sem nome";
+        select.appendChild(opt);
+      }
+      convLeadFilterPopulated = true;
+    } catch (e) {
+      // Silently fail — filter still works without dropdown
+    }
+  }
+
   async function refreshConversations() {
     try {
       const company = opportunities.length > 0 ? opportunities[0].company_id : null;
@@ -1558,6 +1587,8 @@
     }
     // WP-195 — Populate customer dropdown on first refresh
     populateCustomerFilter().catch(() => {});
+    // WP-232 — Populate lead dropdown on first refresh
+    populateLeadFilter().catch(() => {});
     showConversationList();
     updateConversationPagination();
     if (selectedConvId !== null && conversations.some((c) => c.id === selectedConvId)) {
@@ -1597,6 +1628,7 @@
     convFilterStatus = "";
     convFilterQuery = "";
     convFilterCustomerId = "";
+    convFilterLeadId = "";
     convFilterSort = "last_message";
     convFilterFromDate = "";
     convFilterToDate = "";
@@ -1604,6 +1636,7 @@
     $("conv-filter-channel").value = "";
     $("conv-filter-status").value = "";
     $("conv-filter-customer").value = "";
+    $("conv-filter-lead").value = "";
     $("conv-search-q").value = "";
     $("conv-filter-sort").value = "last_message";
     $("conv-from-date").value = "";
@@ -1627,6 +1660,13 @@
   // WP-195 — Filter conversations by customer
   $("conv-filter-customer").addEventListener("change", (e) => {
     convFilterCustomerId = e.target.value;
+    convOffset = 0;
+    refreshConversations().catch(() => {});
+  });
+
+  // WP-232 — Filter conversations by lead
+  $("conv-filter-lead").addEventListener("change", (e) => {
+    convFilterLeadId = e.target.value;
     convOffset = 0;
     refreshConversations().catch(() => {});
   });
@@ -1683,6 +1723,7 @@
     if (convFilterStatus) params.push("status=" + encodeURIComponent(convFilterStatus));
     if (convFilterQuery) params.push("q=" + encodeURIComponent(convFilterQuery));
     if (convFilterCustomerId) params.push("customer_id=" + encodeURIComponent(convFilterCustomerId));
+    if (convFilterLeadId) params.push("lead_id=" + encodeURIComponent(convFilterLeadId));
     if (convFilterFromDate) params.push("from_date=" + encodeURIComponent(convFilterFromDate));
     if (convFilterToDate) params.push("to_date=" + encodeURIComponent(convFilterToDate));
     const company = opportunities.length > 0 ? opportunities[0].company_id : null;

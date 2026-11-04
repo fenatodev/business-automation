@@ -1136,3 +1136,11 @@ tenant-isolado com 1-100 IDs. Botão "Excluir selecionados" na barra de ações
 em massa com confirmação via `confirm()`.
 
 **2787 testes passaram** (8 novos); compileall, diff-check: PASS.
+
+### WP-232 — Filtro de conversas por lead
+
+O módulo de conversas tinha filtro por `customer_id` mas não por `lead_id`.
+Adicionado `?lead_id=` em list, count e export CSV. Dropdown "Lead" na UI
+populado dinamicamente a partir dos leads da company.
+
+**2795 testes passaram** (8 novos); compileall, diff-check: PASS.
