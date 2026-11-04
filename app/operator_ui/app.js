@@ -2287,6 +2287,26 @@
       nextActionsSection.hidden = true;
     }
 
+    // WP-239 — High priority opportunities
+    const highPrioritySection = $("high-priority-section");
+    const highPriorityList = $("high-priority-list");
+    const highPriority = data.high_priority_opportunities || [];
+    if (highPriority.length > 0) {
+      highPrioritySection.hidden = false;
+      highPriorityList.replaceChildren();
+      for (const opp of highPriority) {
+        const li = document.createElement("li");
+        li.className = "next-action-item";
+        li.textContent = `🎯 ${opp.title} (Score: ${opp.priority_score})`;
+        if (opp.deadline) {
+          li.textContent += ` | Prazo: ${opp.deadline}`;
+        }
+        highPriorityList.appendChild(li);
+      }
+    } else {
+      highPrioritySection.hidden = true;
+    }
+
     // WP-228 — Recent activities
     const recentSection = $("recent-activities-section");
     const recentList = $("recent-activities-list");

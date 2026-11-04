@@ -172,6 +172,30 @@ def get_dashboard(
     from app.routers.companies import _get_agent_usage
     agent_usage = _get_agent_usage(company_id)
 
+    # WP-239 — High priority opportunities (reuse _calculate_priority_score from opportunities)
+    from app.routers.opportunities import _calculate_priority_score
+    all_opps = db.scalars(
+        select(Opportunity)
+        .where(Opportunity.company_id == company_id)
+        .order_by(Opportunity.id)
+    ).all()
+    high_priority = []
+    for opp in all_opps:
+        priority = _calculate_priority_score(opp)
+        if priority["level"] == "high":
+            high_priority.append({
+                "id": opp.id,
+                "title": opp.title,
+                "priority_score": priority["score"],
+                "priority_level": priority["level"],
+                "next_action": opp.next_action,
+                "deadline": opp.deadline,
+                "budget": opp.budget,
+                "source": opp.source,
+            })
+    high_priority.sort(key=lambda x: x["priority_score"], reverse=True)
+    high_priority_opportunities = high_priority[:5]
+
     # WP-228 — Recent activities (inline with dashboard to avoid separate fetch)
     activities = []
     for opp in db.scalars(
@@ -227,6 +251,7 @@ def get_dashboard(
             "successful_calls": agent_usage["successful_calls"],
             "failed_calls": agent_usage["failed_calls"],
         },
+        "high_priority_opportunities": high_priority_opportunities,
         "recent_activities": recent_activities,
     }
 
