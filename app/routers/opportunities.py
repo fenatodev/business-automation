@@ -1123,12 +1123,21 @@ def export_briefs_csv(
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    """Export proposal briefs for the authenticated tenant as CSV, respecting filters."""
+    """Export proposal briefs for the authenticated tenant as CSV, respecting filters.
+
+    WP-250: Includes all detailed fields (diagnosis, scope, deliverables, etc).
+    """
     query = (
         select(
             ProposalBrief.id,
             ProposalBrief.opportunity_id,
             ProposalBrief.offer_reference,
+            ProposalBrief.diagnosis,
+            ProposalBrief.scope,
+            ProposalBrief.deliverables,
+            ProposalBrief.acceptance_criteria,
+            ProposalBrief.assumptions,
+            ProposalBrief.risks,
             ProposalBrief.status,
             ProposalBrief.created_at,
             Opportunity.title.label("opportunity_title"),
@@ -1161,7 +1170,9 @@ def export_briefs_csv(
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow([
-        "ID", "Oportunidade ID", "Título", "Referência", "Status", "Criada em",
+        "ID", "Oportunidade ID", "Título", "Referência", "Diagnóstico",
+        "Escopo", "Entregáveis", "Critérios", "Hipóteses", "Riscos",
+        "Status", "Criada em",
     ])
     for row in rows:
         writer.writerow([
@@ -1169,6 +1180,12 @@ def export_briefs_csv(
             row.opportunity_id,
             row.opportunity_title or "",
             row.offer_reference or "",
+            row.diagnosis or "",
+            row.scope or "",
+            row.deliverables or "",
+            row.acceptance_criteria or "",
+            row.assumptions or "",
+            row.risks or "",
             row.status,
             row.created_at.isoformat() if row.created_at else "",
         ])
