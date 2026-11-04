@@ -1257,3 +1257,22 @@ ação sugerida, motivo e contagem de compatibilidade (N/total). Botão
 Estado bulkTriageSuggestion resetado em clearSelection. Allowlist atualizado.
 
 **2929 testes passaram**; compileall, diff-check: PASS.
+
+### WP-250 — Export CSV détaillé des proposal briefs
+
+L'export CSV des briefs inclut maintenant tous les champs détaillés:
+diagnostic, scope, deliverables, critères d'acceptation, hypothèses et
+risques — en plus des champs de base (ID, opportunité, titre, référence,
+status, créée le). 12 colonnes au total. Respecte tous les filtres
+existants (status, q, opportunity_id, from_date, to_date).
+
+**2936 tests passés** (7 nouveaux); compileall, diff-check: PASS.
+
+### WP-251 — Badge de notifications dans le titre du navigateur
+
+Le titre de l'onglet affiche le compteur total de notifications:
+pendentes + nouveaux leads + conversations ouvertes. "(N) Operador"
+quand il y a des notifications, "Operador" sinon. Mise à jour automatique
+à chaque polling de notifications (30s).
+
+**2936 tests passés**; compileall, diff-check: PASS.
