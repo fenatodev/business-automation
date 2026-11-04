@@ -1305,3 +1305,15 @@ de triage par IA, configuration de l'agent par Company, modèles disponibles
 et activités récentes. 20 étapes au total.
 
 **2936 tests passés**; bash syntax, compileall, diff-check: PASS.
+
+### WP-256 — Métriques de performance commerciale dans le dashboard
+
+Le dashboard inclut maintenant `performance_metrics` avec:
+- `lead_conversion_rate`: % de leads convertis en customers
+- `opportunity_closure_rate`: % d'opportunités fermées (done/lost/ignore)
+- `brief_approval_rate`: % de briefs approuvés
+
+Chaque métrique inclut le taux en pourcentage et le compteur brut.
+7 tests backend; tenant isolation et auth requis.
+
+**2943 tests passés**; compileall, diff-check: PASS.
