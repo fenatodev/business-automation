@@ -1296,3 +1296,12 @@ Ctrl+5 (Customers), Ctrl+6 (Fila de revisão), Ctrl+7 (Tarefas internas).
 Utilise scrollIntoView smooth, réutilisant la logique de WP-193.
 
 **2936 tests passés**; compileall, diff-check: PASS.
+
+### WP-254 — Mettre à jour le script de démonstration Client 0
+
+Le script `scripts/demo_client0_cycle.sh` couvre maintenant le cycle F2
+complet plus les fonctionnalités F3 récentes: exportation CSV, suggestion
+de triage par IA, configuration de l'agent par Company, modèles disponibles
+et activités récentes. 20 étapes au total.
+
+**2936 tests passés**; bash syntax, compileall, diff-check: PASS.
