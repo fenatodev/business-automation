@@ -1160,3 +1160,13 @@ dropdown correspondente. Adicionado seletor "Oportunidade" que carrega as
 oportunidades da company e filtra a lista, count e export CSV.
 
 **2802 testes passaram**; compileall, diff-check: PASS.
+
+### WP-235 — Criar customer a partir de conversa
+
+O operador podia criar leads a partir de conversas (WP-147) mas não customers.
+Adicionado botão "+ Criar customer desta conversa" no painel de detalhes da
+conversa, com formulário inline (nome, telefone, e-mail, fonte). A fonte é
+pré-preenchida com o canal da conversa. Handler de submit via customerApi
+com POST /customers; allowlist atualizado.
+
+**2822 testes passaram** (20 novos); compileall, diff-check: PASS.

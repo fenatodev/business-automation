@@ -509,6 +509,35 @@
               <button type="button" id="cancel-conv-lead" class="secondary">Cancelar</button>
             </div>
           </form>
+          <!-- WP-235 — Create customer from conversation -->
+          <button id="conv-create-customer" type="button" class="secondary" hidden>+ Criar customer desta conversa</button>
+          <form id="conv-customer-form" class="conv-customer-form" hidden>
+            <h4>Criar customer a partir desta conversa</h4>
+            <div class="two-col">
+              <div>
+                <label for="conv-customer-name">Nome *</label>
+                <input id="conv-customer-name" type="text" required maxlength="120">
+              </div>
+              <div>
+                <label for="conv-customer-phone">Telefone</label>
+                <input id="conv-customer-phone" type="text" maxlength="30">
+              </div>
+            </div>
+            <div class="two-col">
+              <div>
+                <label for="conv-customer-email">E-mail</label>
+                <input id="conv-customer-email" type="email" maxlength="200">
+              </div>
+              <div>
+                <label for="conv-customer-source">Fonte</label>
+                <input id="conv-customer-source" type="text" maxlength="50" placeholder="Ex.: conversa, indicação...">
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button type="submit" class="primary">Criar customer</button>
+              <button type="button" id="cancel-conv-customer" class="secondary">Cancelar</button>
+            </div>
+          </form>
         </div>
       </section>
 

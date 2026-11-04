@@ -1359,6 +1359,9 @@
     // WP-147 — Show create lead button
     $("conv-create-lead").hidden = false;
     $("conv-lead-form").hidden = true;
+    // WP-235 — Show create customer button
+    $("conv-create-customer").hidden = false;
+    $("conv-customer-form").hidden = true;
     $("reply-conv-id").value = id;
     const conv = conversations.find((c) => c.id === id);
     const channel = conv ? (channelLabels[conv.channel] || conv.channel) : "Conversa";
@@ -1486,6 +1489,49 @@
         await refreshLeads();
       } catch (error) {
         notify("Falha ao criar lead.", true);
+      }
+    });
+  });
+
+  // WP-235 — Create customer from conversation
+  $("conv-create-customer").addEventListener("click", () => {
+    $("conv-customer-form").hidden = false;
+    $("conv-create-customer").hidden = true;
+    const conv = conversations.find((c) => c.id === selectedConvId);
+    if (conv) {
+      $("conv-customer-source").value = conv.channel || "";
+    }
+  });
+
+  $("cancel-conv-customer").addEventListener("click", () => {
+    $("conv-customer-form").hidden = true;
+    $("conv-create-customer").hidden = false;
+    $("conv-customer-name").value = "";
+    $("conv-customer-phone").value = "";
+    $("conv-customer-email").value = "";
+    $("conv-customer-source").value = "";
+  });
+
+  $("conv-customer-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    withButton(event.submitter, async () => {
+      const name = $("conv-customer-name").value.trim();
+      const phone = $("conv-customer-phone").value.trim() || null;
+      const email = $("conv-customer-email").value.trim() || null;
+      const source = $("conv-customer-source").value.trim() || null;
+      if (!name) { notify("Nome é obrigatório.", true); return; }
+      try {
+        await customerApi("/customers", "POST", { name, phone, email, source });
+        notify("Customer criado a partir da conversa.");
+        $("conv-customer-form").hidden = true;
+        $("conv-create-customer").hidden = false;
+        $("conv-customer-name").value = "";
+        $("conv-customer-phone").value = "";
+        $("conv-customer-email").value = "";
+        $("conv-customer-source").value = "";
+        await refreshCustomers();
+      } catch (error) {
+        notify("Falha ao criar customer.", true);
       }
     });
   });
@@ -1624,9 +1670,11 @@
       $("conv-close-toggle").hidden = true;
       $("human-reply-form").hidden = true;
       $("conv-note-section").hidden = true;
-      // WP-147
+      // WP-147 & WP-235
       $("conv-create-lead").hidden = true;
       $("conv-lead-form").hidden = true;
+      $("conv-create-customer").hidden = true;
+      $("conv-customer-form").hidden = true;
       selectedConvIds.clear();
       updateConvBulkBar();
       showConversationList();
@@ -1864,9 +1912,11 @@
   $("conv-list").replaceChildren();
   $("conv-detail").hidden = true;
   $("conv-note-section").hidden = true;
-  // WP-147
+  // WP-147 & WP-235
   $("conv-create-lead").hidden = true;
   $("conv-lead-form").hidden = true;
+  $("conv-create-customer").hidden = true;
+  $("conv-customer-form").hidden = true;
   selectedConvIds.clear();
   updateConvBulkBar();
 
@@ -2657,7 +2707,8 @@
   async function customerApi(path, method, body) {
     if (!bearer) throw new Error("Conecte um operador.");
     const allowedPattern = /^\/customers(\/(count|export\.csv))?(\?.*)?$/;
-    if (!allowedPattern.test(path.split("#")[0])) {
+    // WP-235 — Allow POST /customers for creating from conversation
+    if (!allowedPattern.test(path.split("#")[0]) && !(path === "/customers" && method === "POST")) {
       console.error("[customerApi] Rota não permitida:", path);
       return;
     }
