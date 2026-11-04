@@ -403,6 +403,14 @@ class ReviewQueueBulkDecision(BaseModel):
     operator_note: str | None = Field(default=None, max_length=2000)
 
 
+class ReviewQueueBulkDelete(BaseModel):
+    """Bulk delete multiple review queue items."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    item_ids: list[int] = Field(min_length=1, max_length=100)
+
+
 class ReviewQueueDecisionResponse(BaseModel):
     """Response for review queue decision, includes opportunity_id when created."""
 

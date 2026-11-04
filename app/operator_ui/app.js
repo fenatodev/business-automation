@@ -787,6 +787,7 @@
           /^\/review-queue\/count(\?|$)/.test(route) ||
           /^\/review-queue\/synthetic-trigger$/.test(route) ||
           /^\/review-queue\/bulk-decision$/.test(route) ||
+          /^\/review-queue\/bulk-delete$/.test(route) ||
           /^\/review-queue\/\d+\/decision$/.test(route))) {
       throw new Error("Rota de revisão não permitida.");
     }
@@ -3782,6 +3783,26 @@
         await refreshReviewQueue();
       } catch (e) {
         notify("Falha ao aplicar decisão.", true);
+      }
+    });
+  });
+
+  // WP-230 — Bulk delete review queue items
+  $("rq-bulk-delete").addEventListener("click", () => {
+    const button = $("rq-bulk-delete");
+    withButton(button, async () => {
+      const ids = Array.from(selectedRqIds);
+      if (!ids.length) {notify("Nenhum item selecionado.", true); return;}
+      if (!confirm("Excluir " + ids.length + " item(s) da fila de revisão?")) return;
+      try {
+        const result = await reviewApi("/review-queue/bulk-delete", "POST", {
+          item_ids: ids,
+        });
+        selectedRqIds.clear();
+        notify(result.deleted + " item(s) excluído(s). " + result.skipped.length + " ignorado(s).");
+        await refreshReviewQueue();
+      } catch (e) {
+        notify("Falha ao excluir itens.", true);
       }
     });
   });

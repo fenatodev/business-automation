@@ -16,6 +16,7 @@ from app.database import settings
 from app.dependencies import get_db, require_operator
 from app.schemas import (
     ReviewQueueBulkDecision,
+    ReviewQueueBulkDelete,
     ReviewQueueDecision,
     ReviewQueueDecisionResponse,
     ReviewQueueItemOut,
@@ -303,5 +304,39 @@ def bulk_apply_review_decision(
     return {
         "applied": applied,
         "applied_ids": sorted(applied_ids),
+        "skipped": sorted(skipped),
+    }
+
+
+@router.post("/bulk-delete")
+def bulk_delete_review_items(
+    data: ReviewQueueBulkDelete,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+) -> dict[str, object]:
+    """Bulk delete multiple review queue items (tenant-isolated).
+
+    Returns counts of deleted and skipped items.
+    Items that don't belong to the tenant are skipped.
+    """
+    items = db.scalars(
+        select(ReviewQueueItem).where(
+            ReviewQueueItem.id.in_(data.item_ids),
+            ReviewQueueItem.company_id == identity.company_id,
+        )
+    ).all()
+
+    deleted_ids = []
+    for item in items:
+        db.delete(item)
+        deleted_ids.append(item.id)
+
+    db.commit()
+
+    skipped = set(data.item_ids) - set(deleted_ids)
+
+    return {
+        "deleted": len(deleted_ids),
+        "deleted_ids": sorted(deleted_ids),
         "skipped": sorted(skipped),
     }

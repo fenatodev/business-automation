@@ -1125,3 +1125,14 @@ O endpoint suggest-reply (WP-226) não tinha interface visual. Adicionado botão
 ao agente uma sugestão baseada na última mensagem do cliente. Exibe a sugestão
 em painel dedicado com botão "Copiar" que preenche o formulário de resposta
 manual. Tratamento de 400 (sem mensagem cliente) e 503 (agente indisponível).
+
+**2767 testes passaram** (8 novos); compileall, diff-check: PASS.
+
+### WP-230 — Exclusão em massa da review queue
+
+A review queue tinha bulk approve/reject mas não tinha bulk delete, impedindo
+a limpeza em massa dos itens já decididos. `POST /review-queue/bulk-delete`
+tenant-isolado com 1-100 IDs. Botão "Excluir selecionados" na barra de ações
+em massa com confirmação via `confirm()`.
+
+**2787 testes passaram** (8 novos); compileall, diff-check: PASS.

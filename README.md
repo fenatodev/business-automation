@@ -33,7 +33,8 @@ O projeto tem dois objetivos complementares:
 - Suggest agent reply button in conversation UI (WP-227) — triggers AI suggestion without persisting;
 - Recent activities feed in dashboard (WP-228) — shows last 20 activities across opportunities, conversations, and leads;
 - Failure handling that preserves user messages when the agent service is unavailable (HTTP 503);
-- 2779 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
+- Bulk delete for review queue items (WP-230) — clean up decided items in bulk;
+- 2787 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
 
 ## Engineering case study
 
@@ -46,7 +47,7 @@ The useful part of this project is not the idea of "AI for business". It is the 
 | Authentication | Bearer API keys with role-based access (admin, operator). |
 | API failure behavior | Missing resources and invalid ownership return explicit client errors. |
 | AI integration failure | Customer input preserved, failed agent output not fabricated, internal details not leaked. |
-| Regression protection | 2779 tests cover happy paths, failures, tenant isolation, and UI contracts. |
+| Regression protection | 2787 tests cover happy paths, failures, tenant isolation, and UI contracts. |
 | Product boundaries | ERP and automation engines remain external integrations. |
 
 ### Example evaluation mindset
