@@ -178,6 +178,14 @@ def get_dashboard(
             "count": review_queue["pending"],
             "section": "review_queue",
         })
+    # WP-245 — Briefs ready for review
+    if briefs.get("ready_for_review", 0) > 0:
+        next_actions.append({
+            "type": "brief",
+            "label": f"{briefs['ready_for_review']} brief(s) pronto(s) para revisão",
+            "count": briefs["ready_for_review"],
+            "section": "briefs",
+        })
 
     # WP-216 — Agent usage stats
     from app.routers.companies import _get_agent_usage

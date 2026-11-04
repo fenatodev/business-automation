@@ -2369,6 +2369,7 @@
             "Leads": "leads-title",
             "Tarefas internas": "tasks-title",
             "Fila de revisão": "rq-title",
+            "briefs": "brief-title",
           };
           const headingId = sectionMap[action.section];
           if (headingId) {
