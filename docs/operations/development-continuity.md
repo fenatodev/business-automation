@@ -1317,3 +1317,13 @@ Chaque métrique inclut le taux en pourcentage et le compteur brut.
 7 tests backend; tenant isolation et auth requis.
 
 **2943 tests passés**; compileall, diff-check: PASS.
+
+### WP-257 — Indicadores de performance no dashboard do operador
+
+Seção "Indicadores de performance" com 3 cards: taxa de conversão
+(leads), taxa de fechamento (oportunidades), taxa de aprovação (briefs).
+Cada card mostra a porcentagem e o contador bruto.
+
+Correção: removida sintaxe TypeScript inválida em app.js.
+
+**2943 tests passed**; JS syntax, compileall, diff-check: PASS.
