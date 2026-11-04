@@ -166,6 +166,10 @@ def get_dashboard(
             "section": "review_queue",
         })
 
+    # WP-216 — Agent usage stats
+    from app.routers.companies import _get_agent_usage
+    agent_usage = _get_agent_usage(company_id)
+
     return {
         "opportunities": opportunities,
         "conversations": conversations,
@@ -175,6 +179,11 @@ def get_dashboard(
         "opportunities_by_source": opportunities_by_source,
         "leads_by_source": leads_by_source,
         "next_actions": next_actions,
+        "agent_usage": {
+            "total_calls": agent_usage["total_calls"],
+            "successful_calls": agent_usage["successful_calls"],
+            "failed_calls": agent_usage["failed_calls"],
+        },
     }
 
 

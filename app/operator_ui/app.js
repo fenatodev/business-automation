@@ -1829,6 +1829,22 @@
       rqDetails.appendChild(span);
     }
 
+    // WP-217 — Agent usage
+    const agent = data.agent_usage || {};
+    $("dash-agent-total").textContent = agent.total_calls || 0;
+    const agentDetails = $("dash-agent-details");
+    agentDetails.replaceChildren();
+    const agentLabels = {
+      successful_calls: "✓ Sucesso",
+      failed_calls: "✗ Falha",
+    };
+    for (const [k, v] of Object.entries(agent)) {
+      if (k === "total_calls") continue;
+      const span = document.createElement("span");
+      span.textContent = (agentLabels[k] || k) + ": " + v;
+      agentDetails.appendChild(span);
+    }
+
     // WP-198 — Opportunities by source
     const oppSourceSection = $("opp-source-section");
     const oppSourceList = $("opp-source-list");
