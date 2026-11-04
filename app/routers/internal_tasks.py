@@ -256,6 +256,56 @@ def get_dashboard(
     activities.sort(key=lambda a: a["created_at"], reverse=True)
     recent_activities = activities[:20]
 
+    # WP-256 — Business performance metrics
+    # Lead conversion rate: leads converted to customers / total leads
+    total_leads = db.scalar(
+        select(func.count(Lead.id)).where(Lead.company_id == company_id)
+    ) or 0
+    converted_leads = db.scalar(
+        select(func.count(Lead.id)).where(
+            Lead.company_id == company_id,
+            Lead.status == "converted",
+        )
+    ) or 0
+    lead_conversion_rate = (converted_leads / total_leads * 100) if total_leads > 0 else 0.0
+
+    # Opportunity closure rate: done + lost / total opportunities
+    total_opps = db.scalar(
+        select(func.count(Opportunity.id)).where(Opportunity.company_id == company_id)
+    ) or 0
+    closed_opps = db.scalar(
+        select(func.count(Opportunity.id)).where(
+            Opportunity.company_id == company_id,
+            Opportunity.next_action.in_(["done", "lost", "ignore"]),
+        )
+    ) or 0
+    opportunity_closure_rate = (closed_opps / total_opps * 100) if total_opps > 0 else 0.0
+
+    # Brief approval rate: approved / total briefs
+    total_briefs = db.scalar(
+        select(func.count(ProposalBrief.id))
+        .join(Opportunity, ProposalBrief.opportunity_id == Opportunity.id)
+        .where(Opportunity.company_id == company_id)
+    ) or 0
+    approved_briefs = db.scalar(
+        select(func.count(ProposalBrief.id))
+        .join(Opportunity, ProposalBrief.opportunity_id == Opportunity.id)
+        .where(
+            Opportunity.company_id == company_id,
+            ProposalBrief.status == "approved",
+        )
+    ) or 0
+    brief_approval_rate = (approved_briefs / total_briefs * 100) if total_briefs > 0 else 0.0
+
+    performance_metrics = {
+        "lead_conversion_rate": round(lead_conversion_rate, 1),
+        "lead_conversion_count": f"{converted_leads}/{total_leads}",
+        "opportunity_closure_rate": round(opportunity_closure_rate, 1),
+        "opportunity_closure_count": f"{closed_opps}/{total_opps}",
+        "brief_approval_rate": round(brief_approval_rate, 1),
+        "brief_approval_count": f"{approved_briefs}/{total_briefs}",
+    }
+
     return {
         "opportunities": opportunities,
         "conversations": conversations,
@@ -273,6 +323,7 @@ def get_dashboard(
         "briefs": briefs,
         "high_priority_opportunities": high_priority_opportunities,
         "recent_activities": recent_activities,
+        "performance_metrics": performance_metrics,
     }
 
 
