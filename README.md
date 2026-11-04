@@ -36,6 +36,7 @@ O projeto tem dois objetivos complementares:
 - Bulk delete for review queue items (WP-230) — clean up decided items in bulk;
 - Filter conversations by lead (WP-232) — dropdown and backend `?lead_id=` in list, count, export CSV;
 - Filter proposal briefs by opportunity (WP-233) — backend `?opportunity_id=` in list, count, export CSV;
+- Filter briefs by opportunity in UI (WP-234) — dropdown populated from opportunities;
 - 2802 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
 
 ## Engineering case study
@@ -49,7 +50,7 @@ The useful part of this project is not the idea of "AI for business". It is the 
 | Authentication | Bearer API keys with role-based access (admin, operator). |
 | API failure behavior | Missing resources and invalid ownership return explicit client errors. |
 | AI integration failure | Customer input preserved, failed agent output not fabricated, internal details not leaked. |
-| Regression protection | 2802 tests cover happy paths, failures, tenant isolation, and UI contracts. |
+| Regression protection | 2802 tests cover happy paths, failures, tenant isolation, UI contracts and filtered briefs. |
 | Product boundaries | ERP and automation engines remain external integrations. |
 
 ### Example evaluation mindset

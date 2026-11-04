@@ -1562,6 +1562,30 @@
     }
   }
 
+  // WP-234 — Populate brief opportunity filter dropdown
+  let briefOppFilterPopulated = false;
+  async function populateBriefOpportunityFilter() {
+    if (briefOppFilterPopulated) return;
+    try {
+      const opps = await api("/opportunities?limit=100&offset=0");
+      const select = $("briefs-opportunity-filter");
+      select.replaceChildren();
+      const allOpt = document.createElement("option");
+      allOpt.value = "";
+      allOpt.textContent = "Todas";
+      select.appendChild(allOpt);
+      for (const o of (opps || [])) {
+        const opt = document.createElement("option");
+        opt.value = String(o.id);
+        opt.textContent = o.title || "Sem título";
+        select.appendChild(opt);
+      }
+      briefOppFilterPopulated = true;
+    } catch (e) {
+      // Silently fail — filter still works without dropdown
+    }
+  }
+
   async function refreshConversations() {
     try {
       const company = opportunities.length > 0 ? opportunities[0].company_id : null;
@@ -3865,7 +3889,8 @@
       path === "/proposal-briefs/bulk-status" || path === "/proposal-briefs/bulk-delete" ||
       /^\/proposal-briefs\/\d+\/conversations$/.test(path) ||
       /^\/proposal-briefs\/\d+$/.test(path) ||
-      path.startsWith("/proposal-briefs?");
+      path.startsWith("/proposal-briefs?") ||
+      path.startsWith("/proposal-briefs/export.csv");
     if (!allowed) throw new Error("Path não permitido: " + path);
     const url = path + (path.includes("?") ? "&" : "?") + "t=" + Date.now();
     const res = await fetch(url, {
@@ -3884,11 +3909,13 @@
   function buildBriefUrl() {
     const params = [];
     const status = $("briefs-status-filter") ? $("briefs-status-filter").value : "";
+    const opportunityId = $("briefs-opportunity-filter") ? $("briefs-opportunity-filter").value : "";
     const q = $("briefs-search") ? $("briefs-search").value.trim() : "";
     const sort = $("briefs-sort") ? $("briefs-sort").value : "created_at";
     const fromDate = $("briefs-from-date") ? $("briefs-from-date").value : "";
     const toDate = $("briefs-to-date") ? $("briefs-to-date").value : "";
     if (status) params.push("status=" + encodeURIComponent(status));
+    if (opportunityId) params.push("opportunity_id=" + encodeURIComponent(opportunityId));
     if (q) params.push("q=" + encodeURIComponent(q));
     if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
     if (toDate) params.push("to_date=" + encodeURIComponent(toDate));
@@ -3901,10 +3928,12 @@
   function buildBriefCountUrl() {
     const params = [];
     const status = $("briefs-status-filter") ? $("briefs-status-filter").value : "";
+    const opportunityId = $("briefs-opportunity-filter") ? $("briefs-opportunity-filter").value : "";
     const q = $("briefs-search") ? $("briefs-search").value.trim() : "";
     const fromDate = $("briefs-from-date") ? $("briefs-from-date").value : "";
     const toDate = $("briefs-to-date") ? $("briefs-to-date").value : "";
     if (status) params.push("status=" + encodeURIComponent(status));
+    if (opportunityId) params.push("opportunity_id=" + encodeURIComponent(opportunityId));
     if (q) params.push("q=" + encodeURIComponent(q));
     if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
     if (toDate) params.push("to_date=" + encodeURIComponent(toDate));
@@ -3914,6 +3943,8 @@
   async function refreshBriefs() {
     if (!bearer) return;
     try {
+      // WP-234 — Populate opportunity filter
+      populateBriefOpportunityFilter();
       const [briefs, countData] = await Promise.all([
         briefApi(buildBriefUrl()),
         briefApi(buildBriefCountUrl()),
@@ -4139,6 +4170,12 @@
     refreshBriefs().catch(() => {});
   });
 
+  // WP-234 — Opportunity filter change
+  $("briefs-opportunity-filter").addEventListener("change", () => {
+    briefOffset = 0;
+    refreshBriefs().catch(() => {});
+  });
+
   $("briefs-sort").addEventListener("change", () => {
     briefOffset = 0;
     refreshBriefs().catch(() => {});
@@ -4171,6 +4208,7 @@
 
   $("briefs-clear-filters").addEventListener("click", () => {
     if ($("briefs-status-filter")) $("briefs-status-filter").value = "";
+    if ($("briefs-opportunity-filter")) $("briefs-opportunity-filter").value = "";
     if ($("briefs-search")) $("briefs-search").value = "";
     if ($("briefs-sort")) $("briefs-sort").value = "created_at";
     if ($("briefs-from-date")) $("briefs-from-date").value = "";
@@ -4182,10 +4220,12 @@
   $("briefs-export-csv").addEventListener("click", () => {
     const params = [];
     const status = $("briefs-status-filter") ? $("briefs-status-filter").value : "";
+    const opportunityId = $("briefs-opportunity-filter") ? $("briefs-opportunity-filter").value : "";
     const q = $("briefs-search") ? $("briefs-search").value.trim() : "";
     const fromDate = $("briefs-from-date") ? $("briefs-from-date").value : "";
     const toDate = $("briefs-to-date") ? $("briefs-to-date").value : "";
     if (status) params.push("status=" + encodeURIComponent(status));
+    if (opportunityId) params.push("opportunity_id=" + encodeURIComponent(opportunityId));
     if (q) params.push("q=" + encodeURIComponent(q));
     if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
     if (toDate) params.push("to_date=" + encodeURIComponent(toDate));

@@ -1152,3 +1152,11 @@ Adicionado `?opportunity_id=` em list, count e export CSV. Isolamento tenant
 via JOIN com Opportunity.
 
 **2802 testes passaram** (7 novos); compileall, diff-check: PASS.
+
+### WP-234 — Filtro de briefs por oportunidade na UI
+
+O backend de briefs suporta `?opportunity_id=` (WP-233) mas a UI não tinha
+dropdown correspondente. Adicionado seletor "Oportunidade" que carrega as
+oportunidades da company e filtra a lista, count e export CSV.
+
+**2802 testes passaram**; compileall, diff-check: PASS.
