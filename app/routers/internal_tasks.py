@@ -187,6 +187,78 @@ def get_dashboard(
     }
 
 
+@router.get("/recent-activities")
+def get_recent_activities(
+    limit: int = Query(default=20, ge=1, le=100),
+    type: str | None = Query(None, alias="type", description="Filter by activity type"),
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """WP-223 — Return recent activities across all entities.
+
+    Gives the operator quick context on what's happening in their tenant.
+    """
+    company_id = identity.company_id
+    activities = []
+
+    # Opportunities
+    opps = db.scalars(
+        select(Opportunity)
+        .where(Opportunity.company_id == company_id)
+        .order_by(Opportunity.created_at.desc())
+        .limit(limit)
+    ).all()
+    for opp in opps:
+        activities.append({
+            "type": "opportunity",
+            "id": opp.id,
+            "title": opp.title,
+            "created_at": opp.created_at.isoformat(),
+        })
+
+    # Conversations
+    convs = db.scalars(
+        select(Conversation)
+        .where(Conversation.company_id == company_id)
+        .order_by(Conversation.created_at.desc())
+        .limit(limit)
+    ).all()
+    for conv in convs:
+        activities.append({
+            "type": "conversation",
+            "id": conv.id,
+            "title": f"Conversa ({conv.channel})",
+            "created_at": conv.created_at.isoformat(),
+        })
+
+    # Leads
+    leads = db.scalars(
+        select(Lead)
+        .where(Lead.company_id == company_id)
+        .order_by(Lead.created_at.desc())
+        .limit(limit)
+    ).all()
+    for lead in leads:
+        activities.append({
+            "type": "lead",
+            "id": lead.id,
+            "title": lead.name,
+            "created_at": lead.created_at.isoformat(),
+        })
+
+    # Sort all activities by created_at descending
+    activities.sort(key=lambda a: a["created_at"], reverse=True)
+
+    # Filter by type if requested
+    if type:
+        activities = [a for a in activities if a["type"] == type]
+
+    # Apply limit after sorting
+    activities = activities[:limit]
+
+    return {"activities": activities}
+
+
 @router.get("/export.csv")
 def export_tasks_csv(
     status: Literal["queued", "running", "succeeded", "failed"] | None = Query(None, description="Filter by status"),
