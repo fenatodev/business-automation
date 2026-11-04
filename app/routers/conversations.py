@@ -87,7 +87,7 @@ def agent_reply(
 
     try:
         # WP-204 — Use company agent config as defaults
-        from app.routers.companies import _agent_config_store
+        from app.routers.companies import _agent_config_store, _record_agent_call
 
         company_config = _agent_config_store.get(identity.company_id, {})
         effective_prompt = data.system_prompt or company_config.get("system_prompt")
@@ -103,7 +103,11 @@ def agent_reply(
             max_tokens=effective_max_tokens,
             model=effective_model,
         )
+        # WP-216 — Track successful agent call
+        _record_agent_call(identity.company_id, success=True)
     except AgentServiceError:
+        # WP-216 — Track failed agent call
+        _record_agent_call(identity.company_id, success=False)
         raise HTTPException(
             status_code=503,
             detail="Agent service unavailable",
