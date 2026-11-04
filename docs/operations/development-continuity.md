@@ -1025,3 +1025,10 @@ mas faltava o seletor de modelo. Adicionado dropdown com modelos comuns
 do Ollama (qwen3:8b, qwen2.5:7b, llama3.1:8b, mistral:7b, gemma2:9b).
 
 **2662 testes passaram**; compileall, diff-check: PASS.
+
+### WP-215 — Atualizar README
+
+README atualizado com 2662 testes e novas funcionalidades:
+seleção de modelo por company e seletor de modelo na UI do agente.
+
+**2662 testes passaram**; compileall, diff-check: PASS.
