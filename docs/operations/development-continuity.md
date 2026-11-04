@@ -1032,3 +1032,11 @@ README atualizado com 2662 testes e novas funcionalidades:
 seleção de modelo por company e seletor de modelo na UI do agente.
 
 **2662 testes passaram**; compileall, diff-check: PASS.
+
+### WP-216 — Rastreamento de uso do agente
+
+Para observabilidade F3, é necessário saber quantas chamadas ao agente
+foram feitas por company e quantas falharam. Adicionado rastreamento
+in-memory de chamadas bem-sucedidas e falhas, com endpoint de consulta.
+
+**2676 testes passaram** (14 novos); compileall, diff-check: PASS.
