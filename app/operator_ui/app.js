@@ -2482,6 +2482,54 @@
     } else {
       recentSection.hidden = true;
     }
+
+    // WP-256 — Performance metrics
+    const perfSection = $("performance-metrics-section");
+    const perfGrid = $("performance-metrics-grid");
+    const metrics = data.performance_metrics;
+    if (metrics) {
+      perfSection.hidden = false;
+      perfGrid.replaceChildren();
+      const metricItems = [
+        {
+          label: "Taxa de conversão (Leads)",
+          rate: metrics.lead_conversion_rate,
+          count: metrics.lead_conversion_count,
+          icon: "📩",
+        },
+        {
+          label: "Taxa de fechamento (Oportunidades)",
+          rate: metrics.opportunity_closure_rate,
+          count: metrics.opportunity_closure_count,
+          icon: "🎯",
+        },
+        {
+          label: "Taxa de aprovação (Briefs)",
+          rate: metrics.brief_approval_rate,
+          count: metrics.brief_approval_count,
+          icon: "📄",
+        },
+      ];
+      for (const item of metricItems) {
+        const div = document.createElement("div");
+        div.className = "dashboard-card perf-card";
+        const titleEl = document.createElement("div");
+        titleEl.className = "card-title";
+        titleEl.textContent = `${item.icon} ${item.label}`;
+        const rateEl = document.createElement("div");
+        rateEl.className = "card-value";
+        rateEl.textContent = `${item.rate}%`;
+        const countEl = document.createElement("div");
+        countEl.className = "card-count";
+        countEl.textContent = item.count;
+        div.appendChild(titleEl);
+        div.appendChild(rateEl);
+        div.appendChild(countEl);
+        perfGrid.appendChild(div);
+      }
+    } else {
+      perfSection.hidden = true;
+    }
   }
 
   $("dashboard-refresh").addEventListener("click", () => withButton($("dashboard-refresh"), async () => {
@@ -4735,7 +4783,7 @@
 
   $("agent-config-save")?.addEventListener("click", async () => {
     if (!bearer || !company) return;
-    const body: Record<string, unknown> = {};
+    const body = {};
     const prompt = $("agent-system-prompt").value.trim();
     const temp = $("agent-temperature").value;
     const maxTokens = $("agent-max-tokens").value;

@@ -681,6 +681,19 @@ footer {
   border: 1px solid #f59e0b44;
   border-radius: 10px;
 }
+
+/* WP-256 — Performance metrics cards */
+.perf-card .card-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1.1;
+}
+.perf-card .card-count {
+  margin-top: 4px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
 .next-actions-section h3 {
   margin: 0 0 10px;
   font-size: 0.85rem;
