@@ -1276,3 +1276,14 @@ quand il y a des notifications, "Operador" sinon. Mise à jour automatique
 à chaque polling de notifications (30s).
 
 **2936 tests passés**; compileall, diff-check: PASS.
+
+### WP-252 — Auto-suggestion IA quand on ouvre le formulaire de réponse
+
+Quand l'opérateur clique sur "Responder" pour ouvrir le formulaire de
+réponse manuelle, la suggestion IA se charge automatiquement via
+POST /conversations/{id}/suggest-reply (WP-226). La suggestion est
+insérée directement dans le champ de message. Les erreurs (400, 503)
+sont silencieusement ignorées. Le bouton "🤖 Sugerir" reste disponible
+pour recharger manuellement.
+
+**2936 tests passés**; compileall, diff-check: PASS.
