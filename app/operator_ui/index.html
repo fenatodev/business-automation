@@ -273,6 +273,17 @@
             </div>
             <div id="opp-detail-actions" class="opp-detail-actions">
               <button id="view-brief-button" type="button" class="secondary">Ver brief</button>
+              <!-- WP-238 — AI-assisted triage suggestion -->
+              <button id="suggest-triage-button" type="button" class="secondary">🤖 Sugerir triagem</button>
+            </div>
+            <!-- WP-238 — Triage suggestion result -->
+            <div id="triage-suggestion-panel" class="triage-suggestion-panel" hidden>
+              <h4>🤖 Sugestão de triagem</h4>
+              <div id="triage-suggestion-content"></div>
+              <div style="display:flex;gap:8px;margin-top:8px;">
+                <button id="apply-suggestion-button" type="button" class="primary">Aplicar sugestão</button>
+                <button id="dismiss-suggestion-button" type="button" class="secondary">Descartar</button>
+              </div>
             </div>
             <!-- WP-142 — Conversas relacionadas -->
             <div id="opp-conv-section" class="opp-conv-section">

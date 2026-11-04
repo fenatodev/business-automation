@@ -129,6 +129,9 @@
       option.hidden = false;
       option.disabled = false;
     }
+    // WP-238 — Hide triage suggestion panel
+    $("triage-suggestion-panel").hidden = true;
+    triageSuggestion = null;
   }
 
   function disconnect(message = "Acesso desconectado.") {
@@ -187,10 +190,11 @@
     // WP-142 — allow /opportunities/{id}/conversations
     // WP-143 — allow /opportunities/{id}/timeline
     // WP-144 — allow /opportunities/{id}/leads
+    // WP-238 — allow POST /opportunities/{id}/suggest-triage
     if (!/^\/opportunities(\?[^"]*)?$/.test(path) &&
         !/^\/opportunities\/count(\?[^"]*)?$/.test(path) &&
         !/^\/opportunities\/pipeline-summary$/.test(path) &&
-        !/^\/opportunities\/\d+(\/(triage|proposal-brief|conversations|leads|timeline)(\/approve|\/reject)?)?$/.test(path)) {
+        !/^\/opportunities\/\d+(\/(triage|proposal-brief|conversations|leads|timeline|suggest-triage)(\/approve|\/reject)?)?$/.test(path)) {
       throw new Error("Rota não permitida nesta interface.");
     }
     const epoch = sessionEpoch;
@@ -706,6 +710,80 @@
       panel.scrollIntoView({behavior: "smooth", block: "start"});
     }
   });
+
+  // WP-238 — AI-assisted triage suggestion
+  let triageSuggestion = null;
+
+  $("suggest-triage-button").addEventListener("click", () => withButton($("suggest-triage-button"), async () => {
+    if (selectedId === null) {
+      notify("Selecione uma oportunidade.", true);
+      return;
+    }
+    try {
+      triageSuggestion = await api("/opportunities/" + selectedId + "/suggest-triage", "POST");
+      renderTriageSuggestion();
+      $("triage-suggestion-panel").hidden = false;
+      $("triage-suggestion-panel").scrollIntoView({behavior: "smooth", block: "center"});
+    } catch (error) {
+      if (error instanceof ApiFailure) {
+        if (error.status === 503) {
+          notify("Serviço de agente indisponível.", true);
+        } else {
+          notify(error.message, true);
+        }
+      } else {
+        notify("Falha ao obter sugestão.", true);
+      }
+    }
+  }));
+
+  $("apply-suggestion-button").addEventListener("click", () => {
+    if (!triageSuggestion || !selectedId) return;
+    const action = triageSuggestion.suggested_action;
+    $("next-action").value = action;
+    if (triageSuggestion.reasoning) {
+      $("triage-note").value = triageSuggestion.reasoning;
+    }
+    $("triage-suggestion-panel").hidden = true;
+    triageSuggestion = null;
+    notify("Sugestão aplicada no formulário de triagem.");
+  });
+
+  $("dismiss-suggestion-button").addEventListener("click", () => {
+    $("triage-suggestion-panel").hidden = true;
+    triageSuggestion = null;
+  });
+
+  function renderTriageSuggestion() {
+    if (!triageSuggestion) return;
+    const actionLabels = {
+      pending: "Pendente",
+      follow: "Acompanhar",
+      ignore: "Ignorar",
+      prepare_proposal: "Preparar proposta",
+      in_progress: "Em andamento",
+      done: "Concluída",
+      lost: "Perdida",
+    };
+    const content = $("triage-suggestion-content");
+    content.textContent = "";
+
+    const actionEl = document.createElement("p");
+    actionEl.appendChild(document.createTextNode("Ação sugerida: " + (actionLabels[triageSuggestion.suggested_action] || triageSuggestion.suggested_action)));
+    content.appendChild(actionEl);
+
+    if (triageSuggestion.reasoning) {
+      const reasoningEl = document.createElement("p");
+      reasoningEl.appendChild(document.createTextNode("Justificativa: " + triageSuggestion.reasoning));
+      content.appendChild(reasoningEl);
+    }
+
+    if (triageSuggestion.confidence !== null && triageSuggestion.confidence !== undefined) {
+      const confEl = document.createElement("p");
+      confEl.appendChild(document.createTextNode("Confiança: " + Math.round(triageSuggestion.confidence * 100) + "%"));
+      content.appendChild(confEl);
+    }
+  }
 
   // WP-095 — Opportunity pagination
   $("opp-prev").addEventListener("click", () => withButton($("opp-prev"), async () => {

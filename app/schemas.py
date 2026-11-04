@@ -256,6 +256,22 @@ class OpportunityBulkDelete(BaseModel):
     opportunity_ids: list[int] = Field(min_length=1, max_length=100)
 
 
+class OpportunityTriageSuggestion(BaseModel):
+    """Response from AI-assisted triage suggestion."""
+
+    suggested_action: Literal[
+        "pending",
+        "ignore",
+        "follow",
+        "prepare_proposal",
+        "in_progress",
+        "done",
+        "lost",
+    ]
+    reasoning: str
+    confidence: float | None = None
+
+
 class ConversationBulkDelete(BaseModel):
     """Bulk delete multiple conversations."""
 

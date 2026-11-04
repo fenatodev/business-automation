@@ -15,6 +15,7 @@ from app.schemas import (
     OpportunityBulkDelete,
     OpportunityBulkTriage,
     OpportunityCreate,
+    OpportunityTriageSuggestion,
     OpportunityTriageUpdate,
     OpportunityUpdate,
     ProposalBriefBulkDelete,
@@ -1225,4 +1226,106 @@ def bulk_delete_briefs(
         "deleted": len(deleted_ids),
         "deleted_ids": sorted(deleted_ids),
         "skipped": sorted(skipped),
+    }
+
+
+# ---------------------------------------------------------------------------
+# WP-237 — AI-assisted triage suggestion
+# ---------------------------------------------------------------------------
+
+
+_TRIAGE_SYSTEM_PROMPT = (
+    "Você é um assistente de triagem comercial. "
+    "Analise a oportunidade abaixo e sugira a próxima ação. "
+    "Responda APENAS com um JSON no formato: "
+    '{"action": "<next_action>", "reasoning": "<breve justificativa>", "confidence": <0.0-1.0>}. '
+    "As opções de action são: pending, ignore, follow, prepare_proposal, in_progress, done, lost. "
+    "Não inclua nada além do JSON."
+)
+
+
+def _build_triage_prompt(opp: Opportunity) -> str:
+    """Build the user prompt for triage suggestion based on opportunity context."""
+    parts = [
+        f"Título: {opp.title}",
+        f"Descrição: {opp.description or '(vazia)'}",
+        f"Orçamento: {opp.budget or '(não informado)'}",
+        f"Prazo: {opp.deadline or '(não informado)'}",
+        f"Requisitos: {opp.requirements or '(não informados)'}",
+        f"Fonte: {opp.source or '(desconhecida)'}",
+        f"Status atual: {opp.next_action}",
+        f"Nota de triagem: {opp.triage_note or '(nenhuma)'}",
+    ]
+    return "\n".join(parts)
+
+
+@router.post("/opportunities/{opportunity_id}/suggest-triage")
+def suggest_triage(
+    opportunity_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Suggest the next triage action for an opportunity using AI.
+
+    This endpoint does NOT persist the suggestion — it returns the AI's
+    recommendation so the operator can review and apply it manually.
+    Returns 503 if the agent service is unavailable.
+    """
+    from app.services.agent import AgentServiceError, generate_agent_reply
+
+    opportunity = _get_tenant_opportunity(
+        db,
+        opportunity_id,
+        identity.company_id,
+    )
+
+    # Load company agent config for defaults
+    from app.routers.companies import _agent_config_store
+    config = _agent_config_store.get(identity.company_id)
+    system_prompt = (config.get("system_prompt") if config else None) or _TRIAGE_SYSTEM_PROMPT
+    temperature = config.get("temperature") if config else None
+    max_tokens = config.get("max_tokens") if config else None
+    model = config.get("model") if config else None
+
+    prompt = _build_triage_prompt(opportunity)
+
+    try:
+        reply = generate_agent_reply(
+            message=prompt,
+            history=[],
+            system_prompt=system_prompt,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            model=model,
+        )
+    except AgentServiceError:
+        raise HTTPException(
+            status_code=503,
+            detail="Serviço de agente indisponível",
+        )
+
+    # Parse JSON response from agent
+    import json as json_module
+
+    try:
+        data = json_module.loads(reply)
+        action = data.get("action", "pending")
+        reasoning = data.get("reasoning", "Sem justificativa")
+        confidence = data.get("confidence")
+    except (json_module.JSONDecodeError, AttributeError):
+        return {
+            "suggested_action": "pending",
+            "reasoning": reply[:500] if isinstance(reply, str) else str(reply)[:500],
+            "confidence": None,
+            "raw_response": reply,
+        }
+
+    valid_actions = {"pending", "ignore", "follow", "prepare_proposal", "in_progress", "done", "lost"}
+    if action not in valid_actions:
+        action = "pending"
+
+    return {
+        "suggested_action": action,
+        "reasoning": reasoning,
+        "confidence": confidence,
     }
