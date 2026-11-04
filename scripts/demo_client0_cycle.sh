@@ -335,6 +335,83 @@ if [[ -n "$DASHBOARD" ]]; then
 fi
 
 # =============================================================================
+# PASSO 16: Exportação CSV (WP-106, WP-109, WP-246)
+# =============================================================================
+step "PASSO 16: EXPORTAÇÃO CSV (Operator)"
+
+curl -s -H "Authorization: Bearer $OPERATOR_TOKEN" \
+    "$BASE_URL/opportunities/export.csv" -o /tmp/demo_opportunities.csv 2>/dev/null && \
+    ok "Export CSV oportunidades ($(wc -l < /tmp/demo_opportunities.csv) linhas)" || \
+    info "Export CSV oportunidades: falhou"
+
+curl -s -H "Authorization: Bearer $OPERATOR_TOKEN" \
+    "$BASE_URL/leads/export.csv" -o /tmp/demo_leads.csv 2>/dev/null && \
+    ok "Export CSV leads ($(wc -l < /tmp/demo_leads.csv) linhas)" || \
+    info "Export CSV leads: falhou"
+
+curl -s -H "Authorization: Bearer $OPERATOR_TOKEN" \
+    "$BASE_URL/customers/export.csv" -o /tmp/demo_customers.csv 2>/dev/null && \
+    ok "Export CSV customers ($(wc -l < /tmp/demo_customers.csv) linhas)" || \
+    info "Export CSV customers: falhou"
+
+# =============================================================================
+# PASSO 17: Sugestão de triagem por IA (WP-237) — opcional
+# =============================================================================
+step "PASSO 17: SUGESTÃO DE TRIAGEM POR IA (Operator) — OPCIONAL"
+
+# Re-abrir a oportunidade para demonstrar a sugestão
+curl_step PATCH "/opportunities/$OPP_ID/triage" "Re-abrir oportunidade" \
+    -H "Authorization: Bearer $OPERATOR_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"next_action": "pending"}' 2>/dev/null || {
+    info "Sugestão de triagem por IA requer Ollama configurado"
+}
+
+TRIAGE_SUGGESTION=$(curl -s -X POST -H "Authorization: Bearer $OPERATOR_TOKEN" \
+    -H "Content-Type: application/json" \
+    "$BASE_URL/opportunities/$OPP_ID/suggest-triage" 2>/dev/null) || {
+    info "Sugestão de triagem por IA: Ollama não disponível (esperado sem Ollama)"
+}
+
+if [[ -n "$TRIAGE_SUGGESTION" ]]; then
+    info "Sugestão de triagem: $TRIAGE_SUGGESTION"
+fi
+
+# =============================================================================
+# PASSO 18: Configuração do agente por Company (WP-204)
+# =============================================================================
+step "PASSO 18: CONFIGURAÇÃO DO AGENTE (Operator)"
+
+AGENT_CONFIG=$(curl_step PUT "/companies/$COMPANY_ID/agent-config" "Configurar agente" \
+    -H "Authorization: Bearer $OPERATOR_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{
+        "system_prompt": "Você é um assistente comercial especializado em automação industrial.",
+        "temperature": 0.7,
+        "max_tokens": 512,
+        "model": "qwen3:8b"
+    }')
+
+info "Configuração do agente: $AGENT_CONFIG"
+
+# =============================================================================
+# PASSO 19: Modelos disponíveis (WP-221)
+# =============================================================================
+step "PASSO 19: MODELOS DISPONÍVEIS"
+
+MODELS=$(curl_step GET "/agent-models-available" "Listar modelos disponíveis")
+info "Modelos: $MODELS"
+
+# =============================================================================
+# PASSO 20: Atividades recentes (WP-223)
+# =============================================================================
+step "PASSO 20: ATIVIDADES RECENTES (Operator)"
+
+ACTIVITIES=$(curl_step GET "/internal-tasks/recent-activities" "Atividades recentes" \
+    -H "Authorization: Bearer $OPERATOR_TOKEN")
+info "Atividades: $ACTIVITIES"
+
+# =============================================================================
 # Resumo Final
 # =============================================================================
 step "RESUMO DO CICLO CLIENT 0"
@@ -348,6 +425,9 @@ echo -e "  ${GREEN}Opportunity:${NC} ID $OPP_ID — Intake → Triage → Brief 
 echo ""
 echo -e "  ${GREEN}Fluxo completo:${NC} Intake → Opportunity → Triage → Brief → Approve → In Progress → Done"
 echo -e "  ${GREEN}Lead flow:${NC}    Lead → Convert → Customer → Conversation"
+echo -e "  ${GREEN}Export CSV:${NC}   Oportunidades, Leads, Customers"
+echo -e "  ${GREEN}Agente IA:${NC}    Configurável por Company (prompt, temperatura, tokens, modelo)"
+echo -e "  ${GREEN}Dashboard:${NC}    Métricas, próximas ações, atividades recentes"
 echo ""
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${GREEN}✓ Ciclo Client 0 concluído com sucesso!${NC}"
