@@ -1384,6 +1384,19 @@ footer {
 .opp-status-ignore { background: #2a2a2a; color: #808080; }
 .opp-status-unknown { background: #2a2a2a; color: #808080; }
 
+/* WP-238 — Priority badges */
+.opp-priority-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-left: 8px;
+}
+.opp-priority-high { background: #3a0a0a; color: #f06060; }
+.opp-priority-medium { background: #3a2700; color: #f0c040; }
+.opp-priority-low { background: #0a3a20; color: #40d080; }
+
 /* WP-119 — Conversation status badges */
 .conv-status-badge {
   display: inline-block;

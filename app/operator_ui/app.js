@@ -187,6 +187,7 @@
     // WP-094 — allow ?q= search param
     // WP-095 — allow /opportunities/count and sort/limit/offset params
     // WP-139 — allow /opportunities/pipeline-summary
+    // WP-238 — allow /opportunities/priority
     // WP-142 — allow /opportunities/{id}/conversations
     // WP-143 — allow /opportunities/{id}/timeline
     // WP-144 — allow /opportunities/{id}/leads
@@ -194,6 +195,7 @@
     if (!/^\/opportunities(\?[^"]*)?$/.test(path) &&
         !/^\/opportunities\/count(\?[^"]*)?$/.test(path) &&
         !/^\/opportunities\/pipeline-summary$/.test(path) &&
+        !/^\/opportunities\/priority(\?[^"]*)?$/.test(path) &&
         !/^\/opportunities\/\d+(\/(triage|proposal-brief|conversations|leads|timeline|suggest-triage)(\/approve|\/reject)?)?$/.test(path)) {
       throw new Error("Rota não permitida nesta interface.");
     }
@@ -288,6 +290,14 @@
       stage.className = "opp-status-badge opp-status-" + (opportunity.next_action || "unknown");
       stage.textContent = actionLabels[opportunity.next_action] || "Estado desconhecido";
       titleRow.append(title, stage);
+      // WP-238 — Priority badge
+      if (opportunity.priority_level) {
+        const priorityBadge = document.createElement("span");
+        priorityBadge.className = "opp-priority-badge opp-priority-" + opportunity.priority_level;
+        const priorityLabels = {high: "🔴 Alta", medium: "🟡 Média", low: "🟢 Baixa"};
+        priorityBadge.textContent = priorityLabels[opportunity.priority_level] || "";
+        titleRow.append(priorityBadge);
+      }
       button.append(titleRow);
       // WP-156 — Description preview (truncated)
       if (opportunity.description) {
@@ -577,45 +587,81 @@
     const toDate = $("opp-to-date").value || null;
     // WP-189 — source filter
     const source = $("opp-source-filter") ? $("opp-source-filter").value : "";
-    const params = [];
-    if (!showArchived) params.push("exclude_archived=true");
-    if (oppPipelineFilter !== "all") params.push("next_action=" + encodeURIComponent(oppPipelineFilter));
-    if (source) params.push("source=" + encodeURIComponent(source));
-    if (searchQuery) params.push("q=" + encodeURIComponent(searchQuery));
-    if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
-    if (toDate) params.push("to_date=" + encodeURIComponent(toDate));
-    params.push("sort=" + encodeURIComponent(sort));
-    params.push("limit=" + oppPageSize);
-    params.push("offset=" + oppOffset);
-    const query = "?" + params.join("&");
-    const countParams = [];
-    if (!showArchived) countParams.push("exclude_archived=true");
-    if (oppPipelineFilter !== "all") countParams.push("next_action=" + encodeURIComponent(oppPipelineFilter));
-    if (source) countParams.push("source=" + encodeURIComponent(source));
-    if (searchQuery) countParams.push("q=" + encodeURIComponent(searchQuery));
-    if (fromDate) countParams.push("from_date=" + encodeURIComponent(fromDate));
-    if (toDate) countParams.push("to_date=" + encodeURIComponent(toDate));
-    const [result, countResult, pipelineResult] = await Promise.all([
-      api("/opportunities" + query),
-      api("/opportunities/count" + (countParams.length ? "?" + countParams.join("&") : "")),
-      api("/opportunities/pipeline-summary"),
-    ]);
-    // WP-139 — update pipeline counts
-    for (const [status, count] of Object.entries(pipelineResult || {})) {
-      const countEl = document.querySelector('[data-count="' + status + '"]');
-      if (countEl) countEl.textContent = count;
+    // WP-238 — priority sort uses dedicated endpoint
+    if (sort === "priority") {
+      const result = await api("/opportunities/priority?limit=" + oppPageSize);
+      if (!Array.isArray(result)) {
+        throw new Error("Resposta de prioridade inválida.");
+      }
+      opportunities = result.map((item) => ({
+        id: item.id,
+        title: item.title,
+        description: "",
+        next_action: item.next_action,
+        budget: item.budget,
+        deadline: item.deadline,
+        source: item.source,
+        external_url: "",
+        captured_at: "",
+        triage_note: "",
+        priority_score: item.priority_score,
+        priority_level: item.priority_level,
+      }));
+      oppTotal = opportunities.length;
+      // Update pipeline counts from count endpoint
+      const countParams = [];
+      if (!showArchived) countParams.push("exclude_archived=true");
+      const countResult = await api("/opportunities/count" + (countParams.length ? "?" + countParams.join("&") : ""));
+      oppTotal = countResult.total || 0;
+      const pipelineResult = await api("/opportunities/pipeline-summary");
+      for (const [status, count] of Object.entries(pipelineResult || {})) {
+        const countEl = document.querySelector('[data-count="' + status + '"]');
+        if (countEl) countEl.textContent = count;
+      }
+      document.querySelectorAll('.opp-pipeline-chip').forEach((chip) => {
+        chip.classList.toggle('active', chip.getAttribute('data-pipeline') === oppPipelineFilter);
+      });
+    } else {
+      const params = [];
+      if (!showArchived) params.push("exclude_archived=true");
+      if (oppPipelineFilter !== "all") params.push("next_action=" + encodeURIComponent(oppPipelineFilter));
+      if (source) params.push("source=" + encodeURIComponent(source));
+      if (searchQuery) params.push("q=" + encodeURIComponent(searchQuery));
+      if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
+      if (toDate) params.push("to_date=" + encodeURIComponent(toDate));
+      params.push("sort=" + encodeURIComponent(sort));
+      params.push("limit=" + oppPageSize);
+      params.push("offset=" + oppOffset);
+      const query = "?" + params.join("&");
+      const countParams = [];
+      if (!showArchived) countParams.push("exclude_archived=true");
+      if (oppPipelineFilter !== "all") countParams.push("next_action=" + encodeURIComponent(oppPipelineFilter));
+      if (source) countParams.push("source=" + encodeURIComponent(source));
+      if (searchQuery) countParams.push("q=" + encodeURIComponent(searchQuery));
+      if (fromDate) countParams.push("from_date=" + encodeURIComponent(fromDate));
+      if (toDate) countParams.push("to_date=" + encodeURIComponent(toDate));
+      const [result, countResult, pipelineResult] = await Promise.all([
+        api("/opportunities" + query),
+        api("/opportunities/count" + (countParams.length ? "?" + countParams.join("&") : "")),
+        api("/opportunities/pipeline-summary"),
+      ]);
+      // WP-139 — update pipeline counts
+      for (const [status, count] of Object.entries(pipelineResult || {})) {
+        const countEl = document.querySelector('[data-count="' + status + '"]');
+        if (countEl) countEl.textContent = count;
+      }
+      // Highlight active chip
+      document.querySelectorAll('.opp-pipeline-chip').forEach((chip) => {
+        chip.classList.toggle('active', chip.getAttribute('data-pipeline') === oppPipelineFilter);
+      });
+      if (!Array.isArray(result)) {
+        throw new Error("Resposta de listagem inválida.");
+      }
+      opportunities = result;
+      oppTotal = countResult.total || 0;
     }
-    // Highlight active chip
-    document.querySelectorAll('.opp-pipeline-chip').forEach((chip) => {
-      chip.classList.toggle('active', chip.getAttribute('data-pipeline') === oppPipelineFilter);
-    });
-    if (!Array.isArray(result)) {
-      throw new Error("Resposta de listagem inválida.");
-    }
-    opportunities = result;
-    oppTotal = countResult.total || 0;
     // WP-091 — pending badge
-    const pending = result.filter((o) => o.next_action === "pending").length;
+    const pending = opportunities.filter((o) => o.next_action === "pending").length;
     const badge = $("pending-badge");
     if (pending > 0) {
       badge.hidden = false;

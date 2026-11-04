@@ -417,6 +417,137 @@ def export_opportunities_csv(
     )
 
 
+# WP-238 — Automatic priority score (must be before /opportunities/{opportunity_id})
+def _calculate_priority_score(opp: Opportunity) -> dict:
+    """Calculate a priority score (0-100) for an opportunity based on objective factors.
+
+    Factors:
+    - Deadline urgency: closer deadline = higher score (up to 40 points)
+    - Budget presence: has budget = higher score (up to 20 points)
+    - Status urgency: pending/follow = higher score (up to 25 points)
+    - Source weight: intake/review_queue = higher score (up to 15 points)
+
+    Returns a dict with score, level (high/medium/low) and factors breakdown.
+    """
+    from datetime import datetime
+
+    score = 0
+    factors = []
+
+    # 1. Deadline urgency (0-40 points)
+    if opp.deadline:
+        try:
+            deadline_date = datetime.fromisoformat(opp.deadline.replace("Z", "+00:00"))
+            now = datetime.now(tz=deadline_date.tzinfo)
+            days_until = (deadline_date - now).days
+
+            if days_until <= 0:
+                score += 40
+                factors.append("Prazo expirado")
+            elif days_until <= 7:
+                score += 35
+                factors.append(f"Prazo em {days_until} dias")
+            elif days_until <= 14:
+                score += 25
+                factors.append(f"Prazo em {days_until} dias")
+            elif days_until <= 30:
+                score += 15
+                factors.append(f"Prazo em {days_until} dias")
+            else:
+                score += 5
+                factors.append(f"Prazo em {days_until} dias")
+        except (ValueError, TypeError):
+            pass
+    else:
+        score += 5
+        factors.append("Sem prazo definido")
+
+    # 2. Budget presence (0-20 points)
+    if opp.budget:
+        score += 20
+        factors.append("Orçamento informado")
+    else:
+        factors.append("Sem orçamento")
+
+    # 3. Status urgency (0-25 points)
+    status_scores = {
+        "pending": 25,
+        "follow": 20,
+        "prepare_proposal": 15,
+        "in_progress": 10,
+        "ignore": 5,
+        "done": 0,
+        "lost": 0,
+    }
+    status_score = status_scores.get(opp.next_action, 10)
+    score += status_score
+    factors.append(f"Status: {opp.next_action}")
+
+    # 4. Source weight (0-15 points)
+    source_scores = {
+        "intake": 15,
+        "review_queue": 15,
+        "manual": 10,
+        "import": 5,
+        "99freelas": 10,
+    }
+    source_score = source_scores.get(opp.source, 5)
+    score += source_score
+    factors.append(f"Fonte: {opp.source}")
+
+    # Determine level
+    if score >= 70:
+        level = "high"
+    elif score >= 40:
+        level = "medium"
+    else:
+        level = "low"
+
+    return {
+        "score": min(score, 100),
+        "level": level,
+        "factors": factors,
+    }
+
+
+@router.get("/opportunities/priority")
+def get_priority_opportunities(
+    limit: int = Query(default=20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Return opportunities ordered by calculated priority score (descending).
+
+    The priority score is computed on-the-fly from deadline, budget, status
+    and source — no database migration required.
+    """
+    stmt = (
+        select(Opportunity)
+        .where(Opportunity.company_id == identity.company_id)
+        .order_by(Opportunity.id)
+    )
+    opportunities = db.scalars(stmt).all()
+
+    # Calculate scores and sort
+    scored = []
+    for opp in opportunities:
+        priority = _calculate_priority_score(opp)
+        scored.append({
+            "id": opp.id,
+            "title": opp.title,
+            "next_action": opp.next_action,
+            "deadline": opp.deadline,
+            "budget": opp.budget,
+            "source": opp.source,
+            "priority_score": priority["score"],
+            "priority_level": priority["level"],
+            "priority_factors": priority["factors"],
+        })
+
+    scored.sort(key=lambda x: x["priority_score"], reverse=True)
+    return scored[:limit]
+
+
 @router.get("/opportunities/{opportunity_id}")
 def get_opportunity(
     opportunity_id: int,
