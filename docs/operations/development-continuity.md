@@ -1327,3 +1327,12 @@ Cada card mostra a porcentagem e o contador bruto.
 Correção: removida sintaxe TypeScript inválida em app.js.
 
 **2943 tests passed**; JS syntax, compileall, diff-check: PASS.
+
+### WP-258 — Sugestão IA para intake comercial
+
+Novo endpoint `POST /internal/commercial-intake/suggest` que usa o agente
+IA (Ollama) para prever intenção e categoria antes da submissão. O operador
+pode validar ou corrigir antes de criar a oportunidade. Usa config da company
+(prompt, temperatura, tokens, modelo). 503 quando agente indisponível.
+
+**2953 tests passed**; compileall, diff-check: PASS.
