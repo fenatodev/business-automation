@@ -1144,3 +1144,11 @@ Adicionado `?lead_id=` em list, count e export CSV. Dropdown "Lead" na UI
 populado dinamicamente a partir dos leads da company.
 
 **2795 testes passaram** (8 novos); compileall, diff-check: PASS.
+
+### WP-233 — Filtro de briefs por opportunity
+
+O módulo de briefs tinha filtro por status mas não por `opportunity_id`.
+Adicionado `?opportunity_id=` em list, count e export CSV. Isolamento tenant
+via JOIN com Opportunity.
+
+**2802 testes passaram** (7 novos); compileall, diff-check: PASS.
