@@ -132,6 +132,9 @@
     // WP-238 — Hide triage suggestion panel
     $("triage-suggestion-panel").hidden = true;
     triageSuggestion = null;
+    // WP-241 — Hide brief suggestion panel
+    $("brief-suggestion-panel").hidden = true;
+    briefSuggestion = null;
   }
 
   function disconnect(message = "Acesso desconectado.") {
@@ -192,11 +195,12 @@
     // WP-143 — allow /opportunities/{id}/timeline
     // WP-144 — allow /opportunities/{id}/leads
     // WP-238 — allow POST /opportunities/{id}/suggest-triage
+    // WP-241 — allow POST /opportunities/{id}/suggest-brief
     if (!/^\/opportunities(\?[^"]*)?$/.test(path) &&
         !/^\/opportunities\/count(\?[^"]*)?$/.test(path) &&
         !/^\/opportunities\/pipeline-summary$/.test(path) &&
         !/^\/opportunities\/priority(\?[^"]*)?$/.test(path) &&
-        !/^\/opportunities\/\d+(\/(triage|proposal-brief|conversations|leads|timeline|suggest-triage)(\/approve|\/reject)?)?$/.test(path)) {
+        !/^\/opportunities\/\d+(\/(triage|proposal-brief|conversations|leads|timeline|suggest-triage|suggest-brief)(\/approve|\/reject)?)?$/.test(path)) {
       throw new Error("Rota não permitida nesta interface.");
     }
     const epoch = sessionEpoch;
@@ -759,6 +763,8 @@
 
   // WP-238 — AI-assisted triage suggestion
   let triageSuggestion = null;
+  // WP-241 — AI-assisted brief suggestion
+  let briefSuggestion = null;
 
   $("suggest-triage-button").addEventListener("click", () => withButton($("suggest-triage-button"), async () => {
     if (selectedId === null) {
@@ -799,6 +805,80 @@
     $("triage-suggestion-panel").hidden = true;
     triageSuggestion = null;
   });
+
+  // WP-241 — AI-assisted brief suggestion
+  $("suggest-brief-button").addEventListener("click", () => withButton($("suggest-brief-button"), async () => {
+    if (selectedId === null) {
+      notify("Selecione uma oportunidade.", true);
+      return;
+    }
+    try {
+      briefSuggestion = await api("/opportunities/" + selectedId + "/suggest-brief", "POST");
+      renderBriefSuggestion();
+      $("brief-suggestion-panel").hidden = false;
+      $("brief-suggestion-panel").scrollIntoView({behavior: "smooth", block: "center"});
+    } catch (error) {
+      if (error instanceof ApiFailure) {
+        if (error.status === 503) {
+          notify("Serviço de agente indisponível.", true);
+        } else {
+          notify(error.message, true);
+        }
+      } else {
+        notify("Falha ao obter sugestão.", true);
+      }
+    }
+  }));
+
+  // WP-242 — Apply brief suggestion to form
+  $("apply-brief-suggestion-button").addEventListener("click", () => {
+    if (!briefSuggestion) return;
+    $("brief-offer").value = briefSuggestion.offer_reference || "";
+    $("brief-diagnosis").value = briefSuggestion.diagnosis || "";
+    $("brief-scope").value = briefSuggestion.scope || "";
+    $("brief-deliverables").value = briefSuggestion.deliverables || "";
+    $("brief-acceptance").value = briefSuggestion.acceptance_criteria || "";
+    $("brief-assumptions").value = briefSuggestion.assumptions || "";
+    $("brief-risks").value = briefSuggestion.risks || "";
+    $("brief-suggestion-panel").hidden = true;
+    briefSuggestion = null;
+    // Show and scroll to brief form
+    $("brief-form").hidden = false;
+    $("brief-panel").hidden = false;
+    $("brief-panel").scrollIntoView({behavior: "smooth", block: "start"});
+    notify("Brief preenchido com a sugestão.");
+  });
+
+  $("dismiss-brief-suggestion-button").addEventListener("click", () => {
+    $("brief-suggestion-panel").hidden = true;
+    briefSuggestion = null;
+  });
+
+  function renderBriefSuggestion() {
+    if (!briefSuggestion) return;
+    const content = $("brief-suggestion-content");
+    content.textContent = "";
+    const fields = [
+      { key: "offer_reference", label: "Referência" },
+      { key: "diagnosis", label: "Diagnóstico" },
+      { key: "scope", label: "Escopo" },
+      { key: "deliverables", label: "Entregáveis" },
+      { key: "acceptance_criteria", label: "Critérios de aceite" },
+      { key: "assumptions", label: "Premissas" },
+      { key: "risks", label: "Riscos" },
+    ];
+    for (const field of fields) {
+      const val = briefSuggestion[field.key];
+      if (val) {
+        const p = document.createElement("p");
+        const strong = document.createElement("strong");
+        strong.textContent = field.label + ": ";
+        p.appendChild(strong);
+        p.appendChild(document.createTextNode(val));
+        content.appendChild(p);
+      }
+    }
+  }
 
   function renderTriageSuggestion() {
     if (!triageSuggestion) return;

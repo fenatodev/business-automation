@@ -281,6 +281,8 @@
               <button id="view-brief-button" type="button" class="secondary">Ver brief</button>
               <!-- WP-238 — AI-assisted triage suggestion -->
               <button id="suggest-triage-button" type="button" class="secondary">🤖 Sugerir triagem</button>
+              <!-- WP-241 — AI-assisted brief suggestion -->
+              <button id="suggest-brief-button" type="button" class="secondary">🤖 Sugerir brief</button>
             </div>
             <!-- WP-238 — Triage suggestion result -->
             <div id="triage-suggestion-panel" class="triage-suggestion-panel" hidden>
@@ -289,6 +291,15 @@
               <div style="display:flex;gap:8px;margin-top:8px;">
                 <button id="apply-suggestion-button" type="button" class="primary">Aplicar sugestão</button>
                 <button id="dismiss-suggestion-button" type="button" class="secondary">Descartar</button>
+              </div>
+            </div>
+            <!-- WP-241 — Brief suggestion result -->
+            <div id="brief-suggestion-panel" class="triage-suggestion-panel" hidden>
+              <h4>🤖 Sugestão de brief</h4>
+              <div id="brief-suggestion-content"></div>
+              <div style="display:flex;gap:8px;margin-top:8px;">
+                <button id="apply-brief-suggestion-button" type="button" class="primary">Preencher brief</button>
+                <button id="dismiss-brief-suggestion-button" type="button" class="secondary">Descartar</button>
               </div>
             </div>
             <!-- WP-142 — Conversas relacionadas -->
