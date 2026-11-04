@@ -1080,3 +1080,21 @@ configuráveis (qwen3:8b, qwen2.5:7b, llama3.1:8b, mistral:7b, gemma2:9b)
 com marcação do modelo padrão. Sem autenticação, útil para o dropdown da UI.
 
 **2719 testes passaram** (10 novos); compileall, diff-check: PASS.
+
+### WP-223 — Atividades recentes no dashboard
+
+O dashboard mostrava contagens agregadas mas não o que aconteceu recentemente.
+`GET /internal-tasks/recent-activities` retorna as atividades mais recentes
+(oportunidades, conversas, leads) ordenadas por data, com filtro por tipo
+e tenant isolation. Limit configurável (default 20, max 100).
+
+**2731 testes passaram** (12 novos); compileall, diff-check: PASS.
+
+### WP-224 — Busca por keywords na review queue
+
+A review queue tinha filtro por status, ordenação, paginação e filtro de data,
+mas não tinha busca por keywords. Adicionado `?q=` em list, count e export CSV
+com busca case-insensitive em message, intent e event_id. UI com campo de busca
+na seção de filtros, listener de input para busca em tempo real.
+
+**2750 testes passaram** (19 novos: 9 backend + 10 UI); compileall, diff-check: PASS.

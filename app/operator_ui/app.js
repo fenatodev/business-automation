@@ -809,6 +809,9 @@
     params.set("offset", reviewOffset);
     const status = $("rq-status-filter")?.value?.trim();
     if (status) params.set("status", status);
+    // WP-224 — keyword search
+    const q = $("rq-search")?.value?.trim();
+    if (q) params.set("q", q);
     // WP-154 — date filter
     const fromDate = $("rq-from-date")?.value;
     if (fromDate) params.set("from_date", fromDate);
@@ -822,6 +825,9 @@
     const params = [];
     const status = $("rq-status-filter")?.value?.trim();
     if (status) params.push("status=" + encodeURIComponent(status));
+    // WP-224 — keyword search
+    const q = $("rq-search")?.value?.trim();
+    if (q) params.push("q=" + encodeURIComponent(q));
     // WP-154 — date filter
     const fromDate = $("rq-from-date")?.value;
     if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
@@ -934,9 +940,16 @@
     reviewOffset = 0;
     refreshReviewQueue();
   });
+  // WP-224 — review queue search listener
+  $("rq-search").addEventListener("input", () => {
+    reviewOffset = 0;
+    refreshReviewQueue();
+  });
   $("rq-clear-filters").addEventListener("click", () => {
     $("rq-status-filter").value = "";
     $("rq-sort").value = "created_at";
+    // WP-224 — clear search
+    $("rq-search").value = "";
     // WP-154 — clear date filters
     $("rq-from-date").value = "";
     $("rq-to-date").value = "";
@@ -3177,6 +3190,9 @@
     const params = [];
     const status = $("rq-status-filter")?.value?.trim();
     if (status) params.push("status=" + encodeURIComponent(status));
+    // WP-224 — export with search
+    const q = $("rq-search")?.value?.trim();
+    if (q) params.push("q=" + encodeURIComponent(q));
     const fromDate = $("rq-from-date")?.value;
     if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
     const toDate = $("rq-to-date")?.value;

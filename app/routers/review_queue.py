@@ -30,6 +30,7 @@ router = APIRouter(prefix="/review-queue", tags=["review-queue"])
 @router.get("/export.csv")
 def export_review_queue_csv(
     status: str | None = Query(None, description="Filter by status"),
+    q: str | None = Query(None, description="Search keywords in message, intent, event_id"),
     from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
     to_date: str | None = Query(None, description="Filter created_at <= date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
@@ -39,6 +40,14 @@ def export_review_queue_csv(
     query = select(ReviewQueueItem).where(ReviewQueueItem.company_id == identity.company_id)
     if status:
         query = query.where(ReviewQueueItem.status == status)
+    # WP-224 — keyword search
+    if q:
+        lower_q = func.lower(f"%{q}%")
+        query = query.where(
+            (func.lower(ReviewQueueItem.message).like(lower_q)) |
+            (func.lower(ReviewQueueItem.intent).like(lower_q)) |
+            (func.lower(ReviewQueueItem.event_id).like(lower_q))
+        )
     # WP-154 — date range filter
     if from_date:
         query = query.where(ReviewQueueItem.created_at >= from_date)
@@ -103,6 +112,7 @@ def trigger_synthetic_intake(
 @router.get("/", response_model=list[ReviewQueueItemOut])
 def list_review_items(
     status: str | None = Query(None, description="Filter by status: pending, approved, rejected (default: pending)"),
+    q: str | None = Query(None, description="Search keywords in message, intent, event_id"),
     from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
     to_date: str | None = Query(None, description="Filter created_at <= date (YYYY-MM-DD)"),
     sort: str = Query(default="created_at", description="Sort by: id, created_at, status"),
@@ -121,6 +131,14 @@ def list_review_items(
     else:
         # Default to pending for backward compatibility
         stmt = stmt.where(ReviewQueueItem.status == "pending")
+    # WP-224 — keyword search
+    if q:
+        lower_q = func.lower(f"%{q}%")
+        stmt = stmt.where(
+            (func.lower(ReviewQueueItem.message).like(lower_q)) |
+            (func.lower(ReviewQueueItem.intent).like(lower_q)) |
+            (func.lower(ReviewQueueItem.event_id).like(lower_q))
+        )
     # WP-154 — date range filter
     if from_date:
         stmt = stmt.where(ReviewQueueItem.created_at >= from_date)
@@ -140,17 +158,26 @@ def list_review_items(
 @router.get("/count")
 def count_review_items(
     status: str | None = Query(None, description="Filter by status"),
+    q: str | None = Query(None, description="Search keywords in message, intent, event_id"),
     from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
     to_date: str | None = Query(None, description="Filter created_at <= date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ) -> dict[str, int]:
-    """Count review queue items with optional status and date filters."""
+    """Count review queue items with optional status, search and date filters."""
     stmt = select(func.count()).select_from(ReviewQueueItem).where(
         ReviewQueueItem.company_id == identity.company_id
     )
     if status is not None:
         stmt = stmt.where(ReviewQueueItem.status == status)
+    # WP-224 — keyword search
+    if q:
+        lower_q = func.lower(f"%{q}%")
+        stmt = stmt.where(
+            (func.lower(ReviewQueueItem.message).like(lower_q)) |
+            (func.lower(ReviewQueueItem.intent).like(lower_q)) |
+            (func.lower(ReviewQueueItem.event_id).like(lower_q))
+        )
     # WP-154 — date range filter
     if from_date:
         stmt = stmt.where(ReviewQueueItem.created_at >= from_date)
