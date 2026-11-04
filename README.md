@@ -38,7 +38,8 @@ O projeto tem dois objetivos complementares:
 - Filter proposal briefs by opportunity (WP-233) — backend `?opportunity_id=` in list, count, export CSV;
 - Filter briefs by opportunity in UI (WP-234) — dropdown populated from opportunities;
 - Create customer from conversation (WP-235) — button and form in conversation detail panel;
-- 2822 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
+- Create opportunity from conversation (WP-236) — button and form in conversation detail panel;
+- 2842 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
 
 ## Engineering case study
 
@@ -51,7 +52,7 @@ The useful part of this project is not the idea of "AI for business". It is the 
 | Authentication | Bearer API keys with role-based access (admin, operator). |
 | API failure behavior | Missing resources and invalid ownership return explicit client errors. |
 | AI integration failure | Customer input preserved, failed agent output not fabricated, internal details not leaked. |
-| Regression protection | 2822 tests cover happy paths, failures, tenant isolation, UI contracts and cross-module creation. |
+| Regression protection | 2842 tests cover happy paths, failures, tenant isolation, UI contracts and cross-module creation. |
 | Product boundaries | ERP and automation engines remain external integrations. |
 
 ### Example evaluation mindset

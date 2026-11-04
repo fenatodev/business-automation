@@ -1362,6 +1362,9 @@
     // WP-235 — Show create customer button
     $("conv-create-customer").hidden = false;
     $("conv-customer-form").hidden = true;
+    // WP-236 — Show create opportunity button
+    $("conv-create-opp").hidden = false;
+    $("conv-opp-form").hidden = true;
     $("reply-conv-id").value = id;
     const conv = conversations.find((c) => c.id === id);
     const channel = conv ? (channelLabels[conv.channel] || conv.channel) : "Conversa";
@@ -1536,6 +1539,55 @@
     });
   });
 
+  // WP-236 — Create opportunity from conversation
+  $("conv-create-opp").addEventListener("click", () => {
+    $("conv-opp-form").hidden = false;
+    $("conv-create-opp").hidden = true;
+  });
+
+  $("cancel-conv-opp").addEventListener("click", () => {
+    $("conv-opp-form").hidden = true;
+    $("conv-create-opp").hidden = false;
+    $("conv-opp-title").value = "";
+    $("conv-opp-description").value = "";
+    $("conv-opp-budget").value = "";
+    $("conv-opp-deadline").value = "";
+    $("conv-opp-requirements").value = "";
+  });
+
+  $("conv-opp-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    withButton(event.submitter, async () => {
+      const title = $("conv-opp-title").value.trim();
+      const description = $("conv-opp-description").value.trim() || null;
+      const budget = $("conv-opp-budget").value.trim() || null;
+      const deadline = $("conv-opp-deadline").value || null;
+      const requirements = $("conv-opp-requirements").value.trim() || null;
+      if (!title) { notify("Título é obrigatório.", true); return; }
+      try {
+        await api("/opportunities", "POST", {
+          title,
+          description,
+          budget,
+          deadline,
+          requirements,
+          source: "manual",
+        });
+        notify("Oportunidade criada a partir da conversa.");
+        $("conv-opp-form").hidden = true;
+        $("conv-create-opp").hidden = false;
+        $("conv-opp-title").value = "";
+        $("conv-opp-description").value = "";
+        $("conv-opp-budget").value = "";
+        $("conv-opp-deadline").value = "";
+        $("conv-opp-requirements").value = "";
+        await refreshList();
+      } catch (error) {
+        notify("Falha ao criar oportunidade.", true);
+      }
+    });
+  });
+
   // WP-141 — Bulk conversation status
   $("conv-bulk-apply").addEventListener("click", () => withButton($("conv-bulk-apply"), async () => {
     if (selectedConvIds.size === 0) return;
@@ -1670,11 +1722,13 @@
       $("conv-close-toggle").hidden = true;
       $("human-reply-form").hidden = true;
       $("conv-note-section").hidden = true;
-      // WP-147 & WP-235
+      // WP-147, WP-235 & WP-236
       $("conv-create-lead").hidden = true;
       $("conv-lead-form").hidden = true;
       $("conv-create-customer").hidden = true;
       $("conv-customer-form").hidden = true;
+      $("conv-create-opp").hidden = true;
+      $("conv-opp-form").hidden = true;
       selectedConvIds.clear();
       updateConvBulkBar();
       showConversationList();
@@ -1912,11 +1966,13 @@
   $("conv-list").replaceChildren();
   $("conv-detail").hidden = true;
   $("conv-note-section").hidden = true;
-  // WP-147 & WP-235
+  // WP-147, WP-235 & WP-236
   $("conv-create-lead").hidden = true;
   $("conv-lead-form").hidden = true;
   $("conv-create-customer").hidden = true;
   $("conv-customer-form").hidden = true;
+  $("conv-create-opp").hidden = true;
+  $("conv-opp-form").hidden = true;
   selectedConvIds.clear();
   updateConvBulkBar();
 

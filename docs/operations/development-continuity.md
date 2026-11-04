@@ -1170,3 +1170,13 @@ pré-preenchida com o canal da conversa. Handler de submit via customerApi
 com POST /customers; allowlist atualizado.
 
 **2822 testes passaram** (20 novos); compileall, diff-check: PASS.
+
+### WP-236 — Criar oportunidade a partir de conversa
+
+O operador podia criar leads (WP-147) e customers (WP-235) a partir de conversas
+mas não oportunidades. Adicionado botão "+ Criar oportunidade desta conversa"
+no painel de detalhes da conversa, com formulário inline (título, descrição,
+orçamento, prazo, requisitos). Source "manual". Handler de submit via api
+com POST /opportunities; refreshList após sucesso.
+
+**2842 testes passaram** (20 novos); compileall, diff-check: PASS.

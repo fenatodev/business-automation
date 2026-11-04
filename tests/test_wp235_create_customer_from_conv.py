@@ -66,7 +66,7 @@ class TestCreateCustomerFromConversationUI:
         with open("app/operator_ui/app.js") as f:
             content = f.read()
         # Both hide locations should include WP-235
-        assert "WP-147 & WP-235" in content
+        assert "WP-235" in content
 
     def test_js_customer_api_allows_post(self):
         """customerApi allowlist permits POST /customers."""

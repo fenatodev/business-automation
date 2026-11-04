@@ -538,6 +538,37 @@
               <button type="button" id="cancel-conv-customer" class="secondary">Cancelar</button>
             </div>
           </form>
+          <!-- WP-236 — Create opportunity from conversation -->
+          <button id="conv-create-opp" type="button" class="secondary" hidden>+ Criar oportunidade desta conversa</button>
+          <form id="conv-opp-form" class="conv-opp-form" hidden>
+            <h4>Criar oportunidade a partir desta conversa</h4>
+            <div>
+              <label for="conv-opp-title">Título *</label>
+              <input id="conv-opp-title" type="text" required maxlength="200">
+            </div>
+            <div>
+              <label for="conv-opp-description">Descrição</label>
+              <textarea id="conv-opp-description" rows="3" maxlength="1000"></textarea>
+            </div>
+            <div class="two-col">
+              <div>
+                <label for="conv-opp-budget">Orçamento</label>
+                <input id="conv-opp-budget" type="text" maxlength="50" placeholder="Ex.: R$ 5.000">
+              </div>
+              <div>
+                <label for="conv-opp-deadline">Prazo</label>
+                <input id="conv-opp-deadline" type="date">
+              </div>
+            </div>
+            <div>
+              <label for="conv-opp-requirements">Requisitos</label>
+              <textarea id="conv-opp-requirements" rows="2" maxlength="500"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button type="submit" class="primary">Criar oportunidade</button>
+              <button type="button" id="cancel-conv-opp" class="secondary">Cancelar</button>
+            </div>
+          </form>
         </div>
       </section>
 
