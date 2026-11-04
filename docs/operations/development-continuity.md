@@ -1048,3 +1048,10 @@ card "🤖 Agente IA" com contagem total de chamadas, sucesso e falha,
 alimentado pelo endpoint /dashboard que agora inclui agent_usage.
 
 **2686 testes passaram** (10 novos); compileall, diff-check: PASS.
+
+### WP-218 — Atualizar README
+
+README atualizado com 2686 testes e novas funcionalidades:
+rastreamento de uso do agente e métricas no dashboard.
+
+**2686 testes passaram**; compileall, diff-check: PASS.
