@@ -1228,3 +1228,22 @@ o formulário e rola até ele. Estado `briefSuggestion` resetado em clearSelecti
 Allowlist atualizado para incluir `suggest-brief`.
 
 **2909 testes passaram** (27 novos); compileall, diff-check: PASS.
+
+### WP-246 — Export CSV com coluna de prioridade
+
+O export CSV das oportunidades agora inclui o score de prioridade calculado
+e o nível (high/medium/low), permitindo ao operador analisar as prioridades
+em uma planilha. Reusa `_calculate_priority_score()` de WP-238.
+
+**2921 testes passaram** (7 novos); compileall, diff-check: PASS.
+
+### WP-247 — Sugestão de triagem em massa por IA
+
+`POST /opportunities/bulk-suggest-triage` aceita 1-100 IDs e sugere a melhor
+ação de triagem para o grupo, complementando WP-237 (sugestão individual)
+e WP-105 (triagem em massa). Usa config da company (prompt, temperatura,
+tokens, modelo). Retorna suggested_action, reasoning, matching_count e
+total_count. Conta quantas oportunidades podem realmente transicionar para
+a ação sugerida via `_VALID_TRANSITIONS`. Retorna 503 quando agente indisponível.
+
+**2929 testes passaram** (8 novos); compileall, diff-check: PASS.
