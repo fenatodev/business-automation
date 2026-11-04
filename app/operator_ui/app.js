@@ -1346,8 +1346,10 @@
     showConversationList();
     $("conv-detail").hidden = false;
     $("conv-reply-toggle").hidden = false;
+    $("conv-suggest-reply").hidden = false;
     $("conv-close-toggle").hidden = false;
     $("conv-note-section").hidden = false;
+    $("conv-suggestion").hidden = true;
     // WP-147 — Show create lead button
     $("conv-create-lead").hidden = false;
     $("conv-lead-form").hidden = true;
@@ -1701,6 +1703,53 @@
   $("conv-reply-toggle").addEventListener("click", () => {
     const form = $("human-reply-form");
     form.hidden = !form.hidden;
+  });
+
+  // WP-226 — Suggest agent reply
+  $("conv-suggest-reply").addEventListener("click", () => {
+    const button = $("conv-suggest-reply");
+    const convId = $("reply-conv-id").value;
+    if (!convId) {notify("Selecione uma conversa.", true); return;}
+    const id = parseInt(convId, 10);
+    withButton(button, async () => {
+      try {
+        const res = await fetch("/conversations/" + id + "/suggest-reply", {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + bearer,
+            "Content-Type": "application/json",
+          },
+        });
+        if (res.status === 400) {
+          notify("Nenhuma mensagem do cliente nesta conversa.", true);
+          return;
+        }
+        if (res.status === 503) {
+          notify("Agente indisponível.", true);
+          return;
+        }
+        if (!res.ok) {
+          notify("Falha ao solicitar sugestão.", true);
+          return;
+        }
+        const data = await res.json();
+        $("conv-suggestion-text").textContent = data.suggestion;
+        $("conv-suggestion").hidden = false;
+        notify("Sugestão gerada.");
+      } catch (e) {
+        notify("Erro ao solicitar sugestão.", true);
+      }
+    });
+  });
+
+  // WP-226 — Copy suggestion to reply form
+  $("conv-suggestion-copy").addEventListener("click", () => {
+    const text = $("conv-suggestion-text").textContent;
+    if (text) {
+      $("reply-message").value = text;
+      $("human-reply-form").hidden = false;
+      notify("Sugestão copiada para o formulário.");
+    }
   });
 
   // WP-136 — Message pagination

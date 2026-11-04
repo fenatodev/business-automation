@@ -1117,3 +1117,11 @@ company (prompt, temperatura, tokens, modelo). Retorna 400 se não houver mensag
 do cliente; 503 se o agente falhar.
 
 **2767 testes passaram** (8 novos); compileall, diff-check: PASS.
+
+### WP-227 — Botão "Sugerir resposta" na UI de conversas
+
+O endpoint suggest-reply (WP-226) não tinha interface visual. Adicionado botão
+"🤖 Sugerir resposta" no painel de detalhes da conversa. Ao clicar, solicita
+ao agente uma sugestão baseada na última mensagem do cliente. Exibe a sugestão
+em painel dedicado com botão "Copiar" que preenche o formulário de resposta
+manual. Tratamento de 400 (sem mensagem cliente) e 503 (agente indisponível).

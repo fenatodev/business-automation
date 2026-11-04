@@ -454,6 +454,27 @@ footer {
   padding-top: 16px;
   border-top: 1px solid var(--line);
 }
+
+/* WP-226 — Agent suggestion display */
+.conv-suggestion {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid #4a3a00;
+  border-radius: 8px;
+  background: #1a1500;
+}
+.conv-suggestion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.conv-suggestion-text {
+  white-space: pre-wrap;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--fg);
+}
 .conv-note-section h4 {
   margin: 0 0 8px;
   font-size: 0.85rem;
