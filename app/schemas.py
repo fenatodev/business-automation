@@ -210,6 +210,15 @@ class IntakeCreateResponse(BaseModel):
     flags: list[str]
 
 
+class IntakeSuggestion(BaseModel):
+    """AI-generated intake suggestion for pre-validation."""
+
+    suggested_intent: str
+    suggested_category: str | None = None
+    reasoning: str
+    confidence: float | None = None
+
+
 class OpportunityUpdate(BaseModel):
     """Update opportunity title, description and/or triage note."""
     title: str | None = Field(default=None, min_length=1, max_length=200)
