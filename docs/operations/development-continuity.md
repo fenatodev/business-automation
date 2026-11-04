@@ -1180,3 +1180,51 @@ orçamento, prazo, requisitos). Source "manual". Handler de submit via api
 com POST /opportunities; refreshList após sucesso.
 
 **2842 testes passaram** (20 novos); compileall, diff-check: PASS.
+
+### WP-237 — Sugestão de triagem por IA
+
+`POST /opportunities/{id}/suggest-triage` analisa o contexto da oportunidade
+(título, descrição, orçamento, prazo, requisitos, nota de triagem) e sugere
+a próxima ação ideal. Usa config da company (prompt, temperatura, tokens,
+modelo). Retorna 503 quando agente indisponível. UI com botão "🤖 Sugerir
+triagem" e painel de resultado com "Aplicar sugestão" / "Descartar".
+
+**2852 testes passaram** (10 novos); compileall, diff-check: PASS.
+
+### WP-238 — Score de priorização automática de oportunidades
+
+`_calculate_priority_score()` calcula score 0-100 baseado em deadline (0-40pts),
+budget (0-20pts), status (0-25pts) e source (0-15pts). Novo endpoint
+`GET /opportunities/priority` ordena por score. UI com opção "Ordenar:
+Prioridade" e badges visuais (🔴 Alta, 🟡 Média, 🟢 Baixa).
+
+**2864 testes passaram** (12 novos); compileall, diff-check: PASS.
+
+### WP-239 — Oportunidades de prioridade alta no dashboard
+
+O dashboard agora retorna `high_priority_opportunities` (top 5 com nível
+"high", ordenadas por score descendente). Seção "🔴 Prioridade alta" entre
+próximas ações e atividades recentes. Reusa `_calculate_priority_score`
+de opportunities.py — sem migration.
+
+**2872 testes passaram** (8 novos); compileall, diff-check: PASS.
+
+### WP-240 — Sugestão de conteúdo do proposal brief por IA
+
+`POST /opportunities/{id}/suggest-brief` analisa a oportunidade e sugere
+diagnóstico, escopo, entregáveis e critérios. Schema `ProposalBriefSuggestion`
+com offer_reference, diagnosis, scope, deliverables, acceptance_criteria,
+assumptions, risks. Não persiste — o operador revisa e cria manualmente.
+Segue o padrão WP-237: company config, 503 on error, fallback JSON.
+
+**2882 testes passaram** (10 novos); compileall, diff-check: PASS.
+
+### WP-241/242 — Interface de sugestão de brief por IA
+
+Botão "🤖 Sugerir brief" no painel de detalhes da oportunidade, ao lado do
+botão de sugestão de triagem. Painel de sugestão exibe os 7 campos do brief
+usando textContent/appendChild (regra XSS). Botão "Preencher brief" auto-preenche
+o formulário e rola até ele. Estado `briefSuggestion` resetado em clearSelection.
+Allowlist atualizado para incluir `suggest-brief`.
+
+**2909 testes passaram** (27 novos); compileall, diff-check: PASS.
