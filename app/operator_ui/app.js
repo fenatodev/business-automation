@@ -1305,6 +1305,28 @@
       showList();
     }
 
+    // WP-253 — Ctrl+1 to Ctrl+7: navigate to sections
+    if ((e.ctrlKey || e.metaKey) && !isInput) {
+      const sectionShortcutMap = {
+        "1": "dashboard-title",
+        "2": "opp-title",
+        "3": "conv-title",
+        "4": "leads-title",
+        "5": "customers-title",
+        "6": "rq-title",
+        "7": "tasks-title",
+      };
+      const targetId = sectionShortcutMap[e.key];
+      if (targetId) {
+        e.preventDefault();
+        const target = $(targetId);
+        if (target) {
+          target.scrollIntoView({behavior: "smooth", block: "start"});
+          target.focus();
+        }
+      }
+    }
+
     // Enter in triage form: submit triage (handled by form submit, but prevent double-submit)
     if (e.key === "Enter" && isInput) {
       // Let the form handle it naturally
