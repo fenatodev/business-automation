@@ -1247,3 +1247,13 @@ total_count. Conta quantas oportunidades podem realmente transicionar para
 a ação sugerida via `_VALID_TRANSITIONS`. Retorna 503 quando agente indisponível.
 
 **2929 testes passaram** (8 novos); compileall, diff-check: PASS.
+
+### WP-249 — Interface de sugestão de triagem em massa por IA
+
+Botão "🤖 Sugerir ação" na barra de triagem em massa conecta ao backend
+WP-247 (POST /opportunities/bulk-suggest-triage). Painel de sugestão exibe
+ação sugerida, motivo e contagem de compatibilidade (N/total). Botão
+"Aplicar sugestão" auto-preenche o seletor de ação; "Descartar" esconde.
+Estado bulkTriageSuggestion resetado em clearSelection. Allowlist atualizado.
+
+**2929 testes passaram**; compileall, diff-check: PASS.
