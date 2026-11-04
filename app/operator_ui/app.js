@@ -3207,6 +3207,9 @@
     const params = [];
     const status = $("task-status-filter").value;
     if (status) params.push("status=" + encodeURIComponent(status));
+    // WP-225 — export with search
+    const q = $("task-search")?.value?.trim();
+    if (q) params.push("q=" + encodeURIComponent(q));
     const fromDate = $("task-from-date")?.value;
     if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
     const toDate = $("task-to-date")?.value;
@@ -3299,6 +3302,9 @@
     params.set("sort", $("task-sort").value);
     const status = $("task-status-filter").value;
     if (status) params.set("status", status);
+    // WP-225 — keyword search
+    const q = $("task-search")?.value?.trim();
+    if (q) params.set("q", q);
     // WP-155 — date filter
     const fromDate = $("task-from-date")?.value;
     if (fromDate) params.set("from_date", fromDate);
@@ -3311,6 +3317,9 @@
     const params = [];
     const status = $("task-status-filter").value;
     if (status) params.push("status=" + encodeURIComponent(status));
+    // WP-225 — keyword search
+    const q = $("task-search")?.value?.trim();
+    if (q) params.push("q=" + encodeURIComponent(q));
     // WP-155 — date filter
     const fromDate = $("task-from-date")?.value;
     if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
@@ -3436,6 +3445,11 @@
     refreshTasks();
   });
 
+  // WP-225 — task search listener
+  $("task-search").addEventListener("input", () => {
+    taskOffset = 0;
+    refreshTasks();
+  });
   // WP-155 — task date filter listeners
   $("task-from-date").addEventListener("change", () => {
     taskOffset = 0;
@@ -3450,6 +3464,8 @@
   $("task-clear-filters").addEventListener("click", () => {
     $("task-status-filter").value = "";
     $("task-sort").value = "id";
+    // WP-225 — clear search
+    $("task-search").value = "";
     $("task-from-date").value = "";
     $("task-to-date").value = "";
     taskOffset = 0;

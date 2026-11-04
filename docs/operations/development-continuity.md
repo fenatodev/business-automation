@@ -1098,3 +1098,12 @@ com busca case-insensitive em message, intent e event_id. UI com campo de busca
 na seção de filtros, listener de input para busca em tempo real.
 
 **2750 testes passaram** (19 novos: 9 backend + 10 UI); compileall, diff-check: PASS.
+
+### WP-225 — Busca por keywords nas tarefas internas
+
+O módulo de tarefas internas tinha filtro por status, ordenação, paginação e filtro
+de data, mas não tinha busca por keywords. Adicionado `?q=` em list, count e export CSV
+com busca case-insensitive em event_id e error_code. UI com campo de busca na seção
+de filtros, listener de input para busca em tempo real; botão "Limpar filtros" atualizado.
+
+**2759 testes passaram** (9 novos); compileall, diff-check: PASS.

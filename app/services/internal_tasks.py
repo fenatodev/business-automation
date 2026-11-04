@@ -25,10 +25,17 @@ def get_task(db: Session, task_id: int, company_id: int):
     ))
 
 
-def list_tasks(db: Session, company_id: int, *, status=None, limit=50, offset=0, sort="created_at", from_date=None, to_date=None):
+def list_tasks(db: Session, company_id: int, *, status=None, limit=50, offset=0, sort="created_at", from_date=None, to_date=None, q=None):
     query = select(InternalTask).where(InternalTask.company_id == company_id)
     if status is not None:
         query = query.where(InternalTask.status == status)
+    # WP-225 — keyword search
+    if q:
+        lower_q = func.lower(f"%{q}%")
+        query = query.where(
+            (func.lower(InternalTask.event_id).like(lower_q)) |
+            (func.lower(InternalTask.error_code).like(lower_q))
+        )
     # WP-155 — date range filter
     if from_date:
         query = query.where(InternalTask.created_at >= from_date)
@@ -44,10 +51,17 @@ def list_tasks(db: Session, company_id: int, *, status=None, limit=50, offset=0,
                       .offset(offset).limit(limit)).all()
 
 
-def task_count(db: Session, company_id: int, *, status=None, from_date=None, to_date=None):
+def task_count(db: Session, company_id: int, *, status=None, from_date=None, to_date=None, q=None):
     query = select(func.count(InternalTask.id)).where(InternalTask.company_id == company_id)
     if status is not None:
         query = query.where(InternalTask.status == status)
+    # WP-225 — keyword search
+    if q:
+        lower_q = func.lower(f"%{q}%")
+        query = query.where(
+            (func.lower(InternalTask.event_id).like(lower_q)) |
+            (func.lower(InternalTask.error_code).like(lower_q))
+        )
     # WP-155 — date range filter
     if from_date:
         query = query.where(InternalTask.created_at >= from_date)
