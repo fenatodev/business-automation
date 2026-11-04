@@ -1336,3 +1336,11 @@ pode validar ou corrigir antes de criar a oportunidade. Usa config da company
 (prompt, temperatura, tokens, modelo). 503 quando agente indisponível.
 
 **2953 tests passed**; compileall, diff-check: PASS.
+
+### WP-259 — Interface UI para sugestão IA de intake
+
+Botão "🤖 Sugerir" no formulário de intake comercial chama o endpoint
+/suggest e mostra a previsão da IA (intenção, categoria, raciocínio)
+antes da criação da oportunidade. Tratamento de erro 503.
+
+**2953 tests passed**; JS syntax, compileall, diff-check: PASS.
