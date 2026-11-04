@@ -17,6 +17,7 @@ class AgentRequest(BaseModel):
     system_prompt: str | None = None  # WP-202 — optional custom system prompt
     temperature: float | None = None  # WP-203 — optional temperature (0.0-2.0)
     max_tokens: int | None = None  # WP-208 — optional max tokens
+    model: str | None = None  # WP-213 — optional model override
 
     @field_validator("temperature")
     @classmethod
@@ -127,6 +128,7 @@ class CompanyAgentConfig(BaseModel):
     system_prompt: str | None = None
     temperature: float | None = None
     max_tokens: int | None = None  # WP-208 — optional max tokens
+    model: str | None = None  # WP-213 — optional model override (e.g., "qwen3:8b")
 
     @field_validator("temperature")
     @classmethod

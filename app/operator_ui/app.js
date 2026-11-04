@@ -4027,6 +4027,7 @@
       $("agent-system-prompt").value = res.system_prompt || "";
       $("agent-temperature").value = res.temperature ?? "";
       $("agent-max-tokens").value = res.max_tokens ?? "";
+      $("agent-model").value = res.model ?? "";
     } catch {
       // config not set yet
     }
@@ -4038,9 +4039,11 @@
     const prompt = $("agent-system-prompt").value.trim();
     const temp = $("agent-temperature").value;
     const maxTokens = $("agent-max-tokens").value;
+    const model = $("agent-model").value;
     if (prompt) body.system_prompt = prompt;
     if (temp !== "") body.temperature = parseFloat(temp);
     if (maxTokens !== "") body.max_tokens = parseInt(maxTokens, 10);
+    if (model !== "") body.model = model;
 
     try {
       await api(`/companies/${company}/agent-config`, "PUT", body);

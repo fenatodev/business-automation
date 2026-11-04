@@ -1010,3 +1010,18 @@ campo max_tokens na UI do agente e painel de detalhes do brief
 com botão "Voltar" e título dinâmico.
 
 **2630 testes passaram**; compileall, diff-check: PASS.
+
+### WP-213 — Seleção de modelo por company
+
+O modelo do Ollama estava fixo como `qwen3:8b` para todas as companies.
+Agora cada company configura seu próprio modelo via agent config.
+
+**2662 testes passaram** (31 novos: 15 WP-213 + 16 WP-214); compileall, diff-check: PASS.
+
+### WP-214 — Seletor de modelo na UI do agente
+
+A interface de configuração do agente tinha prompt, temperatura e max_tokens
+mas faltava o seletor de modelo. Adicionado dropdown com modelos comuns
+do Ollama (qwen3:8b, qwen2.5:7b, llama3.1:8b, mistral:7b, gemma2:9b).
+
+**2662 testes passaram**; compileall, diff-check: PASS.

@@ -71,6 +71,8 @@ def get_agent_config(
     return CompanyAgentConfig(
         system_prompt=config.get("system_prompt"),
         temperature=config.get("temperature"),
+        max_tokens=config.get("max_tokens"),
+        model=config.get("model"),
     )
 
 
@@ -93,9 +95,15 @@ def set_agent_config(
         config["system_prompt"] = data.system_prompt
     if data.temperature is not None:
         config["temperature"] = data.temperature
+    if data.max_tokens is not None:
+        config["max_tokens"] = data.max_tokens
+    if data.model is not None:
+        config["model"] = data.model
     _agent_config_store[company_id] = config
 
     return CompanyAgentConfig(
         system_prompt=config.get("system_prompt"),
         temperature=config.get("temperature"),
+        max_tokens=config.get("max_tokens"),
+        model=config.get("model"),
     )

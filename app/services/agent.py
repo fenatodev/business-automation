@@ -23,6 +23,7 @@ def generate_agent_reply(
     system_prompt: str | None = None,
     temperature: float | None = None,
     max_tokens: int | None = None,
+    model: str | None = None,
 ) -> str:
     # WP-202 — Allow custom system prompt; falls back to default
     prompt = system_prompt if system_prompt else _DEFAULT_SYSTEM_PROMPT
@@ -61,7 +62,7 @@ def generate_agent_reply(
 
     # Build request body
     body: dict[str, object] = {
-        "model": settings.ollama_model,
+        "model": model if model else settings.ollama_model,
         "messages": messages,
         "stream": False,
     }
