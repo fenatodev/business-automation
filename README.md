@@ -40,7 +40,7 @@ O projeto tem dois objetivos complementares:
 - Create customer from conversation (WP-235) — button and form in conversation detail panel;
 - Create opportunity from conversation (WP-236) — button and form in conversation detail panel;
 - AI-assisted triage suggestion (WP-237) — `POST /opportunities/{id}/suggest-triage` uses agent to suggest next action;
-- 2909 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
+- 2914 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
 
 ## Engineering case study
 
