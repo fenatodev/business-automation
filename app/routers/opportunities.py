@@ -21,6 +21,7 @@ from app.schemas import (
     ProposalBriefBulkDelete,
     ProposalBriefBulkStatus,
     ProposalBriefCreate,
+    ProposalBriefSuggestion,
     ProposalBriefUpdate,
 )
 
@@ -1460,3 +1461,104 @@ def suggest_triage(
         "reasoning": reasoning,
         "confidence": confidence,
     }
+
+
+# ---------------------------------------------------------------------------
+# WP-240 — AI-assisted proposal brief suggestion
+# ---------------------------------------------------------------------------
+
+
+_BRIEF_SYSTEM_PROMPT = (
+    "Voce e um assistente para criar rascunhos de proposta comercial. "
+    "Analise a oportunidade abaixo e gere um rascunho de proposal brief. "
+    "Responda APENAS com um JSON no formato: "
+    '{"offer_reference": "<titulo curto>", "diagnosis": "<diagnostico do problema>", '
+    '"scope": "<escopo da solucao>", "deliverables": "<entregaveis>", '
+    '"acceptance_criteria": "<critérios de aceitação>", "assumptions": "<suposicoes>", '
+    '"risks": "<riscos>"}. '
+    "Nao inclua nada alem do JSON. Seja conciso e pratico."
+)
+
+
+def _build_brief_prompt(opp: Opportunity) -> str:
+    """Build the user prompt for brief suggestion based on opportunity context."""
+    parts = [
+        f"Titulo: {opp.title}",
+        f"Descricao: {opp.description or '(vazia)'}",
+        f"Orcamento: {opp.budget or '(nao informado)'}",
+        f"Prazo: {opp.deadline or '(nao informado)'}",
+        f"Requisitos: {opp.requirements or '(nao informados)'}",
+        f"Fonte: {opp.source or '(desconhecida)'}",
+        f"Nota de triagem: {opp.triage_note or '(nenhuma)'}",
+    ]
+    return "\n".join(parts)
+
+
+@router.post("/opportunities/{opportunity_id}/suggest-brief", response_model=ProposalBriefSuggestion)
+def suggest_brief(
+    opportunity_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Suggest proposal brief content for an opportunity using AI.
+
+    This endpoint does NOT persist the suggestion — it returns the AI's
+    draft so the operator can review and edit before creating the brief.
+    Returns 503 if the agent service is unavailable.
+    """
+    from app.services.agent import AgentServiceError, generate_agent_reply
+
+    opportunity = _get_tenant_opportunity(
+        db,
+        opportunity_id,
+        identity.company_id,
+    )
+
+    # Load company agent config for defaults
+    from app.routers.companies import _agent_config_store
+    config = _agent_config_store.get(identity.company_id)
+    system_prompt = (config.get("system_prompt") if config else None) or _BRIEF_SYSTEM_PROMPT
+    temperature = config.get("temperature") if config else None
+    max_tokens = config.get("max_tokens") if config else None
+    model = config.get("model") if config else None
+
+    prompt = _build_brief_prompt(opportunity)
+
+    try:
+        reply = generate_agent_reply(
+            message=prompt,
+            history=[],
+            system_prompt=system_prompt,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            model=model,
+        )
+    except AgentServiceError:
+        raise HTTPException(
+            status_code=503,
+            detail="Servico de agente indisponivel",
+        )
+
+    # Parse JSON response from agent
+    import json as json_module
+
+    try:
+        data = json_module.loads(reply)
+        return ProposalBriefSuggestion(
+            offer_reference=data.get("offer_reference", opportunity.title),
+            diagnosis=data.get("diagnosis", ""),
+            scope=data.get("scope", ""),
+            deliverables=data.get("deliverables", ""),
+            acceptance_criteria=data.get("acceptance_criteria", ""),
+            assumptions=data.get("assumptions"),
+            risks=data.get("risks"),
+        )
+    except (json_module.JSONDecodeError, AttributeError):
+        # Fallback: return raw response as diagnosis
+        return ProposalBriefSuggestion(
+            offer_reference=opportunity.title,
+            diagnosis=reply[:2000] if isinstance(reply, str) else str(reply)[:2000],
+            scope="",
+            deliverables="",
+            acceptance_criteria="",
+        )

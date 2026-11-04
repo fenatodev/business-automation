@@ -330,6 +330,18 @@ class ProposalBriefBulkDelete(BaseModel):
     brief_ids: list[int] = Field(min_length=1, max_length=100)
 
 
+class ProposalBriefSuggestion(BaseModel):
+    """AI-generated proposal brief suggestion."""
+
+    offer_reference: str
+    diagnosis: str
+    scope: str
+    deliverables: str
+    acceptance_criteria: str
+    assumptions: str | None = None
+    risks: str | None = None
+
+
 class CommercialIntakeEvaluateRequest(BaseModel):
     """Request body for the private commercial intake evaluate endpoint.
 
