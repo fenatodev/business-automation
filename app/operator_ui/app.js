@@ -2452,11 +2452,15 @@
         fetch("/leads?status=new&limit=100", {headers: {"Authorization": "Bearer " + bearer}}),
         fetch("/companies/1/conversations?status=open&limit=100", {headers: {"Authorization": "Bearer " + bearer}}),
       ]);
+      let pendingCount = 0;
+      let newLeadCount = 0;
+      let openConvCount = 0;
       // Opportunities pending badge
       if (oppRes.ok) {
         const opps = await oppRes.json();
         if (Array.isArray(opps)) {
           const pending = opps.filter((o) => o.next_action === "pending").length;
+          pendingCount = pending;
           const badge = $("pending-badge");
           if (pending > 0) { badge.hidden = false; badge.textContent = pending; }
           else { badge.hidden = true; }
@@ -2466,6 +2470,7 @@
       if (leadsRes.ok) {
         const leads = await leadsRes.json();
         if (Array.isArray(leads)) {
+          newLeadCount = leads.length;
           const badge = $("lead-new-badge");
           if (leads.length > 0) { badge.hidden = false; badge.textContent = leads.length; }
           else { badge.hidden = true; }
@@ -2475,10 +2480,18 @@
       if (convRes.ok) {
         const convs = await convRes.json();
         if (Array.isArray(convs)) {
+          openConvCount = convs.length;
           const badge = $("conv-open-badge");
           if (convs.length > 0) { badge.hidden = false; badge.textContent = convs.length; }
           else { badge.hidden = true; }
         }
+      }
+      // WP-251 — Update browser tab title with notification count
+      const total = pendingCount + newLeadCount + openConvCount;
+      if (total > 0) {
+        document.title = `(${total}) Operador`;
+      } else {
+        document.title = "Operador";
       }
     } catch (_e) {
       // Silently ignore background notification errors
