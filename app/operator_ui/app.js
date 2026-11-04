@@ -1990,6 +1990,29 @@
     } else {
       nextActionsSection.hidden = true;
     }
+
+    // WP-228 — Recent activities
+    const recentSection = $("recent-activities-section");
+    const recentList = $("recent-activities-list");
+    const recentActivities = data.recent_activities || [];
+    if (recentActivities.length > 0) {
+      recentSection.hidden = false;
+      recentList.replaceChildren();
+      const typeLabels = {
+        "opportunity": "🎯 Oportunidade",
+        "conversation": "💬 Conversa",
+        "lead": "📩 Lead",
+      };
+      for (const activity of recentActivities) {
+        const li = document.createElement("li");
+        li.className = "next-action-item";
+        const time = activity.created_at ? new Date(activity.created_at).toLocaleString("pt-BR") : "";
+        li.textContent = `${typeLabels[activity.type] || activity.type}: ${activity.title} (${time})`;
+        recentList.appendChild(li);
+      }
+    } else {
+      recentSection.hidden = true;
+    }
   }
 
   $("dashboard-refresh").addEventListener("click", () => withButton($("dashboard-refresh"), async () => {

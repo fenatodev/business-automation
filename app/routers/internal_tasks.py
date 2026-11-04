@@ -172,6 +172,47 @@ def get_dashboard(
     from app.routers.companies import _get_agent_usage
     agent_usage = _get_agent_usage(company_id)
 
+    # WP-228 — Recent activities (inline with dashboard to avoid separate fetch)
+    activities = []
+    for opp in db.scalars(
+        select(Opportunity)
+        .where(Opportunity.company_id == company_id)
+        .order_by(Opportunity.created_at.desc())
+        .limit(10)
+    ).all():
+        activities.append({
+            "type": "opportunity",
+            "id": opp.id,
+            "title": opp.title,
+            "created_at": opp.created_at.isoformat(),
+        })
+    for conv in db.scalars(
+        select(Conversation)
+        .where(Conversation.company_id == company_id)
+        .order_by(Conversation.created_at.desc())
+        .limit(10)
+    ).all():
+        activities.append({
+            "type": "conversation",
+            "id": conv.id,
+            "title": f"Conversa ({conv.channel})",
+            "created_at": conv.created_at.isoformat(),
+        })
+    for lead in db.scalars(
+        select(Lead)
+        .where(Lead.company_id == company_id)
+        .order_by(Lead.created_at.desc())
+        .limit(10)
+    ).all():
+        activities.append({
+            "type": "lead",
+            "id": lead.id,
+            "title": lead.name,
+            "created_at": lead.created_at.isoformat(),
+        })
+    activities.sort(key=lambda a: a["created_at"], reverse=True)
+    recent_activities = activities[:20]
+
     return {
         "opportunities": opportunities,
         "conversations": conversations,
@@ -186,6 +227,7 @@ def get_dashboard(
             "successful_calls": agent_usage["successful_calls"],
             "failed_calls": agent_usage["failed_calls"],
         },
+        "recent_activities": recent_activities,
     }
 
 
