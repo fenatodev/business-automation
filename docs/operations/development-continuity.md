@@ -1107,3 +1107,13 @@ com busca case-insensitive em event_id e error_code. UI com campo de busca na se
 de filtros, listener de input para busca em tempo real; botão "Limpar filtros" atualizado.
 
 **2759 testes passaram** (9 novos); compileall, diff-check: PASS.
+
+### WP-226 — Sugerir resposta do agente sem persistir
+
+O operador podia disparar agent-reply mas precisava digitar uma mensagem do cliente.
+`POST /conversations/{id}/suggest-reply` usa a última mensagem do cliente na conversa
+e retorna uma sugestão do agente sem persisti-la. Usa a configuração do agente da
+company (prompt, temperatura, tokens, modelo). Retorna 400 se não houver mensagem
+do cliente; 503 se o agente falhar.
+
+**2767 testes passaram** (8 novos); compileall, diff-check: PASS.

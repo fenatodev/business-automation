@@ -128,6 +128,81 @@ def agent_reply(
     }
 
 
+@router.post("/conversations/{conversation_id}/suggest-reply")
+def suggest_reply(
+    conversation_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """WP-226 — Suggest an agent reply based on conversation history.
+
+    Uses the last customer message as the trigger. Returns the suggestion
+    without persisting it. Uses company agent config as defaults.
+    """
+    conversation = _get_tenant_conversation(
+        db,
+        conversation_id,
+        identity.company_id,
+    )
+
+    history_messages = db.scalars(
+        select(Message)
+        .where(Message.conversation_id == conversation.id)
+        .order_by(Message.id)
+    ).all()
+
+    # Find the last customer message
+    last_customer = None
+    for msg in reversed(history_messages):
+        if msg.sender_type == "customer":
+            last_customer = msg
+            break
+
+    if last_customer is None:
+        raise HTTPException(
+            status_code=400,
+            detail="No customer message found in this conversation",
+        )
+
+    history = [
+        {
+            "sender_type": item.sender_type,
+            "content": item.content,
+        }
+        for item in history_messages
+    ]
+
+    try:
+        from app.routers.companies import _agent_config_store, _record_agent_call
+
+        company_config = _agent_config_store.get(identity.company_id, {})
+        effective_prompt = company_config.get("system_prompt")
+        effective_temp = company_config.get("temperature")
+        effective_max_tokens = company_config.get("max_tokens")
+        effective_model = company_config.get("model")
+
+        response = generate_agent_reply(
+            message=last_customer.content,
+            history=history,
+            system_prompt=effective_prompt,
+            temperature=effective_temp,
+            max_tokens=effective_max_tokens,
+            model=effective_model,
+        )
+        _record_agent_call(identity.company_id, success=True)
+    except AgentServiceError:
+        _record_agent_call(identity.company_id, success=False)
+        raise HTTPException(
+            status_code=503,
+            detail="Agent service unavailable",
+        )
+
+    return {
+        "conversation_id": conversation.id,
+        "suggestion": response,
+    }
+
+
 @router.get("/conversations/{conversation_id}")
 def get_conversation(
     conversation_id: int,
