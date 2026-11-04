@@ -1287,3 +1287,12 @@ sont silencieusement ignorées. Le bouton "🤖 Sugerir" reste disponible
 pour recharger manuellement.
 
 **2936 tests passés**; compileall, diff-check: PASS.
+
+### WP-253 — Raccourcis clavier Ctrl+1 à Ctrl+7 pour naviguer entre les sections
+
+L'opérateur peut naviguer entre les 7 sections avec Ctrl+1 (Dashboard),
+Ctrl+2 (Oportunidades), Ctrl+3 (Conversas), Ctrl+4 (Leads),
+Ctrl+5 (Customers), Ctrl+6 (Fila de revisão), Ctrl+7 (Tarefas internas).
+Utilise scrollIntoView smooth, réutilisant la logique de WP-193.
+
+**2936 tests passés**; compileall, diff-check: PASS.
