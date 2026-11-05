@@ -419,7 +419,7 @@ def test_briefs_filters_and_pagination_control_briefs_list():
 
 def test_briefs_list_has_list_semantics():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
-    assert 'id="briefs-list" class="briefs-list" role="list" aria-live="polite" aria-label="Lista de briefs"' in html
+    assert 'id="briefs-list" class="briefs-list" role="list" aria-live="polite" aria-busy="false" aria-label="Lista de briefs"' in html
 
 
 def test_briefs_bulk_actions_have_accessible_list_context():
