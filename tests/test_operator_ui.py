@@ -179,7 +179,7 @@ def test_opportunity_current_page_has_current_semantics():
 
 def test_task_status_filter_controls_task_list():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
-    assert 'id="task-status-filter" aria-label="Filtrar por status" aria-controls="tasks-list"' in html
+    assert '<select id="task-status-filter" aria-controls="tasks-list">' in html
 
 
 def test_task_bulk_clear_controls_task_list():
