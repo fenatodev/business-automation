@@ -269,6 +269,11 @@ def test_task_list_items_have_listitem_semantics():
     assert 'item.setAttribute("role", "listitem")' in js
 
 
+def test_task_pagination_controls_task_list():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    assert 'id="tasks-pagination" class="task-pagination" role="navigation" aria-label="Paginação de tarefas" aria-controls="tasks-list" hidden' in html
+
+
 def test_task_pagination_status_is_live_region():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
     assert 'id="tasks-page-info" class="small" aria-live="polite"' in html
@@ -276,7 +281,7 @@ def test_task_pagination_status_is_live_region():
 
 def test_task_pagination_has_navigation_semantics():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
-    assert 'id="tasks-pagination" class="task-pagination" role="navigation" aria-label="Paginação de tarefas" hidden' in html
+    assert 'id="tasks-pagination" class="task-pagination" role="navigation" aria-label="Paginação de tarefas" aria-controls="tasks-list" hidden' in html
 
 
 def test_opportunity_pagination_controls_have_context_labels():
