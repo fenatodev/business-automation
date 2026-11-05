@@ -605,6 +605,7 @@ def get_recent_activities(
 
 @router.get("/export.csv")
 def export_tasks_csv(
+    sort: Literal["id", "created_at", "status", "attempts"] | None = None,
     status: Literal["queued", "running", "succeeded", "failed"] | None = Query(None, description="Filter by status"),
     q: str | None = Query(None, description="Search keywords in event_id, error_code"),
     from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
@@ -628,7 +629,17 @@ def export_tasks_csv(
         query = query.where(InternalTask.created_at >= from_date)
     if to_date:
         query = query.where(InternalTask.created_at <= to_date + "T23:59:59")
-    task_list = db.scalars(query.order_by(InternalTask.id)).all()
+    if sort is None:
+        query = query.order_by(InternalTask.id)
+    else:
+        sort_column = {
+            "id": InternalTask.id,
+            "created_at": InternalTask.created_at,
+            "status": InternalTask.status,
+            "attempts": InternalTask.attempts,
+        }[sort]
+        query = query.order_by(sort_column.desc(), InternalTask.id.desc())
+    task_list = db.scalars(query).all()
 
     output = io.StringIO()
     writer = csv.writer(output)

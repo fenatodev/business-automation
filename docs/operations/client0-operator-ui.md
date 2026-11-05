@@ -107,3 +107,12 @@ A UI reduz manipulação manual de JSON e oferece uma rotina mínima
 sem introduzir infraestrutura. O trabalho do operador e sua fricção
 precisam ser medidos antes de criar dashboards, adapters ERP ou
 automações de captação. Nenhuma simulação substitui o gate real da F2.
+
+## CSV de tarefas internas
+
+Na seção Tarefas internas, selecionar a ordenação por Data, ID, Status ou
+Tentativas e clicar em Exportar CSV. O arquivo segue a mesma ordem decrescente
+da lista (ID decrescente no desempate), preservando status, busca e datas.
+Exporta todos os resultados filtrados, incluindo os que estão em outras páginas.
+Consumidores diretos de `/internal-tasks/export.csv` que omitem `sort` continuam
+recebendo ID crescente. O arquivo mantém os campos existentes, sem payloads.
