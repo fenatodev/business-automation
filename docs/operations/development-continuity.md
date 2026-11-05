@@ -1434,3 +1434,15 @@ UI: botão "🤖 Sugerir" no formulário de criar oportunidade; painel mostra
 razão; "Preencher oportunidade" auto-preenche os campos. Segue regra XSS.
 
 **3045 testes passaram**; compileall, diff-check, JS syntax: PASS.
+
+### WP-270 — Resumo de conversa por IA
+
+O operador podia ver todas as mensagens mas não tinha forma rápida
+de resumir conversas longas. Adicionado `POST /conversations/{id}/summarize`
+que analisa todas as mensagens e retorna resumo conciso com pontos-chave
+e ações pendentes. Usa config da company. Mínimo 2 mensagens.
+
+UI: botão "📋 Resumir" no painel de detalhes; painel mostra resumo,
+pontos-chave e ações pendentes. Segue regra XSS.
+
+**3055 testes passaram**; compileall, diff-check, JS syntax: PASS.
