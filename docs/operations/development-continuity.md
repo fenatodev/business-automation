@@ -1530,6 +1530,16 @@ Validação local e CI: **3141 testes passaram**, dois warnings preexistentes;
 compileall, sintaxe JavaScript e diff-check: PASS. Nenhuma migration nova ou
 alteração de backend foi necessária.
 
+### WP-287 — Navegação acessível para Leads vinculados
+
+Cards de Lead no detalhe de oportunidade agora abrem diretamente o detalhe do
+Lead e aceitam ativação por teclado, mantendo paridade com Customer. PR #300
+integrado em `89ba564`.
+
+Validação local e CI: **3142 testes passaram**, dois warnings preexistentes;
+compileall e diff-check: PASS. Nenhuma migration ou alteração de API foi
+necessária.
+
 ### WP-284 — Contexto de Customer no detalhe de oportunidade
 
 O cartão de Customer vinculado a uma oportunidade agora exibe telefone e
