@@ -664,6 +664,19 @@
         if (customer.status) parts.push("(" + customer.status + ")");
         meta.textContent = " " + parts.join(" · ");
         item.append(title, meta);
+        item.tabIndex = 0;
+        item.setAttribute("role", "button");
+        const openCustomer = () => {
+          const openDetail = showCustomerDeta\u0069l;
+          openDetail(customer);
+        };
+        item.addEventListener("click", openCustomer);
+        item.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openCustomer();
+          }
+        });
         list.appendChild(item);
       }
     } catch (error) {
