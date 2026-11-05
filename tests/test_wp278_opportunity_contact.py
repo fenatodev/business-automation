@@ -113,3 +113,5 @@ def test_ui_uses_linked_contact_and_authenticated_conversation_routes():
     assert "if (version !== selectionVersion || selectedId === null) return;" in js
     assert "oppConvSuggestion.__version === selectionVersion" in js
     assert 'hidden = opportunityContactType === null' in js
+    customer_submit = js[js.index('$("customer-opp-form").addEventListener'):]
+    assert 'customer_id: currentCustomerId' in customer_submit

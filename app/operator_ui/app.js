@@ -4462,6 +4462,7 @@
           budget,
           deadline,
           requirements,
+          customer_id: currentCustomerId,
           captured_at: new Date().toISOString(),
         }),
       });
