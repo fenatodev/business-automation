@@ -5223,6 +5223,7 @@
     for (const task of tasks) {
       const item = document.createElement("div");
       item.className = "task-item";
+      item.setAttribute("role", "listitem");
       // WP-172 — Checkbox for bulk retry
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
