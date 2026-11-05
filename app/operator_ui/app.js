@@ -558,6 +558,7 @@
         });
         item.tabIndex = 0;
         item.setAttribute("role", "button");
+        item.setAttribute("aria-label", "Abrir conversa #" + conv.id);
         item.addEventListener("keydown", (event) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
@@ -640,6 +641,7 @@
         });
         item.tabIndex = 0;
         item.setAttribute("role", "button");
+        item.setAttribute("aria-label", "Abrir lead " + (lead.name || "sem nome"));
         item.addEventListener("keydown", (event) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
@@ -680,6 +682,7 @@
         item.append(title, meta);
         item.tabIndex = 0;
         item.setAttribute("role", "button");
+        item.setAttribute("aria-label", "Abrir cliente " + (customer.name || "sem nome"));
         const openCustomer = () => {
           const openDetail = showCustomerDeta\u0069l;
           openDetail(customer);
