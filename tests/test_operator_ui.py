@@ -177,6 +177,11 @@ def test_opportunity_current_page_has_current_semantics():
     assert 'id="opp-page" class="small" aria-live="polite" aria-current="page"' in html
 
 
+def test_task_bulk_clear_controls_task_list():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    assert 'id="task-bulk-clear" type="button" class="secondary" aria-controls="tasks-list">Limpar seleção' in html
+
+
 def test_task_export_controls_task_list():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
     assert 'id="tasks-export-csv" type="button" class="secondary" aria-controls="tasks-list">Exportar CSV' in html
