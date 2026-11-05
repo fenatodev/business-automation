@@ -543,6 +543,7 @@
         const conv = conversations[idx];
         const item = document.createElement("div");
         item.className = "opp-conv-item";
+        item.setAttribute("role", "listitem");
         const title = document.createElement("strong");
         title.textContent = "#" + conv.id + " · " + conv.channel;
         const meta = document.createElement("span");
@@ -626,6 +627,7 @@
         opportunityCompanyId = lead.company_id;
         const item = document.createElement("div");
         item.className = "opp-lead-item";
+        item.setAttribute("role", "listitem");
         const title = document.createElement("strong");
         title.textContent = lead.name || "Sem nome";
         const meta = document.createElement("span");
@@ -671,6 +673,7 @@
         opportunityContactType = "customer";
         const item = document.createElement("div");
         item.className = "opp-lead-item";
+        item.setAttribute("role", "listitem");
         const title = document.createElement("strong");
         title.textContent = customer.name || "Sem nome";
         const meta = document.createElement("span");

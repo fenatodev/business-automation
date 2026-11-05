@@ -47,6 +47,7 @@ def test_ui_uses_linked_conversation_route():
     assert '/opportunities/" + id + "/linked-conversations' in js
     assert 'item.addEventListener("keydown", (event) => {' in js
     assert 'item.setAttribute("aria-label", "Abrir conversa #"' in js
+    assert 'item.setAttribute("role", "listitem")' in js
     assert "expectedVersion !== selectionVersion" in js
 
 
