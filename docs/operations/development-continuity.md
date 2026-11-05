@@ -8,6 +8,43 @@
 - Codex é opcional e temporário; **Junie deve continuar sem acesso à sessão ou memória do Codex**.
 - A aplicação comercial permanece sob gate explícito: não ativar workflows, publicar API nem enviar mensagens sem autorização.
 
+## Esteira local contínua do Codex
+
+O desenvolvimento contínuo local usa `scripts/continuous-dev-loop.sh`, que
+inicia uma execução independente do Codex CLI por WP. O prompt operacional
+está em `scripts/continuous-dev-task.md`; cada execução termina após uma WP,
+um bloqueio real ou a ausência de uma WP segura.
+
+O supervisor trabalha somente em árvore limpa na `main`, não inicia outra WP
+enquanto houver PR `wp/*` aberto, preserva logs em
+`/tmp/business-automation-codex-loop/` e usa backoff progressivo para falhas
+transitórias. Ele não apaga alterações locais, não usa `git reset --hard` ou
+`git clean`, e respeita `/tmp/business-automation.stop`.
+
+Para executar uma vez:
+
+```bash
+scripts/continuous-dev-loop.sh --once
+```
+
+Para iniciar o ciclo contínuo:
+
+```bash
+rm -f /tmp/business-automation.stop
+scripts/continuous-dev-loop.sh
+```
+
+Para parar sem apagar nada:
+
+```bash
+touch /tmp/business-automation.stop
+```
+
+O supervisor usa Codex CLI 0.165.0 com `--sandbox danger-full-access` e
+`approval_policy="never"`, conforme as flags disponíveis localmente. O modo
+`--dry-run` apenas registra a execução planejada; a validação normal continua
+exigindo árvore limpa, autenticação GitHub e ausência de PR aberto.
+
 ## Primeira sessão de qualquer agente
 
 1. Verificar branch e árvore de trabalho; usar novo worktree da `main` para não sobrescrever trabalho anterior.
