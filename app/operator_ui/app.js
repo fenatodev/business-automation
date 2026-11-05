@@ -601,6 +601,8 @@
     // WP-263 — lead and customer filters
     const leadId = $("opp-lead-filter") ? $("opp-lead-filter").value : "";
     const customerId = $("opp-customer-filter") ? $("opp-customer-filter").value : "";
+    // WP-266 — priority level filter
+    const priorityLevel = $("opp-priority-filter") ? $("opp-priority-filter").value : "";
     // WP-238 — priority sort uses dedicated endpoint
     if (sort === "priority") {
       const result = await api("/opportunities/priority?limit=" + oppPageSize);
@@ -645,6 +647,7 @@
       if (toDate) params.push("to_date=" + encodeURIComponent(toDate));
       if (leadId) params.push("lead_id=" + encodeURIComponent(leadId));
       if (customerId) params.push("customer_id=" + encodeURIComponent(customerId));
+      if (priorityLevel) params.push("priority_level=" + encodeURIComponent(priorityLevel));
       params.push("sort=" + encodeURIComponent(sort));
       params.push("limit=" + oppPageSize);
       params.push("offset=" + oppOffset);
@@ -658,6 +661,7 @@
       if (toDate) countParams.push("to_date=" + encodeURIComponent(toDate));
       if (leadId) countParams.push("lead_id=" + encodeURIComponent(leadId));
       if (customerId) countParams.push("customer_id=" + encodeURIComponent(customerId));
+      if (priorityLevel) countParams.push("priority_level=" + encodeURIComponent(priorityLevel));
       const [result, countResult, pipelineResult] = await Promise.all([
         api("/opportunities" + query),
         api("/opportunities/count" + (countParams.length ? "?" + countParams.join("&") : "")),
@@ -754,6 +758,13 @@
       refreshList();
     });
   }
+  // WP-266 — Opportunity priority level filter
+  if ($("opp-priority-filter")) {
+    $("opp-priority-filter").addEventListener("change", () => {
+      oppOffset = 0;
+      refreshList();
+    });
+  }
 
   // WP-150 — Clear all filters
   $("opp-clear-filters").addEventListener("click", () => {
@@ -764,6 +775,7 @@
     if ($("opp-source-filter")) $("opp-source-filter").value = "";
     if ($("opp-lead-filter")) $("opp-lead-filter").value = "";
     if ($("opp-customer-filter")) $("opp-customer-filter").value = "";
+    if ($("opp-priority-filter")) $("opp-priority-filter").value = "";
     $("show-archived").checked = false;
     oppPipelineFilter = "all";
     document.querySelectorAll('.opp-pipeline-chip').forEach((chip) => {
@@ -3872,7 +3884,7 @@
   }
 
   $("opp-export-csv").addEventListener("click", () => {
-    // WP-123/150/189 — Export CSV with current filters
+    // WP-123/150/189/266 — Export CSV with current filters
     const params = [];
     const showArchived = $("show-archived").checked;
     if (!showArchived) params.push("exclude_archived=true");
@@ -3885,6 +3897,8 @@
     if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
     const toDate = $("opp-to-date").value;
     if (toDate) params.push("to_date=" + encodeURIComponent(toDate));
+    const priorityLevel = $("opp-priority-filter") ? $("opp-priority-filter").value : "";
+    if (priorityLevel) params.push("priority_level=" + encodeURIComponent(priorityLevel));
     const url = "/opportunities/export.csv" + (params.length ? "?" + params.join("&") : "");
     downloadCsv(url, "opportunities.csv");
     notify("Exportando oportunidades...");

@@ -243,6 +243,7 @@ def list_opportunities(
     to_date: str | None = Query(None, description="Filter captured_at <= date (YYYY-MM-DD)"),
     lead_id: int | None = Query(None, description="Filter opportunities with conversations linked to this lead"),
     customer_id: int | None = Query(None, description="Filter opportunities with conversations linked to this customer"),
+    priority_level: str | None = Query(None, description="Filter by priority level: high, medium, low"),
     sort: str = Query(default="id", description="Sort by: id, created_at, next_action"),
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -300,8 +301,17 @@ def list_opportunities(
     else:
         stmt = stmt.order_by(Opportunity.id)
 
-    stmt = stmt.offset(offset).limit(limit)
-    return db.scalars(stmt).all()
+    opportunities = db.scalars(stmt).all()
+
+    # WP-266 — filter by priority level (computed in-memory)
+    if priority_level is not None:
+        opportunities = [
+            opp for opp in opportunities
+            if _calculate_priority_score(opp)["level"] == priority_level
+        ]
+
+    # Apply pagination after priority filter
+    return opportunities[offset:offset + limit]
 
 
 @router.get("/opportunities/count")
@@ -314,6 +324,7 @@ def count_opportunities(
     to_date: str | None = Query(None, description="Filter captured_at <= date (YYYY-MM-DD)"),
     lead_id: int | None = Query(None, description="Filter opportunities with conversations linked to this lead"),
     customer_id: int | None = Query(None, description="Filter opportunities with conversations linked to this customer"),
+    priority_level: str | None = Query(None, description="Filter by priority level: high, medium, low"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
@@ -362,7 +373,33 @@ def count_opportunities(
             )
         )
 
-    total = db.scalar(stmt)
+    # WP-266 — if priority_level filter, count from list instead
+    if priority_level is not None:
+        opportunities = db.scalars(
+            select(Opportunity).where(Opportunity.company_id == identity.company_id)
+        ).all()
+        if exclude_archived:
+            opportunities = [o for o in opportunities if o.next_action not in ("done", "lost")]
+        if next_action is not None:
+            opportunities = [o for o in opportunities if o.next_action == next_action]
+        if source is not None:
+            opportunities = [o for o in opportunities if o.source == source]
+        if q:
+            pattern = f"%{q}%"
+            opportunities = [
+                o for o in opportunities
+                if o.title.lower().find(q.lower()) >= 0 or (o.description or "").lower().find(q.lower()) >= 0
+            ]
+        if from_date:
+            opportunities = [o for o in opportunities if o.captured_at and o.captured_at >= from_date]
+        if to_date:
+            opportunities = [o for o in opportunities if o.captured_at and o.captured_at <= to_date + "T23:59:59"]
+        total = sum(
+            1 for o in opportunities
+            if _calculate_priority_score(o)["level"] == priority_level
+        )
+    else:
+        total = db.scalar(stmt)
     return {"total": total}
 
 
@@ -393,6 +430,7 @@ def export_opportunities_csv(
     to_date: str | None = Query(None, description="Filter captured_at <= date (YYYY-MM-DD)"),
     lead_id: int | None = Query(None, description="Filter opportunities with conversations linked to this lead"),
     customer_id: int | None = Query(None, description="Filter opportunities with conversations linked to this customer"),
+    priority_level: str | None = Query(None, description="Filter by priority level: high, medium, low"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
@@ -442,6 +480,13 @@ def export_opportunities_csv(
 
     stmt = stmt.order_by(Opportunity.id)
     opportunities = db.scalars(stmt).all()
+
+    # WP-266 — filter by priority level (computed in-memory)
+    if priority_level is not None:
+        opportunities = [
+            opp for opp in opportunities
+            if _calculate_priority_score(opp)["level"] == priority_level
+        ]
 
     output = io.StringIO()
     writer = csv.writer(output)
