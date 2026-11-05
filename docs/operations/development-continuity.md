@@ -1615,6 +1615,31 @@ Validação local e CI: **3142 testes passaram**, dois warnings preexistentes;
 compileall e diff-check: PASS. Nenhuma migration ou alteração de API foi
 necessária.
 
+## WP-385 — Aliases padronizados de health probes (05/11/2026)
+
+Adicionados os aliases públicos `/healthz` e `/readyz`, preservando os
+contratos existentes de `/health` e `/readiness`. Os quatro endpoints mantêm
+respostas sem autenticação e sem detalhes de infraestrutura.
+
+Validação local: **3205 testes passaram**, `compileall app tests` e
+`git diff --check` passaram. PR #385 foi integrado após CI verde no commit
+`058dcb8`. Não houve migration, acesso a banco real, deploy ou ação externa.
+
+## WP-386 — Health probes sem cache (05/11/2026)
+
+Os quatro endpoints de liveness/readiness agora retornam
+`Cache-Control: no-store`, evitando que proxies ou supervisores reutilizem um
+estado de saúde obsoleto. O corpo e os códigos HTTP existentes foram
+preservados, com testes de regressão para cada alias.
+
+Validação local: **3205 testes passaram**, `compileall app tests` e
+`git diff --check` passaram. PR #386 foi integrado após CI verde no commit
+`2f6960b`. O arquivo local não rastreado `error.log` permaneceu fora do Git.
+
+Próxima ação segura: escolher uma fatia funcional do operador ou uma lacuna
+de diagnóstico comprovada no código, evitando novas alterações cosméticas de
+acessibilidade enquanto houver fluxo operacional incompleto.
+
 ## Fatias funcionais completas
 
 Cada novo ciclo deve entregar uma capacidade operacional vertical com backend/API,
