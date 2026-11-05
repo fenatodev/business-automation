@@ -1791,6 +1791,10 @@ footer {
   border-radius: 8px;
   flex-wrap: wrap;
 }
+.brief-item:focus-visible {
+  outline: 2px solid var(--accent, #2563eb);
+  outline-offset: 2px;
+}
 .brief-item-title {
   font-weight: 600;
   flex: 1 1 200px;
