@@ -1374,3 +1374,12 @@ oportunidades usando EXISTS subquery com Conversation. UI com dropdowns
 "Lead" e "Customer" na toolbar.
 
 **2978 testes passaram**; compileall, diff-check, JS syntax: PASS.
+
+### WP-264 — Templates de resposta reutilizáveis
+
+O operador pode salvar respostas comuns e reusá-las rapidamente ao
+responder conversas. Backend com GET/POST/DELETE /companies/{id}/reply-templates
+com tenant isolation e armazenamento em memória. UI com seletor de templates
+no formulário de resposta.
+
+**2992 testes passaram**; compileall, diff-check, JS syntax: PASS.
