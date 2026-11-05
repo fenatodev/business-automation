@@ -135,3 +135,9 @@ def test_brief_status_is_live_region():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
     assert 'id="brief-status"' in html
     assert 'aria-live="polite"' in html
+
+
+def test_triage_note_is_live_region():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    assert 'id="selected-triage-note"' in html
+    assert 'aria-live="polite"' in html
