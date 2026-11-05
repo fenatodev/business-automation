@@ -1614,3 +1614,18 @@ mantendo paridade contextual com Lead. PR #297 integrado em `f402e48`.
 Validação local e CI: **3142 testes passaram**, dois warnings preexistentes;
 compileall e diff-check: PASS. Nenhuma migration ou alteração de API foi
 necessária.
+
+## Fatias funcionais completas
+
+Cada novo ciclo deve entregar uma capacidade operacional vertical com backend/API,
+fluxo de operador quando aplicável, testes e documentação. O PR só deve ser
+aberto depois que essa fatia estiver completa e os gates locais passarem.
+
+A sequência é sincronizar origin/main, ler produto/roadmap/decisões, escolher
+uma capacidade do backlog, implementar em uma branch wp/<id>-<capacidade>,
+executar scripts/preflight.sh, abrir um único PR, aguardar CI, fazer merge
+normal quando verde e iniciar a próxima capacidade.
+
+Não abrir PRs para microajustes isolados. Migrações, segurança, autorização,
+isolamento tenant e infraestrutura continuam sujeitos aos gates adicionais de
+AGENTS.md; nunca são habilitados por auto-merge.
