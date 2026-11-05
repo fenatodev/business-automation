@@ -1529,3 +1529,13 @@ conversas das WPs 279 e 280. PR #295 integrado em `14288ae`.
 Validação local e CI: **3141 testes passaram**, dois warnings preexistentes;
 compileall, sintaxe JavaScript e diff-check: PASS. Nenhuma migration nova ou
 alteração de backend foi necessária.
+
+### WP-284 — Contexto de Customer no detalhe de oportunidade
+
+O cartão de Customer vinculado a uma oportunidade agora exibe telefone e
+status quando disponíveis, usando a linguagem do operador (`Cliente`) e
+mantendo paridade contextual com Lead. PR #297 integrado em `f402e48`.
+
+Validação local e CI: **3142 testes passaram**, dois warnings preexistentes;
+compileall e diff-check: PASS. Nenhuma migration ou alteração de API foi
+necessária.
