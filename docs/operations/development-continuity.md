@@ -1566,6 +1566,14 @@ PR #314 integrado após CI verde.
 
 Validação: 6 testes direcionados, compileall e diff-check passaram.
 
+### WP-363 — Estado inicial busy de Proposal Briefs
+
+A lista de Proposal Briefs agora declara `aria-busy="false"` no HTML inicial,
+evitando estado indeterminado antes da primeira atualização. PR #376 integrado
+após CI verde.
+
+Validação: 59 testes direcionados, compileall e diff-check passaram.
+
 ### WP-307 — Nota de triagem anunciada
 
 A nota de triagem da oportunidade selecionada agora usa `aria-live="polite"`,
