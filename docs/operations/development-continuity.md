@@ -1574,6 +1574,13 @@ CI verde.
 
 Validação: 5 testes direcionados, compileall e diff-check passaram.
 
+### WP-305 — Status de ProposalBrief anunciado
+
+O status dinâmico do ProposalBrief agora usa `aria-live="polite"`, informando
+leitores de tela sobre mudanças no detalhe da oportunidade. PR #318 integrado.
+
+Validação: 6 testes direcionados, compileall e diff-check passaram.
+
 ### WP-289 — Foco visual para contatos vinculados
 
 Cards de Lead e Customer vinculados a oportunidades agora exibem foco visível
