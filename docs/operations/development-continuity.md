@@ -1482,3 +1482,14 @@ UI: seção "Leads" no customer detail com formulário de criação e
 botão "🤖 Sugerir" com painel de sugestão.
 
 **3082 testes passaram**; compileall, diff-check, JS syntax: PASS.
+
+### WP-274 — Sugestão IA para mensagem inicial de conversa
+
+O operador criava conversas sem ajuda da IA para a primeira mensagem.
+Adicionado `POST /conversations/suggest-message` que analisa o contexto
+do lead ou customer e sugere mensagem de abertura personalizada.
+
+UI: formulários de nova conversa nos painéis de detalhes de lead e
+customer com canal, mensagem e botão "🤖 Sugerir".
+
+**3092 testes passaram**; compileall, diff-check, JS syntax: PASS.
