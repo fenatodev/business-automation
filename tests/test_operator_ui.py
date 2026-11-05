@@ -94,6 +94,16 @@ def test_notification_polling_uses_tenant_scoped_dashboard_snapshot(client):
     assert 'dashboard.tasks?.failed' in script
 
 
+def test_notification_sync_status_is_visible_and_handles_stale_data(client):
+    page = client.get("/operator").text
+    script = client.get("/operator/app.js").text
+
+    assert 'id="notification-sync-status"' in page
+    assert 'role="status"' in page
+    assert 'Atualização indisponível' in script
+    assert 'notification-sync-status' in script
+
+
 def test_ui_is_not_an_authentication_bypass(
     client,
     admin_headers,
