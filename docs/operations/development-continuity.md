@@ -1422,3 +1422,15 @@ UI: botão "🤖 Sugerir" no formulário de criar customer; painel mostra
 razão; "Preencher customer" auto-preenche os campos. Segue regra XSS.
 
 **3036 testes passaram**; compileall, diff-check, JS syntax: PASS.
+
+### WP-269 — Sugestão IA para criar oportunidade a partir de conversa
+
+O operador podia criar oportunidades manualmente a partir de conversas mas
+não tinha ajuda da IA. Adicionado `POST /conversations/{id}/suggest-opportunity`
+que analisa as mensagens e sugere título, descrição, orçamento, prazo e
+requisitos.
+
+UI: botão "🤖 Sugerir" no formulário de criar oportunidade; painel mostra
+razão; "Preencher oportunidade" auto-preenche os campos. Segue regra XSS.
+
+**3045 testes passaram**; compileall, diff-check, JS syntax: PASS.
