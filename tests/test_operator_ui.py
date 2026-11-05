@@ -177,6 +177,11 @@ def test_opportunity_current_page_has_current_semantics():
     assert 'id="opp-page" class="small" aria-live="polite" aria-current="page"' in html
 
 
+def test_task_sort_controls_task_list():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    assert '<select id="task-sort" aria-controls="tasks-list">' in html
+
+
 def test_task_search_controls_task_list():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
     assert '<input type="search" id="task-search" aria-controls="tasks-list" placeholder="Buscar por evento ou erro...">' in html
