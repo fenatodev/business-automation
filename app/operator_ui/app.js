@@ -3227,6 +3227,7 @@
         badge.hidden = count <= 0;
         if (count > 0) badge.textContent = count;
       }
+      $("notification-sync-status").textContent = "Atualizado às " + new Date().toLocaleTimeString("pt-BR");
       // WP-251 — Update browser tab title with notification count
       const total = pendingCount + newLeadCount + openConvCount + failedTaskCount;
       if (total > 0) {
@@ -3235,7 +3236,7 @@
         document.title = "Operador";
       }
     } catch (_e) {
-      // Silently ignore background notification errors
+      $("notification-sync-status").textContent = "Atualização indisponível";
     }
   }
 

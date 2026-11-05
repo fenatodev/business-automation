@@ -1679,6 +1679,18 @@ do badge de tarefas passaram, `node --check app/operator_ui/app.js`,
 `compileall app tests` e `git diff --check` passaram. Nenhuma migration,
 credencial, mensagem externa ou deploy foi envolvido.
 
+## WP-392 — Estado visível de sincronização de notificações (05/11/2026)
+
+O painel do operador agora informa quando o snapshot de notificações foi
+atualizado e quando a atualização está indisponível. Em caso de falha, os
+badges não são apresentados como novos dados; o estado permanece explícito
+para o operador sem expor detalhes internos.
+
+Validação local: **3208 testes passaram**, 78 testes direcionados do operador,
+`node --check app/operator_ui/app.js`, `compileall app tests` e
+`git diff --check` passaram. Nenhuma migration, credencial, mensagem externa
+ou deploy foi envolvido.
+
 ## Fatias funcionais completas
 
 Cada novo ciclo deve entregar uma capacidade operacional vertical com backend/API,
