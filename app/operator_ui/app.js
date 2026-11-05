@@ -571,7 +571,13 @@
       }
     } catch (error) {
       if (expectedVersion !== selectionVersion || id !== selectedId) return;
-      $("opp-conv-list").replaceChildren();
+      const list = $("opp-conv-list");
+      list.replaceChildren();
+      const errorState = document.createElement("p");
+      errorState.className = "small";
+      errorState.setAttribute("role", "status");
+      errorState.textContent = "Não foi possível carregar as conversas.";
+      list.appendChild(errorState);
     }
   }
 
@@ -659,7 +665,13 @@
       opportunityLeadId = null;
       opportunityCompanyId = null;
       // Silently fail — leads are supplementary info
-      $("opp-leads-list").replaceChildren();
+      const list = $("opp-leads-list");
+      list.replaceChildren();
+      const errorState = document.createElement("p");
+      errorState.className = "small";
+      errorState.setAttribute("role", "status");
+      errorState.textContent = "Não foi possível carregar os leads.";
+      list.appendChild(errorState);
     }
   }
 
@@ -711,7 +723,13 @@
       }
     } catch (error) {
       if (expectedVersion !== selectionVersion || id !== selectedId) return;
-      $("opp-customers-list").replaceChildren();
+      const list = $("opp-customers-list");
+      list.replaceChildren();
+      const errorState = document.createElement("p");
+      errorState.className = "small";
+      errorState.setAttribute("role", "status");
+      errorState.textContent = "Não foi possível carregar os clientes.";
+      list.appendChild(errorState);
     }
   }
 
