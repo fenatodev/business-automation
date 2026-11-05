@@ -177,6 +177,11 @@ def test_opportunity_current_page_has_current_semantics():
     assert 'id="opp-page" class="small" aria-live="polite" aria-current="page"' in html
 
 
+def test_task_status_filter_controls_task_list():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    assert 'id="task-status-filter" aria-label="Filtrar por status" aria-controls="tasks-list"' in html
+
+
 def test_task_bulk_clear_controls_task_list():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
     assert 'id="task-bulk-clear" type="button" class="secondary" aria-controls="tasks-list">Limpar seleção' in html
