@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
 from app.observability import RequestObservabilityMiddleware
 
 from app.routers.internal_tasks import router as internal_tasks_router
@@ -11,6 +13,7 @@ from app.routers.leads import router as leads_router
 from app.routers.opportunities import router as opportunities_router
 from app.routers.operator_ui import router as operator_ui_router
 from app.routers.review_queue import router as review_queue_router
+from app.database import SessionLocal
 
 
 app = FastAPI(
@@ -46,3 +49,16 @@ def root():
 def health():
     """Stable liveness contract for local operators and process supervisors."""
     return {"status": "ok", "service": "business-automation"}
+
+
+@app.get("/readiness")
+def readiness():
+    """Check database readiness without exposing connection details."""
+    db = SessionLocal()
+    try:
+        db.execute(text("SELECT 1"))
+    except Exception:
+        return JSONResponse(status_code=503, content={"status": "unready"})
+    finally:
+        db.close()
+    return {"status": "ready", "service": "business-automation"}
