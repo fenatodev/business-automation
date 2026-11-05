@@ -5228,6 +5228,7 @@
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.className = "task-checkbox";
+      checkbox.setAttribute("aria-label", "Selecionar tarefa #" + task.id);
       checkbox.checked = selectedTaskIds.has(task.id);
       checkbox.addEventListener("change", () => {
         if (checkbox.checked) {
