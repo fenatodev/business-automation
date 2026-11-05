@@ -50,6 +50,13 @@ def test_ui_uses_linked_conversation_route():
     assert "expectedVersion !== selectionVersion" in js
 
 
+def test_linked_opportunity_lists_are_live_regions():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    assert 'id="opp-conv-list"' in html and 'aria-live="polite"' in html
+    assert 'id="opp-leads-list"' in html and 'aria-live="polite"' in html
+    assert 'id="opp-customers-list"' in html and 'aria-live="polite"' in html
+
+
 def test_customer_linked_conversations_are_returned(client, admin_headers, operator_a_headers):
     company = client.post("/companies", headers=admin_headers,
                           json={"name": "Customer conversations", "slug": "customer-conversations"}).json()
