@@ -235,7 +235,7 @@
         !/^\/opportunities\/pipeline-summary$/.test(path) &&
         !/^\/opportunities\/priority(\?[^"]*)?$/.test(path) &&
         !/^\/opportunities\/(bulk-triage|bulk-delete|bulk-suggest-triage|import\.csv)$/.test(path) &&
-        !/^\/opportunities\/\d+(\/(triage|proposal-brief|conversations|leads|linked-leads|linked-customers|timeline|suggest-triage|suggest-brief)(\/approve|\/reject)?)?$/.test(path)) {
+        !/^\/opportunities\/\d+(\/(triage|proposal-brief|conversations|linked-conversations|leads|linked-leads|linked-customers|timeline|suggest-triage|suggest-brief)(\/approve|\/reject)?)?$/.test(path)) {
       throw new Error("Rota não permitida nesta interface.");
     }
     const epoch = sessionEpoch;
@@ -500,7 +500,7 @@
     // WP-108 — always attempt to load brief, regardless of status
     await loadBrief(id, version);
     // WP-142 — load related conversations
-    await loadOpportunityConversations(id);
+    await loadOpportunityConversations(id, version);
     // WP-143 — load activity timeline
     await loadOpportunityTimeline(id);
     // WP-144 — load related leads
@@ -514,9 +514,10 @@
   }
 
   // WP-142 — Load conversations related to the selected opportunity
-  async function loadOpportunityConversations(id) {
+  async function loadOpportunityConversations(id, expectedVersion) {
     try {
-      const conversations = await api("/opportunities/" + id + "/conversations");
+      const conversations = await api("/opportunities/" + id + "/linked-conversations");
+      if (expectedVersion !== selectionVersion || id !== selectedId) return;
       const list = $("opp-conv-list");
       list.replaceChildren();
       if (!conversations || !conversations.length) {
@@ -537,6 +538,7 @@
           }
         })
       );
+      if (expectedVersion !== selectionVersion || id !== selectedId) return;
       for (let idx = 0; idx < conversations.length; idx++) {
         const conv = conversations[idx];
         const item = document.createElement("div");
@@ -557,6 +559,7 @@
         list.appendChild(item);
       }
     } catch (error) {
+      if (expectedVersion !== selectionVersion || id !== selectedId) return;
       $("opp-conv-list").replaceChildren();
     }
   }
@@ -1200,7 +1203,7 @@
         oppConvSuggestion = null;
         notify("Conversa #" + conv.id + " criada.");
         // Refresh related conversations
-        await loadOpportunityConversations(selectedId);
+        await loadOpportunityConversations(selectedId, selectionVersion);
       } catch (err) {
         notify("Erro ao criar conversa: " + (err.message || err), true);
       }
