@@ -203,8 +203,10 @@ def suggest_intake(
     if company is None:
         raise HTTPException(status_code=404, detail="Company not found")
 
-    # Load company agent config (in-memory store)
-    agent_config = _get_agent_config_store().get(identity.company_id)
+    # Load company agent config from shared store
+    from app.routers.companies import _agent_config_store
+
+    agent_config = _agent_config_store.get(identity.company_id)
 
     system_prompt = (agent_config.get("system_prompt") if agent_config else None) or _INTAKE_SUGGEST_SYSTEM_PROMPT
     temperature = agent_config.get("temperature") if agent_config else None
@@ -241,12 +243,3 @@ def suggest_intake(
             suggested_intent="unknown",
             reasoning=str(reply)[:500],
         )
-
-
-# In-memory store for agent configs (shared with conversations router)
-_agent_config_store: dict[int, dict] = {}
-
-
-def _get_agent_config_store() -> dict[int, dict]:
-    """Return the shared in-memory agent config store."""
-    return _agent_config_store

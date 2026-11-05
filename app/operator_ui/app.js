@@ -1305,7 +1305,7 @@
       showList();
     }
 
-    // WP-253 — Ctrl+1 to Ctrl+7: navigate to sections
+    // WP-253 + WP-260 — Ctrl+1 to Ctrl+0: navigate to all sections
     if ((e.ctrlKey || e.metaKey) && !isInput) {
       const sectionShortcutMap = {
         "1": "dashboard-title",
@@ -1315,6 +1315,9 @@
         "5": "customers-title",
         "6": "rq-title",
         "7": "tasks-title",
+        "8": "briefs-title",
+        "9": "intake-title",
+        "0": "agent-config-title",
       };
       const targetId = sectionShortcutMap[e.key];
       if (targetId) {
