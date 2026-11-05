@@ -1640,6 +1640,19 @@ Próxima ação segura: escolher uma fatia funcional do operador ou uma lacuna
 de diagnóstico comprovada no código, evitando novas alterações cosméticas de
 acessibilidade enquanto houver fluxo operacional incompleto.
 
+## WP-388 — Polling de notificações tenant-aware (05/11/2026)
+
+O polling de notificações do operador deixou de consultar a Company `1` fixa
+para contar conversas abertas. Agora o `company_id` é derivado dos dados de
+oportunidades ou leads já retornados ao operador autenticado; sem dados de
+tenant, nenhuma consulta de conversas é feita.
+
+Validação local: **3206 testes passaram**, 61 testes direcionados do operador,
+`node --check app/operator_ui/app.js`, `compileall app tests` e
+`git diff --check` passaram. PR #388 foi integrado após CI verde no commit
+`76e946e`. Nenhuma migration, mudança de autorização, mensagem externa ou
+deploy foi executado.
+
 ## Fatias funcionais completas
 
 Cada novo ciclo deve entregar uma capacidade operacional vertical com backend/API,
