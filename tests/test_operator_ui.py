@@ -137,6 +137,17 @@ def test_brief_status_is_live_region():
     assert 'aria-live="polite"' in html
 
 
+def test_opportunity_progress_bar_has_accessible_semantics():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    js = (Path(__file__).parents[1] / "app/operator_ui/app.js").read_text()
+    assert 'id="opp-progress-fill"' in html
+    assert 'role="progressbar"' in html
+    assert 'aria-valuemin="0"' in html
+    assert 'aria-valuemax="100"' in html
+    assert 'aria-valuenow="0"' in html
+    assert 'setAttribute("aria-valuenow", String(percent))' in js
+
+
 def test_opportunity_progress_percent_is_live_region():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
     assert 'id="opp-progress-percent" class="small" aria-live="polite"' in html

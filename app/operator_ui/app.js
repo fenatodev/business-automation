@@ -119,6 +119,7 @@
     };
     const percent = progressMap[nextAction] || 0;
     $("opp-progress-fill").style.width = percent + "%";
+    $("opp-progress-fill").setAttribute("aria-valuenow", String(percent));
     $("opp-progress-percent").textContent = percent + "%";
   }
 
