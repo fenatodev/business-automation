@@ -43,9 +43,10 @@ O projeto tem dois objetivos complementares:
 - AI-assisted intake suggestion (WP-258/259) — `POST /internal/commercial-intake/suggest` predicts intent and category before creating the opportunity;
 - Business performance metrics in dashboard (WP-256/257) — lead conversion rate, opportunity closure rate, brief approval rate;
 - Extended keyboard shortcuts (WP-260) — Ctrl+1-0 navigates all 10 operator sections (Dashboard to Agent config);
+- Opportunity lead/customer filtering (WP-263) — `?lead_id=` and `?customer_id=` in GET /opportunities with UI dropdowns;
 - Lead name sorting (WP-261) — `?sort=name` in GET /leads with UI dropdown option;
 - Brief title sorting (WP-262) — `?sort=title` in GET /proposal-briefs with UI dropdown option;
-- 2965 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
+- 2978 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
 
 ## Engineering case study
 
