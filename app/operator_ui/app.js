@@ -659,7 +659,10 @@
         title.textContent = customer.name || "Sem nome";
         const meta = document.createElement("span");
         meta.className = "small";
-        meta.textContent = " Customer";
+        const parts = ["Cliente"];
+        if (customer.phone) parts.push(customer.phone);
+        if (customer.status) parts.push("(" + customer.status + ")");
+        meta.textContent = " " + parts.join(" · ");
         item.append(title, meta);
         list.appendChild(item);
       }
