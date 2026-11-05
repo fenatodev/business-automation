@@ -415,3 +415,8 @@ def test_briefs_bulk_actions_have_accessible_list_context():
         'id="briefs-bulk-clear" type="button" class="secondary" aria-controls="briefs-list"',
     ):
         assert control in html
+
+
+def test_briefs_filters_have_search_semantics():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    assert '<div class="briefs-filters" role="search" aria-label="Filtros de briefs">' in html
