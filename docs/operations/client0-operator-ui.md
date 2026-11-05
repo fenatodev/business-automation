@@ -116,3 +116,12 @@ da lista (ID decrescente no desempate), preservando status, busca e datas.
 Exporta todos os resultados filtrados, incluindo os que estão em outras páginas.
 Consumidores diretos de `/internal-tasks/export.csv` que omitem `sort` continuam
 recebendo ID crescente. O arquivo mantém os campos existentes, sem payloads.
+
+## CSV de leads
+
+Na seção Leads, escolher ID, Data, Status ou Nome e clicar em Exportar CSV.
+O arquivo segue a ordem da lista: data decrescente; ID, status e nome
+crescentes; ID crescente no desempate. Status, fonte, busca e datas são
+preservados, incluindo resultados de outras páginas. O endpoint
+`/leads/export.csv` mantém ID crescente quando `sort` é omitido e retorna
+422 para uma ordenação desconhecida.
