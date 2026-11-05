@@ -42,6 +42,7 @@ O projeto tem dois objetivos complementares:
 - AI-assisted triage suggestion (WP-237) — `POST /opportunities/{id}/suggest-triage` uses agent to suggest next action;
 - AI-assisted intake suggestion (WP-258/259) — `POST /internal/commercial-intake/suggest` predicts intent and category before creating the opportunity;
 - Business performance metrics in dashboard (WP-256/257) — lead conversion rate, opportunity closure rate, brief approval rate;
+- Extended keyboard shortcuts (WP-260) — Ctrl+1-0 navigates all 10 operator sections (Dashboard to Agent config);
 - 2953 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
 
 ## Engineering case study
