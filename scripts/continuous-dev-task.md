@@ -15,11 +15,13 @@ Work only in `~/dev/worktrees/business-automation-next`; never use Cloud.
    `git diff --check`, and `scripts/preflight.sh` when present.
 7. Inspect the diff for secrets, real data, migrations, credentials, external
    actions, or unrelated files.
-8. Commit conventionally, push, open one PR, and wait for every CI check.
-9. Confirm the PR head did not change. Merge normally only when CI is green.
-10. Synchronize `main`, record the checkpoint in the continuity document, and
-    finish this execution with exactly one status: `PASS`, `BLOCKED`, or
-    `NO_SAFE_WP`.
+8. Commit conventionally, push, and open exactly one PR. Leave the PR open for
+   the supervisor to inspect; do not open a second WP or stop merely because
+   the PR exists.
+9. Report the PR number, branch, and head SHA, then finish this execution with
+   exactly one status: `PR_READY`, `BLOCKED`, or `NO_SAFE_WP`. The supervisor
+   waits for CI, verifies the head SHA, merges normal low-risk PRs, and
+   synchronizes `main` before starting the next execution.
 
 Never perform real migrations, use real PostgreSQL/customer data, activate
 n8n, send messages, deploy, change DNS/Cloudflare/VPS, expose secrets, use
