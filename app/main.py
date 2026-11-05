@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from app.observability import RequestObservabilityMiddleware
@@ -46,20 +46,22 @@ def root():
 
 
 @app.get("/health")
-def health():
+def health(response: Response):
     """Stable liveness contract for local operators and process supervisors."""
+    response.headers["Cache-Control"] = "no-store"
     return {"status": "ok", "service": "business-automation"}
 
 
 @app.get("/healthz")
-def healthz():
+def healthz(response: Response):
     """Kubernetes-style alias for the stable liveness contract."""
-    return health()
+    return health(response)
 
 
 @app.get("/readiness")
-def readiness():
+def readiness(response: Response):
     """Check database readiness without exposing connection details."""
+    response.headers["Cache-Control"] = "no-store"
     db = SessionLocal()
     try:
         db.execute(text("SELECT 1"))
@@ -71,6 +73,6 @@ def readiness():
 
 
 @app.get("/readyz")
-def readyz():
+def readyz(response: Response):
     """Kubernetes-style alias for the database readiness contract."""
-    return readiness()
+    return readiness(response)
