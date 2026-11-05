@@ -1010,7 +1010,7 @@ def list_proposal_briefs(
     opportunity_id: int | None = Query(default=None, description="Filter by opportunity"),
     from_date: str | None = Query(default=None, description="Filter created_at >= date (YYYY-MM-DD)"),
     to_date: str | None = Query(default=None, description="Filter created_at <= date (YYYY-MM-DD)"),
-    sort: str = Query(default="created_at", description="Sort by: created_at, id, status"),
+    sort: str = Query(default="created_at", description="Sort by: created_at, id, status, title"),
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
@@ -1055,6 +1055,8 @@ def list_proposal_briefs(
         query = query.order_by(desc(ProposalBrief.created_at), desc(ProposalBrief.id))
     elif sort == "status":
         query = query.order_by(ProposalBrief.status, ProposalBrief.id)
+    elif sort == "title":
+        query = query.order_by(Opportunity.title, ProposalBrief.id)
     else:
         query = query.order_by(ProposalBrief.id)
 
