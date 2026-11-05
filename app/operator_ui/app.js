@@ -19,6 +19,8 @@
   const selectedOpportunityIds = new Set();
   let activeBrief = null;
   let opportunityLeadId = null;
+  let opportunityCustomerId = null;
+  let opportunityContactType = null;
   let opportunityCompanyId = null;
   let selectionVersion = 0;
   let conversations = [];
@@ -161,6 +163,8 @@
     if ($("opp-conv-form")) $("opp-conv-form").hidden = true;
     if ($("opp-conv-suggestion")) $("opp-conv-suggestion").hidden = true;
     opportunityLeadId = null;
+    opportunityCustomerId = null;
+    opportunityContactType = null;
     opportunityCompanyId = null;
   }
 
@@ -231,7 +235,7 @@
         !/^\/opportunities\/pipeline-summary$/.test(path) &&
         !/^\/opportunities\/priority(\?[^"]*)?$/.test(path) &&
         !/^\/opportunities\/(bulk-triage|bulk-delete|bulk-suggest-triage|import\.csv)$/.test(path) &&
-        !/^\/opportunities\/\d+(\/(triage|proposal-brief|conversations|leads|linked-leads|timeline|suggest-triage|suggest-brief)(\/approve|\/reject)?)?$/.test(path)) {
+        !/^\/opportunities\/\d+(\/(triage|proposal-brief|conversations|leads|linked-leads|linked-customers|timeline|suggest-triage|suggest-brief)(\/approve|\/reject)?)?$/.test(path)) {
       throw new Error("Rota não permitida nesta interface.");
     }
     const epoch = sessionEpoch;
@@ -444,6 +448,8 @@
     const version = selectionVersion;
     selectedId = id;
     opportunityLeadId = null;
+    opportunityCustomerId = null;
+    opportunityContactType = null;
     opportunityCompanyId = null;
     if ($("opp-create-conv")) $("opp-create-conv").hidden = true;
     if ($("opp-conv-form")) $("opp-conv-form").hidden = true;
@@ -499,9 +505,10 @@
     await loadOpportunityTimeline(id);
     // WP-144 — load related leads
     await loadOpportunityLeads(id, version);
+    await loadOpportunityCustomers(id, version);
     if (version !== selectionVersion || id !== selectedId) return;
     // WP-278 — Show/hide create conversation button
-    if ($("opp-create-conv")) $("opp-create-conv").hidden = opportunityLeadId === null;
+    if ($("opp-create-conv")) $("opp-create-conv").hidden = opportunityContactType === null;
     if ($("opp-conv-form")) $("opp-conv-form").hidden = true;
     if ($("opp-conv-suggestion")) $("opp-conv-suggestion").hidden = true;
   }
@@ -593,6 +600,7 @@
       list.replaceChildren();
       if (!leads || !leads.length) {
         opportunityLeadId = null;
+        opportunityContactType = null;
         opportunityCompanyId = null;
         const empty = document.createElement("p");
         empty.className = "small";
@@ -602,6 +610,7 @@
       }
       for (const lead of leads) {
         opportunityLeadId = lead.id;
+        opportunityContactType = "lead";
         opportunityCompanyId = lead.company_id;
         const item = document.createElement("div");
         item.className = "opp-lead-item";
@@ -628,6 +637,32 @@
       opportunityCompanyId = null;
       // Silently fail — leads are supplementary info
       $("opp-leads-list").replaceChildren();
+    }
+  }
+
+  async function loadOpportunityCustomers(id, expectedVersion) {
+    try {
+      const customers = await api("/opportunities/" + id + "/linked-customers");
+      if (expectedVersion !== selectionVersion || id !== selectedId) return;
+      const list = $("opp-customers-list");
+      list.replaceChildren();
+      for (const customer of customers || []) {
+        opportunityCustomerId = customer.id;
+        opportunityCompanyId = customer.company_id;
+        opportunityContactType = "customer";
+        const item = document.createElement("div");
+        item.className = "opp-lead-item";
+        const title = document.createElement("strong");
+        title.textContent = customer.name || "Sem nome";
+        const meta = document.createElement("span");
+        meta.className = "small";
+        meta.textContent = " Customer";
+        item.append(title, meta);
+        list.appendChild(item);
+      }
+    } catch (error) {
+      if (expectedVersion !== selectionVersion || id !== selectedId) return;
+      $("opp-customers-list").replaceChildren();
     }
   }
 
@@ -1095,8 +1130,10 @@
       try {
         const result = await conversationApi("/conversations/suggest-message", "POST", {
           company_id: opportunityCompanyId,
-          lead_id: opportunityLeadId,
           channel: $("opp-conv-channel").value,
+          ...(opportunityContactType === "lead"
+            ? {lead_id: opportunityLeadId}
+            : {customer_id: opportunityCustomerId}),
         });
         if (version !== selectionVersion || selectedId === null) return;
         oppConvSuggestion = {...result, __version: version};
@@ -1139,14 +1176,16 @@
         notify("Selecione um canal.", true);
         return;
       }
-      if (!opportunityLeadId || !opportunityCompanyId) {
-        notify("Associe um lead à oportunidade antes de criar conversa.", true); return;
+      if (!opportunityContactType || !opportunityCompanyId) {
+        notify("Associe um lead ou customer à oportunidade antes de criar conversa.", true); return;
       }
       try {
         const conv = await conversationApi("/conversations/", "POST", {
           channel,
           company_id: opportunityCompanyId,
-          lead_id: opportunityLeadId,
+          ...(opportunityContactType === "lead"
+            ? {lead_id: opportunityLeadId}
+            : {customer_id: opportunityCustomerId}),
         });
         // If there's an initial message, send it
         if (message) {

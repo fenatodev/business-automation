@@ -738,6 +738,23 @@ def get_opportunity_linked_leads(
     return [] if lead is None else [lead]
 
 
+@router.get("/opportunities/{opportunity_id}/linked-customers")
+def get_opportunity_linked_customers(
+    opportunity_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Return only the customer explicitly linked to this opportunity."""
+    opportunity = _get_tenant_opportunity(db, opportunity_id, identity.company_id)
+    if opportunity.customer_id is None:
+        return []
+    customer = db.scalar(select(Customer).where(
+        Customer.id == opportunity.customer_id,
+        Customer.company_id == identity.company_id,
+    ))
+    return [] if customer is None else [customer]
+
+
 @router.get("/opportunities/{opportunity_id}/timeline")
 def get_opportunity_timeline(
     opportunity_id: int,
