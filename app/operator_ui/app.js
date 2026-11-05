@@ -5695,6 +5695,12 @@
         errorState.setAttribute("role", "status");
         errorState.textContent = "Não foi possível carregar os briefs.";
         list.appendChild(errorState);
+        const retry = document.createElement("button");
+        retry.type = "button";
+        retry.className = "secondary";
+        retry.textContent = "Tentar novamente";
+        retry.addEventListener("click", () => refreshBriefs());
+        list.appendChild(retry);
       }
     } finally {
       if (list) list.setAttribute("aria-busy", "false");

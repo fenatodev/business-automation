@@ -154,6 +154,7 @@ def test_briefs_refresh_toggles_busy_state():
     assert 'list.setAttribute("aria-busy", "true")' in js
     assert 'list.setAttribute("aria-busy", "false")' in js
     assert 'Não foi possível carregar os briefs.' in js
+    assert 'retry.textContent = "Tentar novamente"' in js
 
 
 def test_task_failure_badge_is_live_region():
