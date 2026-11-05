@@ -1366,3 +1366,11 @@ Adicionado `sort=title` ao backend de briefs e opção "Título" ao dropdown
 de ordenação na UI do operador.
 
 **2965 testes passaram**; compileall, diff-check, JS syntax: PASS.
+
+### WP-263 — Filtro de oportunidades por lead e customer
+
+Adicionado `lead_id` e `customer_id` em list, count e export CSV das
+oportunidades usando EXISTS subquery com Conversation. UI com dropdowns
+"Lead" e "Customer" na toolbar.
+
+**2978 testes passaram**; compileall, diff-check, JS syntax: PASS.
