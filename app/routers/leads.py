@@ -172,7 +172,7 @@ def list_leads(
     q: str | None = Query(default=None, description="Search keywords in name and interest"),
     from_date: str | None = Query(default=None, description="Filter created_at >= date (YYYY-MM-DD)"),
     to_date: str | None = Query(default=None, description="Filter created_at <= date (YYYY-MM-DD)"),
-    sort: str = Query(default="id", description="Sort by: id, created_at, status"),
+    sort: str = Query(default="id", description="Sort by: id, created_at, status, name"),
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
@@ -199,6 +199,8 @@ def list_leads(
         query = query.order_by(desc(Lead.created_at), Lead.id)
     elif sort == "status":
         query = query.order_by(Lead.status, Lead.id)
+    elif sort == "name":
+        query = query.order_by(Lead.name, Lead.id)
     else:
         query = query.order_by(Lead.id)
     query = query.offset(offset).limit(limit)
