@@ -1339,6 +1339,32 @@ footer {
   gap: 6px;
 }
 
+/* WP-276 — Opportunity progress bar */
+.opp-progress {
+  margin: 10px 0;
+}
+.opp-progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.opp-progress-bar {
+  height: 8px;
+  background: var(--panel-alt);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.opp-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #4a90d9, #34d399);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
 /* WP-113 — Opportunity note panel */
 .opp-note-panel {
   margin: 10px 0;

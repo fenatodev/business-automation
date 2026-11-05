@@ -102,6 +102,22 @@
     notice.classList.toggle("error", failure);
   }
 
+  // WP-276 — Update opportunity progress bar
+  function updateOppProgress(nextAction) {
+    const progressMap = {
+      pending: 10,
+      follow: 25,
+      prepare_proposal: 40,
+      in_progress: 70,
+      done: 100,
+      lost: 50,
+      ignore: 50,
+    };
+    const percent = progressMap[nextAction] || 0;
+    $("opp-progress-fill").style.width = percent + "%";
+    $("opp-progress-percent").textContent = percent + "%";
+  }
+
   function clearSelection() {
     selectionVersion += 1;
     selectedId = null;
@@ -454,6 +470,8 @@
       option.disabled = !allowed.includes(option.value);
     }
     nextActionSelect.value = record.next_action;
+    // WP-276 — Update progress bar
+    updateOppProgress(record.next_action);
     $("triage-note").value = record.triage_note || "";
     // WP-113 — populate standalone note editor
     $("opp-note").value = record.triage_note || "";
