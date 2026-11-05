@@ -1477,6 +1477,7 @@
           /^\/conversations\/\d+\/messages(\/count)?(\?|$)/.test(path) ||
           /^\/conversations\/\d+\/note$/.test(path) ||
           /^\/conversations\/\d+\/suggest-lead$/.test(path) ||
+          /^\/conversations\/\d+\/suggest-customer$/.test(path) ||
           /^\/conversations\/bulk-status$/.test(path))) {
       throw new Error("Rota de conversas não permitida.");
     }
@@ -1892,6 +1893,48 @@
     $("conv-customer-phone").value = "";
     $("conv-customer-email").value = "";
     $("conv-customer-source").value = "";
+    $("conv-customer-suggestion").hidden = true;
+  });
+
+  // WP-268 — AI-assisted customer suggestion from conversation
+  let customerSuggestion = null;
+  $("conv-customer-suggest").addEventListener("click", () => {
+    withButton($("conv-customer-suggest"), async () => {
+      try {
+        const res = await conversationApi(
+          "/conversations/" + selectedConvId + "/suggest-customer", "POST"
+        );
+        customerSuggestion = res;
+        const content = $("conv-customer-suggestion-content");
+        while (content.firstChild) content.removeChild(content.firstChild);
+        const p = document.createElement("p");
+        p.className = "small";
+        p.textContent = res.reasoning || "Sugestão gerada pela IA.";
+        content.appendChild(p);
+        $("conv-customer-suggestion").hidden = false;
+      } catch (error) {
+        if (error.status === 503) {
+          notify("Agente indisponível.", true);
+        } else {
+          notify("Falha ao obter sugestão.", true);
+        }
+      }
+    });
+  });
+
+  $("apply-conv-customer-suggestion").addEventListener("click", () => {
+    if (customerSuggestion) {
+      if (customerSuggestion.suggested_name) $("conv-customer-name").value = customerSuggestion.suggested_name;
+      if (customerSuggestion.suggested_phone) $("conv-customer-phone").value = customerSuggestion.suggested_phone;
+      if (customerSuggestion.suggested_email) $("conv-customer-email").value = customerSuggestion.suggested_email;
+    }
+    $("conv-customer-suggestion").hidden = true;
+    customerSuggestion = null;
+  });
+
+  $("dismiss-conv-customer-suggestion").addEventListener("click", () => {
+    $("conv-customer-suggestion").hidden = true;
+    customerSuggestion = null;
   });
 
   $("conv-customer-form").addEventListener("submit", (event) => {
@@ -1911,6 +1954,7 @@
         $("conv-customer-phone").value = "";
         $("conv-customer-email").value = "";
         $("conv-customer-source").value = "";
+        $("conv-customer-suggestion").hidden = true;
         await refreshCustomers();
       } catch (error) {
         notify("Falha ao criar customer.", true);
@@ -2151,11 +2195,13 @@
       $("conv-close-toggle").hidden = true;
       $("human-reply-form").hidden = true;
       $("conv-note-section").hidden = true;
-      // WP-147, WP-235 & WP-236
+      // WP-147, WP-235, WP-236 & WP-268
       $("conv-create-lead").hidden = true;
       $("conv-lead-form").hidden = true;
+      $("conv-lead-suggestion").hidden = true;
       $("conv-create-customer").hidden = true;
       $("conv-customer-form").hidden = true;
+      $("conv-customer-suggestion").hidden = true;
       $("conv-create-opp").hidden = true;
       $("conv-opp-form").hidden = true;
       selectedConvIds.clear();
@@ -2422,11 +2468,13 @@
   $("conv-list").replaceChildren();
   $("conv-detail").hidden = true;
   $("conv-note-section").hidden = true;
-  // WP-147, WP-235 & WP-236
+  // WP-147, WP-235, WP-236 & WP-268
   $("conv-create-lead").hidden = true;
   $("conv-lead-form").hidden = true;
+  $("conv-lead-suggestion").hidden = true;
   $("conv-create-customer").hidden = true;
   $("conv-customer-form").hidden = true;
+  $("conv-customer-suggestion").hidden = true;
   $("conv-create-opp").hidden = true;
   $("conv-opp-form").hidden = true;
   selectedConvIds.clear();

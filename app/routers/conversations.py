@@ -303,6 +303,106 @@ def suggest_lead(
         }
 
 
+@router.post("/conversations/{conversation_id}/suggest-customer")
+def suggest_customer(
+    conversation_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """WP-268 — Suggest customer fields from conversation context.
+
+    Analyzes the conversation messages and suggests name, phone and email
+    for creating a customer. Does NOT persist — returns only the suggestion.
+    """
+    conversation = _get_tenant_conversation(
+        db,
+        conversation_id,
+        identity.company_id,
+    )
+
+    history_messages = db.scalars(
+        select(Message)
+        .where(Message.conversation_id == conversation.id)
+        .order_by(Message.id)
+    ).all()
+
+    if not history_messages:
+        raise HTTPException(
+            status_code=400,
+            detail="No messages found in this conversation",
+        )
+
+    history = [
+        {
+            "sender_type": item.sender_type,
+            "content": item.content,
+        }
+        for item in history_messages
+    ]
+
+    # Build prompt from conversation context
+    prompt_parts = []
+    for msg in history:
+        role = "Cliente" if msg["sender_type"] == "customer" else ("Humano" if msg["sender_type"] == "human" else "Sistema")
+        prompt_parts.append(f"{role}: {msg['content']}")
+    conversation_text = "\n".join(prompt_parts)
+
+    system_prompt = (
+        "Analise esta conversa e extraia informações para criar um customer.\n"
+        "Retorne apenas JSON com esta estrutura:\n"
+        '{"suggested_name": "nome extraído ou null", '
+        '"suggested_phone": "telefone extraído ou null", '
+        '"suggested_email": "e-mail extraído ou null", '
+        '"reasoning": "por que extraiu estes dados"}\n'
+        "Se não encontrar um campo, use null."
+    )
+
+    try:
+        from app.routers.companies import _agent_config_store, _record_agent_call
+
+        company_config = _agent_config_store.get(identity.company_id, {})
+        effective_temp = company_config.get("temperature")
+        effective_max_tokens = company_config.get("max_tokens")
+        effective_model = company_config.get("model")
+
+        response = generate_agent_reply(
+            message=conversation_text,
+            history=[],
+            system_prompt=system_prompt,
+            temperature=effective_temp,
+            max_tokens=effective_max_tokens,
+            model=effective_model,
+        )
+        _record_agent_call(identity.company_id, success=True)
+    except AgentServiceError:
+        _record_agent_call(identity.company_id, success=False)
+        raise HTTPException(
+            status_code=503,
+            detail="Agent service unavailable",
+        )
+
+    # Try to parse JSON from response
+    import json
+    try:
+        parsed = json.loads(response)
+        return {
+            "conversation_id": conversation.id,
+            "suggested_name": parsed.get("suggested_name"),
+            "suggested_phone": parsed.get("suggested_phone"),
+            "suggested_email": parsed.get("suggested_email"),
+            "reasoning": parsed.get("reasoning", response),
+        }
+    except (json.JSONDecodeError, AttributeError):
+        # Fallback: return raw response as reasoning
+        return {
+            "conversation_id": conversation.id,
+            "suggested_name": None,
+            "suggested_phone": None,
+            "suggested_email": None,
+            "reasoning": response,
+        }
+
+
 @router.get("/conversations/{conversation_id}")
 def get_conversation(
     conversation_id: int,

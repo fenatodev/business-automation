@@ -590,6 +590,14 @@
           <button id="conv-create-customer" type="button" class="secondary" hidden>+ Criar customer desta conversa</button>
           <form id="conv-customer-form" class="conv-customer-form" hidden>
             <h4>Criar customer a partir desta conversa</h4>
+            <!-- WP-268 — AI suggestion panel -->
+            <div id="conv-customer-suggestion" class="triage-suggestion-panel" hidden>
+              <div id="conv-customer-suggestion-content"></div>
+              <div style="display:flex;gap:8px;margin-top:8px;">
+                <button type="button" id="apply-conv-customer-suggestion" class="primary">Preencher customer</button>
+                <button type="button" id="dismiss-conv-customer-suggestion" class="secondary">Descartar</button>
+              </div>
+            </div>
             <div class="two-col">
               <div>
                 <label for="conv-customer-name">Nome *</label>
@@ -612,6 +620,7 @@
             </div>
             <div style="display:flex;gap:8px;margin-top:8px;">
               <button type="submit" class="primary">Criar customer</button>
+              <button type="button" id="conv-customer-suggest" class="secondary">🤖 Sugerir</button>
               <button type="button" id="cancel-conv-customer" class="secondary">Cancelar</button>
             </div>
           </form>
