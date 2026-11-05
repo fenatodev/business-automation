@@ -124,3 +124,5 @@ def test_ui_shows_customer_context_in_portuguese():
     assert 'if (customer.status) parts.push("(" + customer.status + ")")' in js
     assert 'item.addEventListener("keydown", (event) => {' in js
     assert 'const openDetail = showCustomerDeta\\u0069l' in js
+    assert 'item.addEventListener("keydown", (event) => {' in js
+    assert 'showLeadDetail(lead)' in js
