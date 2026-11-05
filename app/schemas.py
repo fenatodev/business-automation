@@ -167,6 +167,17 @@ class ConversationSummary(BaseModel):
     action_items: list[str] | None = None
 
 
+class LeadOpportunitySuggestion(BaseModel):
+    """AI-generated opportunity suggestion from lead context."""
+
+    suggested_title: str | None = None
+    suggested_description: str | None = None
+    suggested_budget: str | None = None
+    suggested_deadline: str | None = None
+    suggested_requirements: str | None = None
+    reasoning: str
+
+
 class CompanyCreate(BaseModel):
     name: str
     slug: str

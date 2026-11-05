@@ -3001,7 +3001,8 @@
 
   async function leadApi(path, method, body) {
     // Allow /leads with optional query params, /leads/{status}, /leads/{id}, /leads/count
-    if (!(/^\/leads($|\/(new|contacted|qualified|proposal|won|lost)$|\/count$|\/\d+$)/.test(path.split("?")[0]))) {
+    // WP-271 — also allow /leads/{id}/suggest-opportunity
+    if (!(/^\/leads($|\/(new|contacted|qualified|proposal|won|lost)$|\/count$|\/\d+$|\/\d+\/suggest-opportunity$)/.test(path.split("?")[0]))) {
       console.error("[leadApi] Rota não permitida:", path);
       return;
     }
@@ -3280,6 +3281,8 @@
   $("cancel-lead-opp").addEventListener("click", () => {
     $("lead-opp-form").hidden = true;
     $("lead-opp-form").reset();
+    $("lead-opp-suggestion").hidden = true;
+    leadOppSuggestion = null;
   });
 
   $("lead-opp-form").addEventListener("submit", (event) => {
@@ -3311,10 +3314,91 @@
       });
       $("lead-opp-form").hidden = true;
       $("lead-opp-form").reset();
+      $("lead-opp-suggestion").hidden = true;
       notify("Oportunidade #" + opp.id + " criada.");
       await refreshList(opp.id);
     });
   });
+
+  // WP-271 — Suggest opportunity from lead
+  $("lead-opp-suggest").addEventListener("click", () => {
+    const button = $("lead-opp-suggest");
+    if (!currentLeadId) {notify("Selecione um lead.", true); return;}
+    withButton(button, async () => {
+      try {
+        const res = await fetch("/leads/" + currentLeadId + "/suggest-opportunity", {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + bearer,
+            "Content-Type": "application/json",
+          },
+        });
+        if (res.status === 503) {
+          notify("Agente indisponível.", true);
+          return;
+        }
+        if (!res.ok) {
+          notify("Falha ao gerar sugestão.", true);
+          return;
+        }
+        const data = await res.json();
+        renderLeadOppSuggestion(data);
+        $("lead-opp-suggestion").hidden = false;
+        notify("Sugestão gerada.");
+      } catch (e) {
+        notify("Erro ao gerar sugestão.", true);
+      }
+    });
+  });
+
+  // WP-271 — Dismiss lead opportunity suggestion
+  $("lead-opp-dismiss-suggestion").addEventListener("click", () => {
+    $("lead-opp-suggestion").hidden = true;
+  });
+
+  // WP-271 — Apply lead opportunity suggestion
+  $("lead-opp-apply-suggestion").addEventListener("click", () => {
+    if (leadOppSuggestion) {
+      if (leadOppSuggestion.suggested_title) $("lead-opp-title").value = leadOppSuggestion.suggested_title;
+      if (leadOppSuggestion.suggested_description) $("lead-opp-description").value = leadOppSuggestion.suggested_description;
+      if (leadOppSuggestion.suggested_budget) $("lead-opp-budget").value = leadOppSuggestion.suggested_budget;
+      if (leadOppSuggestion.suggested_deadline) $("lead-opp-deadline").value = leadOppSuggestion.suggested_deadline;
+      if (leadOppSuggestion.suggested_requirements) $("lead-opp-requirements").value = leadOppSuggestion.suggested_requirements;
+    }
+    $("lead-opp-suggestion").hidden = true;
+    $("lead-opp-form").hidden = false;
+    $("lead-opp-title").focus();
+  });
+
+  // WP-271 — Render lead opportunity suggestion
+  var leadOppSuggestion = null;
+  function renderLeadOppSuggestion(data) {
+    leadOppSuggestion = data;
+    const target = $("lead-opp-suggestion-content");
+    target.replaceChildren();
+    if (data.reasoning) {
+      const p = document.createElement("p");
+      p.textContent = data.reasoning;
+      target.appendChild(p);
+    }
+    const fields = [
+      {key: "suggested_title", label: "Título"},
+      {key: "suggested_description", label: "Descrição"},
+      {key: "suggested_budget", label: "Orçamento"},
+      {key: "suggested_deadline", label: "Prazo"},
+      {key: "suggested_requirements", label: "Requisitos"},
+    ];
+    for (const field of fields) {
+      if (data[field.key]) {
+        const strong = document.createElement("strong");
+        strong.textContent = field.label + ":";
+        target.appendChild(strong);
+        const p = document.createElement("p");
+        p.textContent = data[field.key];
+        target.appendChild(p);
+      }
+    }
+  }
 
   async function updateLeadStatus(leadId, status) {
     const path = "/leads/" + leadId;

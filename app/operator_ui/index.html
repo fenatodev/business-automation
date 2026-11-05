@@ -824,9 +824,21 @@
             </div>
             <div style="display:flex;gap:8px;margin-top:8px;">
               <button type="submit" class="primary">Criar</button>
+              <button type="button" id="lead-opp-suggest" class="secondary">🤖 Sugerir</button>
               <button type="button" id="cancel-lead-opp" class="secondary">Cancelar</button>
             </div>
           </form>
+          <!-- WP-271 — AI opportunity suggestion from lead -->
+          <div id="lead-opp-suggestion" class="conv-suggestion" hidden>
+            <div class="conv-suggestion-header">
+              <strong>💡 Sugestão de oportunidade</strong>
+              <button id="lead-opp-dismiss-suggestion" type="button" class="secondary small">Fechar</button>
+            </div>
+            <div id="lead-opp-suggestion-content"></div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button id="lead-opp-apply-suggestion" type="button" class="primary">Preencher formulário</button>
+            </div>
+          </div>
         </div>
 
         <div id="leads-pagination" class="lead-pagination" hidden>

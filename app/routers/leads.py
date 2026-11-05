@@ -411,3 +411,94 @@ def bulk_delete_leads(
         "deleted_ids": sorted(deleted_ids),
         "skipped": sorted(skipped),
     }
+
+
+@router.post("/leads/{lead_id}/suggest-opportunity")
+def suggest_opportunity_from_lead(
+    lead_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """WP-271 — Suggest opportunity fields from lead context.
+
+    Analyzes the lead data (name, interest, source) and suggests
+    title, description, budget, deadline and requirements.
+    Does NOT persist — returns only the suggestion.
+    """
+    lead = _get_tenant_lead(
+        db,
+        lead_id,
+        identity.company_id,
+    )
+
+    # Build prompt from lead data
+    prompt_parts = []
+    prompt_parts.append(f"Nome: {lead.name}")
+    if lead.phone:
+        prompt_parts.append(f"Telefone: {lead.phone}")
+    if lead.source:
+        prompt_parts.append(f"Fonte: {lead.source}")
+    if lead.interest:
+        prompt_parts.append(f"Interesse: {lead.interest}")
+    prompt_parts.append(f"Status: {lead.status}")
+    lead_text = "\n".join(prompt_parts)
+
+    system_prompt = (
+        "Com base nos dados deste lead, sugira campos para criar uma oportunidade comercial.\n"
+        "Retorne apenas JSON com esta estrutura:\n"
+        '{"suggested_title": "título curto ou null", '
+        '"suggested_description": "descrição ou null", '
+        '"suggested_budget": "orçamento ou null", '
+        '"suggested_deadline": "prazo ou null", '
+        '"suggested_requirements": "requisitos ou null", '
+        '"reasoning": "por que extraiu estes dados"}\n'
+        "Se não encontrar um campo, use null."
+    )
+
+    try:
+        from app.routers.companies import _agent_config_store, _record_agent_call
+        from app.services.agent import AgentServiceError, generate_agent_reply
+
+        company_config = _agent_config_store.get(identity.company_id, {})
+        effective_temp = company_config.get("temperature")
+        effective_max_tokens = company_config.get("max_tokens")
+        effective_model = company_config.get("model")
+
+        response = generate_agent_reply(
+            message=lead_text,
+            history=[],
+            system_prompt=system_prompt,
+            temperature=effective_temp,
+            max_tokens=effective_max_tokens,
+            model=effective_model,
+        )
+        _record_agent_call(identity.company_id, success=True)
+    except AgentServiceError:
+        _record_agent_call(identity.company_id, success=False)
+        raise HTTPException(
+            status_code=503,
+            detail="Agent service unavailable",
+        )
+
+    import json
+    try:
+        parsed = json.loads(response)
+        return {
+            "lead_id": lead.id,
+            "suggested_title": parsed.get("suggested_title"),
+            "suggested_description": parsed.get("suggested_description"),
+            "suggested_budget": parsed.get("suggested_budget"),
+            "suggested_deadline": parsed.get("suggested_deadline"),
+            "suggested_requirements": parsed.get("suggested_requirements"),
+            "reasoning": parsed.get("reasoning", response),
+        }
+    except (json.JSONDecodeError, AttributeError):
+        return {
+            "lead_id": lead.id,
+            "suggested_title": None,
+            "suggested_description": None,
+            "suggested_budget": None,
+            "suggested_deadline": None,
+            "suggested_requirements": None,
+            "reasoning": response,
+        }
