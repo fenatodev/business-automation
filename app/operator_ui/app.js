@@ -4969,6 +4969,8 @@
   // WP-153 — Export CSV with current filters
   $("customers-export-csv").addEventListener("click", () => {
     const params = [];
+    const sort = $("customer-sort")?.value;
+    if (sort) params.push("sort=" + encodeURIComponent(sort));
     const q = $("customer-search")?.value?.trim();
     if (q) params.push("q=" + encodeURIComponent(q));
     const fromDate = $("customer-from-date")?.value;

@@ -1789,3 +1789,17 @@ bloqueadas apenas por mencionar `tenant` ou `company_id`. Elas seguem os
 gates normais: árvore limpa, CI verde, SHA confirmado e inspeção do diff.
 Continuam protegidas por bloqueio próprio mudanças de autenticação/autorização,
 migrations, segredos, deploy, n8n, integrações externas e operações destrutivas.
+
+## WP-399 — CSV de clientes na ordem selecionada (05/11/2026)
+
+O botão de exportação de clientes agora transmite a ordenação escolhida
+(ID, data ou nome), junto com busca e datas. A API exporta todos os
+resultados filtrados nessa ordem; sem sort, mantém ID crescente.
+Empates usam ID crescente e ordenações desconhecidas retornam 422.
+
+Os testes cobrem API e listener do botão com DOM sintético, incluindo
+filtros combinados, paginação, arquivo vazio e isolamento existente.
+Sem migrations, mudanças de autorização, dados reais ou ações externas.
+
+Validação local: 3225 testes passaram, 2 warnings; preflight, compileall,
+diff-check e sintaxe JavaScript passaram. CI e merge ficam com o supervisor.
