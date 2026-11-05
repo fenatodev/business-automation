@@ -552,6 +552,14 @@
           <button id="conv-create-lead" type="button" class="secondary" hidden>+ Criar lead desta conversa</button>
           <form id="conv-lead-form" class="conv-lead-form" hidden>
             <h4>Criar lead a partir desta conversa</h4>
+            <!-- WP-267 — AI suggestion panel -->
+            <div id="conv-lead-suggestion" class="triage-suggestion-panel" hidden>
+              <div id="conv-lead-suggestion-content"></div>
+              <div style="display:flex;gap:8px;margin-top:8px;">
+                <button type="button" id="apply-conv-lead-suggestion" class="primary">Preencher lead</button>
+                <button type="button" id="dismiss-conv-lead-suggestion" class="secondary">Descartar</button>
+              </div>
+            </div>
             <div class="two-col">
               <div>
                 <label for="conv-lead-name">Nome *</label>
@@ -574,6 +582,7 @@
             </div>
             <div style="display:flex;gap:8px;margin-top:8px;">
               <button type="submit" class="primary">Criar lead</button>
+              <button type="button" id="conv-lead-suggest" class="secondary">🤖 Sugerir</button>
               <button type="button" id="cancel-conv-lead" class="secondary">Cancelar</button>
             </div>
           </form>

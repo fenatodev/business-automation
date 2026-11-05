@@ -130,6 +130,15 @@ class LeadBulkDelete(BaseModel):
     lead_ids: list[int] = Field(min_length=1, max_length=100)
 
 
+class LeadSuggestion(BaseModel):
+    """AI-generated lead suggestion from conversation context."""
+
+    suggested_name: str | None = None
+    suggested_phone: str | None = None
+    suggested_interest: str | None = None
+    reasoning: str
+
+
 class CompanyCreate(BaseModel):
     name: str
     slug: str

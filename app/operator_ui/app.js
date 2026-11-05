@@ -1476,6 +1476,7 @@
           /^\/conversations\/\d+\/$/.test(path) ||
           /^\/conversations\/\d+\/messages(\/count)?(\?|$)/.test(path) ||
           /^\/conversations\/\d+\/note$/.test(path) ||
+          /^\/conversations\/\d+\/suggest-lead$/.test(path) ||
           /^\/conversations\/bulk-status$/.test(path))) {
       throw new Error("Rota de conversas não permitida.");
     }
@@ -1825,11 +1826,53 @@
         $("conv-lead-phone").value = "";
         $("conv-lead-source").value = "";
         $("conv-lead-interest").value = "";
+        $("conv-lead-suggestion").hidden = true;
         await refreshLeads();
       } catch (error) {
         notify("Falha ao criar lead.", true);
       }
     });
+  });
+
+  // WP-267 — AI-assisted lead suggestion from conversation
+  let leadSuggestion = null;
+  $("conv-lead-suggest").addEventListener("click", () => {
+    withButton($("conv-lead-suggest"), async () => {
+      try {
+        const res = await conversationApi(
+          "/conversations/" + selectedConvId + "/suggest-lead", "POST"
+        );
+        leadSuggestion = res;
+        const content = $("conv-lead-suggestion-content");
+        while (content.firstChild) content.removeChild(content.firstChild);
+        const p = document.createElement("p");
+        p.className = "small";
+        p.textContent = res.reasoning || "Sugestão gerada pela IA.";
+        content.appendChild(p);
+        $("conv-lead-suggestion").hidden = false;
+      } catch (error) {
+        if (error.status === 503) {
+          notify("Agente indisponível.", true);
+        } else {
+          notify("Falha ao obter sugestão.", true);
+        }
+      }
+    });
+  });
+
+  $("apply-conv-lead-suggestion").addEventListener("click", () => {
+    if (leadSuggestion) {
+      if (leadSuggestion.suggested_name) $("conv-lead-name").value = leadSuggestion.suggested_name;
+      if (leadSuggestion.suggested_phone) $("conv-lead-phone").value = leadSuggestion.suggested_phone;
+      if (leadSuggestion.suggested_interest) $("conv-lead-interest").value = leadSuggestion.suggested_interest;
+    }
+    $("conv-lead-suggestion").hidden = true;
+    leadSuggestion = null;
+  });
+
+  $("dismiss-conv-lead-suggestion").addEventListener("click", () => {
+    $("conv-lead-suggestion").hidden = true;
+    leadSuggestion = null;
   });
 
   // WP-235 — Create customer from conversation
