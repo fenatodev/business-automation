@@ -78,6 +78,13 @@ def test_operator_assets_are_fixed_read_only_and_private_cache(client):
         assert 'setItem("token"' not in script.text
 
 
+def test_notification_polling_does_not_assume_company_one(client):
+    script = client.get("/operator/app.js").text
+
+    assert '"/companies/1/conversations' not in script
+    assert 'encodeURIComponent(companyId)' in script
+
+
 def test_ui_is_not_an_authentication_bypass(
     client,
     admin_headers,
