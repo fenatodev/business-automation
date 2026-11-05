@@ -1479,6 +1479,7 @@
           /^\/conversations\/\d+\/suggest-lead$/.test(path) ||
           /^\/conversations\/\d+\/suggest-customer$/.test(path) ||
           /^\/conversations\/\d+\/suggest-opportunity$/.test(path) ||
+          /^\/conversations\/\d+\/summarize$/.test(path) ||
           /^\/conversations\/bulk-status$/.test(path))) {
       throw new Error("Rota de conversas não permitida.");
     }
@@ -1647,9 +1648,11 @@
     $("conv-detail").hidden = false;
     $("conv-reply-toggle").hidden = false;
     $("conv-suggest-reply").hidden = false;
+    $("conv-summarize").hidden = false;
     $("conv-close-toggle").hidden = false;
     $("conv-note-section").hidden = false;
     $("conv-suggestion").hidden = true;
+    $("conv-summary-panel").hidden = true;
     // WP-147 — Show create lead button
     $("conv-create-lead").hidden = false;
     $("conv-lead-form").hidden = true;
@@ -2468,6 +2471,81 @@
       notify("Sugestão copiada para o formulário.");
     }
   });
+
+  // WP-270 — Summarize conversation
+  $("conv-summarize").addEventListener("click", () => {
+    const button = $("conv-summarize");
+    const convId = $("reply-conv-id").value;
+    if (!convId) {notify("Selecione uma conversa.", true); return;}
+    const id = parseInt(convId, 10);
+    withButton(button, async () => {
+      try {
+        const res = await fetch("/conversations/" + id + "/summarize", {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + bearer,
+            "Content-Type": "application/json",
+          },
+        });
+        if (res.status === 400) {
+          notify("Mensagens insuficientes para resumir.", true);
+          return;
+        }
+        if (res.status === 503) {
+          notify("Agente indisponível.", true);
+          return;
+        }
+        if (!res.ok) {
+          notify("Falha ao gerar resumo.", true);
+          return;
+        }
+        const data = await res.json();
+        renderConversationSummary(data);
+        $("conv-summary-panel").hidden = false;
+        notify("Resumo gerado.");
+      } catch (e) {
+        notify("Erro ao gerar resumo.", true);
+      }
+    });
+  });
+
+  // WP-270 — Dismiss summary
+  $("conv-dismiss-summary").addEventListener("click", () => {
+    $("conv-summary-panel").hidden = true;
+  });
+
+  // WP-270 — Render conversation summary
+  function renderConversationSummary(data) {
+    const target = $("conv-summary-content");
+    target.replaceChildren();
+    const summaryP = document.createElement("p");
+    summaryP.textContent = data.summary || "";
+    target.appendChild(summaryP);
+    if (data.key_points && data.key_points.length > 0) {
+      const h4 = document.createElement("strong");
+      h4.textContent = "Pontos-chave:";
+      target.appendChild(h4);
+      const ul = document.createElement("ul");
+      for (const point of data.key_points) {
+        const li = document.createElement("li");
+        li.textContent = point;
+        ul.appendChild(li);
+      }
+      target.appendChild(ul);
+    }
+    if (data.action_items && data.action_items.length > 0) {
+      const h4 = document.createElement("strong");
+      h4.textContent = "Ações pendentes:";
+      target.appendChild(h4);
+      const ul = document.createElement("ul");
+      for (const item of data.action_items) {
+        const li = document.createElement("li");
+        li.textContent = item;
+        ul.appendChild(li);
+      }
+      target.appendChild(ul);
+    }
+  }
 
   // WP-136 — Message pagination
   $("msg-prev").addEventListener("click", () => {

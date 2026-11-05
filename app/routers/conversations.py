@@ -507,6 +507,95 @@ def suggest_opportunity(
         }
 
 
+@router.post("/conversations/{conversation_id}/summarize")
+def summarize_conversation(
+    conversation_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """WP-270 — Generate an AI summary of the conversation.
+
+    Analyzes all messages and returns a concise summary with key points
+    and action items. Does NOT persist — returns only the summary.
+    """
+    conversation = _get_tenant_conversation(
+        db,
+        conversation_id,
+        identity.company_id,
+    )
+
+    history_messages = db.scalars(
+        select(Message)
+        .where(Message.conversation_id == conversation.id)
+        .order_by(Message.id)
+    ).all()
+
+    if len(history_messages) < 2:
+        raise HTTPException(
+            status_code=400,
+            detail="Not enough messages to summarize",
+        )
+
+    # Build conversation text for the prompt
+    prompt_parts = []
+    for msg in history_messages:
+        role = "Cliente" if msg.sender_type == "customer" else ("Humano" if msg.sender_type == "human" else "Agente" if msg.sender_type == "agent" else "Sistema")
+        prompt_parts.append(f"{role}: {msg.content}")
+    conversation_text = "\n".join(prompt_parts)
+
+    system_prompt = (
+        "Resuma esta conversa de forma concisa e útil para um operador de negócios.\n"
+        "Retorne apenas JSON com esta estrutura:\n"
+        '{"summary": "resumo em 2-3 frases", '
+        '"key_points": ["ponto 1", "ponto 2"], '
+        '"action_items": ["ação pendente 1"]}\n'
+        "Se não houver pontos-chave ou ações pendentes, use listas vazias."
+    )
+
+    try:
+        from app.routers.companies import _agent_config_store, _record_agent_call
+
+        company_config = _agent_config_store.get(identity.company_id, {})
+        effective_temp = company_config.get("temperature")
+        effective_max_tokens = company_config.get("max_tokens")
+        effective_model = company_config.get("model")
+
+        response = generate_agent_reply(
+            message=conversation_text,
+            history=[],
+            system_prompt=system_prompt,
+            temperature=effective_temp,
+            max_tokens=effective_max_tokens,
+            model=effective_model,
+        )
+        _record_agent_call(identity.company_id, success=True)
+    except AgentServiceError:
+        _record_agent_call(identity.company_id, success=False)
+        raise HTTPException(
+            status_code=503,
+            detail="Agent service unavailable",
+        )
+
+    # Try to parse JSON from response
+    import json
+    try:
+        parsed = json.loads(response)
+        return {
+            "conversation_id": conversation.id,
+            "summary": parsed.get("summary", response),
+            "key_points": parsed.get("key_points", []),
+            "action_items": parsed.get("action_items", []),
+        }
+    except (json.JSONDecodeError, AttributeError):
+        # Fallback: return raw response as summary
+        return {
+            "conversation_id": conversation.id,
+            "summary": response,
+            "key_points": [],
+            "action_items": [],
+        }
+
+
 @router.get("/conversations/{conversation_id}")
 def get_conversation(
     conversation_id: int,

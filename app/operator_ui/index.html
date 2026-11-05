@@ -510,11 +510,20 @@
             <h3 id="conv-detail-header"></h3>
             <div class="conv-detail-actions">
               <button id="conv-close-toggle" type="button" class="secondary" hidden>Fechar</button>
+              <button id="conv-summarize" type="button" class="secondary" hidden>📋 Resumir</button>
               <button id="conv-suggest-reply" type="button" class="secondary" hidden>🤖 Sugerir resposta</button>
               <button id="conv-reply-toggle" type="button" class="secondary" hidden>Responder</button>
             </div>
           </div>
           <div id="conv-messages" class="conv-messages"></div>
+          <!-- WP-270 — AI conversation summary -->
+          <div id="conv-summary-panel" class="conv-summary-panel" hidden>
+            <div class="conv-summary-header">
+              <strong>📋 Resumo da conversa</strong>
+              <button id="conv-dismiss-summary" type="button" class="secondary small">Fechar</button>
+            </div>
+            <div id="conv-summary-content"></div>
+          </div>
           <div id="conv-suggestion" class="conv-suggestion" hidden>
             <div class="conv-suggestion-header">
               <strong>💡 Sugestão do agente</strong>

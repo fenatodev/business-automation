@@ -159,6 +159,14 @@ class OpportunitySuggestion(BaseModel):
     reasoning: str
 
 
+class ConversationSummary(BaseModel):
+    """AI-generated conversation summary."""
+
+    summary: str
+    key_points: list[str] | None = None
+    action_items: list[str] | None = None
+
+
 class CompanyCreate(BaseModel):
     name: str
     slug: str

@@ -496,6 +496,34 @@ footer {
   line-height: 1.5;
   color: var(--fg);
 }
+
+/* WP-270 — AI conversation summary */
+.conv-summary-panel {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid #004a3a;
+  border-radius: 8px;
+  background: #001a15;
+}
+.conv-summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.conv-summary-content {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+.conv-summary-content ul {
+  margin: 4px 0 4px 20px;
+  padding: 0;
+}
+.conv-summary-content li {
+  margin-bottom: 2px;
+}
+
 .conv-note-section h4 {
   margin: 0 0 8px;
   font-size: 0.85rem;
