@@ -4,7 +4,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
 from fastapi.responses import Response
-from sqlalchemy import desc, func, select
+from sqlalchemy import desc, exists, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -241,6 +241,8 @@ def list_opportunities(
     q: str | None = Query(None, description="Search keywords in title and description"),
     from_date: str | None = Query(None, description="Filter captured_at >= date (YYYY-MM-DD)"),
     to_date: str | None = Query(None, description="Filter captured_at <= date (YYYY-MM-DD)"),
+    lead_id: int | None = Query(None, description="Filter opportunities with conversations linked to this lead"),
+    customer_id: int | None = Query(None, description="Filter opportunities with conversations linked to this customer"),
     sort: str = Query(default="id", description="Sort by: id, created_at, next_action"),
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -275,6 +277,22 @@ def list_opportunities(
     if to_date:
         stmt = stmt.where(Opportunity.captured_at <= to_date + "T23:59:59")
 
+    # WP-263 — filter by lead_id or customer_id via conversations
+    if lead_id is not None:
+        stmt = stmt.where(
+            exists().where(
+                (Conversation.company_id == identity.company_id)
+                & (Conversation.lead_id == lead_id)
+            )
+        )
+    if customer_id is not None:
+        stmt = stmt.where(
+            exists().where(
+                (Conversation.company_id == identity.company_id)
+                & (Conversation.customer_id == customer_id)
+            )
+        )
+
     if sort == "created_at":
         stmt = stmt.order_by(desc(Opportunity.created_at), desc(Opportunity.id))
     elif sort == "next_action":
@@ -294,6 +312,8 @@ def count_opportunities(
     q: str | None = Query(None, description="Search keywords in title and description"),
     from_date: str | None = Query(None, description="Filter captured_at >= date (YYYY-MM-DD)"),
     to_date: str | None = Query(None, description="Filter captured_at <= date (YYYY-MM-DD)"),
+    lead_id: int | None = Query(None, description="Filter opportunities with conversations linked to this lead"),
+    customer_id: int | None = Query(None, description="Filter opportunities with conversations linked to this customer"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
@@ -326,6 +346,22 @@ def count_opportunities(
     if to_date:
         stmt = stmt.where(Opportunity.captured_at <= to_date + "T23:59:59")
 
+    # WP-263 — filter by lead_id or customer_id via conversations
+    if lead_id is not None:
+        stmt = stmt.where(
+            exists().where(
+                (Conversation.company_id == identity.company_id)
+                & (Conversation.lead_id == lead_id)
+            )
+        )
+    if customer_id is not None:
+        stmt = stmt.where(
+            exists().where(
+                (Conversation.company_id == identity.company_id)
+                & (Conversation.customer_id == customer_id)
+            )
+        )
+
     total = db.scalar(stmt)
     return {"total": total}
 
@@ -355,6 +391,8 @@ def export_opportunities_csv(
     q: str | None = Query(None, description="Search keywords in title and description"),
     from_date: str | None = Query(None, description="Filter captured_at >= date (YYYY-MM-DD)"),
     to_date: str | None = Query(None, description="Filter captured_at <= date (YYYY-MM-DD)"),
+    lead_id: int | None = Query(None, description="Filter opportunities with conversations linked to this lead"),
+    customer_id: int | None = Query(None, description="Filter opportunities with conversations linked to this customer"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
@@ -385,6 +423,22 @@ def export_opportunities_csv(
         stmt = stmt.where(Opportunity.captured_at >= from_date)
     if to_date:
         stmt = stmt.where(Opportunity.captured_at <= to_date + "T23:59:59")
+
+    # WP-263 — filter by lead_id or customer_id via conversations
+    if lead_id is not None:
+        stmt = stmt.where(
+            exists().where(
+                (Conversation.company_id == identity.company_id)
+                & (Conversation.lead_id == lead_id)
+            )
+        )
+    if customer_id is not None:
+        stmt = stmt.where(
+            exists().where(
+                (Conversation.company_id == identity.company_id)
+                & (Conversation.customer_id == customer_id)
+            )
+        )
 
     stmt = stmt.order_by(Opportunity.id)
     opportunities = db.scalars(stmt).all()

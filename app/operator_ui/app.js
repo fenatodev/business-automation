@@ -596,6 +596,9 @@
     const toDate = $("opp-to-date").value || null;
     // WP-189 — source filter
     const source = $("opp-source-filter") ? $("opp-source-filter").value : "";
+    // WP-263 — lead and customer filters
+    const leadId = $("opp-lead-filter") ? $("opp-lead-filter").value : "";
+    const customerId = $("opp-customer-filter") ? $("opp-customer-filter").value : "";
     // WP-238 — priority sort uses dedicated endpoint
     if (sort === "priority") {
       const result = await api("/opportunities/priority?limit=" + oppPageSize);
@@ -638,6 +641,8 @@
       if (searchQuery) params.push("q=" + encodeURIComponent(searchQuery));
       if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
       if (toDate) params.push("to_date=" + encodeURIComponent(toDate));
+      if (leadId) params.push("lead_id=" + encodeURIComponent(leadId));
+      if (customerId) params.push("customer_id=" + encodeURIComponent(customerId));
       params.push("sort=" + encodeURIComponent(sort));
       params.push("limit=" + oppPageSize);
       params.push("offset=" + oppOffset);
@@ -649,6 +654,8 @@
       if (searchQuery) countParams.push("q=" + encodeURIComponent(searchQuery));
       if (fromDate) countParams.push("from_date=" + encodeURIComponent(fromDate));
       if (toDate) countParams.push("to_date=" + encodeURIComponent(toDate));
+      if (leadId) countParams.push("lead_id=" + encodeURIComponent(leadId));
+      if (customerId) countParams.push("customer_id=" + encodeURIComponent(customerId));
       const [result, countResult, pipelineResult] = await Promise.all([
         api("/opportunities" + query),
         api("/opportunities/count" + (countParams.length ? "?" + countParams.join("&") : "")),
@@ -732,6 +739,20 @@
     refreshList();
   });
 
+  // WP-263 — Opportunity lead and customer filters
+  if ($("opp-lead-filter")) {
+    $("opp-lead-filter").addEventListener("change", () => {
+      oppOffset = 0;
+      refreshList();
+    });
+  }
+  if ($("opp-customer-filter")) {
+    $("opp-customer-filter").addEventListener("change", () => {
+      oppOffset = 0;
+      refreshList();
+    });
+  }
+
   // WP-150 — Clear all filters
   $("opp-clear-filters").addEventListener("click", () => {
     $("opp-search").value = "";
@@ -739,6 +760,8 @@
     $("opp-to-date").value = "";
     $("opp-sort").value = "id";
     if ($("opp-source-filter")) $("opp-source-filter").value = "";
+    if ($("opp-lead-filter")) $("opp-lead-filter").value = "";
+    if ($("opp-customer-filter")) $("opp-customer-filter").value = "";
     $("show-archived").checked = false;
     oppPipelineFilter = "all";
     document.querySelectorAll('.opp-pipeline-chip').forEach((chip) => {
@@ -1913,6 +1936,56 @@
         select.appendChild(opt);
       }
       briefOppFilterPopulated = true;
+    } catch (e) {
+      // Silently fail — filter still works without dropdown
+    }
+  }
+
+  // WP-263 — Populate opportunity lead filter dropdown
+  let oppLeadFilterPopulated = false;
+  async function populateOppLeadFilter() {
+    if (oppLeadFilterPopulated) return;
+    try {
+      const leads = await leadApi("/leads?limit=100&offset=0", "GET");
+      const select = $("opp-lead-filter");
+      if (!select) return;
+      select.replaceChildren();
+      const allOpt = document.createElement("option");
+      allOpt.value = "";
+      allOpt.textContent = "Todos os leads";
+      select.appendChild(allOpt);
+      for (const l of (leads || [])) {
+        const opt = document.createElement("option");
+        opt.value = String(l.id);
+        opt.textContent = l.name || "Sem nome";
+        select.appendChild(opt);
+      }
+      oppLeadFilterPopulated = true;
+    } catch (e) {
+      // Silently fail — filter still works without dropdown
+    }
+  }
+
+  // WP-263 — Populate opportunity customer filter dropdown
+  let oppCustomerFilterPopulated = false;
+  async function populateOppCustomerFilter() {
+    if (oppCustomerFilterPopulated) return;
+    try {
+      const custs = await customerApi("/customers?limit=100&offset=0", "GET");
+      const select = $("opp-customer-filter");
+      if (!select) return;
+      select.replaceChildren();
+      const allOpt = document.createElement("option");
+      allOpt.value = "";
+      allOpt.textContent = "Todos os customers";
+      select.appendChild(allOpt);
+      for (const c of (custs || [])) {
+        const opt = document.createElement("option");
+        opt.value = String(c.id);
+        opt.textContent = c.name || "Sem nome";
+        select.appendChild(opt);
+      }
+      oppCustomerFilterPopulated = true;
     } catch (e) {
       // Silently fail — filter still works without dropdown
     }
@@ -3614,6 +3687,9 @@
         refreshLeads().catch(() => {});
         refreshCustomers().catch(() => {});
         refreshTasks().catch(() => {});
+        // WP-263 — Populate opportunity lead/customer filter dropdowns
+        populateOppLeadFilter().catch(() => {});
+        populateOppCustomerFilter().catch(() => {});
         workspaceObserver.disconnect();
       }
     }
