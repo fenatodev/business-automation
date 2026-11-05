@@ -99,7 +99,12 @@ Para o piloto privado, a evidência operacional mínima é:
 - access log com método/path e status HTTP;
 - horário fornecido pelo ambiente/coletor quando disponível.
 
-Não há logging estruturado, tracing distribuído ou plataforma de observabilidade definida neste estágio.
+Cada requisição HTTP recebe um `X-Correlation-ID`. O cliente pode enviar um UUID
+nesse cabeçalho para rastrear uma operação; valores inválidos são substituídos.
+A API devolve o ID efetivo na resposta e registra método, caminho, status,
+duração e correlation ID. Corpo, query string, credenciais e conteúdo de cliente
+não entram nesse log. Esse contrato é a observabilidade mínima do piloto; não
+pressupõe tracing distribuído ou uma plataforma externa.
 
 Logs de operação e diagnóstico não devem incluir:
 
