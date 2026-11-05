@@ -129,3 +129,5 @@ def test_ui_shows_customer_context_in_portuguese():
     assert 'item.setAttribute("aria-label", "Abrir lead "' in js
     assert 'item.setAttribute("aria-label", "Abrir cliente "' in js
     assert 'item.setAttribute("role", "listitem")' in js
+    assert 'empty.setAttribute("role", "status")' in js
+    assert 'Nenhum cliente registrado.' in js
