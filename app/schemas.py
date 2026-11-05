@@ -189,6 +189,15 @@ class CustomerOpportunitySuggestion(BaseModel):
     reasoning: str
 
 
+class CustomerLeadSuggestion(BaseModel):
+    """AI-generated lead suggestion from customer context."""
+
+    suggested_name: str | None = None
+    suggested_phone: str | None = None
+    suggested_interest: str | None = None
+    reasoning: str
+
+
 class CompanyCreate(BaseModel):
     name: str
     slug: str

@@ -532,3 +532,87 @@ def suggest_opportunity_from_customer(
             "suggested_requirements": None,
             "reasoning": response,
         }
+
+
+@router.post("/customers/{customer_id}/suggest-lead")
+def suggest_lead_from_customer(
+    customer_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """WP-273 — Suggest lead fields from customer context.
+
+    Analyzes the customer data and suggests name, phone and interest
+    for creating a related lead. Does NOT persist — returns only the suggestion.
+    """
+    customer = _get_tenant_customer(
+        db,
+        customer_id,
+        identity.company_id,
+    )
+
+    # Build prompt from customer data
+    prompt_parts = []
+    prompt_parts.append(f"Nome: {customer.name}")
+    if customer.phone:
+        prompt_parts.append(f"Telefone: {customer.phone}")
+    if customer.email:
+        prompt_parts.append(f"E-mail: {customer.email}")
+    if customer.lead_id:
+        prompt_parts.append(f"Origem: Lead #{customer.lead_id}")
+    prompt_parts.append("Tipo: Customer existente")
+    customer_text = "\n".join(prompt_parts)
+
+    system_prompt = (
+        "Com base nos dados deste customer, sugira campos para criar um lead relacionado.\n"
+        "Retorne apenas JSON com esta estrutura:\n"
+        '{"suggested_name": "nome ou null", '
+        '"suggested_phone": "telefone ou null", '
+        '"suggested_interest": "interesse ou null", '
+        '"reasoning": "por que extraiu estes dados"}\n'
+        "Se não encontrar um campo, use null."
+    )
+
+    try:
+        from app.routers.companies import _agent_config_store, _record_agent_call
+        from app.services.agent import AgentServiceError, generate_agent_reply
+
+        company_config = _agent_config_store.get(identity.company_id, {})
+        effective_temp = company_config.get("temperature")
+        effective_max_tokens = company_config.get("max_tokens")
+        effective_model = company_config.get("model")
+
+        response = generate_agent_reply(
+            message=customer_text,
+            history=[],
+            system_prompt=system_prompt,
+            temperature=effective_temp,
+            max_tokens=effective_max_tokens,
+            model=effective_model,
+        )
+        _record_agent_call(identity.company_id, success=True)
+    except AgentServiceError:
+        _record_agent_call(identity.company_id, success=False)
+        raise HTTPException(
+            status_code=503,
+            detail="Agent service unavailable",
+        )
+
+    import json
+    try:
+        parsed = json.loads(response)
+        return {
+            "customer_id": customer.id,
+            "suggested_name": parsed.get("suggested_name"),
+            "suggested_phone": parsed.get("suggested_phone"),
+            "suggested_interest": parsed.get("suggested_interest"),
+            "reasoning": parsed.get("reasoning", response),
+        }
+    except (json.JSONDecodeError, AttributeError):
+        return {
+            "customer_id": customer.id,
+            "suggested_name": None,
+            "suggested_phone": None,
+            "suggested_interest": None,
+            "reasoning": response,
+        }

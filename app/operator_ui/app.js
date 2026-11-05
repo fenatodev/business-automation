@@ -4054,6 +4054,127 @@
     });
   });
 
+  // WP-273 — Create lead from customer detail
+  $("customer-new-lead").addEventListener("click", () => {
+    $("customer-lead-form").hidden = false;
+    $("customer-lead-suggestion").hidden = true;
+    customerLeadSuggestion = null;
+  });
+
+  $("cancel-customer-lead").addEventListener("click", () => {
+    $("customer-lead-form").hidden = true;
+    $("customer-lead-form").reset();
+    $("customer-lead-suggestion").hidden = true;
+    customerLeadSuggestion = null;
+  });
+
+  // WP-273 — Suggest lead from customer
+  $("customer-lead-suggest").addEventListener("click", () => {
+    const button = $("customer-lead-suggest");
+    if (!currentCustomerId) {notify("Selecione um customer.", true); return;}
+    withButton(button, async () => {
+      try {
+        const res = await fetch("/customers/" + currentCustomerId + "/suggest-lead", {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + bearer,
+            "Content-Type": "application/json",
+          },
+        });
+        if (res.status === 503) {
+          notify("Agente indisponível.", true);
+          return;
+        }
+        if (!res.ok) {
+          notify("Falha ao gerar sugestão.", true);
+          return;
+        }
+        const data = await res.json();
+        renderCustomerLeadSuggestion(data);
+        $("customer-lead-suggestion").hidden = false;
+        notify("Sugestão gerada.");
+      } catch (e) {
+        notify("Erro ao gerar sugestão.", true);
+      }
+    });
+  });
+
+  // WP-273 — Dismiss customer lead suggestion
+  $("customer-lead-dismiss-suggestion").addEventListener("click", () => {
+    $("customer-lead-suggestion").hidden = true;
+  });
+
+  // WP-273 — Apply customer lead suggestion
+  $("customer-lead-apply-suggestion").addEventListener("click", () => {
+    if (customerLeadSuggestion) {
+      if (customerLeadSuggestion.suggested_name) $("customer-lead-name").value = customerLeadSuggestion.suggested_name;
+      if (customerLeadSuggestion.suggested_phone) $("customer-lead-phone").value = customerLeadSuggestion.suggested_phone;
+      if (customerLeadSuggestion.suggested_interest) $("customer-lead-interest").value = customerLeadSuggestion.suggested_interest;
+    }
+    $("customer-lead-suggestion").hidden = true;
+    $("customer-lead-form").hidden = false;
+    $("customer-lead-name").focus();
+  });
+
+  // WP-273 — Render customer lead suggestion
+  var customerLeadSuggestion = null;
+  function renderCustomerLeadSuggestion(data) {
+    customerLeadSuggestion = data;
+    const target = $("customer-lead-suggestion-content");
+    target.replaceChildren();
+    if (data.reasoning) {
+      const p = document.createElement("p");
+      p.textContent = data.reasoning;
+      target.appendChild(p);
+    }
+    const fields = [
+      {key: "suggested_name", label: "Nome"},
+      {key: "suggested_phone", label: "Telefone"},
+      {key: "suggested_interest", label: "Interesse"},
+    ];
+    for (const field of fields) {
+      if (data[field.key]) {
+        const strong = document.createElement("strong");
+        strong.textContent = field.label + ":";
+        target.appendChild(strong);
+        const p = document.createElement("p");
+        p.textContent = data[field.key];
+        target.appendChild(p);
+      }
+    }
+  }
+
+  $("customer-lead-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const button = $("customer-lead-form").querySelector('button[type="submit"]');
+    withButton(button, async () => {
+      const name = $("customer-lead-name").value.trim();
+      const phone = $("customer-lead-phone").value.trim();
+      const interest = $("customer-lead-interest").value.trim() || null;
+      if (!name) {
+        notify("Preencha o nome.", true);
+        return;
+      }
+      const company_id = customers.length > 0 ? customers[0].company_id : null;
+      const lead = await api("/leads", {
+        method: "POST",
+        body: JSON.stringify({
+          company_id,
+          name,
+          phone,
+          source: "manual",
+          interest,
+        }),
+      });
+      $("customer-lead-form").hidden = true;
+      $("customer-lead-form").reset();
+      $("customer-lead-suggestion").hidden = true;
+      customerLeadSuggestion = null;
+      notify("Lead #" + lead.id + " criado.");
+      await refreshLeads();
+    });
+  });
+
   // WP-096 — Commercial intake API and form handler
   async function intakeApi(path, method, body) {
     if (!bearer) throw new Error("Conecte um operador.");

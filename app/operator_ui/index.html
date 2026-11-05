@@ -1007,6 +1007,41 @@
               <button id="customer-opp-apply-suggestion" type="button" class="primary">Preencher formulário</button>
             </div>
           </div>
+
+          <!-- WP-273 — Create lead from customer detail -->
+          <h4>Leads</h4>
+          <button id="customer-new-lead" type="button" class="secondary">+ Novo lead</button>
+          <form id="customer-lead-form" class="customer-lead-form" hidden>
+            <h4>Novo lead</h4>
+            <div>
+              <label for="customer-lead-name">Nome *</label>
+              <input id="customer-lead-name" type="text" required maxlength="120">
+            </div>
+            <div>
+              <label for="customer-lead-phone">Telefone</label>
+              <input id="customer-lead-phone" type="text" maxlength="30">
+            </div>
+            <div>
+              <label for="customer-lead-interest">Interesse</label>
+              <textarea id="customer-lead-interest" rows="2" placeholder="Interesse ou nota"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button type="submit" class="primary">Criar</button>
+              <button type="button" id="customer-lead-suggest" class="secondary">🤖 Sugerir</button>
+              <button type="button" id="cancel-customer-lead" class="secondary">Cancelar</button>
+            </div>
+          </form>
+          <!-- WP-273 — AI lead suggestion from customer -->
+          <div id="customer-lead-suggestion" class="conv-suggestion" hidden>
+            <div class="conv-suggestion-header">
+              <strong>💡 Sugestão de lead</strong>
+              <button id="customer-lead-dismiss-suggestion" type="button" class="secondary small">Fechar</button>
+            </div>
+            <div id="customer-lead-suggestion-content"></div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button id="customer-lead-apply-suggestion" type="button" class="primary">Preencher formulário</button>
+            </div>
+          </div>
         </div>
       </section>
 
