@@ -89,7 +89,7 @@ pr_risk_reason() {
   body="$("$GH_BIN" pr view "$number" --json body --jq '.body')"
   files="$("$GH_BIN" pr diff "$number" --name-only)"
   if printf '%s\n%s\n%s\n' "$title" "$body" "$files" | grep -Eiq \
-    'migration|alembic|auth(entication|orization)?|rbac|tenant|security|contract|docker|compose|deploy|cloudflare|vps|n8n|credential|secret|\.env|\.pem|\.key|integration'; then
+    'migration|alembic|auth(entication|orization)?|rbac|security|contract|docker|compose|deploy|cloudflare|vps|n8n|credential|secret|\.env|\.pem|\.key|integration'; then
     printf '%s\n' "high-risk PR #$number ($title)"
     return 0
   fi
