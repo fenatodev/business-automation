@@ -556,6 +556,14 @@
           refreshConversations().catch(() => {});
           selectConversation(conv.id).catch(() => {});
         });
+        item.tabIndex = 0;
+        item.setAttribute("role", "button");
+        item.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            item.click();
+          }
+        });
         list.appendChild(item);
       }
     } catch (error) {

@@ -1446,6 +1446,10 @@ footer {
 .opp-conv-item:hover {
   background: var(--hover);
 }
+.opp-conv-item:focus-visible {
+  outline: 2px solid var(--accent, #2563eb);
+  outline-offset: 2px;
+}
 .opp-conv-item .small {
   color: var(--muted);
 }

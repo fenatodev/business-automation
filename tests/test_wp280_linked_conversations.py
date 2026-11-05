@@ -45,6 +45,7 @@ def test_linked_conversations_excludes_other_contact(client, admin_headers, oper
 def test_ui_uses_linked_conversation_route():
     js = (Path(__file__).parents[1] / "app/operator_ui/app.js").read_text()
     assert '/opportunities/" + id + "/linked-conversations' in js
+    assert 'item.addEventListener("keydown", (event) => {' in js
     assert "expectedVersion !== selectionVersion" in js
 
 
