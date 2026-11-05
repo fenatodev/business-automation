@@ -1392,3 +1392,11 @@ tinha forma de criá-los ou gerenciá-los. Adicionada subseção
 criação, lista de templates existentes com botão excluir.
 
 **3007 testes passaram**; compileall, diff-check, JS syntax: PASS.
+
+### WP-266 — Filtro por nível de prioridade nas oportunidades
+
+O score de prioridade já era calculado (WP-238) mas não dava para
+filtrar. Adicionado `?priority_level=` em list, count e export CSV.
+Dropdown "Prioridade" na UI com opções Alta, Média e Baixa.
+
+**3017 testes passaram**; compileall, diff-check, JS syntax: PASS.
