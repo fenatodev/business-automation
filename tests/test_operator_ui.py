@@ -137,6 +137,12 @@ def test_brief_status_is_live_region():
     assert 'aria-live="polite"' in html
 
 
+def test_brief_empty_state_is_status():
+    js = (Path(__file__).parents[1] / "app/operator_ui/app.js").read_text()
+    assert 'p.textContent = "Nenhum brief encontrado."' in js
+    assert 'p.setAttribute("role", "status")' in js
+
+
 def test_task_failure_badge_is_live_region():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
     assert 'id="task-failed-badge" class="pending-badge" hidden aria-live="polite"' in html
