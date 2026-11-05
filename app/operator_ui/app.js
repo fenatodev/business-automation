@@ -303,6 +303,7 @@
     for (const opportunity of ordered) {
       const wrapper = document.createElement("div");
       wrapper.className = "opp-item-row";
+      wrapper.setAttribute("role", "listitem");
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.className = "opp-checkbox";
