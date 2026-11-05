@@ -1,5 +1,6 @@
 import csv
 import io
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
 from fastapi.responses import Response
@@ -140,6 +141,7 @@ def export_customers_csv(
     q: str | None = Query(None, description="Search keywords in name, phone, and email"),
     from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
     to_date: str | None = Query(None, description="Filter created_at <= date (YYYY-MM-DD)"),
+    sort: Literal["id", "created_at", "name"] = Query(default="id"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
@@ -157,7 +159,13 @@ def export_customers_csv(
         stmt = stmt.where(Customer.created_at >= from_date)
     if to_date:
         stmt = stmt.where(Customer.created_at <= to_date + "T23:59:59")
-    customers = db.scalars(stmt.order_by(Customer.id)).all()
+    if sort == "name":
+        stmt = stmt.order_by(Customer.name, Customer.id)
+    elif sort == "created_at":
+        stmt = stmt.order_by(Customer.created_at.desc(), Customer.id)
+    else:
+        stmt = stmt.order_by(Customer.id)
+    customers = db.scalars(stmt).all()
 
     output = io.StringIO()
     writer = csv.writer(output)
