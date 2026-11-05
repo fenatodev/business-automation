@@ -131,3 +131,7 @@ def test_client0_form_has_all_required_fields_without_price_or_submission(client
     # A UI não pode receber paths dinâmicos/estáticos arbitrários.
     for invalid in ("/operator/data.json", "/operator/test.env", "/operator/debug"):
         assert client.get(invalid).status_code == 404
+def test_brief_status_is_live_region():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    assert 'id="brief-status"' in html
+    assert 'aria-live="polite"' in html
