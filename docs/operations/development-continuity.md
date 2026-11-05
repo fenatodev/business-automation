@@ -1566,6 +1566,14 @@ PR #314 integrado após CI verde.
 
 Validação: 6 testes direcionados, compileall e diff-check passaram.
 
+### WP-303 — Anúncio da oportunidade selecionada
+
+O identificador da oportunidade selecionada agora usa `aria-live="polite"`,
+anunciando mudanças de seleção para leitores de tela. PR #316 integrado após
+CI verde.
+
+Validação: 5 testes direcionados, compileall e diff-check passaram.
+
 ### WP-289 — Foco visual para contatos vinculados
 
 Cards de Lead e Customer vinculados a oportunidades agora exibem foco visível
