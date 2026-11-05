@@ -3,6 +3,7 @@ def test_readiness_reports_database_availability(client):
 
     assert response.status_code == 200
     assert response.json() == {"status": "ready", "service": "business-automation"}
+    assert response.headers["Cache-Control"] == "no-store"
 
 
 def test_readyz_alias_preserves_readiness_contract(client):
@@ -10,3 +11,4 @@ def test_readyz_alias_preserves_readiness_contract(client):
 
     assert response.status_code == 200
     assert response.json() == {"status": "ready", "service": "business-automation"}
+    assert response.headers["Cache-Control"] == "no-store"

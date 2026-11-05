@@ -3,6 +3,7 @@ def test_health_is_public_and_stable(client):
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "service": "business-automation"}
+    assert response.headers["Cache-Control"] == "no-store"
 
 
 def test_healthz_alias_preserves_liveness_contract(client):
@@ -10,3 +11,4 @@ def test_healthz_alias_preserves_liveness_contract(client):
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "service": "business-automation"}
+    assert response.headers["Cache-Control"] == "no-store"
