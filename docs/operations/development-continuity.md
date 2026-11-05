@@ -1653,6 +1653,19 @@ Validação local: **3206 testes passaram**, 61 testes direcionados do operador,
 `76e946e`. Nenhuma migration, mudança de autorização, mensagem externa ou
 deploy foi executado.
 
+## WP-390 — Contagens completas no polling de notificações (05/11/2026)
+
+O polling de notificações do operador deixou de baixar listas de até 100 itens
+para calcular badges. Ele usa os endpoints de contagem existentes para
+oportunidades pendentes, leads novos, conversas abertas e tarefas falhas, e
+consulta somente uma oportunidade/lead para descobrir o tenant autorizado.
+Isso evita números truncados sem alterar os contratos de isolamento.
+
+Validação local: **3207 testes passaram**, 87 testes direcionados, `node
+--check app/operator_ui/app.js`, `compileall app tests` e `git diff --check`
+passaram. Não houve migration, mudança de credencial, mensagem externa ou
+deploy.
+
 ## Fatias funcionais completas
 
 Cada novo ciclo deve entregar uma capacidade operacional vertical com backend/API,

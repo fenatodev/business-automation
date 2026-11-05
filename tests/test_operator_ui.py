@@ -85,6 +85,14 @@ def test_notification_polling_does_not_assume_company_one(client):
     assert 'encodeURIComponent(companyId)' in script
 
 
+def test_notification_polling_uses_count_endpoints(client):
+    script = client.get("/operator/app.js").text
+
+    assert "/opportunities/count?next_action=pending" in script
+    assert "/leads/count?status=new" in script
+    assert "/companies/" in script and "/conversations/count?status=open" in script
+
+
 def test_ui_is_not_an_authentication_bypass(
     client,
     admin_headers,

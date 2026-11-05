@@ -3207,24 +3207,37 @@
   async function updateNotifications() {
     if (!bearer) return;
     try {
-      const [oppRes, leadsRes, tasksRes] = await Promise.all([
-        fetch("/opportunities", {headers: {"Authorization": "Bearer " + bearer}}),
-        fetch("/leads?status=new&limit=100", {headers: {"Authorization": "Bearer " + bearer}}),
+      const [oppRes, pendingOppRes, leadSampleRes, leadsRes, tasksRes] = await Promise.all([
+        // Keep this list bounded: it only discovers the authorized tenant.
+        fetch("/opportunities?limit=1", {headers: {"Authorization": "Bearer " + bearer}}),
+        fetch("/opportunities/count?next_action=pending", {headers: {"Authorization": "Bearer " + bearer}}),
+        fetch("/leads?status=new&limit=1", {headers: {"Authorization": "Bearer " + bearer}}),
+        fetch("/leads/count?status=new", {headers: {"Authorization": "Bearer " + bearer}}),
         // WP-277 — Failed tasks count
-        fetch("/internal-tasks?status=failed&limit=100", {headers: {"Authorization": "Bearer " + bearer}}),
+        fetch("/internal-tasks/count?status=failed", {headers: {"Authorization": "Bearer " + bearer}}),
       ]);
       let pendingCount = 0;
       let newLeadCount = 0;
       let openConvCount = 0;
       let failedTaskCount = 0;
       let opportunities = [];
-      let newLeads = [];
+      let leadSamples = [];
       // Opportunities pending badge
       if (oppRes.ok) {
         const payload = await oppRes.json();
         if (Array.isArray(payload)) {
           opportunities = payload;
-          const pending = opportunities.filter((o) => o.next_action === "pending").length;
+        }
+      }
+      if (leadSampleRes.ok) {
+        const payload = await leadSampleRes.json();
+        if (Array.isArray(payload)) {
+          leadSamples = payload;
+        }
+      }
+      if (pendingOppRes.ok) {
+        const pending = await pendingOppRes.json();
+        if (Number.isInteger(pending)) {
           pendingCount = pending;
           const badge = $("pending-badge");
           if (pending > 0) { badge.hidden = false; badge.textContent = pending; }
@@ -3234,30 +3247,31 @@
       // Leads new badge
       if (leadsRes.ok) {
         const payload = await leadsRes.json();
-        if (Array.isArray(payload)) {
-          newLeads = payload;
-          newLeadCount = newLeads.length;
+        const total = typeof payload === "number" ? payload : payload.total;
+        if (Number.isInteger(total)) {
+          newLeadCount = total;
           const badge = $("lead-new-badge");
-          if (newLeads.length > 0) { badge.hidden = false; badge.textContent = newLeads.length; }
+          if (total > 0) { badge.hidden = false; badge.textContent = total; }
           else { badge.hidden = true; }
         }
       }
       const companyId = opportunities
         .find((item) => Number.isInteger(item.company_id))?.company_id
-        ?? newLeads
+        ?? leadSamples
           .find((item) => Number.isInteger(item.company_id))?.company_id;
       if (companyId !== undefined) {
         const convRes = await fetch(
-          "/companies/" + encodeURIComponent(companyId) + "/conversations?status=open&limit=100",
+          "/companies/" + encodeURIComponent(companyId) + "/conversations/count?status=open",
           {headers: {"Authorization": "Bearer " + bearer}},
         );
         // Conversations open badge — use count endpoint
         if (convRes.ok) {
           const convs = await convRes.json();
-          if (Array.isArray(convs)) {
-            openConvCount = convs.length;
+          const total = typeof convs === "number" ? convs : convs.total;
+          if (Number.isInteger(total)) {
+            openConvCount = total;
             const badge = $("conv-open-badge");
-            if (convs.length > 0) { badge.hidden = false; badge.textContent = convs.length; }
+            if (total > 0) { badge.hidden = false; badge.textContent = total; }
             else { badge.hidden = true; }
           }
         }
@@ -3265,10 +3279,11 @@
       // WP-277 — Failed tasks badge
       if (tasksRes.ok) {
         const tasks = await tasksRes.json();
-        if (Array.isArray(tasks)) {
-          failedTaskCount = tasks.length;
+        const total = typeof tasks === "number" ? tasks : tasks.total;
+        if (Number.isInteger(total)) {
+          failedTaskCount = total;
           const badge = $("task-failed-badge");
-          if (tasks.length > 0) { badge.hidden = false; badge.textContent = tasks.length; }
+          if (total > 0) { badge.hidden = false; badge.textContent = total; }
           else { badge.hidden = true; }
         }
       }
