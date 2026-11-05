@@ -1780,3 +1780,12 @@ normal quando verde e iniciar a próxima capacidade.
 Não abrir PRs para microajustes isolados. Migrações, segurança, autorização,
 isolamento tenant e infraestrutura continuam sujeitos aos gates adicionais de
 AGENTS.md; nunca são habilitados por auto-merge.
+
+
+## Política do supervisor para tenant-aware
+
+Mudanças que preservam ou ampliam testes de isolamento por tenant não são
+bloqueadas apenas por mencionar `tenant` ou `company_id`. Elas seguem os
+gates normais: árvore limpa, CI verde, SHA confirmado e inspeção do diff.
+Continuam protegidas por bloqueio próprio mudanças de autenticação/autorização,
+migrations, segredos, deploy, n8n, integrações externas e operações destrutivas.
