@@ -137,6 +137,11 @@ def test_brief_status_is_live_region():
     assert 'aria-live="polite"' in html
 
 
+def test_selected_opportunity_id_has_context_label():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    assert 'id="selected-id" class="tag" aria-label="Oportunidade selecionada" aria-live="polite"' in html
+
+
 def test_opportunity_progress_bar_has_accessible_semantics():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
     js = (Path(__file__).parents[1] / "app/operator_ui/app.js").read_text()
