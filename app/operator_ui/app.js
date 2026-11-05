@@ -5263,6 +5263,7 @@
         retryBtn.type = "button";
         retryBtn.className = "secondary task-retry-btn";
         retryBtn.textContent = "Retry";
+        retryBtn.setAttribute("aria-label", "Tentar novamente a tarefa #" + task.id);
         retryBtn.addEventListener("click", () => {
           withButton(retryBtn, async () => {
             try {
