@@ -454,6 +454,16 @@
     if ($("opp-create-conv")) $("opp-create-conv").hidden = true;
     if ($("opp-conv-form")) $("opp-conv-form").hidden = true;
     if ($("opp-conv-suggestion")) $("opp-conv-suggestion").hidden = true;
+    for (const listId of ["opp-conv-list", "opp-leads-list", "opp-customers-list"]) {
+      const list = $(listId);
+      if (!list) continue;
+      list.replaceChildren();
+      const loading = document.createElement("p");
+      loading.className = "small";
+      loading.setAttribute("role", "status");
+      loading.textContent = "Carregando…";
+      list.appendChild(loading);
+    }
     activeBrief = null;
     $("empty-panel").hidden = true;
     $("selection-panel").hidden = false;
