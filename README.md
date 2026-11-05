@@ -44,7 +44,8 @@ O projeto tem dois objetivos complementares:
 - Business performance metrics in dashboard (WP-256/257) — lead conversion rate, opportunity closure rate, brief approval rate;
 - Extended keyboard shortcuts (WP-260) — Ctrl+1-0 navigates all 10 operator sections (Dashboard to Agent config);
 - Lead name sorting (WP-261) — `?sort=name` in GET /leads with UI dropdown option;
-- 2959 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
+- Brief title sorting (WP-262) — `?sort=title` in GET /proposal-briefs with UI dropdown option;
+- 2965 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
 
 ## Engineering case study
 
@@ -57,7 +58,7 @@ The useful part of this project is not the idea of "AI for business". It is the 
 | Authentication | Bearer API keys with role-based access (admin, operator). |
 | API failure behavior | Missing resources and invalid ownership return explicit client errors. |
 | AI integration failure | Customer input preserved, failed agent output not fabricated, internal details not leaked. |
-| Regression protection | 2959 tests cover happy paths, failures, tenant isolation, UI contracts, cross-module creation, AI-assisted triage and intake suggestion. |
+| Regression protection | 2965 tests cover happy paths, failures, tenant isolation, UI contracts, cross-module creation, AI-assisted triage and intake suggestion. |
 | Product boundaries | ERP and automation engines remain external integrations. |
 
 ### Example evaluation mindset
