@@ -291,7 +291,8 @@
               <span id="selected-id" class="tag" aria-label="Oportunidade selecionada" aria-live="polite"></span>
             </div>
             <!-- WP-093 — Editable title and description -->
-            <div id="opp-edit-panel" class="opp-edit-panel">
+            <div id="opp-edit-panel" class="opp-edit-panel" role="group" aria-labelledby="opp-edit-title">
+              <h3 id="opp-edit-title">Editar oportunidade</h3>
               <label for="edit-title">Título</label>
               <input id="edit-title" type="text" maxlength="200" placeholder="Título da oportunidade">
               <label for="edit-description">Descrição</label>
