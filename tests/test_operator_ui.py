@@ -137,6 +137,11 @@ def test_brief_status_is_live_region():
     assert 'aria-live="polite"' in html
 
 
+def test_task_failure_badge_is_live_region():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    assert 'id="task-failed-badge" class="pending-badge" aria-live="polite" hidden' in html
+
+
 def test_task_list_has_list_semantics():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
     assert 'id="tasks-list" class="task-list" role="list" aria-label="Lista de tarefas internas"' in html
