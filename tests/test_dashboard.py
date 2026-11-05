@@ -116,6 +116,47 @@ def test_dashboard_requires_auth(client, admin_headers):
     assert res.status_code in (401, 403)
 
 
+def test_notification_summary_returns_badge_counters(client, admin_headers, operator_a_headers):
+    company = _create_company(client, admin_headers, name="SummaryCo")
+    lead = _create_lead(client, operator_a_headers, company["id"])
+    _create_opportunity(client, operator_a_headers, title="SummaryOpp")
+    _create_conv(client, operator_a_headers, company["id"], lead["id"])
+
+    res = client.get("/internal-tasks/notification-summary", headers=operator_a_headers)
+
+    assert res.status_code == 200
+    assert res.json() == {
+        "opportunities": {"pending": 1},
+        "conversations": {"open": 1},
+        "leads": {"new": 1},
+        "tasks": {"failed": 0},
+    }
+
+
+def test_notification_summary_requires_auth(client):
+    res = client.get("/internal-tasks/notification-summary")
+
+    assert res.status_code in (401, 403)
+
+
+def test_notification_summary_is_tenant_isolated(
+    client, admin_headers, operator_a_headers, operator_b_headers
+):
+    company_a = _create_company(client, admin_headers, name="SummaryA")
+    company_b = _create_company(client, admin_headers, name="SummaryB")
+    lead_a = _create_lead(client, operator_a_headers, company_a["id"])
+    lead_b = _create_lead(client, operator_b_headers, company_b["id"])
+    _create_opportunity(client, operator_a_headers, title="SummaryOppA")
+    _create_opportunity(client, operator_b_headers, title="SummaryOppB")
+    _create_conv(client, operator_a_headers, company_a["id"], lead_a["id"])
+    _create_conv(client, operator_b_headers, company_b["id"], lead_b["id"])
+
+    res_a = client.get("/internal-tasks/notification-summary", headers=operator_a_headers)
+    res_b = client.get("/internal-tasks/notification-summary", headers=operator_b_headers)
+
+    assert res_a.json() == res_b.json()
+
+
 def test_dashboard_tenant_isolation(client, admin_headers, operator_a_headers, operator_b_headers):
     """Dashboard only returns counts for the authenticated tenant."""
     company_a = _create_company(client, admin_headers, name="IsolateA")

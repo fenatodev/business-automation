@@ -82,13 +82,13 @@ def test_notification_polling_does_not_assume_company_one(client):
     script = client.get("/operator/app.js").text
 
     assert '"/companies/1/conversations' not in script
-    assert 'fetch("/internal-tasks/dashboard"' in script
+    assert 'fetch("/internal-tasks/notification-summary"' in script
 
 
 def test_notification_polling_uses_tenant_scoped_dashboard_snapshot(client):
     script = client.get("/operator/app.js").text
 
-    assert 'fetch("/internal-tasks/dashboard"' in script
+    assert 'fetch("/internal-tasks/notification-summary"' in script
     assert 'dashboard.opportunities?.pending' in script
     assert 'dashboard.conversations?.open' in script
     assert 'dashboard.tasks?.failed' in script
