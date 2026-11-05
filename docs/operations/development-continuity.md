@@ -1540,6 +1540,15 @@ Validação local e CI: **3142 testes passaram**, dois warnings preexistentes;
 compileall e diff-check: PASS. Nenhuma migration ou alteração de API foi
 necessária.
 
+### WP-289 — Foco visual para contatos vinculados
+
+Cards de Lead e Customer vinculados a oportunidades agora exibem foco visível
+ao navegar por teclado, complementando a ativação acessível das WPs 286 e 287.
+PR #302 integrado em `f801bf3`.
+
+Validação: testes específicos, compileall e diff-check passaram; nenhuma
+alteração de API, schema ou migration foi necessária.
+
 ### WP-284 — Contexto de Customer no detalhe de oportunidade
 
 O cartão de Customer vinculado a uma oportunidade agora exibe telefone e
