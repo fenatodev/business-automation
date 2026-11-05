@@ -5255,6 +5255,7 @@
       if (task.error_code) {
         const err = document.createElement("div");
         err.className = "task-error small";
+        err.setAttribute("role", "alert");
         err.textContent = "Erro: " + task.error_code;
         item.appendChild(err);
       }
