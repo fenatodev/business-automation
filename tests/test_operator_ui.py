@@ -137,6 +137,11 @@ def test_brief_status_is_live_region():
     assert 'aria-live="polite"' in html
 
 
+def test_opportunity_bulk_selection_count_is_live_region():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    assert 'id="bulk-selected-count" class="small" aria-live="polite"' in html
+
+
 def test_opportunity_list_items_have_listitem_semantics():
     js = (Path(__file__).parents[1] / "app/operator_ui/app.js").read_text()
     assert 'wrapper.setAttribute("role", "listitem")' in js
