@@ -26,7 +26,7 @@ class TestFailedTasksBadge:
 
     def test_js_fetches_failed_tasks(self):
         """JS fetches failed tasks in updateNotifications."""
-        assert '"/internal-tasks/dashboard"' in JS
+        assert '"/internal-tasks/notification-summary"' in JS
 
     def test_js_updates_task_failed_badge(self):
         """JS updates task-failed-badge."""
@@ -51,5 +51,5 @@ class TestFailedTasksBadge:
 
     def test_js_uses_one_dashboard_snapshot(self):
         """JS reads all notification counters from one tenant-scoped snapshot."""
-        assert 'fetch("/internal-tasks/dashboard"' in JS
+        assert 'fetch("/internal-tasks/notification-summary"' in JS
         assert 'dashboard.tasks?.failed' in JS

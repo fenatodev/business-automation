@@ -1691,6 +1691,18 @@ Validação local: **3208 testes passaram**, 78 testes direcionados do operador,
 `git diff --check` passaram. Nenhuma migration, credencial, mensagem externa
 ou deploy foi envolvido.
 
+## WP-393 — Endpoint leve para resumo de notificações (05/11/2026)
+
+Criado `GET /internal-tasks/notification-summary`, autenticado e filtrado
+pela Company do operador, retornando somente os quatro contadores usados pelos
+badges. O polling deixou de executar o dashboard completo para uma atualização
+de fundo, reduzindo trabalho de banco e preservando isolamento entre tenants.
+
+Validação local: **3211 testes passaram**, 87 testes direcionados, `node
+--check app/operator_ui/app.js`, `compileall app tests` e `git diff --check`
+passaram. Nenhuma migration, credencial, mensagem externa ou deploy foi
+envolvido.
+
 ## Fatias funcionais completas
 
 Cada novo ciclo deve entregar uma capacidade operacional vertical com backend/API,

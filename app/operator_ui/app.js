@@ -3207,7 +3207,7 @@
   async function updateNotifications() {
     if (!bearer) return;
     try {
-      const response = await fetch("/internal-tasks/dashboard", {
+      const response = await fetch("/internal-tasks/notification-summary", {
         headers: {"Authorization": "Bearer " + bearer},
       });
       if (!response.ok) throw new Error("Dashboard indisponível");

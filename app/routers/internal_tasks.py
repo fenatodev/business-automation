@@ -327,6 +327,40 @@ def get_dashboard(
     }
 
 
+@router.get("/notification-summary", response_model=dict[str, dict[str, int]])
+def get_notification_summary(
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Return only the tenant-scoped counters needed by the operator bell."""
+    company_id = identity.company_id
+    opportunities_pending = db.scalar(
+        select(func.count(Opportunity.id)).where(
+            Opportunity.company_id == company_id,
+            Opportunity.next_action == "pending",
+        )
+    ) or 0
+    conversations_open = db.scalar(
+        select(func.count(Conversation.id)).where(
+            Conversation.company_id == company_id,
+            Conversation.status == "open",
+        )
+    ) or 0
+    leads_new = db.scalar(
+        select(func.count(Lead.id)).where(
+            Lead.company_id == company_id,
+            Lead.status == "new",
+        )
+    ) or 0
+    task_summary = tasks.task_summary(db, company_id)
+    return {
+        "opportunities": {"pending": int(opportunities_pending)},
+        "conversations": {"open": int(conversations_open)},
+        "leads": {"new": int(leads_new)},
+        "tasks": {"failed": int(task_summary["failed"])},
+    }
+
+
 @router.get("/export-dashboard.csv")
 def export_dashboard_csv(
     db: Session = Depends(get_db),
