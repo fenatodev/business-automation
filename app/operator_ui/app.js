@@ -2958,14 +2958,17 @@
   async function updateNotifications() {
     if (!bearer) return;
     try {
-      const [oppRes, leadsRes, convRes] = await Promise.all([
+      const [oppRes, leadsRes, convRes, tasksRes] = await Promise.all([
         fetch("/opportunities", {headers: {"Authorization": "Bearer " + bearer}}),
         fetch("/leads?status=new&limit=100", {headers: {"Authorization": "Bearer " + bearer}}),
         fetch("/companies/1/conversations?status=open&limit=100", {headers: {"Authorization": "Bearer " + bearer}}),
+        // WP-277 — Failed tasks count
+        fetch("/internal-tasks?status=failed&limit=100", {headers: {"Authorization": "Bearer " + bearer}}),
       ]);
       let pendingCount = 0;
       let newLeadCount = 0;
       let openConvCount = 0;
+      let failedTaskCount = 0;
       // Opportunities pending badge
       if (oppRes.ok) {
         const opps = await oppRes.json();
@@ -2997,8 +3000,18 @@
           else { badge.hidden = true; }
         }
       }
+      // WP-277 — Failed tasks badge
+      if (tasksRes.ok) {
+        const tasks = await tasksRes.json();
+        if (Array.isArray(tasks)) {
+          failedTaskCount = tasks.length;
+          const badge = $("task-failed-badge");
+          if (tasks.length > 0) { badge.hidden = false; badge.textContent = tasks.length; }
+          else { badge.hidden = true; }
+        }
+      }
       // WP-251 — Update browser tab title with notification count
-      const total = pendingCount + newLeadCount + openConvCount;
+      const total = pendingCount + newLeadCount + openConvCount + failedTaskCount;
       if (total > 0) {
         document.title = `(${total}) Operador`;
       } else {

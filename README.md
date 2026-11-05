@@ -48,7 +48,10 @@ O projeto tem dois objetivos complementares:
 - Opportunity lead/customer filtering (WP-263) — `?lead_id=` and `?customer_id=` in GET /opportunities with UI dropdowns;
 - Lead name sorting (WP-261) — `?sort=name` in GET /leads with UI dropdown option;
 - Brief title sorting (WP-262) — `?sort=title` in GET /proposal-briefs with UI dropdown option;
-- 3092 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
+- Consolidated dashboard CSV export (WP-275) — single CSV with all dashboard metrics;
+- Opportunity progress bar (WP-276) — visual cycle progress indicator in opportunity detail panel;
+- Failed tasks badge in notifications (WP-277) — failed internal tasks appear in notification polling and task section badge;
+- 3130 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
 
 ## Engineering case study
 
@@ -61,7 +64,7 @@ The useful part of this project is not the idea of "AI for business". It is the 
 | Authentication | Bearer API keys with role-based access (admin, operator). |
 | API failure behavior | Missing resources and invalid ownership return explicit client errors. |
 | AI integration failure | Customer input preserved, failed agent output not fabricated, internal details not leaked. |
-| Regression protection | 2965 tests cover happy paths, failures, tenant isolation, UI contracts, cross-module creation, AI-assisted triage and intake suggestion. |
+| Regression protection | 3130 tests cover happy paths, failures, tenant isolation, UI contracts, cross-module creation, AI-assisted triage and intake suggestion. |
 | Product boundaries | ERP and automation engines remain external integrations. |
 
 ### Example evaluation mindset
