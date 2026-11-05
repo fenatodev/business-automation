@@ -1458,3 +1458,15 @@ UI: botão "🤖 Sugerir" no formulário de oportunidade do lead detail;
 painel mostra sugestão com botão "Preencher formulário".
 
 **3064 testes passaram**; compileall, diff-check, JS syntax: PASS.
+
+### WP-272 — Sugestão IA para criar oportunidade a partir de customer
+
+O operador podia criar oportunidades manualmente a partir do customer
+mas não tinha ajuda da IA. Adicionado `POST /customers/{id}/suggest-opportunity`
+que analisa nome, telefone, e-mail e origem do customer para sugerir
+título, descrição, orçamento, prazo e requisitos. Usa config da company.
+
+UI: botão "🤖 Sugerir" no formulário de oportunidade do customer detail;
+painel mostra sugestão com botão "Preencher formulário".
+
+**3073 testes passaram**; compileall, diff-check, JS syntax: PASS.

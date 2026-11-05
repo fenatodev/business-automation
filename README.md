@@ -48,7 +48,7 @@ O projeto tem dois objetivos complementares:
 - Opportunity lead/customer filtering (WP-263) — `?lead_id=` and `?customer_id=` in GET /opportunities with UI dropdowns;
 - Lead name sorting (WP-261) — `?sort=name` in GET /leads with UI dropdown option;
 - Brief title sorting (WP-262) — `?sort=title` in GET /proposal-briefs with UI dropdown option;
-- 3064 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
+- 3073 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
 
 ## Engineering case study
 
