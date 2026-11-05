@@ -1359,3 +1359,10 @@ Adicionado `sort=name` ao backend de leads e opção "Nome" ao dropdown
 de ordenação na UI do operador. Completou a paridade com customers.
 
 **2959 testes passaram**; compileall, diff-check, JS syntax: PASS.
+
+### WP-262 — Ordenação de briefs por título da oportunidade
+
+Adicionado `sort=title` ao backend de briefs e opção "Título" ao dropdown
+de ordenação na UI do operador.
+
+**2965 testes passaram**; compileall, diff-check, JS syntax: PASS.
