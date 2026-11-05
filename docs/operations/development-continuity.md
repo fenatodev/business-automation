@@ -1344,3 +1344,11 @@ Botão "🤖 Sugerir" no formulário de intake comercial chama o endpoint
 antes da criação da oportunidade. Tratamento de erro 503.
 
 **2953 tests passed**; JS syntax, compileall, diff-check: PASS.
+
+### WP-260 — Raccourcis clavier étendus et correction du store agent
+
+Ajouté Ctrl+8 (Briefs), Ctrl+9 (Intake) et Ctrl+0 (Agent) pour la
+navigation entre toutes les sections du panneau opérateur. Corrigé la
+duplication de _agent_config_store dans commercial_intake.py.
+
+**2953 tests passed**; compileall, diff-check, JS syntax: PASS.
