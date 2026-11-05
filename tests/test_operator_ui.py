@@ -271,7 +271,7 @@ def test_task_list_items_have_listitem_semantics():
 
 def test_task_filters_have_search_semantics():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
-    assert '<div id="task-filters" role="search" aria-label="Filtros de tarefas">' in html
+    assert '<div id="task-filters" class="task-filters" role="search" aria-label="Filtros de tarefas">' in html
 
 
 def test_task_pagination_controls_task_list():
