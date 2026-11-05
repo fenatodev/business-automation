@@ -628,9 +628,15 @@
         meta.textContent = " " + parts.join(" · ");
         item.append(title, meta);
         item.addEventListener("click", () => {
-          // Navigate to the leads section
-          workspaceObserver.disconnect();
-          refreshLeads().catch(() => {});
+          showLeadDetail(lead);
+        });
+        item.tabIndex = 0;
+        item.setAttribute("role", "button");
+        item.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            showLeadDetail(lead);
+          }
         });
         list.appendChild(item);
       }
