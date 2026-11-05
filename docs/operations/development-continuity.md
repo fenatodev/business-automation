@@ -1666,6 +1666,19 @@ Validação local: **3207 testes passaram**, 87 testes direcionados, `node
 passaram. Não houve migration, mudança de credencial, mensagem externa ou
 deploy.
 
+## WP-391 — Snapshot único para badges de notificações (05/11/2026)
+
+O polling de notificações agora consulta uma única vez
+`GET /internal-tasks/dashboard`, que já é autenticado e tenant-scoped. Os
+badges de oportunidades pendentes, leads novos, conversas abertas e tarefas
+falhas são derivados do mesmo snapshot, reduzindo cinco requisições e evitando
+contagens observadas em momentos diferentes.
+
+Validação local: **3207 testes passaram**, testes direcionados do operador e
+do badge de tarefas passaram, `node --check app/operator_ui/app.js`,
+`compileall app tests` e `git diff --check` passaram. Nenhuma migration,
+credencial, mensagem externa ou deploy foi envolvido.
+
 ## Fatias funcionais completas
 
 Cada novo ciclo deve entregar uma capacidade operacional vertical com backend/API,
