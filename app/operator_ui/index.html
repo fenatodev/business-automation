@@ -1288,7 +1288,7 @@
         <div class="briefs-filters">
           <div class="briefs-filter-group">
             <label for="briefs-status-filter">Status</label>
-            <select id="briefs-status-filter">
+            <select id="briefs-status-filter" aria-controls="briefs-list">
               <option value="">Todos</option>
               <option value="draft">Rascunho</option>
               <option value="ready_for_review">Pronto para revisão</option>
@@ -1298,13 +1298,13 @@
           <!-- WP-234 — Filter briefs by opportunity -->
           <div class="briefs-filter-group">
             <label for="briefs-opportunity-filter">Oportunidade</label>
-            <select id="briefs-opportunity-filter">
+            <select id="briefs-opportunity-filter" aria-controls="briefs-list">
               <option value="">Todas</option>
             </select>
           </div>
           <div class="briefs-filter-group">
             <label for="briefs-sort">Ordenar</label>
-            <select id="briefs-sort">
+            <select id="briefs-sort" aria-controls="briefs-list">
               <option value="created_at">Data</option>
               <option value="id">ID</option>
               <option value="status">Status</option>
@@ -1313,21 +1313,21 @@
           </div>
           <div class="briefs-filter-group briefs-search-inline">
             <label for="briefs-search">Buscar</label>
-            <input type="text" id="briefs-search" placeholder="Buscar por título ou referência...">
+            <input type="text" id="briefs-search" aria-controls="briefs-list" placeholder="Buscar por título ou referência...">
           </div>
           <div class="briefs-filter-group">
             <label for="briefs-from-date">Data de</label>
-            <input type="date" id="briefs-from-date" class="briefs-date-filter">
+            <input type="date" id="briefs-from-date" class="briefs-date-filter" aria-controls="briefs-list">
           </div>
           <div class="briefs-filter-group">
             <label for="briefs-to-date">Data até</label>
-            <input type="date" id="briefs-to-date" class="briefs-date-filter">
+            <input type="date" id="briefs-to-date" class="briefs-date-filter" aria-controls="briefs-list">
           </div>
           <div class="briefs-filter-group" style="align-self:flex-end;">
-            <button id="briefs-export-csv" type="button" class="secondary">Exportar CSV</button>
+            <button id="briefs-export-csv" type="button" class="secondary" aria-controls="briefs-list">Exportar CSV</button>
           </div>
           <div class="briefs-filter-group" style="align-self:flex-end;">
-            <button id="briefs-clear-filters" type="button" class="secondary">Limpar filtros</button>
+            <button id="briefs-clear-filters" type="button" class="secondary" aria-controls="briefs-list">Limpar filtros</button>
           </div>
         </div>
         <!-- WP-184 — Bulk status bar -->
@@ -1339,7 +1339,7 @@
           </select>
           <button id="briefs-bulk-apply" type="button" class="primary">Atualizar status</button>
           <button id="briefs-bulk-delete" type="button" class="danger">Excluir selecionados</button>
-          <button id="briefs-bulk-clear" type="button" class="secondary">Limpar seleção</button>
+          <button id="briefs-bulk-clear" type="button" class="secondary" aria-controls="briefs-list">Limpar seleção</button>
         </div>
         <div id="briefs-list" class="briefs-list"></div>
         <!-- WP-187 — Brief detail panel -->
@@ -1350,10 +1350,10 @@
           </div>
           <div id="brief-detail-content" class="detail-panel-content"></div>
         </div>
-        <div id="briefs-pagination" class="briefs-pagination" hidden>
-          <button id="briefs-prev-page" type="button" class="secondary">Anterior</button>
-          <span id="briefs-page-info" class="small"></span>
-          <button id="briefs-next-page" type="button" class="secondary">Próxima</button>
+        <div id="briefs-pagination" class="briefs-pagination" role="navigation" aria-label="Paginação de briefs" aria-controls="briefs-list" hidden>
+          <button id="briefs-prev-page" type="button" class="secondary" aria-controls="briefs-list">Anterior</button>
+          <span id="briefs-page-info" class="small" aria-live="polite"></span>
+          <button id="briefs-next-page" type="button" class="secondary" aria-controls="briefs-list">Próxima</button>
         </div>
       </section>
 
