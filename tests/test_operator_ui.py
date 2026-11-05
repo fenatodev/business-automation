@@ -139,7 +139,7 @@ def test_brief_status_is_live_region():
 
 def test_task_failure_badge_is_live_region():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
-    assert 'id="task-failed-badge" class="pending-badge" aria-live="polite" hidden' in html
+    assert 'id="task-failed-badge" class="pending-badge" hidden aria-live="polite"' in html
 
 
 def test_task_list_has_list_semantics():
