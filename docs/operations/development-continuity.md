@@ -1352,3 +1352,10 @@ navigation entre toutes les sections du panneau opérateur. Corrigé la
 duplication de _agent_config_store dans commercial_intake.py.
 
 **2953 tests passed**; compileall, diff-check, JS syntax: PASS.
+
+### WP-261 — Ordenação de leads por nome
+
+Adicionado `sort=name` ao backend de leads e opção "Nome" ao dropdown
+de ordenação na UI do operador. Completou a paridade com customers.
+
+**2959 testes passaram**; compileall, diff-check, JS syntax: PASS.
