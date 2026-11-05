@@ -1400,3 +1400,14 @@ filtrar. Adicionado `?priority_level=` em list, count e export CSV.
 Dropdown "Prioridade" na UI com opções Alta, Média e Baixa.
 
 **3017 testes passaram**; compileall, diff-check, JS syntax: PASS.
+
+### WP-267 — Sugestão IA para criar lead a partir de conversa
+
+O operador podia criar leads manualmente a partir de conversas mas
+não tinha ajuda da IA. Adicionado `POST /conversations/{id}/suggest-lead`
+que analisa as mensagens e sugere nome, telefone e interesse.
+
+UI: botão "🤖 Sugerir" no formulário de criar lead; painel mostra
+razão; "Preencher lead" auto-preenche os campos. Segue regra XSS.
+
+**3027 testes passaram**; compileall, diff-check, JS syntax: PASS.
