@@ -106,6 +106,10 @@ duração e correlation ID. Corpo, query string, credenciais e conteúdo de clie
 não entram nesse log. Esse contrato é a observabilidade mínima do piloto; não
 pressupõe tracing distribuído ou uma plataforma externa.
 
+Para verificar apenas se o processo está vivo, use `GET /health`. O endpoint é
+público e não consulta banco nem serviços externos; uma resposta `200` com
+`{"status":"ok","service":"business-automation"}` confirma liveness.
+
 Logs de operação e diagnóstico não devem incluir:
 
 - body de requisição/resposta;

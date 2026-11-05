@@ -40,3 +40,9 @@ def root():
         "name": "Fenato Business Automation API",
         "status": "running",
     }
+
+
+@app.get("/health")
+def health():
+    """Stable liveness contract for local operators and process supervisors."""
+    return {"status": "ok", "service": "business-automation"}
