@@ -1493,3 +1493,29 @@ UI: formulários de nova conversa nos painéis de detalhes de lead e
 customer com canal, mensagem e botão "🤖 Sugerir".
 
 **3092 testes passaram**; compileall, diff-check, JS syntax: PASS.
+
+### WP-278 — Ownership de contato em oportunidades
+
+Oportunidades passaram a aceitar um Lead ou Customer explícito do mesmo tenant,
+com FKs, índices e constraint de exclusão mútua. A UI cria/sugere conversas
+somente para o contato vinculado e invalida respostas assíncronas antigas.
+
+PR #291 integrado em `d96f76d`. Migration `f278a1b2c3d4` foi validada somente
+no PostgreSQL descartável; nenhuma migration real foi executada.
+
+### WP-279 — Conversas de oportunidades vinculadas a Customers
+
+O painel passou a tratar Customer e Lead de forma equivalente, usando
+`customer_id` ou `lead_id` conforme o vínculo explícito. PR #292 integrado em
+`9d00838`; não houve alteração de schema adicional.
+
+### WP-280 — Conversas realmente relacionadas à oportunidade
+
+Adicionada `/opportunities/{id}/linked-conversations`, filtrada pelo contato
+vinculado e pela Company autenticada. O endpoint legado permanece compatível;
+somente o painel usa a rota vinculada. PR #293 integrado em `8cda491`.
+
+Estado atual: suíte local em **3141 testes**, dois warnings preexistentes;
+compileall, sintaxe JavaScript e diff-check passam. O próximo recorte pode
+tratar observabilidade ou filtros operacionais, mantendo o gate de não enviar
+mensagens externas e sem ativar n8n.
