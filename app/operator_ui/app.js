@@ -5688,6 +5688,14 @@
       updateBriefPagination();
     } catch (e) {
       console.error("[refreshBriefs]", e);
+      if (list) {
+        list.replaceChildren();
+        const errorState = document.createElement("p");
+        errorState.className = "small";
+        errorState.setAttribute("role", "status");
+        errorState.textContent = "Não foi possível carregar os briefs.";
+        list.appendChild(errorState);
+      }
     } finally {
       if (list) list.setAttribute("aria-busy", "false");
     }
