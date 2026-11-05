@@ -5710,6 +5710,7 @@
     if (!briefs || briefs.length === 0) {
       const p = document.createElement("p");
       p.className = "small";
+      p.setAttribute("role", "status");
       p.textContent = "Nenhum brief encontrado.";
       list.appendChild(p);
       return;
