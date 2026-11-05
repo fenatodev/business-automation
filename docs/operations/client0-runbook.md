@@ -109,6 +109,9 @@ pressupõe tracing distribuído ou uma plataforma externa.
 Para verificar apenas se o processo está vivo, use `GET /health`. O endpoint é
 público e não consulta banco nem serviços externos; uma resposta `200` com
 `{"status":"ok","service":"business-automation"}` confirma liveness.
+Para verificar prontidão operacional, use `GET /readiness`: ele executa apenas
+`SELECT 1` no banco e retorna `200` quando a conexão está disponível, ou `503`
+com `{"status":"unready"}` sem expor detalhes de infraestrutura.
 
 Logs de operação e diagnóstico não devem incluir:
 
