@@ -269,6 +269,11 @@ def test_task_list_items_have_listitem_semantics():
     assert 'item.setAttribute("role", "listitem")' in js
 
 
+def test_task_filters_have_search_semantics():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    assert '<div id="task-filters" role="search" aria-label="Filtros de tarefas">' in html
+
+
 def test_task_pagination_controls_task_list():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
     assert 'id="tasks-pagination" class="task-pagination" role="navigation" aria-label="Paginação de tarefas" aria-controls="tasks-list" hidden' in html
