@@ -1740,6 +1740,25 @@ Validação local: **3211 testes passaram**, 87 testes direcionados, `node
 passaram. Nenhuma migration, credencial, mensagem externa ou deploy foi
 envolvido.
 
+## WP-394 — Esteira local contínua do Codex (05/11/2026)
+
+Adicionados `scripts/continuous-dev-loop.sh` e
+`scripts/continuous-dev-task.md`. O supervisor executa uma WP por invocação,
+preserva logs fora do Git, recusa árvore suja e PRs abertos antes da execução,
+respeita `/tmp/business-automation.stop` e usa backoff para falhas transitórias.
+O PR #394 foi integrado no commit `f48438b` após CI verde.
+
+## WP-395 — Merge seguro após CI do PR do Codex (05/11/2026)
+
+O supervisor agora exige exatamente um PR `wp/*` após a execução, captura o
+head SHA, aguarda o `statusCheckRollup` via GitHub CLI com polling interrompível,
+recusa CI pending/falho, head alterado, revisão humana e escopos protegidos,
+faz merge normal de WPs seguras e sincroniza `main` antes de retornar sucesso.
+Falhas terminais não entram no backoff automático nem iniciam outra WP.
+Fixtures locais validaram PR inexistente, PR único verde, CI pending com
+stop-file, CI falho, múltiplos PRs, revisão obrigatória, árvore suja e branch
+fora da `main`.
+
 ## Fatias funcionais completas
 
 Cada novo ciclo deve entregar uma capacidade operacional vertical com backend/API,
