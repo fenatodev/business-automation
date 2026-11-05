@@ -457,6 +457,7 @@
     for (const listId of ["opp-conv-list", "opp-leads-list", "opp-customers-list"]) {
       const list = $(listId);
       if (!list) continue;
+      list.setAttribute("aria-busy", "true");
       list.replaceChildren();
       const loading = document.createElement("p");
       loading.className = "small";
@@ -517,6 +518,10 @@
     await loadOpportunityLeads(id, version);
     await loadOpportunityCustomers(id, version);
     if (version !== selectionVersion || id !== selectedId) return;
+    for (const listId of ["opp-conv-list", "opp-leads-list", "opp-customers-list"]) {
+      const list = $(listId);
+      if (list) list.setAttribute("aria-busy", "false");
+    }
     // WP-278 — Show/hide create conversation button
     if ($("opp-create-conv")) $("opp-create-conv").hidden = opportunityContactType === null;
     if ($("opp-conv-form")) $("opp-conv-form").hidden = true;
