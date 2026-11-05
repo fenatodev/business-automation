@@ -402,3 +402,16 @@ def test_briefs_filters_and_pagination_control_briefs_list():
 def test_briefs_list_has_list_semantics():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
     assert 'id="briefs-list" class="briefs-list" role="list" aria-label="Lista de briefs"' in html
+
+
+def test_briefs_bulk_actions_have_accessible_list_context():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    assert 'id="briefs-bulk-bar" class="briefs-bulk-bar" role="group" aria-label="Ações de briefs em massa" hidden' in html
+    assert 'id="briefs-bulk-selected-count" class="small" aria-live="polite"' in html
+    for control in (
+        'id="briefs-bulk-status" aria-controls="briefs-list"',
+        'id="briefs-bulk-apply" type="button" class="primary" aria-controls="briefs-list"',
+        'id="briefs-bulk-delete" type="button" class="danger" aria-controls="briefs-list"',
+        'id="briefs-bulk-clear" type="button" class="secondary" aria-controls="briefs-list"',
+    ):
+        assert control in html
