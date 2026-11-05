@@ -177,6 +177,11 @@ def test_opportunity_current_page_has_current_semantics():
     assert 'id="opp-page" class="small" aria-live="polite" aria-current="page"' in html
 
 
+def test_task_pagination_has_navigation_semantics():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    assert 'id="tasks-pagination" class="task-pagination" role="navigation" aria-label="Paginação de tarefas" hidden' in html
+
+
 def test_opportunity_pagination_controls_have_context_labels():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
     assert 'id="opp-prev" type="button" class="secondary" aria-label="Página anterior de oportunidades" disabled' in html
