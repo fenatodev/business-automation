@@ -177,6 +177,11 @@ def test_opportunity_current_page_has_current_semantics():
     assert 'id="opp-page" class="small" aria-live="polite" aria-current="page"' in html
 
 
+def test_task_selection_checkboxes_have_accessible_labels():
+    js = (Path(__file__).parents[1] / "app/operator_ui/app.js").read_text()
+    assert 'checkbox.setAttribute("aria-label", "Selecionar tarefa #" + task.id)' in js
+
+
 def test_task_list_items_have_listitem_semantics():
     js = (Path(__file__).parents[1] / "app/operator_ui/app.js").read_text()
     assert 'item.setAttribute("role", "listitem")' in js
