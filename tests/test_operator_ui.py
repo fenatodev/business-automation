@@ -137,6 +137,12 @@ def test_brief_status_is_live_region():
     assert 'aria-live="polite"' in html
 
 
+def test_opportunity_pagination_controls_have_context_labels():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    assert 'id="opp-prev" type="button" class="secondary" aria-label="Página anterior de oportunidades" disabled' in html
+    assert 'id="opp-next" type="button" class="secondary" aria-label="Próxima página de oportunidades" disabled' in html
+
+
 def test_opportunity_pagination_has_navigation_semantics():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
     assert 'id="opp-pagination" class="opp-pagination" role="navigation" aria-label="Paginação de oportunidades" hidden' in html
