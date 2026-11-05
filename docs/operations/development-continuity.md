@@ -1540,6 +1540,15 @@ Validação local e CI: **3142 testes passaram**, dois warnings preexistentes;
 compileall e diff-check: PASS. Nenhuma migration ou alteração de API foi
 necessária.
 
+### WP-294 — Semântica de itens nas listas vinculadas
+
+Os cards dinâmicos de conversas, Leads e Customers vinculados agora usam
+`role="listitem"`, completando a semântica das listas anunciadas pela WP-293.
+PR #307 integrado em `bcbaef9`.
+
+Validação local e CI: **3143 testes passaram**, dois warnings preexistentes;
+compileall e diff-check: PASS.
+
 ### WP-289 — Foco visual para contatos vinculados
 
 Cards de Lead e Customer vinculados a oportunidades agora exibem foco visível
