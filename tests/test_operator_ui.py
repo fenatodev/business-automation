@@ -137,6 +137,11 @@ def test_brief_status_is_live_region():
     assert 'aria-live="polite"' in html
 
 
+def test_opportunity_progress_percent_is_live_region():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    assert 'id="opp-progress-percent" class="small" aria-live="polite"' in html
+
+
 def test_selected_opportunity_captured_at_is_live_region():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
     assert 'id="selected-captured-at" aria-live="polite"' in html
