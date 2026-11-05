@@ -793,6 +793,39 @@
           <div id="lead-detail-info" class="lead-detail-info"></div>
           <h4>Conversas</h4>
           <button id="lead-new-conv" type="button" class="secondary">+ Nova conversa</button>
+          <form id="lead-conv-form" class="lead-conv-form" hidden>
+            <h4>Nova conversa</h4>
+            <div>
+              <label for="lead-conv-channel">Canal *</label>
+              <select id="lead-conv-channel" required>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="instagram">Instagram</option>
+                <option value="web">Web</option>
+                <option value="telegram">Telegram</option>
+                <option value="email">E-mail</option>
+              </select>
+            </div>
+            <div>
+              <label for="lead-conv-message">Mensagem *</label>
+              <textarea id="lead-conv-message" required rows="3" placeholder="Primeira mensagem"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button type="submit" class="primary">Criar</button>
+              <button type="button" id="lead-conv-suggest" class="secondary">🤖 Sugerir</button>
+              <button type="button" id="cancel-lead-conv" class="secondary">Cancelar</button>
+            </div>
+          </form>
+          <!-- WP-274 — AI message suggestion from lead -->
+          <div id="lead-conv-suggestion" class="conv-suggestion" hidden>
+            <div class="conv-suggestion-header">
+              <strong>💡 Sugestão de mensagem</strong>
+              <button id="lead-conv-dismiss-suggestion" type="button" class="secondary small">Fechar</button>
+            </div>
+            <div id="lead-conv-suggestion-content"></div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button id="lead-conv-apply-suggestion" type="button" class="primary">Usar mensagem</button>
+            </div>
+          </div>
           <div id="lead-conversations-list" class="lead-conv-list"></div>
 
           <!-- WP-192 — Create opportunity from lead detail -->
@@ -961,6 +994,39 @@
 
           <h4>Conversas</h4>
           <button id="customer-new-conv" type="button" class="secondary">+ Nova conversa</button>
+          <form id="customer-conv-form" class="customer-conv-form" hidden>
+            <h4>Nova conversa</h4>
+            <div>
+              <label for="customer-conv-channel">Canal *</label>
+              <select id="customer-conv-channel" required>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="instagram">Instagram</option>
+                <option value="web">Web</option>
+                <option value="telegram">Telegram</option>
+                <option value="email">E-mail</option>
+              </select>
+            </div>
+            <div>
+              <label for="customer-conv-message">Mensagem *</label>
+              <textarea id="customer-conv-message" required rows="3" placeholder="Primeira mensagem"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button type="submit" class="primary">Criar</button>
+              <button type="button" id="customer-conv-suggest" class="secondary">🤖 Sugerir</button>
+              <button type="button" id="cancel-customer-conv" class="secondary">Cancelar</button>
+            </div>
+          </form>
+          <!-- WP-274 — AI message suggestion from customer -->
+          <div id="customer-conv-suggestion" class="conv-suggestion" hidden>
+            <div class="conv-suggestion-header">
+              <strong>💡 Sugestão de mensagem</strong>
+              <button id="customer-conv-dismiss-suggestion" type="button" class="secondary small">Fechar</button>
+            </div>
+            <div id="customer-conv-suggestion-content"></div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button id="customer-conv-apply-suggestion" type="button" class="primary">Usar mensagem</button>
+            </div>
+          </div>
           <div id="customer-conversations-list" class="customer-conv-list"></div>
 
           <!-- WP-167 — Create opportunity from customer -->

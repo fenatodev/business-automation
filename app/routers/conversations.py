@@ -507,6 +507,113 @@ def suggest_opportunity(
         }
 
 
+@router.post("/conversations/suggest-message")
+def suggest_conversation_message(
+    data: ConversationCreate,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """WP-274 — Suggest the first message for a new conversation.
+
+    Analyzes the lead or customer context and suggests an appropriate
+    opening message. Does NOT persist — returns only the suggestion.
+    """
+    # Build context from the entity being contacted
+    context_parts = [f"Canal: {data.channel}"]
+
+    if data.lead_id is not None:
+        lead = db.scalar(
+            select(Lead).where(
+                Lead.id == data.lead_id,
+                Lead.company_id == identity.company_id,
+            )
+        )
+        if lead is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Lead not found",
+            )
+        context_parts.append(f"Tipo: Lead")
+        context_parts.append(f"Nome: {lead.name}")
+        if lead.phone:
+            context_parts.append(f"Telefone: {lead.phone}")
+        if lead.source:
+            context_parts.append(f"Fonte: {lead.source}")
+        if lead.interest:
+            context_parts.append(f"Interesse: {lead.interest}")
+    elif data.customer_id is not None:
+        customer = db.scalar(
+            select(Customer).where(
+                Customer.id == data.customer_id,
+                Customer.company_id == identity.company_id,
+            )
+        )
+        if customer is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Customer not found",
+            )
+        context_parts.append(f"Tipo: Customer")
+        context_parts.append(f"Nome: {customer.name}")
+        if customer.phone:
+            context_parts.append(f"Telefone: {customer.phone}")
+        if customer.email:
+            context_parts.append(f"E-mail: {customer.email}")
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="lead_id or customer_id is required",
+        )
+
+    context_text = "\n".join(context_parts)
+
+    system_prompt = (
+        "Com base nos dados deste contato, sugira uma primeira mensagem "
+        "para iniciar uma conversa comercial.\n"
+        "Retorne apenas JSON com esta estrutura:\n"
+        '{"suggested_message": "mensagem de abertura profissional", '
+        '"reasoning": "por que esta mensagem é adequada"}\n'
+        "A mensagem deve ser profissional, personalizada e adequada ao canal."
+    )
+
+    try:
+        from app.routers.companies import _agent_config_store, _record_agent_call
+
+        company_config = _agent_config_store.get(identity.company_id, {})
+        effective_temp = company_config.get("temperature")
+        effective_max_tokens = company_config.get("max_tokens")
+        effective_model = company_config.get("model")
+
+        response = generate_agent_reply(
+            message=context_text,
+            history=[],
+            system_prompt=system_prompt,
+            temperature=effective_temp,
+            max_tokens=effective_max_tokens,
+            model=effective_model,
+        )
+        _record_agent_call(identity.company_id, success=True)
+    except AgentServiceError:
+        _record_agent_call(identity.company_id, success=False)
+        raise HTTPException(
+            status_code=503,
+            detail="Agent service unavailable",
+        )
+
+    import json
+    try:
+        parsed = json.loads(response)
+        return {
+            "suggested_message": parsed.get("suggested_message", response),
+            "reasoning": parsed.get("reasoning", response),
+        }
+    except (json.JSONDecodeError, AttributeError):
+        return {
+            "suggested_message": response,
+            "reasoning": response,
+        }
+
+
 @router.post("/conversations/{conversation_id}/summarize")
 def summarize_conversation(
     conversation_id: int,

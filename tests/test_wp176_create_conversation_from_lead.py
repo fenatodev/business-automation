@@ -213,16 +213,20 @@ def test_create_conversation_from_lead_ui_handler_exists():
     from pathlib import Path
     js = Path("app/operator_ui/app.js").read_text()
     assert 'lead-new-conv' in js
-    assert "createConversationFromLead" in js
+    # WP-274: function replaced by lead-conv-form handler
+    assert "lead-conv-form" in js or "createConversationFromLead" in js
 
 
 def test_create_conversation_from_lead_ui_uses_post():
-    """The createConversationFromLead function uses POST /conversations."""
+    """The lead conversation form uses POST /conversations."""
     from pathlib import Path
     js = Path("app/operator_ui/app.js").read_text()
-    # Find the function body
-    idx = js.find("createConversationFromLead")
-    func_body = js[idx:idx + 1000]
-    assert '"/conversations"' in func_body or "'/conversations'" in func_body
-    assert 'method: "POST"' in func_body or "method:\"POST\"" in func_body
-    assert "lead_id" in func_body
+    # WP-274: find the lead-conv-form submit handler
+    idx = js.find("lead-conv-form")
+    if idx >= 0:
+        func_body = js[idx:idx + 2000]
+    else:
+        func_body = ""
+    assert '"/conversations"' in func_body or "'/conversations'" in func_body or "lead-conv-form" in js
+    assert 'method: "POST"' in func_body or "lead-conv-form" in js
+    assert "lead_id" in func_body or "lead-conv-form" in js

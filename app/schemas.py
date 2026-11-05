@@ -198,6 +198,13 @@ class CustomerLeadSuggestion(BaseModel):
     reasoning: str
 
 
+class ConversationMessageSuggestion(BaseModel):
+    """AI-generated first message suggestion for a new conversation."""
+
+    suggested_message: str
+    reasoning: str
+
+
 class CompanyCreate(BaseModel):
     name: str
     slug: str

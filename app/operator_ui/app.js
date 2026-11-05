@@ -3235,42 +3235,124 @@
     hideLeadDetail();
   });
 
-  // WP-176 — Create conversation from lead detail
+  // WP-274 — Create conversation from lead detail with form
   $("lead-new-conv").addEventListener("click", () => {
-    if (currentLeadId) {
-      createConversationFromLead(currentLeadId);
-    }
+    $("lead-conv-form").hidden = false;
+    $("lead-conv-suggestion").hidden = true;
+    leadConvSuggestion = null;
   });
 
-  async function createConversationFromLead(leadId) {
-    if (!bearer) return;
-    const company = opportunities.length > 0 ? opportunities[0].company_id : null;
-    if (!company) {notify("Não é possível determinar a company.", true); return;}
-    const channel = prompt("Canal da conversa (whatsapp, instagram, web, telegram, email):");
-    if (!channel) return;
-    const allowedChannels = ["whatsapp", "instagram", "web", "telegram", "email"];
-    if (!allowedChannels.includes(channel.trim().toLowerCase())) {
-      notify("Canal inválido.", true);
-      return;
-    }
-    const res = await fetch("/conversations", {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer " + bearer,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        company_id: company,
-        channel: channel.trim().toLowerCase(),
-        lead_id: leadId,
-      }),
+  $("cancel-lead-conv").addEventListener("click", () => {
+    $("lead-conv-form").hidden = true;
+    $("lead-conv-form").reset();
+    $("lead-conv-suggestion").hidden = true;
+    leadConvSuggestion = null;
+  });
+
+  // WP-274 — Suggest message for lead conversation
+  $("lead-conv-suggest").addEventListener("click", () => {
+    const button = $("lead-conv-suggest");
+    if (!currentLeadId) {notify("Selecione um lead.", true); return;}
+    withButton(button, async () => {
+      try {
+        const res = await fetch("/conversations/suggest-message", {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + bearer,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            company_id: opportunities.length > 0 ? opportunities[0].company_id : null,
+            channel: $("lead-conv-channel").value,
+            lead_id: currentLeadId,
+          }),
+        });
+        if (res.status === 503) {notify("Agente indisponível.", true); return;}
+        if (!res.ok) {notify("Falha ao gerar sugestão.", true); return;}
+        const data = await res.json();
+        renderLeadConvSuggestion(data);
+        $("lead-conv-suggestion").hidden = false;
+        notify("Sugestão gerada.");
+      } catch (e) {
+        notify("Erro ao gerar sugestão.", true);
+      }
     });
-    if (res.status === 403) {disconnect("Permissão de operador necessária."); return;}
-    if (res.status === 409) {notify("Conversa já existe.", true); return;}
-    if (!res.ok) {console.error("[createConversationFromLead] Erro:", res.status); return;}
-    notify("Conversa criada.");
-    await showLeadDetail(leads.find((l) => l.id === leadId) || {id: leadId});
+  });
+
+  $("lead-conv-dismiss-suggestion").addEventListener("click", () => {
+    $("lead-conv-suggestion").hidden = true;
+  });
+
+  $("lead-conv-apply-suggestion").addEventListener("click", () => {
+    if (leadConvSuggestion && leadConvSuggestion.suggested_message) {
+      $("lead-conv-message").value = leadConvSuggestion.suggested_message;
+    }
+    $("lead-conv-suggestion").hidden = true;
+    $("lead-conv-form").hidden = false;
+    $("lead-conv-message").focus();
+  });
+
+  var leadConvSuggestion = null;
+  function renderLeadConvSuggestion(data) {
+    leadConvSuggestion = data;
+    const target = $("lead-conv-suggestion-content");
+    target.replaceChildren();
+    if (data.reasoning) {
+      const p = document.createElement("p");
+      p.textContent = data.reasoning;
+      target.appendChild(p);
+    }
+    if (data.suggested_message) {
+      const strong = document.createElement("strong");
+      strong.textContent = "Mensagem:";
+      target.appendChild(strong);
+      const p = document.createElement("p");
+      p.textContent = data.suggested_message;
+      target.appendChild(p);
+    }
   }
+
+  $("lead-conv-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const button = $("lead-conv-form").querySelector('button[type="submit"]');
+    withButton(button, async () => {
+      const channel = $("lead-conv-channel").value;
+      const message = $("lead-conv-message").value.trim();
+      if (!message) {notify("Preencha a mensagem.", true); return;}
+      const company = opportunities.length > 0 ? opportunities[0].company_id : null;
+      const res = await fetch("/conversations", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + bearer,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          company_id: company,
+          channel,
+          lead_id: currentLeadId,
+        }),
+      });
+      if (res.status === 403) {disconnect("Permissão de operador necessária."); return;}
+      if (res.status === 409) {notify("Conversa já existe.", true); return;}
+      if (!res.ok) {console.error("[lead-conv-form] Erro:", res.status); return;}
+      const conv = await res.json();
+      // Send the first message
+      await fetch("/conversations/" + conv.id + "/messages", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + bearer,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({sender_type: "human", content: message}),
+      });
+      $("lead-conv-form").hidden = true;
+      $("lead-conv-form").reset();
+      $("lead-conv-suggestion").hidden = true;
+      leadConvSuggestion = null;
+      notify("Conversa criada.");
+      await showLeadDetail(leads.find((l) => l.id === currentLeadId) || {id: currentLeadId});
+    });
+  });
 
   // WP-192 — Create opportunity from lead detail
   $("lead-new-opp").addEventListener("click", () => {
@@ -3921,10 +4003,122 @@
     hideCustomerDetail();
   });
 
+  // WP-274 — Create conversation from customer detail with form
   $("customer-new-conv").addEventListener("click", () => {
-    if (currentCustomerId) {
-      createConversationFromCustomer(currentCustomerId);
+    $("customer-conv-form").hidden = false;
+    $("customer-conv-suggestion").hidden = true;
+    customerConvSuggestion = null;
+  });
+
+  $("cancel-customer-conv").addEventListener("click", () => {
+    $("customer-conv-form").hidden = true;
+    $("customer-conv-form").reset();
+    $("customer-conv-suggestion").hidden = true;
+    customerConvSuggestion = null;
+  });
+
+  // WP-274 — Suggest message for customer conversation
+  $("customer-conv-suggest").addEventListener("click", () => {
+    const button = $("customer-conv-suggest");
+    if (!currentCustomerId) {notify("Selecione um customer.", true); return;}
+    withButton(button, async () => {
+      try {
+        const res = await fetch("/conversations/suggest-message", {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + bearer,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            company_id: opportunities.length > 0 ? opportunities[0].company_id : null,
+            channel: $("customer-conv-channel").value,
+            customer_id: currentCustomerId,
+          }),
+        });
+        if (res.status === 503) {notify("Agente indisponível.", true); return;}
+        if (!res.ok) {notify("Falha ao gerar sugestão.", true); return;}
+        const data = await res.json();
+        renderCustomerConvSuggestion(data);
+        $("customer-conv-suggestion").hidden = false;
+        notify("Sugestão gerada.");
+      } catch (e) {
+        notify("Erro ao gerar sugestão.", true);
+      }
+    });
+  });
+
+  $("customer-conv-dismiss-suggestion").addEventListener("click", () => {
+    $("customer-conv-suggestion").hidden = true;
+  });
+
+  $("customer-conv-apply-suggestion").addEventListener("click", () => {
+    if (customerConvSuggestion && customerConvSuggestion.suggested_message) {
+      $("customer-conv-message").value = customerConvSuggestion.suggested_message;
     }
+    $("customer-conv-suggestion").hidden = true;
+    $("customer-conv-form").hidden = false;
+    $("customer-conv-message").focus();
+  });
+
+  var customerConvSuggestion = null;
+  function renderCustomerConvSuggestion(data) {
+    customerConvSuggestion = data;
+    const target = $("customer-conv-suggestion-content");
+    target.replaceChildren();
+    if (data.reasoning) {
+      const p = document.createElement("p");
+      p.textContent = data.reasoning;
+      target.appendChild(p);
+    }
+    if (data.suggested_message) {
+      const strong = document.createElement("strong");
+      strong.textContent = "Mensagem:";
+      target.appendChild(strong);
+      const p = document.createElement("p");
+      p.textContent = data.suggested_message;
+      target.appendChild(p);
+    }
+  }
+
+  $("customer-conv-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const button = $("customer-conv-form").querySelector('button[type="submit"]');
+    withButton(button, async () => {
+      const channel = $("customer-conv-channel").value;
+      const message = $("customer-conv-message").value.trim();
+      if (!message) {notify("Preencha a mensagem.", true); return;}
+      const company = opportunities.length > 0 ? opportunities[0].company_id : null;
+      const res = await fetch("/conversations", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + bearer,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          company_id: company,
+          channel,
+          customer_id: currentCustomerId,
+        }),
+      });
+      if (res.status === 403) {disconnect("Permissão de operador necessária."); return;}
+      if (res.status === 409) {notify("Conversa já existe.", true); return;}
+      if (!res.ok) {console.error("[customer-conv-form] Erro:", res.status); return;}
+      const conv = await res.json();
+      await fetch("/conversations/" + conv.id + "/messages", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + bearer,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({sender_type: "human", content: message}),
+      });
+      $("customer-conv-form").hidden = true;
+      $("customer-conv-form").reset();
+      $("customer-conv-suggestion").hidden = true;
+      customerConvSuggestion = null;
+      notify("Conversa criada.");
+      await loadCustomerConversations(currentCustomerId);
+    });
   });
 
   // WP-167 — Create opportunity from customer detail
