@@ -327,6 +327,176 @@ def get_dashboard(
     }
 
 
+@router.get("/export-dashboard.csv")
+def export_dashboard_csv(
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """WP-275 — Export a consolidated dashboard report as CSV.
+
+    Combines all dashboard metrics into a single CSV for management reporting.
+    """
+    company_id = identity.company_id
+
+    # Reuse dashboard logic to gather all metrics
+    opp_rows = db.execute(
+        select(Opportunity.next_action, func.count(Opportunity.id))
+        .where(Opportunity.company_id == company_id)
+        .group_by(Opportunity.next_action)
+    ).all()
+    opportunities = {"total": sum(c for _, c in opp_rows)}
+    for action, count in opp_rows:
+        opportunities[action] = int(count)
+
+    conv_rows = db.execute(
+        select(Conversation.status, func.count(Conversation.id))
+        .where(Conversation.company_id == company_id)
+        .group_by(Conversation.status)
+    ).all()
+    conversations = {"total": sum(c for _, c in conv_rows)}
+    for status, count in conv_rows:
+        conversations[status] = int(count)
+
+    lead_rows = db.execute(
+        select(Lead.status, func.count(Lead.id))
+        .where(Lead.company_id == company_id)
+        .group_by(Lead.status)
+    ).all()
+    leads = {"total": sum(c for _, c in lead_rows)}
+    for status, count in lead_rows:
+        leads[status] = int(count)
+
+    task_summary = tasks.task_summary(db, company_id)
+
+    rq_rows = db.execute(
+        select(ReviewQueueItem.status, func.count(ReviewQueueItem.id))
+        .where(ReviewQueueItem.company_id == company_id)
+        .group_by(ReviewQueueItem.status)
+    ).all()
+    review_queue = {"total": sum(c for _, c in rq_rows)}
+    for status, count in rq_rows:
+        review_queue[status] = int(count)
+
+    brief_rows = db.execute(
+        select(ProposalBrief.status, func.count(ProposalBrief.id))
+        .join(Opportunity, ProposalBrief.opportunity_id == Opportunity.id)
+        .where(Opportunity.company_id == company_id)
+        .group_by(ProposalBrief.status)
+    ).all()
+    briefs = {"total": sum(c for _, c in brief_rows)}
+    for status, count in brief_rows:
+        briefs[status] = int(count)
+
+    # Agent usage
+    from app.routers.companies import _get_agent_usage
+    agent_usage = _get_agent_usage(company_id)
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Section 1: Opportunities
+    writer.writerow(["OPORTUNIDADES"])
+    writer.writerow(["Status", "Quantidade"])
+    for key, value in opportunities.items():
+        writer.writerow([key, value])
+    writer.writerow([])
+
+    # Section 2: Conversations
+    writer.writerow(["CONVERSAS"])
+    writer.writerow(["Status", "Quantidade"])
+    for key, value in conversations.items():
+        writer.writerow([key, value])
+    writer.writerow([])
+
+    # Section 3: Leads
+    writer.writerow(["LEADS"])
+    writer.writerow(["Status", "Quantidade"])
+    for key, value in leads.items():
+        writer.writerow([key, value])
+    writer.writerow([])
+
+    # Section 4: Briefs
+    writer.writerow(["BRIEFS"])
+    writer.writerow(["Status", "Quantidade"])
+    for key, value in briefs.items():
+        writer.writerow([key, value])
+    writer.writerow([])
+
+    # Section 5: Internal Tasks
+    writer.writerow(["TAREFAS INTERNAS"])
+    writer.writerow(["Status", "Quantidade"])
+    for key, value in task_summary.items():
+        writer.writerow([key, value])
+    writer.writerow([])
+
+    # Section 6: Review Queue
+    writer.writerow(["FILA DE REVISAO"])
+    writer.writerow(["Status", "Quantidade"])
+    for key, value in review_queue.items():
+        writer.writerow([key, value])
+    writer.writerow([])
+
+    # Section 7: Agent Usage
+    writer.writerow(["AGENTE IA"])
+    writer.writerow(["Metrica", "Valor"])
+    writer.writerow(["Total de chamadas", agent_usage["total_calls"]])
+    writer.writerow(["Chamadas bem-sucedidas", agent_usage["successful_calls"]])
+    writer.writerow(["Chamadas falhadas", agent_usage["failed_calls"]])
+    writer.writerow([])
+
+    # Section 8: Performance Metrics
+    total_leads = db.scalar(
+        select(func.count(Lead.id)).where(Lead.company_id == company_id)
+    ) or 0
+    converted_leads = db.scalar(
+        select(func.count(Lead.id)).where(
+            Lead.company_id == company_id,
+            Lead.status == "converted",
+        )
+    ) or 0
+    lead_conversion_rate = (converted_leads / total_leads * 100) if total_leads > 0 else 0.0
+
+    total_opps = db.scalar(
+        select(func.count(Opportunity.id)).where(Opportunity.company_id == company_id)
+    ) or 0
+    closed_opps = db.scalar(
+        select(func.count(Opportunity.id)).where(
+            Opportunity.company_id == company_id,
+            Opportunity.next_action.in_(["done", "lost", "ignore"]),
+        )
+    ) or 0
+    opportunity_closure_rate = (closed_opps / total_opps * 100) if total_opps > 0 else 0.0
+
+    total_briefs = db.scalar(
+        select(func.count(ProposalBrief.id))
+        .join(Opportunity, ProposalBrief.opportunity_id == Opportunity.id)
+        .where(Opportunity.company_id == company_id)
+    ) or 0
+    approved_briefs = db.scalar(
+        select(func.count(ProposalBrief.id))
+        .join(Opportunity, ProposalBrief.opportunity_id == Opportunity.id)
+        .where(
+            Opportunity.company_id == company_id,
+            ProposalBrief.status == "approved",
+        )
+    ) or 0
+    brief_approval_rate = (approved_briefs / total_briefs * 100) if total_briefs > 0 else 0.0
+
+    writer.writerow(["INDICADORES DE PERFORMANCE"])
+    writer.writerow(["Indicador", "Taxa (%)", "Contagem"])
+    writer.writerow(["Taxa de conversao de leads", round(lead_conversion_rate, 1), f"{converted_leads}/{total_leads}"])
+    writer.writerow(["Taxa de fechamento de oportunidades", round(opportunity_closure_rate, 1), f"{closed_opps}/{total_opps}"])
+    writer.writerow(["Taxa de aprovacao de briefs", round(brief_approval_rate, 1), f"{approved_briefs}/{total_briefs}"])
+
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=dashboard_report.csv",
+        },
+    )
+
+
 @router.get("/recent-activities")
 def get_recent_activities(
     limit: int = Query(default=20, ge=1, le=100),

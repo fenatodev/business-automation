@@ -2909,6 +2909,30 @@
     notify("Dashboard atualizado.");
   }));
 
+  // WP-275 — Export dashboard as CSV
+  $("dashboard-export").addEventListener("click", () => {
+    if (!bearer) return;
+    const link = document.createElement("a");
+    link.href = "/internal-tasks/export-dashboard.csv";
+    link.download = "dashboard_report.csv";
+    fetch("/internal-tasks/export-dashboard.csv", {
+      headers: { "Authorization": "Bearer " + bearer },
+    }).then((res) => {
+      if (!res.ok) throw new Error("Falha ao exportar");
+      return res.blob();
+    }).then((blob) => {
+      const url = URL.createObjectURL(blob);
+      link.href = url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      notify("Relatório exportado.");
+    }).catch((e) => {
+      notify("Erro ao exportar relatório.", true);
+    });
+  });
+
   // WP-107 — Notifications polling
   const NOTIFICATION_REFRESH_MS = 30000;
   let notificationIntervalId = null;
