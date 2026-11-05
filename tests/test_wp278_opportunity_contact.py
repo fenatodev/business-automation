@@ -126,6 +126,12 @@ def test_ui_shows_customer_context_in_portuguese():
     assert 'const openDetail = showCustomerDeta\\u0069l' in js
     assert 'item.addEventListener("keydown", (event) => {' in js
     assert 'showLeadDetail(lead)' in js
+
+
+def test_ui_announces_linked_list_loading_state():
+    js = (Path(__file__).parents[1] / "app/operator_ui/app.js").read_text()
+    assert 'for (const listId of ["opp-conv-list", "opp-leads-list", "opp-customers-list"])' in js
+    assert 'loading.textContent = "Carregando…"' in js
     assert 'item.setAttribute("aria-label", "Abrir lead "' in js
     assert 'item.setAttribute("aria-label", "Abrir cliente "' in js
     assert 'item.setAttribute("role", "listitem")' in js
