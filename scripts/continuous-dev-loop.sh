@@ -200,7 +200,7 @@ run_codex() {
     log "DRY-RUN: would execute Codex with $TASK_FILE"
     return 0
   fi
-  "$CODEX_BIN" exec --ephemeral --sandbox danger-full-access \
+  "$CODEX_BIN" exec --ephemeral --ignore-user-config --sandbox danger-full-access \
     -c 'approval_policy="never"' -C "$WORKTREE" \
     -o "$LOG_DIR/$RUN_ID.last-message.txt" < "$TASK_FILE"
 }
