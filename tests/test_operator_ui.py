@@ -137,6 +137,11 @@ def test_brief_status_is_live_region():
     assert 'aria-live="polite"' in html
 
 
+def test_task_list_has_list_semantics():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    assert 'id="tasks-list" class="task-list" role="list" aria-label="Lista de tarefas internas"' in html
+
+
 def test_opportunity_bulk_actions_have_context_label():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
     assert 'id="bulk-triage-bar" class="bulk-triage-bar" role="group" aria-label="Ações de triagem em massa" hidden' in html
