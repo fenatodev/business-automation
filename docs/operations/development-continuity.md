@@ -1446,3 +1446,15 @@ UI: botão "📋 Resumir" no painel de detalhes; painel mostra resumo,
 pontos-chave e ações pendentes. Segue regra XSS.
 
 **3055 testes passaram**; compileall, diff-check, JS syntax: PASS.
+
+### WP-271 — Sugestão IA para criar oportunidade a partir de lead
+
+O operador podia criar oportunidades manualmente a partir do lead
+mas não tinha ajuda da IA. Adicionado `POST /leads/{id}/suggest-opportunity`
+que analisa nome, interesse, fonte e status do lead para sugerir
+título, descrição, orçamento, prazo e requisitos. Usa config da company.
+
+UI: botão "🤖 Sugerir" no formulário de oportunidade do lead detail;
+painel mostra sugestão com botão "Preencher formulário".
+
+**3064 testes passaram**; compileall, diff-check, JS syntax: PASS.
