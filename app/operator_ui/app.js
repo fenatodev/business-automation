@@ -5718,6 +5718,9 @@
       const item = document.createElement("div");
       item.className = "brief-item";
       item.style.cursor = "pointer";
+      item.tabIndex = 0;
+      item.setAttribute("role", "button");
+      item.setAttribute("aria-label", "Abrir brief de " + (brief.opportunity_title || "Sem título"));
       // WP-184 — Checkbox for bulk selection
       const cb = document.createElement("input");
       cb.type = "checkbox";
@@ -5750,6 +5753,12 @@
       item.addEventListener("click", (e) => {
         if (e.target.type === "checkbox") return;
         selectBrief(brief.id, brief.opportunity_title || "Sem título");
+      });
+      item.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          selectBrief(brief.id, brief.opportunity_title || "Sem título");
+        }
       });
       list.appendChild(item);
     });
