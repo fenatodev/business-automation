@@ -137,6 +137,11 @@ def test_brief_status_is_live_region():
     assert 'aria-live="polite"' in html
 
 
+def test_opportunity_list_has_list_semantics():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    assert 'id="opportunity-list" class="opportunity-list" role="list" aria-label="Lista de oportunidades"' in html
+
+
 def test_opportunity_current_page_has_current_semantics():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
     assert 'id="opp-page" class="small" aria-live="polite" aria-current="page"' in html
