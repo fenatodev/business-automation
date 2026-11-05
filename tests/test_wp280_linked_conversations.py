@@ -56,6 +56,7 @@ def test_linked_opportunity_lists_are_live_regions():
     assert 'id="opp-conv-list"' in html and 'aria-live="polite"' in html
     assert 'id="opp-leads-list"' in html and 'aria-live="polite"' in html
     assert 'id="opp-customers-list"' in html and 'aria-live="polite"' in html
+    assert html.count('aria-busy="false"') >= 3
 
 
 def test_customer_linked_conversations_are_returned(client, admin_headers, operator_a_headers):
