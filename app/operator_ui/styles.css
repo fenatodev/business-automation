@@ -1503,6 +1503,10 @@ footer {
 .opp-lead-item:hover {
   background: var(--hover);
 }
+.opp-lead-item:focus-visible {
+  outline: 2px solid var(--accent, #2563eb);
+  outline-offset: 2px;
+}
 .opp-lead-item .small {
   color: var(--muted);
 }
