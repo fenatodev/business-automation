@@ -5674,6 +5674,8 @@
 
   async function refreshBriefs() {
     if (!bearer) return;
+    const list = $("briefs-list");
+    if (list) list.setAttribute("aria-busy", "true");
     try {
       // WP-234 — Populate opportunity filter
       populateBriefOpportunityFilter();
@@ -5686,6 +5688,8 @@
       updateBriefPagination();
     } catch (e) {
       console.error("[refreshBriefs]", e);
+    } finally {
+      if (list) list.setAttribute("aria-busy", "false");
     }
   }
 

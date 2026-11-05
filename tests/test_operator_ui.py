@@ -149,6 +149,12 @@ def test_briefs_list_is_live_region():
     assert 'aria-live="polite"' in html
 
 
+def test_briefs_refresh_toggles_busy_state():
+    js = (Path(__file__).parents[1] / "app/operator_ui/app.js").read_text()
+    assert 'list.setAttribute("aria-busy", "true")' in js
+    assert 'list.setAttribute("aria-busy", "false")' in js
+
+
 def test_task_failure_badge_is_live_region():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
     assert 'id="task-failed-badge" class="pending-badge" hidden aria-live="polite"' in html
