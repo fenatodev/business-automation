@@ -137,6 +137,11 @@ def test_brief_status_is_live_region():
     assert 'aria-live="polite"' in html
 
 
+def test_opportunity_list_summary_is_live_region():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    assert 'id="list-meta" class="small" aria-live="polite"' in html
+
+
 def test_opportunity_edit_group_has_accessible_name():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
     assert 'id="opp-edit-panel" class="opp-edit-panel" role="group" aria-labelledby="opp-edit-title"' in html
