@@ -1826,3 +1826,73 @@ footer {
   outline: none;
   border-color: var(--accent);
 }
+
+/* WP-265 — Reply templates management */
+.reply-templates-management {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.reply-templates-management h3 {
+  font-size: 1rem;
+  margin: 0 0 4px;
+}
+.reply-templates-management p.small {
+  margin: 0 0 12px;
+  color: var(--muted);
+}
+#reply-template-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.reply-template-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.reply-template-form-field label {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.reply-template-form-field input,
+.reply-template-form-field textarea {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-input);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+.reply-template-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.reply-template-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.reply-template-item-name {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.reply-template-item-preview {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 400px;
+}
+.reply-template-item button {
+  flex-shrink: 0;
+  margin-left: 8px;
+}

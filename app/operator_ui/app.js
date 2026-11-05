@@ -4993,9 +4993,84 @@
   const loadAgentConfigOnConnect = () => {
     if (bearer && company) {
       loadAgentConfig();
+      loadReplyTemplateList();
     }
   };
   // Call after a short delay to ensure connection is established
   setTimeout(loadAgentConfigOnConnect, 1000);
+
+  // WP-265 — Reply templates management
+  async function loadReplyTemplateList() {
+    if (!bearer || !company) return;
+    const listEl = $("reply-template-list");
+    if (!listEl) return;
+    try {
+      const templates = await templateApi(`/companies/${company}/reply-templates`, "GET");
+      listEl.replaceChildren();
+      if (!templates || templates.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "small";
+        empty.textContent = "Nenhum template salvo.";
+        listEl.appendChild(empty);
+        return;
+      }
+      for (const t of templates) {
+        const item = document.createElement("div");
+        item.className = "reply-template-item";
+        const info = document.createElement("div");
+        const name = document.createElement("span");
+        name.className = "reply-template-item-name";
+        name.textContent = t.name;
+        const preview = document.createElement("span");
+        preview.className = "reply-template-item-preview";
+        preview.textContent = t.content;
+        info.appendChild(name);
+        info.appendChild(preview);
+        item.appendChild(info);
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className = "danger";
+        deleteBtn.textContent = "Excluir";
+        deleteBtn.addEventListener("click", () => deleteReplyTemplate(t.id, item));
+        item.appendChild(deleteBtn);
+        listEl.appendChild(item);
+      }
+    } catch {
+      // templates not available
+    }
+  }
+
+  async function deleteReplyTemplate(templateId, itemEl) {
+    if (!bearer || !company) return;
+    if (!confirm("Excluir este template?")) return;
+    try {
+      await templateApi(`/companies/${company}/reply-templates/${templateId}`, "DELETE");
+      itemEl.remove();
+      notify("Template excluído.");
+      // Refresh the reply template selector in conversation reply
+      loadReplyTemplates();
+    } catch {
+      notify("Erro ao excluir template.");
+    }
+  }
+
+  $("reply-template-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!bearer || !company) return;
+    const name = $("reply-template-name").value.trim();
+    const content = $("reply-template-content").value.trim();
+    if (!name || !content) return;
+    try {
+      await templateApi(`/companies/${company}/reply-templates`, "POST", {name, content});
+      $("reply-template-name").value = "";
+      $("reply-template-content").value = "";
+      notify("Template salvo.");
+      await loadReplyTemplateList();
+      // Refresh the reply template selector in conversation reply
+      loadReplyTemplates();
+    } catch (err) {
+      notify("Erro ao salvar template.");
+    }
+  });
 
 })();

@@ -1183,6 +1183,24 @@
           </div>
           <div id="agent-config-status" class="small" style="margin-top:8px;"></div>
         </div>
+
+        <!-- WP-265 — Reply templates management -->
+        <div class="reply-templates-management">
+          <h3>Templates de resposta</h3>
+          <p class="small">Salve respostas comuns para reusar rapidamente.</p>
+          <form id="reply-template-form">
+            <div class="reply-template-form-field">
+              <label for="reply-template-name">Nome</label>
+              <input type="text" id="reply-template-name" placeholder="Ex: Saudação inicial" maxlength="100" required>
+            </div>
+            <div class="reply-template-form-field">
+              <label for="reply-template-content">Conteúdo</label>
+              <textarea id="reply-template-content" rows="3" placeholder="Texto da resposta..." maxlength="4000" required></textarea>
+            </div>
+            <button id="reply-template-save" type="submit" class="primary">Salvar template</button>
+          </form>
+          <div id="reply-template-list" class="reply-template-list"></div>
+        </div>
       </section>
 
     </main>
