@@ -1549,6 +1549,15 @@ PR #307 integrado em `bcbaef9`.
 Validação local e CI: **3143 testes passaram**, dois warnings preexistentes;
 compileall e diff-check: PASS.
 
+### WP-299 — Estado busy das listas vinculadas
+
+As listas de conversas, Leads e Customers vinculados agora expõem `aria-busy`
+durante a atualização e removem o estado ao concluir. PR #312 integrado após
+CI verde.
+
+Validação local e CI: **3144 testes passaram**, dois warnings preexistentes;
+compileall e diff-check: PASS.
+
 ### WP-289 — Foco visual para contatos vinculados
 
 Cards de Lead e Customer vinculados a oportunidades agora exibem foco visível
