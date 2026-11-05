@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import AccessIdentity
 from app.dependencies import get_db, require_operator
-from app.models import Company, Conversation, Opportunity, ProposalBrief
+from app.models import Company, Conversation, Customer, Lead, Opportunity, ProposalBrief
 from app.schemas import (
     OpportunityBulkDelete,
     OpportunityBulkTriage,
@@ -103,8 +103,19 @@ def create_opportunity(
         deadline=data.deadline,
         requirements=data.requirements,
         captured_at=data.captured_at,
+        lead_id=data.lead_id,
+        customer_id=data.customer_id,
         next_action="pending",
     )
+
+    if data.lead_id is not None and db.scalar(select(Lead.id).where(
+        Lead.id == data.lead_id, Lead.company_id == identity.company_id,
+    )) is None:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    if data.customer_id is not None and db.scalar(select(Customer.id).where(
+        Customer.id == data.customer_id, Customer.company_id == identity.company_id,
+    )) is None:
+        raise HTTPException(status_code=404, detail="Customer not found")
 
     db.add(opportunity)
 
@@ -710,6 +721,23 @@ def get_opportunity_leads(
     return leads
 
 
+@router.get("/opportunities/{opportunity_id}/linked-leads")
+def get_opportunity_linked_leads(
+    opportunity_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Return only the lead explicitly linked to this opportunity."""
+    opportunity = _get_tenant_opportunity(db, opportunity_id, identity.company_id)
+    if opportunity.lead_id is None:
+        return []
+    lead = db.scalar(select(Lead).where(
+        Lead.id == opportunity.lead_id,
+        Lead.company_id == identity.company_id,
+    ))
+    return [] if lead is None else [lead]
+
+
 @router.get("/opportunities/{opportunity_id}/timeline")
 def get_opportunity_timeline(
     opportunity_id: int,
@@ -796,6 +824,24 @@ def update_opportunity(
         opportunity.description = changed["description"]
     if "triage_note" in changed:
         opportunity.triage_note = changed["triage_note"]
+    if "lead_id" in changed and "customer_id" in changed:
+        raise HTTPException(status_code=400, detail="opportunity cannot belong to both lead and customer")
+    if "lead_id" in changed:
+        if changed["lead_id"] is not None and db.scalar(select(Lead.id).where(
+            Lead.id == changed["lead_id"], Lead.company_id == identity.company_id,
+        )) is None:
+            raise HTTPException(status_code=404, detail="Lead not found")
+        opportunity.lead_id = changed["lead_id"]
+        if changed["lead_id"] is not None:
+            opportunity.customer_id = None
+    if "customer_id" in changed:
+        if changed["customer_id"] is not None and db.scalar(select(Customer.id).where(
+            Customer.id == changed["customer_id"], Customer.company_id == identity.company_id,
+        )) is None:
+            raise HTTPException(status_code=404, detail="Customer not found")
+        opportunity.customer_id = changed["customer_id"]
+        if changed["customer_id"] is not None:
+            opportunity.lead_id = None
 
     db.commit()
     db.refresh(opportunity)

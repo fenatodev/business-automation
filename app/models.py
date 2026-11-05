@@ -172,6 +172,10 @@ class Opportunity(Base):
             "external_url",
             name="uq_opportunities_company_external_url",
         ),
+        CheckConstraint(
+            "NOT (lead_id IS NOT NULL AND customer_id IS NOT NULL)",
+            name="ck_opportunities_one_contact",
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -180,6 +184,13 @@ class Opportunity(Base):
         ForeignKey("companies.id"),
         nullable=False,
         index=True,
+    )
+
+    lead_id: Mapped[int | None] = mapped_column(
+        ForeignKey("leads.id"), nullable=True, index=True,
+    )
+    customer_id: Mapped[int | None] = mapped_column(
+        ForeignKey("customers.id"), nullable=True, index=True,
     )
 
     source: Mapped[str] = mapped_column(String(50))

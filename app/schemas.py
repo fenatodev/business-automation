@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class LeadCreate(BaseModel):
@@ -57,7 +57,6 @@ class ConversationCreate(BaseModel):
     ]
     lead_id: int | None = None
     customer_id: int | None = None
-
 
 class ConversationUpdate(BaseModel):
     """Update conversation status and/or internal note."""
@@ -253,6 +252,14 @@ class OpportunityCreate(BaseModel):
     deadline: str | None = Field(default=None, max_length=120)
     requirements: str | None = None
     captured_at: datetime
+    lead_id: int | None = None
+    customer_id: int | None = None
+
+    @model_validator(mode="after")
+    def one_contact(self):
+        if self.lead_id is not None and self.customer_id is not None:
+            raise ValueError("opportunity cannot belong to both lead and customer")
+        return self
 
 
 class IntakeCreate(BaseModel):
@@ -299,6 +306,14 @@ class OpportunityUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=200)
     description: str | None = Field(default=None, min_length=1)
     triage_note: str | None = None
+    lead_id: int | None = None
+    customer_id: int | None = None
+
+    @model_validator(mode="after")
+    def one_contact(self):
+        if self.lead_id is not None and self.customer_id is not None:
+            raise ValueError("opportunity cannot belong to both lead and customer")
+        return self
 
 
 class OpportunityTriageUpdate(BaseModel):
