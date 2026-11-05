@@ -5191,6 +5191,8 @@
 
   async function refreshTasks() {
     if (!bearer) return;
+    const taskList = $("tasks-list");
+    taskList.setAttribute("aria-busy", "true");
     // WP-172 — Reset bulk selection on refresh
     selectedTaskIds.clear();
     $("task-bulk-bar").hidden = true;
@@ -5206,6 +5208,8 @@
       if (e instanceof ApiFailure && e.status !== 401) {
         notify("Falha ao carregar tarefas.", true);
       }
+    } finally {
+      taskList.setAttribute("aria-busy", "false");
     }
   }
 
