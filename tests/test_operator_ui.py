@@ -397,3 +397,8 @@ def test_briefs_filters_and_pagination_control_briefs_list():
         'id="briefs-page-info" class="small" aria-live="polite"',
     ):
         assert control in html
+
+
+def test_briefs_list_has_list_semantics():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    assert 'id="briefs-list" class="briefs-list" role="list" aria-label="Lista de briefs"' in html
