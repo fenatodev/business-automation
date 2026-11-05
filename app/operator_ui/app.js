@@ -523,6 +523,7 @@
       if (!conversations || !conversations.length) {
         const empty = document.createElement("p");
         empty.className = "small";
+        empty.setAttribute("role", "status");
         empty.textContent = "Nenhuma conversa registrada.";
         list.appendChild(empty);
         return;
@@ -617,6 +618,7 @@
         opportunityCompanyId = null;
         const empty = document.createElement("p");
         empty.className = "small";
+        empty.setAttribute("role", "status");
         empty.textContent = "Nenhum lead registrado.";
         list.appendChild(empty);
         return;
@@ -667,6 +669,14 @@
       if (expectedVersion !== selectionVersion || id !== selectedId) return;
       const list = $("opp-customers-list");
       list.replaceChildren();
+      if (!customers || !customers.length) {
+        const empty = document.createElement("p");
+        empty.className = "small";
+        empty.setAttribute("role", "status");
+        empty.textContent = "Nenhum cliente registrado.";
+        list.appendChild(empty);
+        return;
+      }
       for (const customer of customers || []) {
         opportunityCustomerId = customer.id;
         opportunityCompanyId = customer.company_id;
