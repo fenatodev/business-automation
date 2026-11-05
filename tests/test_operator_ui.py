@@ -137,6 +137,11 @@ def test_brief_status_is_live_region():
     assert 'aria-live="polite"' in html
 
 
+def test_selected_opportunity_deadline_is_live_region():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    assert 'id="selected-deadline" aria-live="polite"' in html
+
+
 def test_selected_opportunity_budget_is_live_region():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
     assert 'id="selected-budget" aria-live="polite"' in html
