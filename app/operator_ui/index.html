@@ -521,6 +521,13 @@
             <span id="msg-page" class="small">Página 1</span>
             <button id="msg-next" type="button" class="secondary" disabled>Próxima</button>
           </div>
+          <!-- WP-264 — Reply template selector -->
+          <div id="reply-template-section" class="reply-template-section" hidden>
+            <label for="reply-template-select">Template</label>
+            <select id="reply-template-select">
+              <option value="">Selecione um template...</option>
+            </select>
+          </div>
           <form id="human-reply-form" hidden>
             <input id="reply-conv-id" name="conversation_id" type="hidden" readonly>
             <label for="reply-message">Mensagem *</label>

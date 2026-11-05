@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.auth import AccessIdentity
 from app.dependencies import get_db, require_admin, require_operator
 from app.models import Company
-from app.schemas import CompanyAgentConfig, CompanyCreate
+from app.schemas import CompanyAgentConfig, CompanyCreate, ReplyTemplate, ReplyTemplateCreate
 
 
 # WP-204 — In-memory agent config store (no migration required)
@@ -15,6 +15,11 @@ _agent_config_store: dict[int, dict[str, object]] = {}
 # WP-216 — In-memory agent usage tracking (no migration required)
 # Keyed by company_id; values are dicts with total_calls, successful_calls, failed_calls
 _agent_usage_store: dict[int, dict[str, int]] = {}
+
+# WP-264 — In-memory reply templates store (no migration required)
+# Keyed by company_id; values are lists of dicts with id, name, content
+_reply_template_store: dict[int, list[dict[str, object]]] = {}
+_reply_template_next_id: int = 1
 
 
 def _get_agent_usage(company_id: int) -> dict[str, int]:
@@ -180,3 +185,80 @@ def get_agent_usage(
         "successful_calls": usage["successful_calls"],
         "failed_calls": usage["failed_calls"],
     }
+
+
+# ---------------------------------------------------------------------------
+# WP-264 — Reply templates
+# ---------------------------------------------------------------------------
+
+
+@router.get("/companies/{company_id}/reply-templates")
+def list_reply_templates(
+    company_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """List reply templates for this company."""
+    company = db.scalar(select(Company).where(Company.id == company_id))
+    if company is None:
+        raise HTTPException(status_code=404, detail="Company not found")
+    if company.id != identity.company_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    templates = _reply_template_store.get(company_id, [])
+    return [
+        ReplyTemplate(id=t["id"], name=t["name"], content=t["content"])
+        for t in templates
+    ]
+
+
+@router.post("/companies/{company_id}/reply-templates")
+def create_reply_template(
+    company_id: int,
+    data: ReplyTemplateCreate,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Create a new reply template for this company."""
+    company = db.scalar(select(Company).where(Company.id == company_id))
+    if company is None:
+        raise HTTPException(status_code=404, detail="Company not found")
+    if company.id != identity.company_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    global _reply_template_next_id
+    if company_id not in _reply_template_store:
+        _reply_template_store[company_id] = []
+
+    template = {
+        "id": _reply_template_next_id,
+        "name": data.name,
+        "content": data.content,
+    }
+    _reply_template_next_id += 1
+    _reply_template_store[company_id].append(template)
+
+    return ReplyTemplate(id=template["id"], name=template["name"], content=template["content"])
+
+
+@router.delete("/companies/{company_id}/reply-templates/{template_id}")
+def delete_reply_template(
+    company_id: int,
+    template_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Delete a reply template."""
+    company = db.scalar(select(Company).where(Company.id == company_id))
+    if company is None:
+        raise HTTPException(status_code=404, detail="Company not found")
+    if company.id != identity.company_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    templates = _reply_template_store.get(company_id, [])
+    for i, t in enumerate(templates):
+        if t["id"] == template_id:
+            templates.pop(i)
+            return {"deleted": True}
+
+    raise HTTPException(status_code=404, detail="Template not found")

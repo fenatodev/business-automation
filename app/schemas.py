@@ -314,6 +314,23 @@ class ConversationBulkDelete(BaseModel):
     conversation_ids: list[int] = Field(min_length=1, max_length=100)
 
 
+class ReplyTemplateCreate(BaseModel):
+    """Create a reusable reply template."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=100)
+    content: str = Field(min_length=1, max_length=4000)
+
+
+class ReplyTemplate(BaseModel):
+    """Reply template for reuse in conversations."""
+
+    id: int
+    name: str
+    content: str
+
+
 class ProposalBriefCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

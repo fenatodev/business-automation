@@ -448,6 +448,27 @@ footer {
   border-top: 1px solid var(--line);
 }
 
+/* WP-264 — Reply template selector */
+.reply-template-section {
+  margin-top: 12px;
+}
+.reply-template-section label {
+  font-size: 0.82rem;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 4px;
+}
+.reply-template-section select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
 /* WP-140 — Conversation internal note */
 .conv-note-section {
   margin-top: 16px;

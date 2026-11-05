@@ -181,6 +181,8 @@
     convLeadFilterPopulated = false;
     stopDashboardRefresh();
     stopNotificationRefresh();
+    // WP-264 — Hide reply template section
+    $("reply-template-section").hidden = true;
     notify(message);
   }
 
@@ -1499,6 +1501,26 @@
     return response.json();
   }
 
+  // WP-264 — Reply templates API with strict allowlist.
+  async function templateApi(path, method = "GET", body) {
+    if (!bearer) throw new Error("Conecte um operador.");
+    if (!/^\/companies\/\d+\/reply-templates(\/\d+)?$/.test(path)) {
+      throw new Error("Rota de templates não permitida.");
+    }
+    const epoch = sessionEpoch;
+    const headers = {Authorization: "Bearer " + bearer};
+    if (body !== undefined) headers["Content-Type"] = "application/json";
+    const response = await fetch(path, {method, headers, body: body === undefined ? undefined : JSON.stringify(body),
+      credentials: "omit", cache: "no-store", redirect: "error", referrerPolicy: "no-referrer"});
+    if (epoch !== sessionEpoch) throw new Error("Sessão encerrada.");
+    if (response.status === 401) {
+      disconnect("Credencial inválida.");
+      throw new ApiFailure(401);
+    }
+    if (!response.ok) throw new ApiFailure(response.status);
+    return response.json();
+  }
+
   const channelLabels = {
     whatsapp: "WhatsApp",
     instagram: "Instagram",
@@ -1629,6 +1651,8 @@
     await loadMessages(id);
     // WP-140 — Load internal note
     await loadConversationNote(id);
+    // WP-264 — Load reply templates
+    await loadReplyTemplates();
   }
 
   async function loadMessages(id) {
@@ -1694,6 +1718,49 @@
       $("conv-note-text").value = "";
       $("conv-note-status").textContent = "";
     }
+  }
+
+  // WP-264 — Load reply templates for the current company
+  async function loadReplyTemplates() {
+    const select = $("reply-template-select");
+    if (!select) return;
+    try {
+      const company = opportunities.length > 0 ? opportunities[0].company_id : null;
+      if (!company) {
+        $("reply-template-section").hidden = true;
+        return;
+      }
+      const templates = await templateApi("/companies/" + company + "/reply-templates", "GET");
+      select.replaceChildren();
+      const allOpt = document.createElement("option");
+      allOpt.value = "";
+      allOpt.textContent = "Selecione um template...";
+      select.appendChild(allOpt);
+      for (const t of (templates || [])) {
+        const opt = document.createElement("option");
+        opt.value = String(t.id);
+        opt.textContent = t.name;
+        opt.dataset.content = t.content || "";
+        select.appendChild(opt);
+      }
+      $("reply-template-section").hidden = templates.length === 0;
+    } catch (e) {
+      $("reply-template-section").hidden = true;
+    }
+  }
+
+  // WP-264 — Fill reply message when template selected
+  if ($("reply-template-select")) {
+    $("reply-template-select").addEventListener("change", (e) => {
+      const templateId = e.target.value;
+      if (!templateId) return;
+      const selectedOption = e.target.options[e.target.selectedIndex];
+      // Store content in a data attribute for lookup
+      const content = selectedOption.dataset.content || "";
+      if (content) {
+        $("reply-message").value = content;
+      }
+    });
   }
 
   $("conv-note-save").addEventListener("click", () => withButton($("conv-note-save"), async () => {
