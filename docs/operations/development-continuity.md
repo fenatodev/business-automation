@@ -1558,6 +1558,14 @@ CI verde.
 Validação local e CI: **3144 testes passaram**, dois warnings preexistentes;
 compileall e diff-check: PASS.
 
+### WP-301 — Estado inicial busy das listas
+
+As listas vinculadas agora declaram explicitamente `aria-busy="false"` no
+HTML inicial, evitando estado indeterminado antes da primeira seleção.
+PR #314 integrado após CI verde.
+
+Validação: 6 testes direcionados, compileall e diff-check passaram.
+
 ### WP-289 — Foco visual para contatos vinculados
 
 Cards de Lead e Customer vinculados a oportunidades agora exibem foco visível
