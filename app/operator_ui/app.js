@@ -5215,6 +5215,7 @@
     if (!tasks.length) {
       const empty = document.createElement("p");
       empty.className = "small";
+      empty.setAttribute("role", "status");
       empty.textContent = "Nenhuma tarefa encontrada.";
       list.appendChild(empty);
       return;
