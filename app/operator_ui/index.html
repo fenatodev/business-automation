@@ -628,6 +628,14 @@
           <button id="conv-create-opp" type="button" class="secondary" hidden>+ Criar oportunidade desta conversa</button>
           <form id="conv-opp-form" class="conv-opp-form" hidden>
             <h4>Criar oportunidade a partir desta conversa</h4>
+            <!-- WP-269 — AI suggestion panel -->
+            <div id="conv-opp-suggestion" class="triage-suggestion-panel" hidden>
+              <div id="conv-opp-suggestion-content"></div>
+              <div style="display:flex;gap:8px;margin-top:8px;">
+                <button type="button" id="apply-conv-opp-suggestion" class="primary">Preencher oportunidade</button>
+                <button type="button" id="dismiss-conv-opp-suggestion" class="secondary">Descartar</button>
+              </div>
+            </div>
             <div>
               <label for="conv-opp-title">Título *</label>
               <input id="conv-opp-title" type="text" required maxlength="200">
@@ -652,6 +660,7 @@
             </div>
             <div style="display:flex;gap:8px;margin-top:8px;">
               <button type="submit" class="primary">Criar oportunidade</button>
+              <button type="button" id="conv-opp-suggest" class="secondary">🤖 Sugerir</button>
               <button type="button" id="cancel-conv-opp" class="secondary">Cancelar</button>
             </div>
           </form>

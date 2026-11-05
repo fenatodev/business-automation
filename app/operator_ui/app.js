@@ -1478,6 +1478,7 @@
           /^\/conversations\/\d+\/note$/.test(path) ||
           /^\/conversations\/\d+\/suggest-lead$/.test(path) ||
           /^\/conversations\/\d+\/suggest-customer$/.test(path) ||
+          /^\/conversations\/\d+\/suggest-opportunity$/.test(path) ||
           /^\/conversations\/bulk-status$/.test(path))) {
       throw new Error("Rota de conversas não permitida.");
     }
@@ -1976,6 +1977,50 @@
     $("conv-opp-budget").value = "";
     $("conv-opp-deadline").value = "";
     $("conv-opp-requirements").value = "";
+    $("conv-opp-suggestion").hidden = true;
+  });
+
+  // WP-269 — AI-assisted opportunity suggestion from conversation
+  let oppSuggestion = null;
+  $("conv-opp-suggest").addEventListener("click", () => {
+    withButton($("conv-opp-suggest"), async () => {
+      try {
+        const res = await conversationApi(
+          "/conversations/" + selectedConvId + "/suggest-opportunity", "POST"
+        );
+        oppSuggestion = res;
+        const content = $("conv-opp-suggestion-content");
+        while (content.firstChild) content.removeChild(content.firstChild);
+        const p = document.createElement("p");
+        p.className = "small";
+        p.textContent = res.reasoning || "Sugestão gerada pela IA.";
+        content.appendChild(p);
+        $("conv-opp-suggestion").hidden = false;
+      } catch (error) {
+        if (error.status === 503) {
+          notify("Agente indisponível.", true);
+        } else {
+          notify("Falha ao obter sugestão.", true);
+        }
+      }
+    });
+  });
+
+  $("apply-conv-opp-suggestion").addEventListener("click", () => {
+    if (oppSuggestion) {
+      if (oppSuggestion.suggested_title) $("conv-opp-title").value = oppSuggestion.suggested_title;
+      if (oppSuggestion.suggested_description) $("conv-opp-description").value = oppSuggestion.suggested_description;
+      if (oppSuggestion.suggested_budget) $("conv-opp-budget").value = oppSuggestion.suggested_budget;
+      if (oppSuggestion.suggested_deadline) $("conv-opp-deadline").value = oppSuggestion.suggested_deadline;
+      if (oppSuggestion.suggested_requirements) $("conv-opp-requirements").value = oppSuggestion.suggested_requirements;
+    }
+    $("conv-opp-suggestion").hidden = true;
+    oppSuggestion = null;
+  });
+
+  $("dismiss-conv-opp-suggestion").addEventListener("click", () => {
+    $("conv-opp-suggestion").hidden = true;
+    oppSuggestion = null;
   });
 
   $("conv-opp-form").addEventListener("submit", (event) => {
@@ -2004,6 +2049,7 @@
         $("conv-opp-budget").value = "";
         $("conv-opp-deadline").value = "";
         $("conv-opp-requirements").value = "";
+        $("conv-opp-suggestion").hidden = true;
         await refreshList();
       } catch (error) {
         notify("Falha ao criar oportunidade.", true);
@@ -2195,7 +2241,7 @@
       $("conv-close-toggle").hidden = true;
       $("human-reply-form").hidden = true;
       $("conv-note-section").hidden = true;
-      // WP-147, WP-235, WP-236 & WP-268
+      // WP-147, WP-235, WP-236 & WP-269
       $("conv-create-lead").hidden = true;
       $("conv-lead-form").hidden = true;
       $("conv-lead-suggestion").hidden = true;
@@ -2204,6 +2250,7 @@
       $("conv-customer-suggestion").hidden = true;
       $("conv-create-opp").hidden = true;
       $("conv-opp-form").hidden = true;
+      $("conv-opp-suggestion").hidden = true;
       selectedConvIds.clear();
       updateConvBulkBar();
       showConversationList();
@@ -2468,7 +2515,7 @@
   $("conv-list").replaceChildren();
   $("conv-detail").hidden = true;
   $("conv-note-section").hidden = true;
-  // WP-147, WP-235, WP-236 & WP-268
+  // WP-147, WP-235, WP-236 & WP-269
   $("conv-create-lead").hidden = true;
   $("conv-lead-form").hidden = true;
   $("conv-lead-suggestion").hidden = true;
@@ -2477,6 +2524,7 @@
   $("conv-customer-suggestion").hidden = true;
   $("conv-create-opp").hidden = true;
   $("conv-opp-form").hidden = true;
+  $("conv-opp-suggestion").hidden = true;
   selectedConvIds.clear();
   updateConvBulkBar();
 

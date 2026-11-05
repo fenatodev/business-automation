@@ -63,7 +63,7 @@ class TestCreateOpportunityFromConversationUI:
         """disconnect/clearSelection hides conv-create-opp."""
         with open("app/operator_ui/app.js") as f:
             content = f.read()
-        assert "WP-147, WP-235, WP-236 & WP-268" in content
+        assert "WP-147, WP-235, WP-236 & WP-269" in content
 
     def test_css_has_opp_form_styles(self):
         """CSS has .conv-opp-form styles."""

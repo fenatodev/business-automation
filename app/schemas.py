@@ -148,6 +148,17 @@ class CustomerSuggestion(BaseModel):
     reasoning: str
 
 
+class OpportunitySuggestion(BaseModel):
+    """AI-generated opportunity suggestion from conversation context."""
+
+    suggested_title: str | None = None
+    suggested_description: str | None = None
+    suggested_budget: str | None = None
+    suggested_deadline: str | None = None
+    suggested_requirements: str | None = None
+    reasoning: str
+
+
 class CompanyCreate(BaseModel):
     name: str
     slug: str
