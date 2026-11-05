@@ -82,15 +82,16 @@ def test_notification_polling_does_not_assume_company_one(client):
     script = client.get("/operator/app.js").text
 
     assert '"/companies/1/conversations' not in script
-    assert 'encodeURIComponent(companyId)' in script
+    assert 'fetch("/internal-tasks/dashboard"' in script
 
 
-def test_notification_polling_uses_count_endpoints(client):
+def test_notification_polling_uses_tenant_scoped_dashboard_snapshot(client):
     script = client.get("/operator/app.js").text
 
-    assert "/opportunities/count?next_action=pending" in script
-    assert "/leads/count?status=new" in script
-    assert "/companies/" in script and "/conversations/count?status=open" in script
+    assert 'fetch("/internal-tasks/dashboard"' in script
+    assert 'dashboard.opportunities?.pending' in script
+    assert 'dashboard.conversations?.open' in script
+    assert 'dashboard.tasks?.failed' in script
 
 
 def test_ui_is_not_an_authentication_bypass(
