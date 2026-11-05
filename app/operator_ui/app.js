@@ -5035,6 +5035,7 @@
   $("tasks-export-csv").addEventListener("click", () => {
     // WP-155 — export with filters
     const params = [];
+    params.push("sort=" + encodeURIComponent($("task-sort").value));
     const status = $("task-status-filter").value;
     if (status) params.push("status=" + encodeURIComponent(status));
     // WP-225 — export with search
