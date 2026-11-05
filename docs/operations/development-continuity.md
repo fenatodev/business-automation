@@ -1470,3 +1470,15 @@ UI: botão "🤖 Sugerir" no formulário de oportunidade do customer detail;
 painel mostra sugestão com botão "Preencher formulário".
 
 **3073 testes passaram**; compileall, diff-check, JS syntax: PASS.
+
+### WP-273 — Sugestão IA para criar lead a partir de customer
+
+O operador podia criar oportunidades de customer (WP-272) mas não
+leads com ajuda da IA. Adicionado `POST /customers/{id}/suggest-lead`
+que analisa nome, telefone, e-mail e origem do customer para sugerir
+nome, telefone e interesse do lead. Usa config da company.
+
+UI: seção "Leads" no customer detail com formulário de criação e
+botão "🤖 Sugerir" com painel de sugestão.
+
+**3082 testes passaram**; compileall, diff-check, JS syntax: PASS.
