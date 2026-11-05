@@ -352,6 +352,32 @@
             <div id="opp-conv-section" class="opp-conv-section">
               <h3>Conversas relacionadas</h3>
               <div id="opp-conv-list" class="conv-list" aria-label="Conversas da oportunidade"></div>
+              <!-- WP-278 — Create conversation from opportunity -->
+              <button id="opp-create-conv" type="button" class="secondary" style="margin-top:8px;">+ Nova conversa</button>
+              <div id="opp-conv-form" class="conv-opp-form" hidden>
+                <label for="opp-conv-channel">Canal *</label>
+                <select id="opp-conv-channel" required>
+                  <option value="whatsapp">WhatsApp</option>
+                  <option value="instagram">Instagram</option>
+                  <option value="web">Web</option>
+                  <option value="telegram">Telegram</option>
+                  <option value="email">E-mail</option>
+                </select>
+                <label for="opp-conv-message">Mensagem inicial</label>
+                <textarea id="opp-conv-message" rows="3" placeholder="Mensagem de abertura"></textarea>
+                <div style="display:flex;gap:8px;">
+                  <button id="opp-conv-suggest" type="button" class="secondary">🤖 Sugerir</button>
+                  <button id="opp-conv-submit" type="button" class="primary">Criar conversa</button>
+                  <button id="opp-conv-cancel" type="button" class="secondary">Cancelar</button>
+                </div>
+                <div id="opp-conv-suggestion" class="triage-suggestion-panel" hidden>
+                  <div id="opp-conv-suggestion-content"></div>
+                  <div style="display:flex;gap:8px;margin-top:8px;">
+                    <button id="opp-conv-apply-suggestion" type="button" class="primary">Aplicar</button>
+                    <button id="opp-conv-dismiss-suggestion" type="button" class="secondary">Descartar</button>
+                  </div>
+                </div>
+              </div>
             </div>
             <!-- WP-143 — Timeline de atividades -->
             <div id="opp-timeline-section" class="opp-timeline-section">

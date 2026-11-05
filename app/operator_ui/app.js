@@ -18,6 +18,8 @@
   let oppPipelineFilter = "all";
   const selectedOpportunityIds = new Set();
   let activeBrief = null;
+  let opportunityLeadId = null;
+  let opportunityCompanyId = null;
   let selectionVersion = 0;
   let conversations = [];
   let selectedConvId = null;
@@ -154,6 +156,12 @@
     // WP-249 — Hide bulk suggestion panel
     $("bulk-suggestion-panel").hidden = true;
     bulkTriageSuggestion = null;
+    // WP-278 — Hide create conversation form
+    if ($("opp-create-conv")) $("opp-create-conv").hidden = true;
+    if ($("opp-conv-form")) $("opp-conv-form").hidden = true;
+    if ($("opp-conv-suggestion")) $("opp-conv-suggestion").hidden = true;
+    opportunityLeadId = null;
+    opportunityCompanyId = null;
   }
 
   function disconnect(message = "Acesso desconectado.") {
@@ -223,7 +231,7 @@
         !/^\/opportunities\/pipeline-summary$/.test(path) &&
         !/^\/opportunities\/priority(\?[^"]*)?$/.test(path) &&
         !/^\/opportunities\/(bulk-triage|bulk-delete|bulk-suggest-triage|import\.csv)$/.test(path) &&
-        !/^\/opportunities\/\d+(\/(triage|proposal-brief|conversations|leads|timeline|suggest-triage|suggest-brief)(\/approve|\/reject)?)?$/.test(path)) {
+        !/^\/opportunities\/\d+(\/(triage|proposal-brief|conversations|leads|linked-leads|timeline|suggest-triage|suggest-brief)(\/approve|\/reject)?)?$/.test(path)) {
       throw new Error("Rota não permitida nesta interface.");
     }
     const epoch = sessionEpoch;
@@ -435,6 +443,11 @@
     selectionVersion += 1;
     const version = selectionVersion;
     selectedId = id;
+    opportunityLeadId = null;
+    opportunityCompanyId = null;
+    if ($("opp-create-conv")) $("opp-create-conv").hidden = true;
+    if ($("opp-conv-form")) $("opp-conv-form").hidden = true;
+    if ($("opp-conv-suggestion")) $("opp-conv-suggestion").hidden = true;
     activeBrief = null;
     $("empty-panel").hidden = true;
     $("selection-panel").hidden = false;
@@ -485,7 +498,12 @@
     // WP-143 — load activity timeline
     await loadOpportunityTimeline(id);
     // WP-144 — load related leads
-    await loadOpportunityLeads(id);
+    await loadOpportunityLeads(id, version);
+    if (version !== selectionVersion || id !== selectedId) return;
+    // WP-278 — Show/hide create conversation button
+    if ($("opp-create-conv")) $("opp-create-conv").hidden = opportunityLeadId === null;
+    if ($("opp-conv-form")) $("opp-conv-form").hidden = true;
+    if ($("opp-conv-suggestion")) $("opp-conv-suggestion").hidden = true;
   }
 
   // WP-142 — Load conversations related to the selected opportunity
@@ -567,12 +585,15 @@
   }
 
   // WP-144 — Load leads related to the selected opportunity
-  async function loadOpportunityLeads(id) {
+  async function loadOpportunityLeads(id, expectedVersion) {
     try {
-      const leads = await api("/opportunities/" + id + "/leads");
+      const leads = await api("/opportunities/" + id + "/linked-leads");
+      if (expectedVersion !== selectionVersion || id !== selectedId) return;
       const list = $("opp-leads-list");
       list.replaceChildren();
       if (!leads || !leads.length) {
+        opportunityLeadId = null;
+        opportunityCompanyId = null;
         const empty = document.createElement("p");
         empty.className = "small";
         empty.textContent = "Nenhum lead registrado.";
@@ -580,6 +601,8 @@
         return;
       }
       for (const lead of leads) {
+        opportunityLeadId = lead.id;
+        opportunityCompanyId = lead.company_id;
         const item = document.createElement("div");
         item.className = "opp-lead-item";
         const title = document.createElement("strong");
@@ -600,6 +623,9 @@
         list.appendChild(item);
       }
     } catch (error) {
+      if (expectedVersion !== selectionVersion || id !== selectedId) return;
+      opportunityLeadId = null;
+      opportunityCompanyId = null;
       // Silently fail — leads are supplementary info
       $("opp-leads-list").replaceChildren();
     }
@@ -1041,6 +1067,105 @@
         notify("Falha ao salvar alterações.", true);
       }
     }
+  });
+
+  // WP-278 — Create conversation from opportunity
+  let oppConvSuggestion = null;
+
+  $("opp-create-conv").addEventListener("click", () => {
+    $("opp-create-conv").hidden = true;
+    $("opp-conv-form").hidden = false;
+    $("opp-conv-suggestion").hidden = true;
+    $("opp-conv-form").reset();
+    oppConvSuggestion = null;
+  });
+
+  $("opp-conv-cancel").addEventListener("click", () => {
+    $("opp-conv-form").hidden = true;
+    $("opp-conv-suggestion").hidden = true;
+    $("opp-create-conv").hidden = false;
+    oppConvSuggestion = null;
+  });
+
+  $("opp-conv-suggest").addEventListener("click", () => {
+    const button = $("opp-conv-suggest");
+    const version = selectionVersion;
+    withButton(button, async () => {
+      if (selectedId === null) return;
+      try {
+        const result = await conversationApi("/conversations/suggest-message", "POST", {
+          company_id: opportunityCompanyId,
+          lead_id: opportunityLeadId,
+          channel: $("opp-conv-channel").value,
+        });
+        if (version !== selectionVersion || selectedId === null) return;
+        oppConvSuggestion = {...result, __version: version};
+        const content = $("opp-conv-suggestion-content");
+        content.textContent = "";
+        const msg = document.createElement("p");
+        msg.textContent = result.suggested_message || "";
+        content.appendChild(msg);
+        $("opp-conv-suggestion").hidden = false;
+      } catch (err) {
+        if (err instanceof ApiFailure && err.status === 503) {
+          notify("Agente IA indisponível.", true);
+        } else {
+          notify("Erro ao sugerir: " + (err.message || err), true);
+        }
+      }
+    });
+  });
+
+  $("opp-conv-apply-suggestion").addEventListener("click", () => {
+    if (oppConvSuggestion && oppConvSuggestion.__version === selectionVersion && oppConvSuggestion.suggested_message) {
+      $("opp-conv-message").value = oppConvSuggestion.suggested_message;
+    }
+    $("opp-conv-suggestion").hidden = true;
+    oppConvSuggestion = null;
+  });
+
+  $("opp-conv-dismiss-suggestion").addEventListener("click", () => {
+    $("opp-conv-suggestion").hidden = true;
+    oppConvSuggestion = null;
+  });
+
+  $("opp-conv-submit").addEventListener("click", () => {
+    const button = $("opp-conv-submit");
+    withButton(button, async () => {
+      if (selectedId === null) return;
+      const channel = $("opp-conv-channel").value;
+      const message = $("opp-conv-message").value.trim();
+      if (!channel) {
+        notify("Selecione um canal.", true);
+        return;
+      }
+      if (!opportunityLeadId || !opportunityCompanyId) {
+        notify("Associe um lead à oportunidade antes de criar conversa.", true); return;
+      }
+      try {
+        const conv = await conversationApi("/conversations/", "POST", {
+          channel,
+          company_id: opportunityCompanyId,
+          lead_id: opportunityLeadId,
+        });
+        // If there's an initial message, send it
+        if (message) {
+          await conversationApi("/conversations/" + conv.id + "/messages", "POST", {
+            content: message,
+            sender_type: "human",
+          });
+        }
+        $("opp-conv-form").hidden = true;
+        $("opp-create-conv").hidden = false;
+        $("opp-conv-suggestion").hidden = true;
+        oppConvSuggestion = null;
+        notify("Conversa #" + conv.id + " criada.");
+        // Refresh related conversations
+        await loadOpportunityConversations(selectedId);
+      } catch (err) {
+        notify("Erro ao criar conversa: " + (err.message || err), true);
+      }
+    });
   });
 
 
@@ -1491,6 +1616,7 @@
     if (!(/^\/companies\/\d+\/conversations($|\?)/.test(path) ||
           /^\/companies\/\d+\/conversations\/count($|\?)/.test(path) ||
           /^\/conversations\/$/.test(path) ||
+          /^\/conversations\/suggest-message$/.test(path) ||
           /^\/conversations\/\d+\/$/.test(path) ||
           /^\/conversations\/\d+\/messages(\/count)?(\?|$)/.test(path) ||
           /^\/conversations\/\d+\/note$/.test(path) ||
@@ -3446,6 +3572,7 @@
           budget,
           deadline,
           requirements,
+          lead_id: currentLeadId,
           captured_at: new Date().toISOString(),
         }),
       });
