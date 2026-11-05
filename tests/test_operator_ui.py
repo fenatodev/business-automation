@@ -137,6 +137,12 @@ def test_brief_status_is_live_region():
     assert 'aria-live="polite"' in html
 
 
+def test_opportunity_edit_group_has_accessible_name():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    assert 'id="opp-edit-panel" class="opp-edit-panel" role="group" aria-labelledby="opp-edit-title"' in html
+    assert '<h3 id="opp-edit-title">Editar oportunidade</h3>' in html
+
+
 def test_opportunity_progress_bar_describes_visible_percent():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
     assert 'aria-describedby="opp-progress-percent"' in html
