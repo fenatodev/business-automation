@@ -115,3 +115,10 @@ def test_ui_uses_linked_contact_and_authenticated_conversation_routes():
     assert 'hidden = opportunityContactType === null' in js
     customer_submit = js[js.index('$("customer-opp-form").addEventListener'):]
     assert 'customer_id: currentCustomerId' in customer_submit
+
+
+def test_ui_shows_customer_context_in_portuguese():
+    js = (Path(__file__).parents[1] / "app/operator_ui/app.js").read_text()
+    assert 'const parts = ["Cliente"]' in js
+    assert 'if (customer.phone) parts.push(customer.phone)' in js
+    assert 'if (customer.status) parts.push("(" + customer.status + ")")' in js
