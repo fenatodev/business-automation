@@ -992,9 +992,21 @@
             </div>
             <div style="display:flex;gap:8px;margin-top:8px;">
               <button type="submit" class="primary">Criar</button>
+              <button type="button" id="customer-opp-suggest" class="secondary">🤖 Sugerir</button>
               <button type="button" id="cancel-customer-opp" class="secondary">Cancelar</button>
             </div>
           </form>
+          <!-- WP-272 — AI opportunity suggestion from customer -->
+          <div id="customer-opp-suggestion" class="conv-suggestion" hidden>
+            <div class="conv-suggestion-header">
+              <strong>💡 Sugestão de oportunidade</strong>
+              <button id="customer-opp-dismiss-suggestion" type="button" class="secondary small">Fechar</button>
+            </div>
+            <div id="customer-opp-suggestion-content"></div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button id="customer-opp-apply-suggestion" type="button" class="primary">Preencher formulário</button>
+            </div>
+          </div>
         </div>
       </section>
 

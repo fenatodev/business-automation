@@ -3936,7 +3936,89 @@
   $("cancel-customer-opp").addEventListener("click", () => {
     $("customer-opp-form").hidden = true;
     $("customer-opp-form").reset();
+    $("customer-opp-suggestion").hidden = true;
+    customerOppSuggestion = null;
   });
+
+  // WP-272 — Suggest opportunity from customer
+  $("customer-opp-suggest").addEventListener("click", () => {
+    const button = $("customer-opp-suggest");
+    if (!currentCustomerId) {notify("Selecione um customer.", true); return;}
+    withButton(button, async () => {
+      try {
+        const res = await fetch("/customers/" + currentCustomerId + "/suggest-opportunity", {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + bearer,
+            "Content-Type": "application/json",
+          },
+        });
+        if (res.status === 503) {
+          notify("Agente indisponível.", true);
+          return;
+        }
+        if (!res.ok) {
+          notify("Falha ao gerar sugestão.", true);
+          return;
+        }
+        const data = await res.json();
+        renderCustomerOppSuggestion(data);
+        $("customer-opp-suggestion").hidden = false;
+        notify("Sugestão gerada.");
+      } catch (e) {
+        notify("Erro ao gerar sugestão.", true);
+      }
+    });
+  });
+
+  // WP-272 — Dismiss customer opportunity suggestion
+  $("customer-opp-dismiss-suggestion").addEventListener("click", () => {
+    $("customer-opp-suggestion").hidden = true;
+  });
+
+  // WP-272 — Apply customer opportunity suggestion
+  $("customer-opp-apply-suggestion").addEventListener("click", () => {
+    if (customerOppSuggestion) {
+      if (customerOppSuggestion.suggested_title) $("customer-opp-title").value = customerOppSuggestion.suggested_title;
+      if (customerOppSuggestion.suggested_description) $("customer-opp-description").value = customerOppSuggestion.suggested_description;
+      if (customerOppSuggestion.suggested_budget) $("customer-opp-budget").value = customerOppSuggestion.suggested_budget;
+      if (customerOppSuggestion.suggested_deadline) $("customer-opp-deadline").value = customerOppSuggestion.suggested_deadline;
+      if (customerOppSuggestion.suggested_requirements) $("customer-opp-requirements").value = customerOppSuggestion.suggested_requirements;
+    }
+    $("customer-opp-suggestion").hidden = true;
+    $("customer-opp-form").hidden = false;
+    $("customer-opp-title").focus();
+  });
+
+  // WP-272 — Render customer opportunity suggestion
+  var customerOppSuggestion = null;
+  function renderCustomerOppSuggestion(data) {
+    customerOppSuggestion = data;
+    const target = $("customer-opp-suggestion-content");
+    target.replaceChildren();
+    if (data.reasoning) {
+      const p = document.createElement("p");
+      p.textContent = data.reasoning;
+      target.appendChild(p);
+    }
+    const fields = [
+      {key: "suggested_title", label: "Título"},
+      {key: "suggested_description", label: "Descrição"},
+      {key: "suggested_budget", label: "Orçamento"},
+      {key: "suggested_deadline", label: "Prazo"},
+      {key: "suggested_requirements", label: "Requisitos"},
+    ];
+    for (const field of fields) {
+      if (data[field.key]) {
+        const strong = document.createElement("strong");
+        strong.textContent = field.label + ":";
+        target.appendChild(strong);
+        const p = document.createElement("p");
+        p.textContent = data[field.key];
+        target.appendChild(p);
+      }
+    }
+  }
 
   $("customer-opp-form").addEventListener("submit", (event) => {
     event.preventDefault();
