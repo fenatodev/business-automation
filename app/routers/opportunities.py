@@ -721,6 +721,27 @@ def get_opportunity_leads(
     return leads
 
 
+@router.get("/opportunities/{opportunity_id}/linked-conversations")
+def get_opportunity_linked_conversations(
+    opportunity_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Return conversations for the opportunity's explicit lead or customer."""
+    opportunity = _get_tenant_opportunity(db, opportunity_id, identity.company_id)
+    if opportunity.lead_id is None and opportunity.customer_id is None:
+        return []
+    predicate = (
+        Conversation.lead_id == opportunity.lead_id
+        if opportunity.lead_id is not None
+        else Conversation.customer_id == opportunity.customer_id
+    )
+    return db.scalars(select(Conversation).where(
+        Conversation.company_id == identity.company_id,
+        predicate,
+    ).order_by(desc(Conversation.id)).limit(50)).all()
+
+
 @router.get("/opportunities/{opportunity_id}/linked-leads")
 def get_opportunity_linked_leads(
     opportunity_id: int,
