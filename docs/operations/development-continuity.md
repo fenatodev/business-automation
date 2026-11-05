@@ -1566,6 +1566,13 @@ PR #314 integrado após CI verde.
 
 Validação: 6 testes direcionados, compileall e diff-check passaram.
 
+### WP-307 — Nota de triagem anunciada
+
+A nota de triagem da oportunidade selecionada agora usa `aria-live="polite"`,
+anunciando atualizações para leitores de tela. PR #320 integrado após CI verde.
+
+Validação: 7 testes direcionados, compileall e diff-check passaram.
+
 ### WP-303 — Anúncio da oportunidade selecionada
 
 O identificador da oportunidade selecionada agora usa `aria-live="polite"`,
