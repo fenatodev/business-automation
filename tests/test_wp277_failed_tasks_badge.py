@@ -26,7 +26,7 @@ class TestFailedTasksBadge:
 
     def test_js_fetches_failed_tasks(self):
         """JS fetches failed tasks in updateNotifications."""
-        assert '/internal-tasks?status=failed' in JS
+        assert '/internal-tasks/count?status=failed' in JS
 
     def test_js_updates_task_failed_badge(self):
         """JS updates task-failed-badge."""
@@ -47,7 +47,7 @@ class TestFailedTasksBadge:
     def test_js_shows_badge_when_failed_tasks_exist(self):
         """JS shows badge and sets count when failed tasks exist."""
         assert 'badge.hidden = false' in JS
-        assert 'badge.textContent = tasks.length' in JS
+        assert 'badge.textContent = total' in JS
 
     def test_js_parallel_fetch(self):
         """JS fetches all notifications in parallel via Promise.all."""
