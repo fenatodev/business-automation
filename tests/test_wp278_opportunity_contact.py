@@ -85,6 +85,23 @@ def test_customer_contact_and_cross_tenant_update(
     assert response.status_code == 404
 
 
+def test_linked_customer_endpoint_is_tenant_scoped(
+    client, admin_headers, operator_a_headers,
+):
+    company, _ = _company_and_lead(client, admin_headers, operator_a_headers, "customer-linked")
+    customer = client.post("/customers", headers=operator_a_headers, json={
+        "company_id": company, "name": "Linked Customer", "phone": "5511777777777",
+    })
+    opportunity = _opportunity(client, operator_a_headers)
+    updated = client.patch(f"/opportunities/{opportunity.json()['id']}", headers=operator_a_headers,
+                           json={"customer_id": customer.json()["id"]})
+    assert updated.status_code == 200
+    linked = client.get(f"/opportunities/{opportunity.json()['id']}/linked-customers",
+                        headers=operator_a_headers)
+    assert linked.status_code == 200
+    assert [item["id"] for item in linked.json()] == [customer.json()["id"]]
+
+
 def test_ui_uses_linked_contact_and_authenticated_conversation_routes():
     js = (Path(__file__).parents[1] / "app/operator_ui/app.js").read_text()
     assert '/opportunities/" + id + "/linked-leads' in js
@@ -95,3 +112,4 @@ def test_ui_uses_linked_contact_and_authenticated_conversation_routes():
     assert "opportunityLeadId = null" in js
     assert "if (version !== selectionVersion || selectedId === null) return;" in js
     assert "oppConvSuggestion.__version === selectionVersion" in js
+    assert 'hidden = opportunityContactType === null' in js
