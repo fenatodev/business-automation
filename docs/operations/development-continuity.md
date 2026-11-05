@@ -1383,3 +1383,12 @@ com tenant isolation e armazenamento em memória. UI com seletor de templates
 no formulário de resposta.
 
 **2992 testes passaram**; compileall, diff-check, JS syntax: PASS.
+
+### WP-265 — Interface de gerenciamento de templates de resposta
+
+O operador podia selecionar templates nas respostas (WP-264) mas não
+tinha forma de criá-los ou gerenciá-los. Adicionada subseção
+"Templates de resposta" na seção "12 / AGENTE IA" com formulário de
+criação, lista de templates existentes com botão excluir.
+
+**3007 testes passaram**; compileall, diff-check, JS syntax: PASS.
