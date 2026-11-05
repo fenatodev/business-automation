@@ -379,6 +379,12 @@ def test_triage_note_is_live_region():
     assert 'aria-live="polite"' in html
 
 
+def test_brief_items_are_keyboard_accessible():
+    js = (Path(__file__).parents[1] / "app/operator_ui/app.js").read_text()
+    assert 'item.setAttribute("aria-label", "Abrir brief de "' in js
+    assert 'if (e.key === "Enter" || e.key === " ")' in js
+
+
 def test_briefs_filters_and_pagination_control_briefs_list():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
     for control in (
