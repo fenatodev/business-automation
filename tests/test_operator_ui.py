@@ -177,6 +177,11 @@ def test_opportunity_current_page_has_current_semantics():
     assert 'id="opp-page" class="small" aria-live="polite" aria-current="page"' in html
 
 
+def test_task_error_messages_are_alerts():
+    js = (Path(__file__).parents[1] / "app/operator_ui/app.js").read_text()
+    assert 'err.setAttribute("role", "alert")' in js
+
+
 def test_task_retry_buttons_use_portuguese_label():
     js = (Path(__file__).parents[1] / "app/operator_ui/app.js").read_text()
     assert 'retryBtn.textContent = "Tentar novamente"' in js
