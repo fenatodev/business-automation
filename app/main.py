@@ -51,6 +51,12 @@ def health():
     return {"status": "ok", "service": "business-automation"}
 
 
+@app.get("/healthz")
+def healthz():
+    """Kubernetes-style alias for the stable liveness contract."""
+    return health()
+
+
 @app.get("/readiness")
 def readiness():
     """Check database readiness without exposing connection details."""
@@ -62,3 +68,9 @@ def readiness():
     finally:
         db.close()
     return {"status": "ready", "service": "business-automation"}
+
+
+@app.get("/readyz")
+def readyz():
+    """Kubernetes-style alias for the database readiness contract."""
+    return readiness()
