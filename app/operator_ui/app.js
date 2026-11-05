@@ -3207,10 +3207,9 @@
   async function updateNotifications() {
     if (!bearer) return;
     try {
-      const [oppRes, leadsRes, convRes, tasksRes] = await Promise.all([
+      const [oppRes, leadsRes, tasksRes] = await Promise.all([
         fetch("/opportunities", {headers: {"Authorization": "Bearer " + bearer}}),
         fetch("/leads?status=new&limit=100", {headers: {"Authorization": "Bearer " + bearer}}),
-        fetch("/companies/1/conversations?status=open&limit=100", {headers: {"Authorization": "Bearer " + bearer}}),
         // WP-277 — Failed tasks count
         fetch("/internal-tasks?status=failed&limit=100", {headers: {"Authorization": "Bearer " + bearer}}),
       ]);
@@ -3218,11 +3217,14 @@
       let newLeadCount = 0;
       let openConvCount = 0;
       let failedTaskCount = 0;
+      let opportunities = [];
+      let newLeads = [];
       // Opportunities pending badge
       if (oppRes.ok) {
-        const opps = await oppRes.json();
-        if (Array.isArray(opps)) {
-          const pending = opps.filter((o) => o.next_action === "pending").length;
+        const payload = await oppRes.json();
+        if (Array.isArray(payload)) {
+          opportunities = payload;
+          const pending = opportunities.filter((o) => o.next_action === "pending").length;
           pendingCount = pending;
           const badge = $("pending-badge");
           if (pending > 0) { badge.hidden = false; badge.textContent = pending; }
@@ -3231,22 +3233,33 @@
       }
       // Leads new badge
       if (leadsRes.ok) {
-        const leads = await leadsRes.json();
-        if (Array.isArray(leads)) {
-          newLeadCount = leads.length;
+        const payload = await leadsRes.json();
+        if (Array.isArray(payload)) {
+          newLeads = payload;
+          newLeadCount = newLeads.length;
           const badge = $("lead-new-badge");
-          if (leads.length > 0) { badge.hidden = false; badge.textContent = leads.length; }
+          if (newLeads.length > 0) { badge.hidden = false; badge.textContent = newLeads.length; }
           else { badge.hidden = true; }
         }
       }
-      // Conversations open badge — use count endpoint
-      if (convRes.ok) {
-        const convs = await convRes.json();
-        if (Array.isArray(convs)) {
-          openConvCount = convs.length;
-          const badge = $("conv-open-badge");
-          if (convs.length > 0) { badge.hidden = false; badge.textContent = convs.length; }
-          else { badge.hidden = true; }
+      const companyId = opportunities
+        .find((item) => Number.isInteger(item.company_id))?.company_id
+        ?? newLeads
+          .find((item) => Number.isInteger(item.company_id))?.company_id;
+      if (companyId !== undefined) {
+        const convRes = await fetch(
+          "/companies/" + encodeURIComponent(companyId) + "/conversations?status=open&limit=100",
+          {headers: {"Authorization": "Bearer " + bearer}},
+        );
+        // Conversations open badge — use count endpoint
+        if (convRes.ok) {
+          const convs = await convRes.json();
+          if (Array.isArray(convs)) {
+            openConvCount = convs.length;
+            const badge = $("conv-open-badge");
+            if (convs.length > 0) { badge.hidden = false; badge.textContent = convs.length; }
+            else { badge.hidden = true; }
+          }
         }
       }
       // WP-277 — Failed tasks badge
