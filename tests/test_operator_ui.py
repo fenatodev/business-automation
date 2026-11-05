@@ -177,6 +177,11 @@ def test_opportunity_current_page_has_current_semantics():
     assert 'id="opp-page" class="small" aria-live="polite" aria-current="page"' in html
 
 
+def test_task_refresh_controls_task_list():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    assert 'id="tasks-refresh" type="button" aria-controls="tasks-list">Atualizar' in html
+
+
 def test_task_list_exposes_loading_state():
     js = (Path(__file__).parents[1] / "app/operator_ui/app.js").read_text()
     assert 'taskList.setAttribute("aria-busy", "true")' in js
