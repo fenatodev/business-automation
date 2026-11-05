@@ -1519,3 +1519,13 @@ Estado atual: suíte local em **3141 testes**, dois warnings preexistentes;
 compileall, sintaxe JavaScript e diff-check passam. O próximo recorte pode
 tratar observabilidade ou filtros operacionais, mantendo o gate de não enviar
 mensagens externas e sem ativar n8n.
+
+### WP-282 — Ownership Customer preservado na UI
+
+O formulário de criação de oportunidade aberto no detalhe de Customer agora
+envia `customer_id`, preservando o vínculo explícito necessário ao fluxo de
+conversas das WPs 279 e 280. PR #295 integrado em `14288ae`.
+
+Validação local e CI: **3141 testes passaram**, dois warnings preexistentes;
+compileall, sintaxe JavaScript e diff-check: PASS. Nenhuma migration nova ou
+alteração de backend foi necessária.
