@@ -1759,6 +1759,13 @@ Fixtures locais validaram PR inexistente, PR único verde, CI pending com
 stop-file, CI falho, múltiplos PRs, revisão obrigatória, árvore suja e branch
 fora da `main`.
 
+## WP-396 — Compatibilidade do Codex com hooks locais (05/11/2026)
+
+O launcher usa `--ignore-user-config` porque os hooks globais do
+`context-mode` falharam com `NODE_TOO_OLD` dentro do Codex filho. A flag foi
+validada com smoke test read-only e não desativa sandbox, approval policy,
+`AGENTS.md`, guards do supervisor, CI ou revisão de escopos protegidos.
+
 ## Fatias funcionais completas
 
 Cada novo ciclo deve entregar uma capacidade operacional vertical com backend/API,
