@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from app.observability import RequestObservabilityMiddleware
 
 from app.routers.internal_tasks import router as internal_tasks_router
 from app.dependencies import get_db
@@ -16,6 +17,7 @@ app = FastAPI(
     title="Fenato Business Automation API",
     version="0.1.0",
 )
+app.add_middleware(RequestObservabilityMiddleware)
 
 app.include_router(commercial_intake_router)
 app.include_router(companies_router)
