@@ -377,3 +377,23 @@ def test_triage_note_is_live_region():
     html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
     assert 'id="selected-triage-note"' in html
     assert 'aria-live="polite"' in html
+
+
+def test_briefs_filters_and_pagination_control_briefs_list():
+    html = (Path(__file__).parents[1] / "app/operator_ui/index.html").read_text()
+    for control in (
+        'id="briefs-status-filter" aria-controls="briefs-list"',
+        'id="briefs-opportunity-filter" aria-controls="briefs-list"',
+        'id="briefs-sort" aria-controls="briefs-list"',
+        'id="briefs-search" aria-controls="briefs-list"',
+        'id="briefs-from-date" class="briefs-date-filter" aria-controls="briefs-list"',
+        'id="briefs-to-date" class="briefs-date-filter" aria-controls="briefs-list"',
+        'id="briefs-export-csv" type="button" class="secondary" aria-controls="briefs-list"',
+        'id="briefs-clear-filters" type="button" class="secondary" aria-controls="briefs-list"',
+        'id="briefs-bulk-clear" type="button" class="secondary" aria-controls="briefs-list"',
+        'id="briefs-pagination" class="briefs-pagination" role="navigation" aria-label="Paginação de briefs" aria-controls="briefs-list" hidden',
+        'id="briefs-prev-page" type="button" class="secondary" aria-controls="briefs-list"',
+        'id="briefs-next-page" type="button" class="secondary" aria-controls="briefs-list"',
+        'id="briefs-page-info" class="small" aria-live="polite"',
+    ):
+        assert control in html
