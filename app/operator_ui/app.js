@@ -3337,8 +3337,11 @@
     return res.json();
   }
 
+  let leadRefreshVersion = 0;
+
   async function refreshLeads() {
     if (!bearer) return false;
+    const version = ++leadRefreshVersion;
     $("leads-load-status").textContent = "Carregando leads...";
     $("leads-load-retry").hidden = true;
     $("leads-list").setAttribute("aria-busy", "true");
@@ -3373,6 +3376,7 @@
         leadApi(path, "GET"),
         leadApi("/leads/count" + (countParams.length ? "?" + countParams.join("&") : ""), "GET")
       ]);
+      if (version !== leadRefreshVersion) return false;
       if (!Array.isArray(leads) || !countResult) {
         throw new Error("Lead list unavailable");
       }
@@ -3388,11 +3392,14 @@
       $("leads-load-status").textContent = "";
       return true;
     } catch (error) {
+      if (version !== leadRefreshVersion) return false;
       $("leads-load-status").textContent = "Não foi possível atualizar os leads. Os dados anteriores podem estar desatualizados.";
       $("leads-load-retry").hidden = false;
       return false;
     } finally {
-      $("leads-list").setAttribute("aria-busy", "false");
+      if (version === leadRefreshVersion) {
+        $("leads-list").setAttribute("aria-busy", "false");
+      }
     }
   }
 

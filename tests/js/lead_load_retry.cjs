@@ -41,7 +41,7 @@ async function run(failedRequest, failureMode) {
     withButton(button, action) {return action();}, notify(message) {notices.push(message);},
   };
   vm.createContext(context);
-  vm.runInContext(section('  async function refreshLeads()', '  function renderLeads(')
+  vm.runInContext(section('  let leadRefreshVersion = 0;', '  function renderLeads(')
     + section('  $("leads-refresh").addEventListener', '  // WP-099 — Lead search'), context);
   for (const [id, value] of Object.entries({
     'lead-filter-status': 'new', 'lead-filter-source': 'synthetic',
