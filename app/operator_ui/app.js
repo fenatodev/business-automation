@@ -4159,6 +4159,8 @@
     }
   }
 
+  let customerConversationsVersion = 0;
+
   // Customer detail view — WP-087
   async function showCustomerDetail(cust) {
     currentCustomerId = cust.id;
@@ -4202,6 +4204,11 @@
 
   async function loadCustomerConversations(customerId) {
     if (!bearer) return;
+    const version = ++customerConversationsVersion;
+    const session = sessionEpoch;
+    const isCurrent = () => version === customerConversationsVersion &&
+      session === sessionEpoch && bearer && currentCustomerId === customerId &&
+      !$("customer-detail").hidden;
     const convList = $("customer-conversations-list");
     convList.replaceChildren();
 
@@ -4218,6 +4225,7 @@
       params.set("customer_id", customerId);
       const url = "/companies/" + company + "/conversations?" + params.toString();
       const convs = await conversationApi(url);
+      if (!isCurrent()) return;
       if (!convs || !convs.length) {
         const p = document.createElement("p");
         p.className = "small";
@@ -4243,11 +4251,12 @@
         convList.appendChild(item);
       }
     } catch (e) {
-      console.error("[loadCustomerConversations] Erro:", e);
+      if (isCurrent()) console.error("[loadCustomerConversations] Erro:", e);
     }
   }
 
   function hideCustomerDetail() {
+    customerConversationsVersion += 1;
     currentCustomerId = null;
     $("customers-list").hidden = false;
     $("customer-detail").hidden = true;
