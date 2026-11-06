@@ -194,3 +194,11 @@ anteriores permanecem visíveis, com aviso de possível desatualização.
 ordenação e página atuais; não reprocessa tarefas. A seção anuncia o
 carregamento. Após sucesso, a seleção é limpa e resultados vazios mostram
 o estado vazio normal.
+
+## Falha ao atualizar fila de revisão
+
+Falhas na lista, resumo, atrasos ou contagem preservam o snapshot e a seleção
+anteriores, com aviso de possível desatualização. **Tentar novamente** repete
+somente consultas de leitura com filtros, ordem e página atuais; não registra
+decisões nem envia mensagens. O carregamento é anunciado à tecnologia assistiva.
+Após sucesso, a seleção é limpa e a fila vazia mostra seu estado normal.
