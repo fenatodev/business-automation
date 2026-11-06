@@ -194,6 +194,9 @@
     $("list-meta").textContent = "Nenhuma consulta realizada.";
     $("capture-form").reset();
     conversations = [];
+    $("conv-load-status").textContent = "";
+    $("conv-load-retry").hidden = true;
+    $("conv-list").setAttribute("aria-busy", "false");
     selectedConvId = null;
     convFilterChannel = "";
     convFilterStatus = "";
@@ -2474,6 +2477,9 @@
   }
 
   async function refreshConversations() {
+    $("conv-load-status").textContent = "Carregando conversas...";
+    $("conv-load-retry").hidden = true;
+    $("conv-list").setAttribute("aria-busy", "true");
     try {
       const company = opportunities.length > 0 ? opportunities[0].company_id : null;
       if (company) {
@@ -2493,9 +2499,13 @@
         convTotal = 0;
       }
     } catch (error) {
-      conversations = [];
-      convTotal = 0;
+      $("conv-load-status").textContent = "Não foi possível atualizar as conversas. Os dados anteriores podem estar desatualizados.";
+      $("conv-load-retry").hidden = false;
+      return false;
+    } finally {
+      $("conv-list").setAttribute("aria-busy", "false");
     }
+    $("conv-load-status").textContent = "";
     // WP-195 — Populate customer dropdown on first refresh
     populateCustomerFilter().catch(() => {});
     // WP-232 — Populate lead dropdown on first refresh
@@ -2629,9 +2639,12 @@
 
   $("conv-refresh").addEventListener("click", () => {
     withButton($("conv-refresh"), async () => {
-      await refreshConversations();
-      notify("Conversas atualizadas.");
+      if (await refreshConversations() !== false) notify("Conversas atualizadas.");
     });
+  });
+
+  $("conv-load-retry").addEventListener("click", () => {
+    withButton($("conv-load-retry"), () => refreshConversations());
   });
 
   // WP-196 — Export CSV with current filters

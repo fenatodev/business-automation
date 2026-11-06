@@ -532,7 +532,9 @@
           </div>
         </div>
 
-        <div id="conv-list" class="conversation-list"></div>
+        <p id="conv-load-status" class="small" role="status" aria-live="polite"></p>
+        <button id="conv-load-retry" type="button" class="secondary" aria-controls="conv-list" hidden>Tentar novamente</button>
+        <div id="conv-list" class="conversation-list" aria-busy="false"></div>
         <div id="conv-bulk-bar" class="conv-bulk-bar" hidden>
           <span id="conv-bulk-count" class="small">0 selecionadas</span>
           <select id="conv-bulk-action" class="conv-bulk-select">
