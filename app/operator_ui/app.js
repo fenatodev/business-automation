@@ -5219,24 +5219,32 @@
   }
 
   async function refreshTasks() {
-    if (!bearer) return;
+    if (!bearer) return false;
     const taskList = $("tasks-list");
     taskList.setAttribute("aria-busy", "true");
-    // WP-172 — Reset bulk selection on refresh
-    selectedTaskIds.clear();
-    $("task-bulk-bar").hidden = true;
+    $("tasks-load-status").textContent = "Carregando tarefas...";
+    $("tasks-load-retry").hidden = true;
     try {
       const [tasks, count] = await Promise.all([
         taskApi(buildTaskUrl()),
         taskApi(buildTaskCountUrl()),
       ]);
+      if (!Array.isArray(tasks) || !Number.isInteger(count) || count < 0) {
+        throw new Error("Task list unavailable");
+      }
       taskTotal = count;
+      selectedTaskIds.clear();
+      $("task-bulk-bar").hidden = true;
       renderTasks(tasks);
       updateTaskPagination();
-    } catch (e) {
-      if (e instanceof ApiFailure && e.status !== 401) {
-        notify("Falha ao carregar tarefas.", true);
+      $("tasks-load-status").textContent = "";
+      return true;
+    } catch (error) {
+      if (bearer) {
+        $("tasks-load-status").textContent = "Não foi possível atualizar as tarefas. Os dados anteriores podem estar desatualizados.";
+        $("tasks-load-retry").hidden = false;
       }
+      return false;
     } finally {
       taskList.setAttribute("aria-busy", "false");
     }
@@ -5329,6 +5337,10 @@
     $("tasks-prev-page").disabled = taskOffset === 0;
     $("tasks-next-page").disabled = taskOffset + taskPageSize >= taskTotal;
   }
+
+  $("tasks-load-retry").addEventListener("click", () => {
+    withButton($("tasks-load-retry"), () => refreshTasks());
+  });
 
   $("tasks-refresh").addEventListener("click", () => {
     refreshTasks();
