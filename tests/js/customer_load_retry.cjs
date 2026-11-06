@@ -42,7 +42,7 @@ async function run(failedRequest, failureMode) {
   };
   vm.createContext(context);
   vm.runInContext(section('  function buildCustomerUrl()', '  async function customerApi(')
-    + section('  async function refreshCustomers()', '  function updateCustomerPagination()')
+    + section('  let customerRefreshVersion = 0;', '  function updateCustomerPagination()')
     + section('  $("customers-refresh").addEventListener', '  // WP-104 — Customer search'), context);
   for (const [id, value] of Object.entries({
     'customer-search': ' synthetic & sample ', 'customer-sort': 'name',

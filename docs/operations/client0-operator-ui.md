@@ -225,3 +225,11 @@ carregando, apenas a atualização mais recente pode substituir lista, contagem,
 badge e paginação. Respostas e falhas de consultas anteriores são ignoradas;
 o carregamento permanece até a consulta atual terminar. Se ela falhar, os dados
 anteriores permanecem com aviso e **Tentar novamente**, usando os filtros atuais.
+
+## Buscas de clientes sobrepostas
+
+Ao buscar clientes ou mudar filtros/página durante uma consulta, somente a
+última atualização iniciada pode aplicar resultados, contagem e paginação ou
+limpar a seleção. Respostas e falhas anteriores são ignoradas e não encerram
+o carregamento atual. Se a consulta atual falhar, os dados e a seleção anteriores
+permanecem com aviso e **Tentar novamente**, usando os filtros atuais.

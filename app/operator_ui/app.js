@@ -4022,8 +4022,11 @@
     return res.json();
   }
 
+  let customerRefreshVersion = 0;
+
   async function refreshCustomers() {
     if (!bearer) return false;
+    const version = ++customerRefreshVersion;
     $("customers-load-status").textContent = "Carregando clientes...";
     $("customers-load-retry").hidden = true;
     $("customers-list").setAttribute("aria-busy", "true");
@@ -4032,6 +4035,7 @@
         customerApi(buildCustomerUrl(), "GET"),
         customerApi(buildCustomerCountUrl(), "GET"),
       ]);
+      if (version !== customerRefreshVersion) return false;
       if (!Array.isArray(customers) || !countData) {
         throw new Error("Customer list unavailable");
       }
@@ -4043,11 +4047,14 @@
       $("customers-load-status").textContent = "";
       return true;
     } catch (error) {
+      if (version !== customerRefreshVersion) return false;
       $("customers-load-status").textContent = "Não foi possível atualizar os clientes. Os dados anteriores podem estar desatualizados.";
       $("customers-load-retry").hidden = false;
       return false;
     } finally {
-      $("customers-list").setAttribute("aria-busy", "false");
+      if (version === customerRefreshVersion) {
+        $("customers-list").setAttribute("aria-busy", "false");
+      }
     }
   }
 
