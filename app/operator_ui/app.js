@@ -3532,8 +3532,14 @@
 
   // WP-114 — Lead detail panel
   let currentLeadId = null;
+  let leadConversationsVersion = 0;
 
   async function showLeadDetail(lead) {
+    const version = ++leadConversationsVersion;
+    const session = sessionEpoch;
+    const isCurrent = () => version === leadConversationsVersion &&
+      session === sessionEpoch && bearer && currentLeadId === lead.id &&
+      !$("lead-detail").hidden;
     currentLeadId = lead.id;
     $("leads-list").hidden = true;
     $("leads-pagination").hidden = true;
@@ -3564,7 +3570,10 @@
     const convList = $("lead-conversations-list");
     convList.replaceChildren();
     try {
-      const convs = await api("/companies/" + company + "/conversations?limit=50");
+      const company = lead.company_id;
+      const params = new URLSearchParams({lead_id: lead.id, limit: 50});
+      const convs = await conversationApi("/companies/" + company + "/conversations?" + params);
+      if (!isCurrent()) return;
       const leadConvs = (convs || []).filter((c) => c.lead_id === lead.id);
       if (!leadConvs.length) {
         const p = document.createElement("p");
@@ -3580,11 +3589,12 @@
         }
       }
     } catch (e) {
-      console.error("[showLeadDetail] Falha ao carregar conversas:", e);
+      if (isCurrent()) console.error("[showLeadDetail] Falha ao carregar conversas:", e);
     }
   }
 
   function hideLeadDetail() {
+    leadConversationsVersion += 1;
     currentLeadId = null;
     $("leads-list").hidden = false;
     $("lead-detail").hidden = true;
