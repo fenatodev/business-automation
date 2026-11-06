@@ -42,6 +42,8 @@
   const msgPageSize = 50;
   let msgTotal = 0;
   let messageLoadEpoch = 0;
+  let conversationNoteVersion = 0;
+  let conversationNoteReady = false;
   let dashboardIntervalId = null;
   // WP-169/170 — Bulk delete state
   const selectedLeadIds = new Set();
@@ -1953,6 +1955,8 @@
 
   async function selectConversation(id) {
     selectedConvId = id;
+    const noteVersion = ++conversationNoteVersion;
+    const noteLoad = loadConversationNote(id, noteVersion);
     msgOffset = 0;
     showConversationList();
     $("conv-detail").hidden = false;
@@ -1978,7 +1982,7 @@
     $("conv-detail-header").textContent = channel + " · #" + id;
     await loadMessages(id);
     // WP-140 — Load internal note
-    await loadConversationNote(id);
+    await noteLoad;
     // WP-264 — Load reply templates
     await loadReplyTemplates();
   }
@@ -2040,15 +2044,27 @@
   }
 
   // WP-140 — Conversation internal notes
-  async function loadConversationNote(id) {
+  async function loadConversationNote(id, version) {
+    const session = sessionEpoch;
+    const isCurrent = () => version === conversationNoteVersion &&
+      session === sessionEpoch && selectedConvId === id;
+    if (!isCurrent()) return;
+    conversationNoteReady = false;
+    $("conv-note-text").value = "";
+    $("conv-note-text").readOnly = true;
+    $("conv-note-save").disabled = true;
+    $("conv-note-status").textContent = "Carregando nota...";
     try {
       const result = await conversationApi("/conversations/" + id + "/note");
-      if (selectedConvId !== id) return;
+      if (!isCurrent()) return;
       $("conv-note-text").value = result.note || "";
       $("conv-note-status").textContent = "";
+      $("conv-note-text").readOnly = false;
+      $("conv-note-save").disabled = false;
+      conversationNoteReady = true;
     } catch (error) {
-      $("conv-note-text").value = "";
-      $("conv-note-status").textContent = "";
+      if (!isCurrent()) return;
+      $("conv-note-status").textContent = "Não foi possível carregar a nota. Selecione a conversa novamente para tentar.";
     }
   }
 
@@ -2095,18 +2111,31 @@
     });
   }
 
-  $("conv-note-save").addEventListener("click", () => withButton($("conv-note-save"), async () => {
-    if (selectedConvId === null) return;
+  $("conv-note-save").addEventListener("click", async () => {
+    if (selectedConvId === null || !conversationNoteReady || $("conv-note-save").disabled) return;
+    const id = selectedConvId;
+    const version = conversationNoteVersion;
+    const session = sessionEpoch;
+    const isCurrent = () => version === conversationNoteVersion &&
+      session === sessionEpoch && selectedConvId === id;
     const note = $("conv-note-text").value;
+    $("conv-note-save").disabled = true;
+    $("conv-note-text").readOnly = true;
+    $("conv-note-status").textContent = "Salvando nota...";
     try {
-      await conversationApi("/conversations/" + selectedConvId, "PATCH", { note });
+      await conversationApi("/conversations/" + id, "PATCH", { note });
+      if (!isCurrent()) return;
       $("conv-note-status").textContent = "Nota salva.";
-      $("conv-note-status").style.color = "var(--success)";
-      setTimeout(() => { $("conv-note-status").textContent = ""; }, 3000);
     } catch (error) {
-      notify("Falha ao salvar nota.", true);
+      if (!isCurrent()) return;
+      $("conv-note-status").textContent = "Falha ao salvar nota. Tente novamente.";
+    } finally {
+      if (isCurrent()) {
+        $("conv-note-save").disabled = false;
+        $("conv-note-text").readOnly = false;
+      }
     }
-  }));
+  });
 
   // WP-147 — Create lead from conversation
   $("conv-create-lead").addEventListener("click", () => {

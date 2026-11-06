@@ -271,3 +271,13 @@ com até 50 resultados. A Company vem do próprio lead retornado pela API;
 a consulta funciona mesmo sem oportunidades carregadas. A autorização continua
 sob o contrato existente do servidor. Trocar de lead, voltar ou encerrar a
 sessão invalida resultados pendentes, inclusive ao reabrir o mesmo lead.
+
+## Notas internas ao trocar de conversa
+
+Selecionar uma conversa limpa a nota anterior imediatamente e bloqueia edição e
+salvamento até a leitura concluir. Uma falha de leitura orienta selecionar a
+conversa novamente. Respostas antigas não alteram a nota ou a confirmação da
+seleção atual, inclusive ao reabrir a mesma conversa ou trocar de sessão.
+Durante a gravação, o editor e o botão ficam bloqueados; em caso de falha,
+o rascunho permanece disponível para tentar novamente. A confirmação de
+sucesso permanece até a próxima leitura ou gravação.
