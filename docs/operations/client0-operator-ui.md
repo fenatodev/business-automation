@@ -210,3 +210,10 @@ anteriores permanecem visíveis com aviso de possível desatualização.
 **Tentar novamente** repete consultas de leitura com filtros, ordem e página
 atuais. O carregamento é anunciado; após sucesso, a seleção é limpa e uma
 lista vazia mostra o estado normal. Nenhuma nova tentativa altera briefs.
+
+## Ordem das oportunidades na tela
+
+Os cards preservam a ordem retornada pela API: ID crescente, Data decrescente,
+Status alfabético ou Prioridade por score decrescente. Selecionar um card
+mantém essa sequência. Os filtros e páginas continuam sob o contrato dos
+endpoints existentes; Prioridade usa sua consulta própria.
