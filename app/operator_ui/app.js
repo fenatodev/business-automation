@@ -5896,9 +5896,14 @@
   }
 
   // WP-187 — Load and display brief detail
+  let briefDetailVersion = 0;
   async function selectBrief(briefId, title) {
     const detail = $("brief-detail");
     if (!detail) return;
+    const version = ++briefDetailVersion;
+    const session = sessionEpoch;
+    const isCurrent = () => version === briefDetailVersion && session === sessionEpoch &&
+      bearer && !detail.hidden && String(detail.dataset.briefId) === String(briefId);
     // Toggle close
     if (!detail.hidden && detail.dataset.briefId == briefId) {
       detail.hidden = true;
@@ -5915,6 +5920,7 @@
         briefApi("/proposal-briefs/" + briefId),
         briefApi("/proposal-briefs/" + briefId + "/conversations").catch(() => []),
       ]);
+      if (!isCurrent()) return;
       if (content) {
         while (content.firstChild) content.removeChild(content.firstChild);
         const fields = [
@@ -5962,12 +5968,13 @@
         }
       }
     } catch (e) {
-      if (content) content.textContent = "Falha ao carregar brief.";
+      if (isCurrent() && content) content.textContent = "Falha ao carregar brief.";
     }
   }
 
   // WP-211 — Back button for brief detail
   $("brief-detail-back")?.addEventListener("click", () => {
+    briefDetailVersion += 1;
     const detail = $("brief-detail");
     if (detail) detail.hidden = true;
   });
