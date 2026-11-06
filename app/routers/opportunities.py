@@ -433,6 +433,7 @@ def pipeline_summary(
 
 @router.get("/opportunities/export.csv")
 def export_opportunities_csv(
+    sort: str = Query(default="id", pattern="^(id|created_at|next_action|priority)$"),
     exclude_archived: bool = False,
     next_action: str | None = Query(None, description="Filter by next_action status"),
     source: str | None = Query(None, description="Filter by source"),
@@ -489,8 +490,15 @@ def export_opportunities_csv(
             )
         )
 
-    stmt = stmt.order_by(Opportunity.id)
+    if sort == "created_at":
+        stmt = stmt.order_by(desc(Opportunity.created_at), desc(Opportunity.id))
+    elif sort == "next_action":
+        stmt = stmt.order_by(Opportunity.next_action, Opportunity.id)
+    else:
+        stmt = stmt.order_by(Opportunity.id)
     opportunities = db.scalars(stmt).all()
+    if sort == "priority":
+        opportunities.sort(key=lambda opp: _calculate_priority_score(opp)["score"], reverse=True)
 
     # WP-266 — filter by priority level (computed in-memory)
     if priority_level is not None:

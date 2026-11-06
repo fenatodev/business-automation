@@ -141,3 +141,12 @@ O arquivo preserva a ordenação e os filtros de canal, status, busca, contato e
 período, incluindo resultados de outras páginas e suas mensagens. Datas são
 decrescentes; ID é crescente, inclusive no desempate. O endpoint mantém ID
 crescente sem `sort` e retorna 422 para ordenação desconhecida.
+
+## CSV de oportunidades
+
+Exportar CSV transmite a ordem ID, Data, Status ou Prioridade selecionada.
+Exporta todos os resultados dos filtros existentes, sem limite de página.
+Data e ID de desempate são decrescentes; status é crescente com ID crescente;
+prioridade usa score decrescente e ID crescente no empate. Sem `sort`, a API
+mantém ID crescente; valor desconhecido retorna 422. A lista por prioridade
+continua usando seu endpoint próprio, sem alterar seu contrato de filtros.
