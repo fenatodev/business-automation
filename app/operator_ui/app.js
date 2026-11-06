@@ -4858,7 +4858,7 @@
 
   $("opp-export-csv").addEventListener("click", () => {
     // WP-123/150/189/266 — Export CSV with current filters
-    const params = [];
+    const params = ["sort=" + encodeURIComponent($("opp-sort").value)];
     const showArchived = $("show-archived").checked;
     if (!showArchived) params.push("exclude_archived=true");
     if (oppPipelineFilter !== "all") params.push("next_action=" + encodeURIComponent(oppPipelineFilter));
