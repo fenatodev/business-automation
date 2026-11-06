@@ -159,3 +159,12 @@ período em todos os resultados, inclusive os de outras páginas. Data e ID de
 desempate são decrescentes; status/título e seu desempate por ID são crescentes.
 Sem `sort`, `/proposal-briefs/export.csv` mantém ID crescente; valor desconhecido
 retorna 422. Os campos detalhados permanecem no arquivo.
+
+## Falha ao atualizar conversas
+
+Se a consulta da lista ou da contagem falhar, a seção Conversas informa que
+não foi possível atualizar e oferece **Tentar novamente**. Resultados e
+seleção anteriores permanecem visíveis e podem estar desatualizados. A nova
+tentativa mantém filtros, ordenação e página, repetindo somente consultas de
+leitura. O indicador de carregamento é anunciado à tecnologia assistiva;
+uma resposta vazia bem-sucedida continua mostrando o estado vazio normal.
