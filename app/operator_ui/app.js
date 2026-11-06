@@ -5272,8 +5272,11 @@
     return "/internal-tasks/count" + (params.length ? "?" + params.join("&") : "");
   }
 
+  let taskRefreshVersion = 0;
+
   async function refreshTasks() {
     if (!bearer) return false;
+    const version = ++taskRefreshVersion;
     const taskList = $("tasks-list");
     taskList.setAttribute("aria-busy", "true");
     $("tasks-load-status").textContent = "Carregando tarefas...";
@@ -5283,6 +5286,7 @@
         taskApi(buildTaskUrl()),
         taskApi(buildTaskCountUrl()),
       ]);
+      if (version !== taskRefreshVersion) return false;
       if (!Array.isArray(tasks) || !Number.isInteger(count) || count < 0) {
         throw new Error("Task list unavailable");
       }
@@ -5294,13 +5298,16 @@
       $("tasks-load-status").textContent = "";
       return true;
     } catch (error) {
+      if (version !== taskRefreshVersion) return false;
       if (bearer) {
         $("tasks-load-status").textContent = "Não foi possível atualizar as tarefas. Os dados anteriores podem estar desatualizados.";
         $("tasks-load-retry").hidden = false;
       }
       return false;
     } finally {
-      taskList.setAttribute("aria-busy", "false");
+      if (version === taskRefreshVersion) {
+        taskList.setAttribute("aria-busy", "false");
+      }
     }
   }
 
