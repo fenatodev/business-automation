@@ -6,6 +6,7 @@ trigger synthetic intake events, list pending items, and make approve/reject dec
 
 import csv
 import io
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import desc, func, select
@@ -34,6 +35,7 @@ def export_review_queue_csv(
     q: str | None = Query(None, description="Search keywords in message, intent, event_id"),
     from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
     to_date: str | None = Query(None, description="Filter created_at <= date (YYYY-MM-DD)"),
+    sort: Literal["id", "created_at", "status"] = Query(default="id"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
@@ -54,7 +56,13 @@ def export_review_queue_csv(
         query = query.where(ReviewQueueItem.created_at >= from_date)
     if to_date:
         query = query.where(ReviewQueueItem.created_at <= to_date + "T23:59:59")
-    items = db.scalars(query.order_by(ReviewQueueItem.id)).all()
+    if sort == "created_at":
+        query = query.order_by(desc(ReviewQueueItem.created_at), ReviewQueueItem.id)
+    elif sort == "status":
+        query = query.order_by(ReviewQueueItem.status, ReviewQueueItem.id)
+    else:
+        query = query.order_by(ReviewQueueItem.id)
+    items = db.scalars(query).all()
 
     output = io.StringIO()
     writer = csv.writer(output)
