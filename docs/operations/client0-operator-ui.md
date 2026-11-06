@@ -263,3 +263,11 @@ Ao trocar de cliente, somente a consulta mais recente da seleção visível pode
 mostrar suas conversas. Voltar invalida consultas pendentes, inclusive quando
 o mesmo cliente é reaberto. Respostas antigas não acrescentam conversas ao
 cliente atual.
+
+## Conversas no detalhe do lead
+
+Selecionar um lead consulta suas conversas usando o filtro `lead_id` na API,
+com até 50 resultados. A Company vem do próprio lead retornado pela API;
+a consulta funciona mesmo sem oportunidades carregadas. A autorização continua
+sob o contrato existente do servidor. Trocar de lead, voltar ou encerrar a
+sessão invalida resultados pendentes, inclusive ao reabrir o mesmo lead.
