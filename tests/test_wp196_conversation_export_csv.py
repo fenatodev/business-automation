@@ -71,8 +71,9 @@ class TestConversationExportCsvHandler:
         """Export handler calls downloadCsv function."""
         with open("app/operator_ui/app.js") as f:
             js = f.read()
-        handler_pos = js.index('conv-export-csv')
-        section = js[handler_pos:handler_pos + 1000]
+        handler_pos = js.index('$("conv-export-csv").addEventListener')
+        handler_end = js.index('\n  });', handler_pos)
+        section = js[handler_pos:handler_end]
         assert "downloadCsv" in section
         assert "conversations.csv" in section
 

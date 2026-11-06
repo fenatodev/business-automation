@@ -133,3 +133,11 @@ segue data decrescente ou ID/status crescentes, com ID crescente no desempate.
 Status, busca e datas permanecem aplicados a todos os resultados, sem limite
 de página. Sem `sort`, `/review-queue/export.csv` mantém ID crescente; uma
 ordenação desconhecida retorna 422. A exportação não registra decisões.
+
+## CSV de conversas
+
+Em Conversas, escolher Última mensagem, Data de criação ou ID e exportar CSV.
+O arquivo preserva a ordenação e os filtros de canal, status, busca, contato e
+período, incluindo resultados de outras páginas e suas mensagens. Datas são
+decrescentes; ID é crescente, inclusive no desempate. O endpoint mantém ID
+crescente sem `sort` e retorna 422 para ordenação desconhecida.
