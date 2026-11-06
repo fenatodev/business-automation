@@ -2508,7 +2508,10 @@
     }
   }
 
+  let conversationRefreshVersion = 0;
+
   async function refreshConversations() {
+    const version = ++conversationRefreshVersion;
     $("conv-load-status").textContent = "Carregando conversas...";
     $("conv-load-retry").hidden = true;
     $("conv-list").setAttribute("aria-busy", "true");
@@ -2519,6 +2522,7 @@
           conversationApi(buildConversationUrl(company)),
           conversationApi(buildConversationCountUrl(company)),
         ]);
+        if (version !== conversationRefreshVersion) return false;
         conversations = convs;
         convTotal = countResult.total || 0;
         // WP-175 — update open conversations badge
@@ -2531,11 +2535,14 @@
         convTotal = 0;
       }
     } catch (error) {
+      if (version !== conversationRefreshVersion) return false;
       $("conv-load-status").textContent = "Não foi possível atualizar as conversas. Os dados anteriores podem estar desatualizados.";
       $("conv-load-retry").hidden = false;
       return false;
     } finally {
-      $("conv-list").setAttribute("aria-busy", "false");
+      if (version === conversationRefreshVersion) {
+        $("conv-list").setAttribute("aria-busy", "false");
+      }
     }
     $("conv-load-status").textContent = "";
     // WP-195 — Populate customer dropdown on first refresh
@@ -2567,6 +2574,7 @@
       updateConvBulkBar();
       showConversationList();
     }
+    return version === conversationRefreshVersion;
   }
 
   function updateConversationPagination() {

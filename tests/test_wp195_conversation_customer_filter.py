@@ -116,7 +116,7 @@ class TestCustomerFilterJavaScript:
         with open("app/operator_ui/app.js") as f:
             js = f.read()
         refresh_start = js.index("async function refreshConversations")
-        refresh_end = js.index("}", refresh_start + 1500)
+        refresh_end = js.index("  function updateConversationPagination()", refresh_start)
         refresh_func = js[refresh_start:refresh_end]
         assert "populateCustomerFilter" in refresh_func
 
