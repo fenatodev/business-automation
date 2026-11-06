@@ -5022,6 +5022,8 @@
   $("rq-export-csv").addEventListener("click", () => {
     // WP-154 — export with filters
     const params = [];
+    const sort = $("rq-sort")?.value || "created_at";
+    params.push("sort=" + encodeURIComponent(sort));
     const status = $("rq-status-filter")?.value?.trim();
     if (status) params.push("status=" + encodeURIComponent(status));
     // WP-224 — export with search

@@ -125,3 +125,11 @@ crescentes; ID crescente no desempate. Status, fonte, busca e datas são
 preservados, incluindo resultados de outras páginas. O endpoint
 `/leads/export.csv` mantém ID crescente quando `sort` é omitido e retorna
 422 para uma ordenação desconhecida.
+
+## CSV da fila de revisão
+
+Na fila de revisão, escolher Data, ID ou Status e exportar CSV. O arquivo
+segue data decrescente ou ID/status crescentes, com ID crescente no desempate.
+Status, busca e datas permanecem aplicados a todos os resultados, sem limite
+de página. Sem `sort`, `/review-queue/export.csv` mantém ID crescente; uma
+ordenação desconhecida retorna 422. A exportação não registra decisões.
