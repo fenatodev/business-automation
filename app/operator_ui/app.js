@@ -3965,14 +3965,32 @@
   }
 
   async function refreshCustomers() {
-    if (!bearer) return;
-    const [customers, countData] = await Promise.all([
-      customerApi(buildCustomerUrl(), "GET"),
-      customerApi(buildCustomerCountUrl(), "GET"),
-    ]);
-    customerTotal = countData?.total || 0;
-    renderCustomers(customers || []);
-    updateCustomerPagination();
+    if (!bearer) return false;
+    $("customers-load-status").textContent = "Carregando clientes...";
+    $("customers-load-retry").hidden = true;
+    $("customers-list").setAttribute("aria-busy", "true");
+    try {
+      const [customers, countData] = await Promise.all([
+        customerApi(buildCustomerUrl(), "GET"),
+        customerApi(buildCustomerCountUrl(), "GET"),
+      ]);
+      if (!Array.isArray(customers) || !countData) {
+        throw new Error("Customer list unavailable");
+      }
+      customerTotal = countData.total || 0;
+      selectedCustomerIds.clear();
+      renderCustomers(customers);
+      updateCustomerPagination();
+      $("customer-bulk-bar").hidden = true;
+      $("customers-load-status").textContent = "";
+      return true;
+    } catch (error) {
+      $("customers-load-status").textContent = "Não foi possível atualizar os clientes. Os dados anteriores podem estar desatualizados.";
+      $("customers-load-retry").hidden = false;
+      return false;
+    } finally {
+      $("customers-list").setAttribute("aria-busy", "false");
+    }
   }
 
   function updateCustomerPagination() {
@@ -4237,9 +4255,12 @@
 
   $("customers-refresh").addEventListener("click", () => withButton($("customers-refresh"), async () => {
     customerOffset = 0;
-    await refreshCustomers();
-    notify("Customers atualizados.");
+    if (await refreshCustomers()) notify("Customers atualizados.");
   }));
+
+  $("customers-load-retry").addEventListener("click", () => {
+    withButton($("customers-load-retry"), () => refreshCustomers());
+  });
 
   // WP-104 — Customer search, sort, pagination
   $("customer-search").addEventListener("input", () => {
@@ -5483,13 +5504,6 @@
     selectedLeadIds.clear();
     await origRefreshLeads(targetId);
     $("lead-bulk-bar").hidden = true;
-  };
-
-  const origRefreshCustomers = refreshCustomers;
-  refreshCustomers = async function() {
-    selectedCustomerIds.clear();
-    await origRefreshCustomers();
-    $("customer-bulk-bar").hidden = true;
   };
 
   // WP-172 — Bulk retry handlers for internal tasks

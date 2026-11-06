@@ -168,3 +168,12 @@ seleção anteriores permanecem visíveis e podem estar desatualizados. A nova
 tentativa mantém filtros, ordenação e página, repetindo somente consultas de
 leitura. O indicador de carregamento é anunciado à tecnologia assistiva;
 uma resposta vazia bem-sucedida continua mostrando o estado vazio normal.
+
+## Falha ao atualizar clientes
+
+Se a lista ou a contagem de Clientes falhar, a tela preserva os resultados,
+a contagem e as seleções anteriores e informa que podem estar desatualizados.
+**Tentar novamente** repete apenas consultas de leitura com os filtros,
+a ordenação e a página atuais. O carregamento é anunciado à tecnologia
+assistiva. Uma consulta vazia bem-sucedida mostra o estado vazio normal;
+a notificação de atualização concluída só aparece após sucesso.
