@@ -5954,7 +5954,8 @@
   });
 
   $("briefs-export-csv").addEventListener("click", () => {
-    const params = [];
+    const sort = $("briefs-sort") ? $("briefs-sort").value : "created_at";
+    const params = ["sort=" + encodeURIComponent(sort)];
     const status = $("briefs-status-filter") ? $("briefs-status-filter").value : "";
     const opportunityId = $("briefs-opportunity-filter") ? $("briefs-opportunity-filter").value : "";
     const q = $("briefs-search") ? $("briefs-search").value.trim() : "";

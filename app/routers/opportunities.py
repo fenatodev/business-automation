@@ -1308,6 +1308,7 @@ def count_proposal_briefs(
 
 @router.get("/proposal-briefs/export.csv")
 def export_briefs_csv(
+    sort: str = Query(default="id", pattern="^(id|created_at|status|title)$"),
     status: str | None = Query(default=None, description="Filter by brief status"),
     q: str | None = Query(default=None, description="Search keywords in title and offer reference"),
     opportunity_id: int | None = Query(default=None, description="Filter by opportunity"),
@@ -1337,7 +1338,6 @@ def export_briefs_csv(
         )
         .join(Opportunity, ProposalBrief.opportunity_id == Opportunity.id)
         .where(Opportunity.company_id == identity.company_id)
-        .order_by(ProposalBrief.id)
     )
 
     if status:
@@ -1357,6 +1357,15 @@ def export_briefs_csv(
         query = query.where(ProposalBrief.created_at >= from_date)
     if to_date:
         query = query.where(ProposalBrief.created_at <= to_date + "T23:59:59")
+
+    if sort == "created_at":
+        query = query.order_by(desc(ProposalBrief.created_at), desc(ProposalBrief.id))
+    elif sort == "status":
+        query = query.order_by(ProposalBrief.status, ProposalBrief.id)
+    elif sort == "title":
+        query = query.order_by(Opportunity.title, ProposalBrief.id)
+    else:
+        query = query.order_by(ProposalBrief.id)
 
     rows = db.execute(query).all()
 
