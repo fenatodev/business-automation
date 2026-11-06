@@ -256,3 +256,10 @@ Somente a consulta mais recente pode atualizar os totais do dashboard.
 Respostas antigas são descartadas, inclusive quando a leitura do JSON demora.
 Interromper a atualização automática ou encerrar a sessão invalida as consultas
 pendentes; elas não atualizam a tela nem desconectam uma sessão posterior.
+
+## Conversas no detalhe do cliente
+
+Ao trocar de cliente, somente a consulta mais recente da seleção visível pode
+mostrar suas conversas. Voltar invalida consultas pendentes, inclusive quando
+o mesmo cliente é reaberto. Respostas antigas não acrescentam conversas ao
+cliente atual.
