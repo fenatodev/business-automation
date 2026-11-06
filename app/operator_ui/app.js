@@ -2636,7 +2636,7 @@
 
   // WP-196 — Export CSV with current filters
   $("conv-export-csv").addEventListener("click", () => {
-    const params = [];
+    const params = ["sort=" + encodeURIComponent(convFilterSort)];
     if (convFilterChannel) params.push("channel=" + encodeURIComponent(convFilterChannel));
     if (convFilterStatus) params.push("status=" + encodeURIComponent(convFilterStatus));
     if (convFilterQuery) params.push("q=" + encodeURIComponent(convFilterQuery));

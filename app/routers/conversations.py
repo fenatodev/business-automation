@@ -1,5 +1,6 @@
 import csv
 import io
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
@@ -1096,6 +1097,7 @@ def export_conversations_csv(
     lead_id: int | None = Query(None, description="Filter by lead"),
     from_date: str | None = Query(None, description="Filter created_at >= date (YYYY-MM-DD)"),
     to_date: str | None = Query(None, description="Filter created_at <= date (YYYY-MM-DD)"),
+    sort: Literal["id", "last_message", "created_at"] = Query(default="id"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator_company),
 ):
@@ -1139,7 +1141,20 @@ def export_conversations_csv(
     if to_date:
         stmt = stmt.where(Conversation.created_at <= to_date + "T23:59:59")
 
-    conversations = db.scalars(stmt.order_by(Conversation.id)).all()
+    if sort == "last_message":
+        last_msg = (
+            select(func.max(Message.created_at))
+            .where(Message.conversation_id == Conversation.id)
+            .correlate(Conversation)
+            .scalar_subquery()
+        )
+        stmt = stmt.order_by(desc(last_msg), Conversation.id)
+    elif sort == "created_at":
+        stmt = stmt.order_by(desc(Conversation.created_at), Conversation.id)
+    else:
+        stmt = stmt.order_by(Conversation.id)
+
+    conversations = db.scalars(stmt).all()
 
     output = io.StringIO()
     writer = csv.writer(output)
