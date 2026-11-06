@@ -202,3 +202,11 @@ anteriores, com aviso de possível desatualização. **Tentar novamente** repete
 somente consultas de leitura com filtros, ordem e página atuais; não registra
 decisões nem envia mensagens. O carregamento é anunciado à tecnologia assistiva.
 Após sucesso, a seleção é limpa e a fila vazia mostra seu estado normal.
+
+## Falha ao atualizar briefs
+
+Se a lista ou contagem de briefs falhar, os resultados, paginação e seleção
+anteriores permanecem visíveis com aviso de possível desatualização.
+**Tentar novamente** repete consultas de leitura com filtros, ordem e página
+atuais. O carregamento é anunciado; após sucesso, a seleção é limpa e uma
+lista vazia mostra o estado normal. Nenhuma nova tentativa altera briefs.

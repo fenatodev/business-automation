@@ -7,6 +7,7 @@
   let bearer = null;
   let sessionEpoch = 0;
   let reviewEpoch = 0;
+  let briefEpoch = 0;
   let reviewOffset = 0;
   const reviewPageSize = 50;
   let reviewTotal = 0;
@@ -173,6 +174,10 @@
     sessionEpoch += 1;
     bearer = null;
     reviewEpoch += 1;
+    briefEpoch += 1;
+    $("briefs-load-status").textContent = "";
+    $("briefs-load-retry").hidden = true;
+    $("briefs-list").setAttribute("aria-busy", "false");
     reviewOffset = 0;
     reviewTotal = 0;
     oppOffset = 0;
@@ -5733,39 +5738,43 @@
   }
 
   async function refreshBriefs() {
-    if (!bearer) return;
+    if (!bearer) return false;
+    const epoch = ++briefEpoch;
     const list = $("briefs-list");
-    if (list) list.setAttribute("aria-busy", "true");
+    list.setAttribute("aria-busy", "true");
+    $("briefs-load-status").textContent = "Carregando briefs...";
+    $("briefs-load-retry").hidden = true;
     try {
-      // WP-234 — Populate opportunity filter
       populateBriefOpportunityFilter();
       const [briefs, countData] = await Promise.all([
         briefApi(buildBriefUrl()),
         briefApi(buildBriefCountUrl()),
       ]);
-      briefTotal = countData.count || 0;
+      if (epoch !== briefEpoch) return false;
+      if (!Array.isArray(briefs) || !Number.isInteger(countData?.count) || countData.count < 0) {
+        throw new Error("Brief list unavailable");
+      }
+      briefTotal = countData.count;
+      selectedBriefIds.clear();
+      $("briefs-bulk-bar").hidden = true;
       renderBriefs(briefs);
       updateBriefPagination();
+      $("briefs-load-status").textContent = "";
+      return true;
     } catch (e) {
-      console.error("[refreshBriefs]", e);
-      if (list) {
-        list.replaceChildren();
-        const errorState = document.createElement("p");
-        errorState.className = "small";
-        errorState.setAttribute("role", "status");
-        errorState.textContent = "Não foi possível carregar os briefs.";
-        list.appendChild(errorState);
-        const retry = document.createElement("button");
-        retry.type = "button";
-        retry.className = "secondary";
-        retry.textContent = "Tentar novamente";
-        retry.addEventListener("click", () => refreshBriefs());
-        list.appendChild(retry);
+      if (epoch === briefEpoch && bearer) {
+        $("briefs-load-status").textContent = "Não foi possível carregar os briefs. Os dados anteriores podem estar desatualizados.";
+        $("briefs-load-retry").hidden = false;
       }
+      return false;
     } finally {
-      if (list) list.setAttribute("aria-busy", "false");
+      if (epoch === briefEpoch) list.setAttribute("aria-busy", "false");
     }
   }
+
+  $("briefs-load-retry").addEventListener("click", () => {
+    withButton($("briefs-load-retry"), () => refreshBriefs());
+  });
 
   function updateBriefPagination() {
     const pag = $("briefs-pagination");
@@ -5971,14 +5980,6 @@
       }
     });
   });
-
-  // Reset brief selection on refresh
-  const origRefreshBriefs = refreshBriefs;
-  refreshBriefs = async function() {
-    selectedBriefIds.clear();
-    $("briefs-bulk-bar").hidden = true;
-    await origRefreshBriefs();
-  };
 
   $("briefs-refresh").addEventListener("click", () => withButton($("briefs-refresh"), async () => {
     briefOffset = 0;
