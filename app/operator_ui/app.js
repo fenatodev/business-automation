@@ -3306,46 +3306,62 @@
   }
 
   async function refreshLeads() {
-    if (!bearer) return;
-    const status = $("lead-filter-status").value;
-    // WP-177 — source filter
-    const source = $("lead-filter-source") ? $("lead-filter-source").value : "";
-    const q = $("lead-search") ? $("lead-search").value.trim() : "";
-    // WP-152 — date filter
-    const fromDate = $("lead-from-date") ? $("lead-from-date").value : "";
-    const toDate = $("lead-to-date") ? $("lead-to-date").value : "";
-    const sort = $("lead-sort") ? $("lead-sort").value : "id";
-    let path = "/leads";
-    const params = [];
-    if (status) params.push("status=" + encodeURIComponent(status));
-    if (source) params.push("source=" + encodeURIComponent(source));
-    if (q) params.push("q=" + encodeURIComponent(q));
-    if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
-    if (toDate) params.push("to_date=" + encodeURIComponent(toDate));
-    if (sort !== "id") params.push("sort=" + encodeURIComponent(sort));
-    params.push("limit=" + leadPageSize);
-    params.push("offset=" + leadOffset);
-    if (params.length) path += "?" + params.join("&");
-    // Count params
-    const countParams = [];
-    if (status) countParams.push("status=" + encodeURIComponent(status));
-    if (source) countParams.push("source=" + encodeURIComponent(source));
-    if (q) countParams.push("q=" + encodeURIComponent(q));
-    if (fromDate) countParams.push("from_date=" + encodeURIComponent(fromDate));
-    if (toDate) countParams.push("to_date=" + encodeURIComponent(toDate));
-    const [leads, countResult] = await Promise.all([
-      leadApi(path, "GET"),
-      leadApi("/leads/count" + (countParams.length ? "?" + countParams.join("&") : ""), "GET")
-    ]);
-    leadTotal = countResult ? countResult.total || 0 : 0;
-    leadListLength = (leads || []).length;
-    // WP-175 — update new leads badge
-    const newLeads = (leads || []).filter((l) => l.status === "new").length;
-    const leadBadge = $("lead-new-badge");
-    if (newLeads > 0) { leadBadge.hidden = false; leadBadge.textContent = newLeads; }
-    else { leadBadge.hidden = true; }
-    renderLeads(leads || []);
-    updateLeadPagination();
+    if (!bearer) return false;
+    $("leads-load-status").textContent = "Carregando leads...";
+    $("leads-load-retry").hidden = true;
+    $("leads-list").setAttribute("aria-busy", "true");
+    try {
+      const status = $("lead-filter-status").value;
+      // WP-177 — source filter
+      const source = $("lead-filter-source") ? $("lead-filter-source").value : "";
+      const q = $("lead-search") ? $("lead-search").value.trim() : "";
+      // WP-152 — date filter
+      const fromDate = $("lead-from-date") ? $("lead-from-date").value : "";
+      const toDate = $("lead-to-date") ? $("lead-to-date").value : "";
+      const sort = $("lead-sort") ? $("lead-sort").value : "id";
+      let path = "/leads";
+      const params = [];
+      if (status) params.push("status=" + encodeURIComponent(status));
+      if (source) params.push("source=" + encodeURIComponent(source));
+      if (q) params.push("q=" + encodeURIComponent(q));
+      if (fromDate) params.push("from_date=" + encodeURIComponent(fromDate));
+      if (toDate) params.push("to_date=" + encodeURIComponent(toDate));
+      if (sort !== "id") params.push("sort=" + encodeURIComponent(sort));
+      params.push("limit=" + leadPageSize);
+      params.push("offset=" + leadOffset);
+      if (params.length) path += "?" + params.join("&");
+      // Count params
+      const countParams = [];
+      if (status) countParams.push("status=" + encodeURIComponent(status));
+      if (source) countParams.push("source=" + encodeURIComponent(source));
+      if (q) countParams.push("q=" + encodeURIComponent(q));
+      if (fromDate) countParams.push("from_date=" + encodeURIComponent(fromDate));
+      if (toDate) countParams.push("to_date=" + encodeURIComponent(toDate));
+      const [leads, countResult] = await Promise.all([
+        leadApi(path, "GET"),
+        leadApi("/leads/count" + (countParams.length ? "?" + countParams.join("&") : ""), "GET")
+      ]);
+      if (!Array.isArray(leads) || !countResult) {
+        throw new Error("Lead list unavailable");
+      }
+      leadTotal = countResult.total || 0;
+      leadListLength = (leads || []).length;
+      // WP-175 — update new leads badge
+      const newLeads = (leads || []).filter((l) => l.status === "new").length;
+      const leadBadge = $("lead-new-badge");
+      if (newLeads > 0) { leadBadge.hidden = false; leadBadge.textContent = newLeads; }
+      else { leadBadge.hidden = true; }
+      renderLeads(leads || []);
+      updateLeadPagination();
+      $("leads-load-status").textContent = "";
+      return true;
+    } catch (error) {
+      $("leads-load-status").textContent = "Não foi possível atualizar os leads. Os dados anteriores podem estar desatualizados.";
+      $("leads-load-retry").hidden = false;
+      return false;
+    } finally {
+      $("leads-list").setAttribute("aria-busy", "false");
+    }
   }
 
   function renderLeads(leads) {
@@ -3824,9 +3840,12 @@
   }
 
   $("leads-refresh").addEventListener("click", () => withButton($("leads-refresh"), async () => {
-    await refreshLeads();
-    notify("Leads atualizados.");
+    if (await refreshLeads()) notify("Leads atualizados.");
   }));
+
+  $("leads-load-retry").addEventListener("click", () => {
+    withButton($("leads-load-retry"), () => refreshLeads());
+  });
 
   // WP-099 — Lead search
   const leadSearch = $("lead-search");

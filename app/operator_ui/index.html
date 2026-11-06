@@ -825,7 +825,9 @@
           <button id="lead-bulk-clear" type="button" class="secondary">Limpar seleção</button>
         </div>
 
-        <div id="leads-list" class="lead-list"></div>
+        <p id="leads-load-status" class="small" role="status" aria-live="polite"></p>
+        <button id="leads-load-retry" type="button" class="secondary" aria-controls="leads-list" hidden>Tentar novamente</button>
+        <div id="leads-list" aria-busy="false" class="lead-list"></div>
 
         <!-- WP-114 — Lead detail panel -->
         <div id="lead-detail" class="lead-detail" hidden>

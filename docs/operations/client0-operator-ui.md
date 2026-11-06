@@ -177,3 +177,11 @@ a contagem e as seleções anteriores e informa que podem estar desatualizados.
 a ordenação e a página atuais. O carregamento é anunciado à tecnologia
 assistiva. Uma consulta vazia bem-sucedida mostra o estado vazio normal;
 a notificação de atualização concluída só aparece após sucesso.
+
+## Falha ao atualizar leads
+
+Se a lista ou contagem de Leads falhar, resultados, contagem, badge e seleção
+anteriores permanecem na tela e podem estar desatualizados. **Tentar novamente**
+repete consultas de leitura com filtros, ordenação e página atuais. A seção
+anuncia carregamento e falha; só anuncia atualização concluída após sucesso.
+Uma resposta vazia bem-sucedida mostra o estado vazio normal.
