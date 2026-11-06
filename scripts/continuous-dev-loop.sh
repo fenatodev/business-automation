@@ -87,8 +87,12 @@ pr_risk_reason() {
   local number="$1" title files
   title="$("$GH_BIN" pr view "$number" --json title --jq '.title')"
   files="$("$GH_BIN" pr diff "$number" --name-only)"
-  if printf '%s\n' "$files" | grep -Eiq \
-    '(^|/)(alembic|migrations?)(/|$)|(^|/)(auth|security|rbac|credentials?)(/|\\.)|(^|/)(Dockerfile|docker-compose[^/]*)$|(^|/)(deploy|cloudflare|vps|n8n)(/|$)|(^|/)(\.env|.*\\.(pem|key))
+  if printf '%s\n' "$files" | grep -Eiq '(^|/)(alembic|migrations?)(/|$)|(^|/)(auth|security|rbac|credentials?)(/|\\.)|(^|/)(Dockerfile|docker-compose[^/]*)$|(^|/)(deploy|cloudflare|vps|n8n)(/|$)|(^|/)(\.env|.*\\.(pem|key))$'; then
+    printf '%s\n' "high-risk PR #$number ($title)"
+    return 0
+  fi
+  return 1
+}
 
 sync_main_after_merge() {
   git -C "$WORKTREE" fetch origin
