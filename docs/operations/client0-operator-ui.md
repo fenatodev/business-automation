@@ -217,3 +217,11 @@ Os cards preservam a ordem retornada pela API: ID crescente, Data decrescente,
 Status alfabético ou Prioridade por score decrescente. Selecionar um card
 mantém essa sequência. Os filtros e páginas continuam sob o contrato dos
 endpoints existentes; Prioridade usa sua consulta própria.
+
+## Buscas de leads sobrepostas
+
+Ao digitar buscas sucessivas ou mudar filtros enquanto uma consulta ainda está
+carregando, apenas a atualização mais recente pode substituir lista, contagem,
+badge e paginação. Respostas e falhas de consultas anteriores são ignoradas;
+o carregamento permanece até a consulta atual terminar. Se ela falhar, os dados
+anteriores permanecem com aviso e **Tentar novamente**, usando os filtros atuais.
