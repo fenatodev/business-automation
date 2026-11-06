@@ -462,6 +462,7 @@
     selectionVersion += 1;
     const version = selectionVersion;
     selectedId = id;
+    $("opp-timeline-list").replaceChildren();
     opportunityLeadId = null;
     opportunityCustomerId = null;
     opportunityContactType = null;
@@ -528,7 +529,7 @@
     // WP-142 — load related conversations
     await loadOpportunityConversations(id, version);
     // WP-143 — load activity timeline
-    await loadOpportunityTimeline(id);
+    await loadOpportunityTimeline(id, version);
     // WP-144 — load related leads
     await loadOpportunityLeads(id, version);
     await loadOpportunityCustomers(id, version);
@@ -612,10 +613,16 @@
   }
 
   // WP-143 — Load activity timeline for the selected opportunity
-  async function loadOpportunityTimeline(id) {
+  async function loadOpportunityTimeline(id, expectedVersion) {
+    const session = sessionEpoch;
+    const isCurrent = () => expectedVersion === selectionVersion &&
+      id === selectedId && session === sessionEpoch;
+    if (!isCurrent()) return;
+    const list = $("opp-timeline-list");
+    list.replaceChildren();
     try {
       const events = await api("/opportunities/" + id + "/timeline");
-      const list = $("opp-timeline-list");
+      if (!isCurrent()) return;
       list.replaceChildren();
       if (!events || !events.length) {
         const empty = document.createElement("p");
@@ -636,8 +643,8 @@
         list.appendChild(item);
       }
     } catch (error) {
-      // Silently fail — timeline is supplementary info
-      $("opp-timeline-list").replaceChildren();
+      // Timeline is supplementary; only the current request may clear it.
+      if (isCurrent()) list.replaceChildren();
     }
   }
 
