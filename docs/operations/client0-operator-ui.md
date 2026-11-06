@@ -185,3 +185,12 @@ anteriores permanecem na tela e podem estar desatualizados. **Tentar novamente**
 repete consultas de leitura com filtros, ordenação e página atuais. A seção
 anuncia carregamento e falha; só anuncia atualização concluída após sucesso.
 Uma resposta vazia bem-sucedida mostra o estado vazio normal.
+
+## Falha ao atualizar tarefas internas
+
+Se a lista ou contagem de tarefas falhar, resultados, paginação e seleção
+anteriores permanecem visíveis, com aviso de possível desatualização.
+**Tentar novamente** repete somente consultas de leitura usando filtros,
+ordenação e página atuais; não reprocessa tarefas. A seção anuncia o
+carregamento. Após sucesso, a seleção é limpa e resultados vazios mostram
+o estado vazio normal.

@@ -1274,7 +1274,9 @@
   <button id="task-bulk-retry" type="button" class="primary" aria-label="Tentar novamente as tarefas selecionadas">Tentar novamente selecionadas</button>
   <button id="task-bulk-clear" type="button" class="secondary" aria-controls="tasks-list">Limpar seleção</button>
 </div>
-<div id="tasks-list" class="task-list" role="list" aria-label="Lista de tarefas internas"></div>
+<p id="tasks-load-status" class="small" role="status" aria-live="polite"></p>
+<button id="tasks-load-retry" type="button" class="secondary" aria-controls="tasks-list" hidden>Tentar novamente</button>
+<div id="tasks-list" class="task-list" role="list" aria-label="Lista de tarefas internas" aria-busy="false"></div>
 
         <div id="tasks-pagination" class="task-pagination" role="navigation" aria-label="Paginação de tarefas" aria-controls="tasks-list" hidden>
           <button id="tasks-prev-page" type="button" class="secondary" aria-controls="tasks-list">Anterior</button>
