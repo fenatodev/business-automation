@@ -41,6 +41,7 @@
   let msgOffset = 0;
   const msgPageSize = 50;
   let msgTotal = 0;
+  let messageLoadEpoch = 0;
   let dashboardIntervalId = null;
   // WP-169/170 — Bulk delete state
   const selectedLeadIds = new Set();
@@ -1976,12 +1977,16 @@
   }
 
   async function loadMessages(id) {
+    const epoch = ++messageLoadEpoch;
+    const session = sessionEpoch;
+    const isCurrent = () => epoch === messageLoadEpoch &&
+      session === sessionEpoch && selectedConvId === id;
     try {
       const [messages, countResult] = await Promise.all([
         conversationApi("/conversations/" + id + "/messages?limit=" + msgPageSize + "&offset=" + msgOffset),
         conversationApi("/conversations/" + id + "/messages/count?limit=" + msgPageSize + "&offset=" + msgOffset),
       ]);
-      if (selectedConvId !== id) return;
+      if (!isCurrent()) return;
       msgTotal = countResult.total || 0;
       const target = $("conv-messages");
       target.replaceChildren();
@@ -2007,7 +2012,7 @@
       }
       updateMessagePagination();
     } catch (error) {
-      if (selectedConvId !== id) return;
+      if (!isCurrent()) return;
       notify("Não foi possível carregar as mensagens.", true);
     }
   }
