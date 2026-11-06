@@ -47,7 +47,7 @@ async function run(failedRequest) {
   };
   vm.createContext(context);
   vm.runInContext(section('  function buildConversationUrl(', '  function showConversationList(')
-    + section('  async function refreshConversations()', '  function updateConversationPagination()')
+    + section('  let conversationRefreshVersion = 0;', '  function updateConversationPagination()')
     + section('  $("conv-refresh").addEventListener', '  // WP-196'), context);
   elements.get('conv-refresh').click();
   await new Promise(resolve => setImmediate(resolve));

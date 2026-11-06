@@ -233,3 +233,11 @@ Ao buscar clientes ou mudar filtros/página durante uma consulta, somente a
 limpar a seleção. Respostas e falhas anteriores são ignoradas e não encerram
 o carregamento atual. Se a consulta atual falhar, os dados e a seleção anteriores
 permanecem com aviso e **Tentar novamente**, usando os filtros atuais.
+
+## Buscas de conversas sobrepostas
+
+Ao buscar conversas ou mudar filtros/página durante uma consulta, apenas a
+atualização mais recente aplica lista, contagem, badge, paginação e seleção.
+Respostas ou falhas antigas não encerram o carregamento atual nem anunciam
+sucesso. Se a consulta atual falhar, os dados e a seleção anteriores permanecem
+com aviso e **Tentar novamente**, preservando os filtros atuais.
