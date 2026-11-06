@@ -998,7 +998,9 @@
           <button id="customer-bulk-clear" type="button" class="secondary">Limpar seleção</button>
         </div>
 
-        <div id="customers-list" class="customer-list"></div>
+        <p id="customers-load-status" class="small" role="status" aria-live="polite"></p>
+        <button id="customers-load-retry" type="button" class="secondary" aria-controls="customers-list" hidden>Tentar novamente</button>
+        <div id="customers-list" class="customer-list" aria-busy="false"></div>
 
         <div id="customers-pagination" class="customer-pagination" hidden>
           <button id="customers-prev-page" type="button" class="secondary">Anterior</button>
