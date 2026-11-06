@@ -4915,6 +4915,8 @@
   // WP-152 — Export CSV with current filters
   $("leads-export-csv").addEventListener("click", () => {
     const params = [];
+    const sort = $("lead-sort")?.value;
+    if (sort) params.push("sort=" + encodeURIComponent(sort));
     const status = $("lead-filter-status").value;
     if (status) params.push("status=" + encodeURIComponent(status));
     // WP-177 — source filter

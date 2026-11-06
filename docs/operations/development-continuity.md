@@ -1803,3 +1803,15 @@ Sem migrations, mudanças de autorização, dados reais ou ações externas.
 
 Validação local: 3225 testes passaram, 2 warnings; preflight, compileall,
 diff-check e sintaxe JavaScript passaram. CI e merge ficam com o supervisor.
+
+## WP-400 — CSV de leads na ordem selecionada (05/11/2026)
+
+O botão de exportação de leads transmite a ordem ID, Data, Status ou Nome
+junto com status, fonte, busca e datas. A API exporta todos os resultados
+filtrados, incluindo outras páginas. Data decrescente; demais ordens crescentes;
+ID crescente no desempate. Sem sort mantém ID crescente; sort inválido retorna 422.
+
+Validação local: 3232 testes passaram, 2 warnings; preflight, compileall,
+diff-check e sintaxe JavaScript passaram. API e listener real do botão
+cobertos com dados sintéticos. Sem schema, migrations, serviços reais ou
+ações externas. Um único PR fica aberto para CI e revisão pelo supervisor.
