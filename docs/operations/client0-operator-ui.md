@@ -150,3 +150,12 @@ Data e ID de desempate são decrescentes; status é crescente com ID crescente;
 prioridade usa score decrescente e ID crescente no empate. Sem `sort`, a API
 mantém ID crescente; valor desconhecido retorna 422. A lista por prioridade
 continua usando seu endpoint próprio, sem alterar seu contrato de filtros.
+
+## CSV de briefs
+
+Em Proposal Briefs, escolher Data, ID, Status ou Título e exportar CSV.
+O arquivo segue a ordem da lista, preservando status, oportunidade, busca e
+período em todos os resultados, inclusive os de outras páginas. Data e ID de
+desempate são decrescentes; status/título e seu desempate por ID são crescentes.
+Sem `sort`, `/proposal-briefs/export.csv` mantém ID crescente; valor desconhecido
+retorna 422. Os campos detalhados permanecem no arquivo.
