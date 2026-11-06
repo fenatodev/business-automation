@@ -281,3 +281,11 @@ seleção atual, inclusive ao reabrir a mesma conversa ou trocar de sessão.
 Durante a gravação, o editor e o botão ficam bloqueados; em caso de falha,
 o rascunho permanece disponível para tentar novamente. A confirmação de
 sucesso permanece até a próxima leitura ou gravação.
+
+## Salvamento de notas ao trocar de oportunidade
+
+Ao salvar uma nota e trocar de oportunidade, a resposta anterior não altera
+os editores, a lista em memória nem os avisos da seleção atual. O mesmo vale
+para fechar/reabrir a seleção ou encerrar a sessão. A escrita enviada continua
+no servidor; selecionar novamente usa o fluxo normal para consultar o estado.
+Falha da gravação atual preserva o rascunho para nova tentativa.

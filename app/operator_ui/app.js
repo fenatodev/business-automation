@@ -1151,13 +1151,16 @@
   // WP-113 — Save opportunity note independently
   $("save-opp-note").addEventListener("click", async () => {
     if (selectedId === null) return;
+    const id = selectedId, version = selectionVersion, epoch = sessionEpoch;
+    const isCurrent = () => id === selectedId && version === selectionVersion && epoch === sessionEpoch;
     const triageNote = $("opp-note").value;
     try {
-      const updated = await api("/opportunities/" + selectedId, {
+      const updated = await api("/opportunities/" + id, {
         method: "PATCH",
         body: { triage_note: triageNote.trim() || null },
       });
-      const idx = opportunities.findIndex((o) => o.id === selectedId);
+      if (!isCurrent()) return;
+      const idx = opportunities.findIndex((o) => o.id === id);
       if (idx !== -1) {
         opportunities[idx] = updated;
       }
@@ -1165,6 +1168,7 @@
       $("opp-note").value = updated.triage_note || "";
       notify("Nota salva.");
     } catch (error) {
+      if (!isCurrent()) return;
       if (error instanceof ApiFailure) {
         notify(error.message, true);
       } else {
