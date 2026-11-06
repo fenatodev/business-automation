@@ -301,7 +301,8 @@
   function showList() {
     const target = $("opportunity-list");
     target.replaceChildren();
-    const ordered = [...opportunities].sort((a, b) => b.id - a.id);
+    // Preserve server ordering, including priority and paginated results.
+    const ordered = opportunities;
     $("list-meta").textContent = ordered.length + " oportunidade(s) da sua empresa.";
     updateBulkTriageBar();
     if (!ordered.length) {
