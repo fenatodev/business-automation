@@ -178,6 +178,9 @@
     oppOffset = 0;
     oppTotal = 0;
     $("rq-list").replaceChildren();
+    $("rq-load-status").textContent = "";
+    $("rq-load-retry").hidden = true;
+    $("rq-list").setAttribute("aria-busy", "false");
     $("rq-count").textContent = "—";
     $("rq-summary").textContent = "Resumo operacional indisponível.";
     $("rq-aging").textContent = "Atrasos: indisponível.";
@@ -1356,15 +1359,36 @@
   }
   async function refreshReviewQueue() {
     const epoch = ++reviewEpoch;
-    const [items, summary, aging, countData] = await Promise.all([
-      reviewApi(buildReviewUrl()),
-      reviewApi("/review-queue/summary"),
-      reviewApi("/review-queue/aging"),
-      reviewApi(buildReviewCountUrl()),
-    ]);
-    if (epoch !== reviewEpoch) return;
-    if (!Array.isArray(items)) throw new Error("Fila inválida.");
-    reviewTotal = countData?.total || 0;
+    if (!bearer) return false;
+    $("rq-list").setAttribute("aria-busy", "true");
+    $("rq-load-status").textContent = "Carregando fila de revisão...";
+    $("rq-load-retry").hidden = true;
+    let items, summary, aging, countData;
+    try {
+      [items, summary, aging, countData] = await Promise.all([
+        reviewApi(buildReviewUrl()),
+        reviewApi("/review-queue/summary"),
+        reviewApi("/review-queue/aging"),
+        reviewApi(buildReviewCountUrl()),
+      ]);
+      if (epoch !== reviewEpoch) return false;
+      const validCount = value => Number.isInteger(value) && value >= 0;
+      if (!Array.isArray(items) || !validCount(countData?.total) ||
+          ![summary?.pending, summary?.approve, summary?.reject,
+            aging?.overdue_pending].every(validCount)) {
+        throw new Error("Fila inválida.");
+      }
+    } catch (error) {
+      if (epoch === reviewEpoch && bearer) {
+        $("rq-load-status").textContent = "Não foi possível atualizar a fila. Os dados anteriores podem estar desatualizados.";
+        $("rq-load-retry").hidden = false;
+      }
+      return false;
+    } finally {
+      if (epoch === reviewEpoch) $("rq-list").setAttribute("aria-busy", "false");
+    }
+    $("rq-load-status").textContent = "";
+    reviewTotal = countData.total;
     $("rq-count").textContent = summary.pending + " pendente(s)";
     $("rq-prev").disabled = reviewOffset === 0;
     $("rq-next").disabled = reviewOffset + items.length >= reviewTotal;
@@ -1441,7 +1465,9 @@
       p.textContent = "Nenhum item pendente.";
       list.append(p);
     }
+    return true;
   }
+  $("rq-load-retry").addEventListener("click", () => withButton($("rq-load-retry"), refreshReviewQueue));
   $("rq-refresh").addEventListener("click", () => withButton($("rq-refresh"), refreshReviewQueue));
   $("rq-prev").addEventListener("click", () => withButton($("rq-prev"), async () => {
     reviewOffset = Math.max(0, reviewOffset - reviewPageSize);
