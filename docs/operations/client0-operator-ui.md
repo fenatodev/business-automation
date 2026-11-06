@@ -241,3 +241,11 @@ atualização mais recente aplica lista, contagem, badge, paginação e seleçã
 Respostas ou falhas antigas não encerram o carregamento atual nem anunciam
 sucesso. Se a consulta atual falhar, os dados e a seleção anteriores permanecem
 com aviso e **Tentar novamente**, preservando os filtros atuais.
+
+## Paginação concorrente do histórico de mensagens
+
+Ao navegar rapidamente entre páginas de mensagens, apenas a consulta mais
+recente pode atualizar o histórico, a contagem e o indicador de página.
+Resultados e falhas anteriores são ignorados, inclusive após encerrar a sessão.
+Se a consulta atual falhar, o histórico anterior permanece e o operador recebe
+um aviso genérico; navegar novamente repete somente consultas de leitura.
