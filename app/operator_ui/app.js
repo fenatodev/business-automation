@@ -2933,15 +2933,22 @@
 
   const DASHBOARD_REFRESH_MS = 60000;
 
+  let dashboardRefreshVersion = 0;
+
   // Dashboard — WP-082
   async function refreshDashboard() {
     if (!bearer) return;
+    const version = ++dashboardRefreshVersion;
+    const session = sessionEpoch;
+    const isCurrent = () => version === dashboardRefreshVersion && session === sessionEpoch;
     const res = await fetch("/internal-tasks/dashboard", {
       headers: {"Authorization": "Bearer " + bearer},
     });
+    if (!isCurrent()) return;
     if (res.status === 403) {disconnect("Permissão de operador necessária."); return;}
     if (!res.ok) return;
     const data = await res.json();
+    if (!isCurrent()) return;
     renderDashboard(data);
   }
 
@@ -2954,6 +2961,7 @@
   }
 
   function stopDashboardRefresh() {
+    dashboardRefreshVersion += 1;
     if (dashboardIntervalId !== null) {
       clearInterval(dashboardIntervalId);
       dashboardIntervalId = null;

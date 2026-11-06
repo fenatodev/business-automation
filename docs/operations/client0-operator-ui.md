@@ -249,3 +249,10 @@ recente pode atualizar o histórico, a contagem e o indicador de página.
 Resultados e falhas anteriores são ignorados, inclusive após encerrar a sessão.
 Se a consulta atual falhar, o histórico anterior permanece e o operador recebe
 um aviso genérico; navegar novamente repete somente consultas de leitura.
+
+## Atualizações concorrentes do dashboard
+
+Somente a consulta mais recente pode atualizar os totais do dashboard.
+Respostas antigas são descartadas, inclusive quando a leitura do JSON demora.
+Interromper a atualização automática ou encerrar a sessão invalida as consultas
+pendentes; elas não atualizam a tela nem desconectam uma sessão posterior.
