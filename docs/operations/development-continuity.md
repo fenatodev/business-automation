@@ -1,5 +1,13 @@
 # Continuidade do desenvolvimento — Codex ou Junie
 
+## WP-502 — Aviso de inserção de template (07/11/2026)
+
+O aviso acessível de inserção de template é limpo quando a pessoa edita
+manualmente o rascunho da resposta, evitando que a confirmação fique
+desatualizada. O aviso continua visível imediatamente após a inserção.
+Implementação limitada à UI e ao teste sintético do handler; sem mudança de API,
+autorização, persistência ou integração externa.
+
 ## Ponto de partida
 
 - Repositório: `fenatodev/business-automation`, branch base `main`.
