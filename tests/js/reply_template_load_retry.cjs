@@ -54,12 +54,14 @@ async function run() {
   const list = context.$('reply-template-list');
 
   const failedLoad = context.loadReplyTemplateList();
+  assert.equal(list.attributes['aria-busy'], 'true');
   assert.equal(requests[0].path, '/companies/3/reply-templates');
   assert.equal(requests[0].method, 'GET');
   assert.equal(status.textContent, 'Carregando templates');
   assert.equal(retry.hidden, true);
   requests[0].reject(new Error('private backend details'));
   await failedLoad;
+  assert.equal(list.attributes['aria-busy'], 'false');
   assert.equal(status.textContent, 'Não foi possível carregar os templates.');
   assert.equal(retry.hidden, false);
   assert.equal(retry.disabled, false);
@@ -67,10 +69,12 @@ async function run() {
 
   retry.click();
   assert.equal(requests.length, 2);
+  assert.equal(list.attributes['aria-busy'], 'true');
   assert.equal(status.textContent, 'Carregando templates');
   requests[1].resolve([{id: 7, name: 'Saudação', content: 'Olá'}]);
   await requests[1].promise;
   await new Promise(resolve => setImmediate(resolve));
+  assert.equal(list.attributes['aria-busy'], 'false');
   assert.equal(status.textContent, '');
   assert.equal(retry.hidden, true);
   assert.equal(list.children.length, 1);
@@ -80,8 +84,10 @@ async function run() {
   const currentLoad = context.loadReplyTemplateList();
   requests[2].resolve([{id: 8, name: 'Obsoleto', content: 'Antigo'}]);
   await staleLoad;
+  assert.equal(list.attributes['aria-busy'], 'true');
   requests[3].resolve([]);
   await currentLoad;
+  assert.equal(list.attributes['aria-busy'], 'false');
   assert.equal(list.children.length, 1);
   assert.equal(list.children[0].textContent, 'Nenhum template salvo.');
 }

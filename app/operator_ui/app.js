@@ -6515,6 +6515,7 @@
     const loadStatus = $("reply-template-load-status");
     const retry = $("reply-template-load-retry");
     const isCurrent = () => version === replyTemplateLoadVersion;
+    listEl.setAttribute("aria-busy", "true");
     loadStatus.textContent = "Carregando templates";
     retry.hidden = true;
     retry.disabled = true;
@@ -6558,7 +6559,10 @@
       loadStatus.textContent = "Não foi possível carregar os templates.";
       retry.hidden = false;
     } finally {
-      if (isCurrent()) retry.disabled = false;
+      if (isCurrent()) {
+        listEl.setAttribute("aria-busy", "false");
+        retry.disabled = false;
+      }
     }
   }
 

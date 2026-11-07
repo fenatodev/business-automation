@@ -10,6 +10,8 @@ assert(start >= 0 && end > start);
 function setup(templates) {
   const list = {
     children: [],
+    attributes: {},
+    setAttribute(name, value) { this.attributes[name] = value; },
     replaceChildren() { this.children = []; },
     appendChild(child) { this.children.push(child); },
   };
@@ -43,6 +45,7 @@ function setup(templates) {
 async function run() {
   const empty = setup([]);
   await empty.context.loadReplyTemplateList();
+  assert.equal(empty.list.attributes['aria-busy'], 'false');
   assert.equal(empty.list.children.length, 1);
   assert.equal(empty.list.children[0].textContent, 'Nenhum template salvo.');
   assert.equal(empty.list.children[0].attributes.role, 'status');
@@ -50,6 +53,7 @@ async function run() {
 
   const populated = setup([{id: 1, name: 'Saudação', content: 'Olá'}]);
   await populated.context.loadReplyTemplateList();
+  assert.equal(populated.list.attributes['aria-busy'], 'false');
   assert.equal(populated.list.children.length, 1);
   assert.notEqual(populated.list.children[0].textContent, 'Nenhum template salvo.');
   assert.equal(populated.list.children[0].attributes.role, undefined);
