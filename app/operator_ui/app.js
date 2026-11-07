@@ -6610,6 +6610,7 @@
     saveStatus.textContent = "Salvando template";
     try {
       await templateApi(`/companies/${company}/reply-templates`, "POST", {name, content});
+      saveStatus.textContent = "Template salvo.";
       $("reply-template-name").value = "";
       $("reply-template-content").value = "";
       notify("Template salvo.");
@@ -6617,12 +6618,12 @@
       // Refresh the reply template selector in conversation reply
       loadReplyTemplates();
     } catch (err) {
+      saveStatus.textContent = "Não foi possível salvar o template.";
       notify("Erro ao salvar template.");
     } finally {
       replyTemplateSaving = false;
       saveButton.disabled = false;
       saveStatus.setAttribute("aria-busy", "false");
-      saveStatus.textContent = "";
     }
   });
 
