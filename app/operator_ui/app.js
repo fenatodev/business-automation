@@ -2983,6 +2983,7 @@
           if (res.ok) {
             const data = await res.json();
             $("reply-message").value = data.suggestion;
+            $("reply-template-insert-status").textContent = "";
           }
         } catch (_e) {
           // Silently ignore auto-suggest errors

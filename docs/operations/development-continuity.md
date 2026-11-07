@@ -1,5 +1,12 @@
 # Continuidade do desenvolvimento — Codex ou Junie
 
+## WP-505 — Limpar aviso ao carregar sugestão automática (07/11/2026)
+
+Ao abrir o formulário de resposta, uma sugestão automática bem-sucedida substitui
+o rascunho e limpa o aviso anterior de template inserido. Falhas e respostas sem
+sugestão mantêm o comportamento atual. Coberto por teste sintético do listener;
+sem mudança de API, autorização, persistência ou integração externa.
+
 ## WP-504 — Limpar aviso de template após envio (07/11/2026)
 
 Depois que a API aceita o envio de uma resposta, o formulário é limpo e o aviso
