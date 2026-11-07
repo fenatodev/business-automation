@@ -1,5 +1,12 @@
 # Continuidade do desenvolvimento — Codex ou Junie
 
+## WP-503 — Limpar aviso ao copiar sugestão (07/11/2026)
+
+Copiar uma sugestão de resposta para o formulário limpa o aviso anterior de
+template inserido, mantendo o conteúdo copiado, a abertura do formulário e a
+notificação de confirmação. Implementação limitada à UI e ao teste sintético
+do handler; sem mudança de API, autorização, persistência ou integração externa.
+
 ## WP-502 — Aviso de inserção de template (07/11/2026)
 
 O aviso acessível de inserção de template é limpo quando a pessoa edita
