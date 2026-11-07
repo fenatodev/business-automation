@@ -6551,7 +6551,7 @@
     const listEl = $("reply-template-list");
     if (!search || !filterStatus || !listEl) return;
     const query = normalizeReplyTemplateSearchText(search.value);
-    if (clearSearch) clearSearch.disabled = query === "";
+    if (clearSearch) clearSearch.disabled = search.value === "";
     const items = Array.from(listEl.children).filter(item => item.className === "reply-template-item");
     let visible = 0;
     for (const item of items) {
@@ -6572,7 +6572,7 @@
 
   $("reply-template-search")?.addEventListener("input", applyReplyTemplateFilter);
   $("reply-template-search")?.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape" || !(event.currentTarget?.value || "").trim()) return;
+    if (event.key !== "Escape" || !(event.currentTarget?.value || "")) return;
     event.preventDefault();
     event.currentTarget.value = "";
     applyReplyTemplateFilter();

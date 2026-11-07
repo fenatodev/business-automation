@@ -79,6 +79,21 @@ async function run() {
   whitespaceUi.search.handlers.input();
   assert.deepEqual(whitespaceUi.list.children.map(item => item.hidden), [false, true]);
   assert.equal(whitespaceUi.filterStatus.textContent, '1 template corresponde à busca.');
+  whitespaceUi.search.value = '   ';
+  whitespaceUi.search.handlers.input();
+  assert.deepEqual(whitespaceUi.list.children.map(item => item.hidden), [false, false]);
+  assert.equal(whitespaceUi.filterStatus.textContent, '');
+  assert.equal(whitespaceUi.clearSearch.disabled, false);
+  let whitespaceEscapePrevented = false;
+  whitespaceUi.search.handlers.keydown({key: 'Escape', currentTarget: whitespaceUi.search, preventDefault() { whitespaceEscapePrevented = true; }});
+  assert.equal(whitespaceEscapePrevented, true);
+  assert.equal(whitespaceUi.search.value, '');
+  assert.equal(whitespaceUi.clearSearch.disabled, true);
+  whitespaceUi.search.value = '\t ';
+  whitespaceUi.search.handlers.input();
+  whitespaceUi.clearSearch.handler();
+  assert.equal(whitespaceUi.search.value, '');
+  assert.equal(whitespaceUi.clearSearch.disabled, true);
 
   const unicodeUi = setup([
     {id: 3, name: 'Alpha\u1ab0beta', content: 'Texto sintético'},
