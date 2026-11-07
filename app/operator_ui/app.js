@@ -202,6 +202,9 @@
     $("connect-button").hidden = false;
     $("disconnect-button").hidden = true;
     $("opportunity-list").replaceChildren();
+    $("opp-load-status").textContent = "";
+    $("opp-load-retry").hidden = true;
+    $("opportunity-list").setAttribute("aria-busy", "false");
     $("list-meta").textContent = "Nenhuma consulta realizada.";
     $("capture-form").reset();
     conversations = [];
@@ -873,6 +876,26 @@
   });
 
   async function refreshList(preferId = selectedId) {
+    const list = $("opportunity-list");
+    const status = $("opp-load-status");
+    status.textContent = "Carregando oportunidades...";
+    $("opp-load-retry").hidden = true;
+    list.setAttribute("aria-busy", "true");
+    try {
+      await loadOpportunityList(preferId);
+      $("opp-load-retry").hidden = true;
+      status.textContent = "";
+      return true;
+    } catch (error) {
+      status.textContent = "Não foi possível atualizar as oportunidades. Os dados anteriores podem estar desatualizados.";
+      $("opp-load-retry").hidden = false;
+      return false;
+    } finally {
+      list.setAttribute("aria-busy", "false");
+    }
+  }
+
+  async function loadOpportunityList(preferId = selectedId) {
     const showArchived = $("show-archived").checked;
     // WP-094 — opportunity search
     const searchQuery = $("opp-search").value.trim();
@@ -1797,8 +1820,13 @@
 
   $("refresh-button").addEventListener("click", () => {
     withButton($("refresh-button"), async () => {
+      if (await refreshList()) notify("Oportunidades atualizadas.");
+    });
+  });
+
+  $("opp-load-retry").addEventListener("click", () => {
+    withButton($("opp-load-retry"), async () => {
       await refreshList();
-      notify("Oportunidades atualizadas.");
     });
   });
 
