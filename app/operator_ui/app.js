@@ -6509,10 +6509,12 @@
   let replyTemplateLoadVersion = 0;
   function applyReplyTemplateFilter() {
     const search = $("reply-template-search");
+    const clearSearch = $("reply-template-search-clear");
     const filterStatus = $("reply-template-filter-status");
     const listEl = $("reply-template-list");
     if (!search || !filterStatus || !listEl) return;
     const query = (search.value || "").trim().toLocaleLowerCase();
+    if (clearSearch) clearSearch.disabled = query === "";
     const items = Array.from(listEl.children).filter(item => item.className === "reply-template-item");
     let visible = 0;
     for (const item of items) {
@@ -6526,6 +6528,13 @@
   }
 
   $("reply-template-search")?.addEventListener("input", applyReplyTemplateFilter);
+  $("reply-template-search-clear")?.addEventListener("click", () => {
+    const search = $("reply-template-search");
+    if (!search) return;
+    search.value = "";
+    applyReplyTemplateFilter();
+    search.focus();
+  });
 
   async function loadReplyTemplateList() {
     if (!bearer || !company) return;

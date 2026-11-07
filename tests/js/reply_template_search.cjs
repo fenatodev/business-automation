@@ -14,13 +14,15 @@ function setup(templates) {
     replaceChildren() { this.children = []; },
     appendChild(child) { this.children.push(child); },
   };
-  const search = {value: '', addEventListener(event, handler) { this.handler = handler; }};
+  const search = {value: '', addEventListener(event, handler) { this.handler = handler; }, focus() { this.focused = true; }};
+  const clearSearch = {disabled: true, addEventListener(event, handler) { this.handler = handler; }};
   const filterStatus = {textContent: ''};
   const loadStatus = {textContent: ''};
   const retry = {hidden: false, disabled: false, addEventListener() {}};
   const elements = {
     'reply-template-list': list,
     'reply-template-search': search,
+    'reply-template-search-clear': clearSearch,
     'reply-template-filter-status': filterStatus,
     'reply-template-load-status': loadStatus,
     'reply-template-load-retry': retry,
@@ -47,7 +49,7 @@ function setup(templates) {
   };
   vm.createContext(context);
   vm.runInContext(source.slice(start, end) + '\nthis.loadReplyTemplateList = loadReplyTemplateList; this.deleteReplyTemplate = deleteReplyTemplate;', context);
-  return {context, list, search, filterStatus};
+  return {context, list, search, clearSearch, filterStatus};
 }
 
 async function run() {
@@ -67,11 +69,14 @@ async function run() {
   ui.search.handler();
   assert.deepEqual(ui.list.children.map(item => item.hidden), [true, true]);
   assert.equal(ui.filterStatus.textContent, 'Nenhum template corresponde à busca.');
+  assert.equal(ui.clearSearch.disabled, false);
 
-  ui.search.value = '';
-  ui.search.handler();
+  ui.clearSearch.handler();
+  assert.equal(ui.search.value, '');
+  assert.equal(ui.search.focused, true);
   assert.deepEqual(ui.list.children.map(item => item.hidden), [false, false]);
   assert.equal(ui.filterStatus.textContent, '');
+  assert.equal(ui.clearSearch.disabled, true);
 
   ui.search.value = 'saudação';
   ui.search.handler();
