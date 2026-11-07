@@ -757,12 +757,22 @@
   });
 
   async function loadOpportunityCustomers(id, expectedVersion) {
+    const expectedSession = sessionEpoch;
+    const isCurrent = () => !(expectedSession !== sessionEpoch ||
+      expectedVersion !== selectionVersion || id !== selectedId);
+    const status = $("opp-customers-status");
+    const retry = $("opp-customers-retry");
+    const list = $("opp-customers-list");
+    status.textContent = "Carregando clientes…";
+    retry.hidden = true;
+    retry.disabled = true;
+    list.setAttribute("aria-busy", "true");
     try {
       const customers = await api("/opportunities/" + id + "/linked-customers");
-      if (expectedVersion !== selectionVersion || id !== selectedId) return;
-      const list = $("opp-customers-list");
+      if (!isCurrent()) return;
       list.replaceChildren();
       if (!customers || !customers.length) {
+        status.textContent = "";
         const empty = document.createElement("p");
         empty.className = "small";
         empty.setAttribute("role", "status");
@@ -802,17 +812,29 @@
         });
         list.appendChild(item);
       }
+      status.textContent = "";
     } catch (error) {
-      if (expectedVersion !== selectionVersion || id !== selectedId) return;
-      const list = $("opp-customers-list");
+      if (!isCurrent()) return;
       list.replaceChildren();
       const errorState = document.createElement("p");
       errorState.className = "small";
       errorState.setAttribute("role", "status");
       errorState.textContent = "Não foi possível carregar os clientes.";
       list.appendChild(errorState);
+      status.textContent = "Falha ao carregar clientes da oportunidade.";
+      retry.hidden = false;
+    } finally {
+      if (isCurrent()) {
+        list.setAttribute("aria-busy", "false");
+        retry.disabled = false;
+      }
     }
   }
+
+  $("opp-customers-retry").addEventListener("click", () => {
+    if (selectedId === null) return;
+    loadOpportunityCustomers(selectedId, selectionVersion).catch(() => {});
+  });
 
   async function refreshList(preferId = selectedId) {
     const showArchived = $("show-archived").checked;
