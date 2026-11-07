@@ -2965,6 +2965,8 @@
     form.hidden = !form.hidden;
     if (!form.hidden) {
       // Auto-load suggestion when form is shown
+      const suggestionStatus = $("reply-auto-suggestion-status");
+      suggestionStatus.textContent = "";
       const convId = $("reply-conv-id").value;
       if (convId && !$("reply-message").value) {
         const id = parseInt(convId, 10);
@@ -2976,19 +2978,29 @@
               "Content-Type": "application/json",
             },
           });
+          // WP-508 — Report auto-suggestion failures without replacing a draft.
+          const isCurrent = () => !form.hidden && $("reply-conv-id").value === convId && !$("reply-message").value;
           if (res.status === 400 || res.status === 503) {
-            // Silently ignore — no customer message or agent unavailable
+            if (isCurrent()) {
+              suggestionStatus.textContent = res.status === 400
+                ? "Não há mensagem do cliente para sugerir uma resposta."
+                : "Agente indisponível. Você pode escrever a resposta manualmente.";
+            }
             return;
           }
           if (res.ok) {
             const data = await res.json();
             // WP-507 — Ignore late suggestions after the operator edits or changes conversations.
-            if (form.hidden || $("reply-conv-id").value !== convId || $("reply-message").value) return;
+            if (!isCurrent()) return;
             $("reply-message").value = data.suggestion;
             $("reply-template-insert-status").textContent = "";
+          } else if (isCurrent()) {
+            suggestionStatus.textContent = "Não foi possível gerar uma sugestão. Você pode escrever a resposta manualmente.";
           }
         } catch (_e) {
-          // Silently ignore auto-suggest errors
+          if (!form.hidden && $("reply-conv-id").value === convId && !$("reply-message").value) {
+            suggestionStatus.textContent = "Não foi possível gerar uma sugestão. Você pode escrever a resposta manualmente.";
+          }
         }
       }
     }
