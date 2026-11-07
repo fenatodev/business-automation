@@ -6779,6 +6779,7 @@
     ) && !confirm("Descartar as alterações não salvas deste template?")) return;
     const trigger = editingReplyTemplateTrigger;
     resetReplyTemplateForm();
+    $("reply-template-save-status").textContent = "Edição cancelada.";
     if (trigger?.isConnected) trigger.focus();
     else $("reply-template-name").focus();
   }
