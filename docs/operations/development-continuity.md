@@ -1815,3 +1815,14 @@ Validação local: 3232 testes passaram, 2 warnings; preflight, compileall,
 diff-check e sintaxe JavaScript passaram. API e listener real do botão
 cobertos com dados sintéticos. Sem schema, migrations, serviços reais ou
 ações externas. Um único PR fica aberto para CI e revisão pelo supervisor.
+
+## WP-431 — Retry de conversas relacionadas à oportunidade (06/11/2026)
+
+O detalhe da oportunidade agora oferece retry para recuperar a lista de
+conversas após falha de leitura. O estado acessível informa carregamento,
+erro genérico e busy state; o retry repete apenas o GET da oportunidade ainda
+selecionada. Testes exercitam o handler real com DOM/API sintéticos, incluindo
+falha seguida de sucesso, lista vazia e resposta obsoleta.
+
+Escopo limitado à UI do operador e testes. Sem mudança de API, auth/tenant,
+schema, migrations, integrações ou serviços externos.
