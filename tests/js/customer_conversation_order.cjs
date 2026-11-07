@@ -14,7 +14,7 @@ function element() {
 }
 async function run(mode, fails, oldFirst) {
   const elements = new Map(), pending = [];
-  const context = {sessionEpoch: 0, bearer: 'synthetic', currentCustomerId: null, opportunities: [{company_id: 1}], URLSearchParams, console: {error() {}}, hideCustomerEditForm() {},
+  const context = {sessionEpoch: 0, bearer: 'synthetic', currentCustomerId: null, customerSelectionVersion: 0, opportunities: [{company_id: 1}], URLSearchParams, console: {error() {}}, hideCustomerEditForm() {},
     $: id => {if (!elements.has(id)) elements.set(id, element()); return elements.get(id);},
     document: {createElement: element},
     conversationApi: () => new Promise((resolve, reject) => pending.push({resolve, reject})),

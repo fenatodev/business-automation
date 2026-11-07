@@ -4042,6 +4042,7 @@
 
   // Customer detail state — WP-087
   let currentCustomerId = null;
+  let customerSelectionVersion = 0;
 
   // WP-104 — Customer pagination state
   let customerOffset = 0;
@@ -4219,6 +4220,7 @@
 
   // Customer detail view — WP-087
   async function showCustomerDetail(cust) {
+    customerSelectionVersion += 1;
     currentCustomerId = cust.id;
     $("customers-list").hidden = true;
     $("customer-detail").hidden = false;
@@ -4313,6 +4315,7 @@
 
   function hideCustomerDetail() {
     customerConversationsVersion += 1;
+    customerSelectionVersion += 1;
     currentCustomerId = null;
     $("customers-list").hidden = false;
     $("customer-detail").hidden = true;
@@ -4329,7 +4332,7 @@
     $("customer-edit-form").hidden = true;
   }
 
-  async function updateCustomer(customerId, data) {
+  async function updateCustomer(customerId, data, isCurrent = () => true) {
     if (!bearer) return;
     const path = "/customers/" + customerId;
     const res = await fetch(path, {
@@ -4340,9 +4343,9 @@
       },
       body: JSON.stringify(data),
     });
-    if (res.status === 403) {disconnect("Permissão de operador necessária."); return null;}
-    if (res.status === 404) {notify("Customer não encontrado.", true); return null;}
-    if (!res.ok) {notify("Falha ao atualizar customer.", true); return null;}
+    if (res.status === 403) {if (isCurrent()) disconnect("Permissão de operador necessária."); return null;}
+    if (res.status === 404) {if (isCurrent()) notify("Customer não encontrado.", true); return null;}
+    if (!res.ok) {if (isCurrent()) notify("Falha ao atualizar customer.", true); return null;}
     return res.json();
   }
 
@@ -4353,6 +4356,10 @@
 
   $("customer-edit-form").addEventListener("submit", (event) => {
     event.preventDefault();
+    const customerId = currentCustomerId;
+    const selectionVersion = customerSelectionVersion;
+    const session = sessionEpoch;
+    if (customerId === null || customerId === undefined) return;
     const name = $("customer-edit-name").value.trim();
     const phone = $("customer-edit-phone").value.trim() || null;
     const email = $("customer-edit-email").value.trim() || null;
@@ -4362,7 +4369,15 @@
     if (email !== null) data.email = email;
     const button = $("customer-edit-form").querySelector('button[type="submit"]');
     withButton(button, async () => {
-      const updated = await updateCustomer(currentCustomerId, data);
+      const isCurrent = () => selectionVersion === customerSelectionVersion && currentCustomerId === customerId && session === sessionEpoch && bearer;
+      let updated;
+      try {
+        updated = await updateCustomer(customerId, data, isCurrent);
+      } catch (error) {
+        if (!isCurrent()) return;
+        throw error;
+      }
+      if (!isCurrent()) return;
       if (updated) {
         hideCustomerEditForm();
         $("customer-detail-name").textContent = updated.name;
