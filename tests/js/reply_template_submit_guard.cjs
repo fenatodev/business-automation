@@ -12,10 +12,12 @@ function element(value = '') {
     value,
     disabled: false,
     attributes: {},
+    focused: false,
     addEventListener(event, callback) {
       if (event === 'submit') this.submit = callback;
     },
     setAttribute(name, value) { this.attributes[name] = value; },
+    focus() { this.focused = true; },
   };
 }
 
@@ -73,6 +75,7 @@ async function run() {
   assert.equal(status.textContent, 'Template salvo.');
   assert.equal(elements.get('reply-template-name').value, '');
   assert.equal(elements.get('reply-template-content').value, '');
+  assert.equal(elements.get('reply-template-name').focused, true);
   assert.deepEqual(notifications, ['Template salvo.']);
 
   const failedSetup = setup();
