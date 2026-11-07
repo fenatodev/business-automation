@@ -26,13 +26,17 @@ const elements = new Map(
 const templates = [{id: 7, name: 'Saudação', content: 'Olá, como posso ajudar?'}];
 const requests = [];
 const notifications = [];
-const promptAnswers = [null, '   ', 'Saudação (cópia)'];
+const promptAnswers = [null, '   ', 'Saudação (cópia)', null, null, null];
+const promptDefaults = [];
 let selectorRefreshes = 0;
 
 const context = {
   bearer: 'synthetic-token', company: 3,
   $: id => elements.get(id) || null,
-  prompt: () => promptAnswers.shift(),
+  prompt: (_message, defaultValue) => {
+    promptDefaults.push(defaultValue);
+    return promptAnswers.shift();
+  },
   confirm: () => true,
   notify: message => notifications.push(message),
   loadReplyTemplates: () => { selectorRefreshes++; },
@@ -68,6 +72,7 @@ async function run() {
   await duplicateButton.handlers.click();
   assert.deepEqual(requests, []);
   assert.equal(elements.get('reply-template-load-status').textContent, '');
+  assert.equal(promptDefaults[0], 'Saudação (cópia)');
 
   await duplicateButton.handlers.click();
   assert.deepEqual(requests, []);
@@ -94,6 +99,34 @@ async function run() {
     child => child.textContent === 'Duplicar'
   );
   assert.equal(refreshedDuplicateButton.focused, true);
+
+  templates.push(
+    {id: 9, name: 'Saudação (cópia 2)', content: 'Conteúdo sintético'},
+    {id: 10, name: 'Saudação (cópia)', content: 'Conteúdo sintético'},
+  );
+  await context.loadReplyTemplateList();
+  const refreshedOriginalItem = elements.get('reply-template-list').children.find(
+    child => child.dataset.templateId === '7'
+  );
+  const refreshedOriginalDuplicateButton = refreshedOriginalItem.children.find(
+    child => child.textContent === 'Duplicar'
+  );
+  await refreshedOriginalDuplicateButton.handlers.click();
+  await refreshedOriginalDuplicateButton.handlers.click();
+  assert.deepEqual(promptDefaults.slice(-2), ['Saudação (cópia 3)', 'Saudação (cópia 3)']);
+
+  const longName = '😀'.repeat(100);
+  templates.push({id: 11, name: longName, content: 'Conteúdo sintético'});
+  await context.loadReplyTemplateList();
+  const longNameItem = elements.get('reply-template-list').children.find(
+    child => child.dataset.templateId === '11'
+  );
+  const longNameDuplicateButton = longNameItem.children.find(
+    child => child.textContent === 'Duplicar'
+  );
+  await longNameDuplicateButton.handlers.click();
+  assert.equal(promptDefaults.at(-1), `${'😀'.repeat(92)} (cópia)`);
+  assert.equal(Array.from(promptDefaults.at(-1)).length, 100);
 }
 
 run().catch(error => { console.error(error); process.exitCode = 1; });

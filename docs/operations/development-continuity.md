@@ -1942,3 +1942,12 @@ O contador de nome e conteúdo de templates agora usa pontos de código Unicode,
 compatíveis com os limites validados pela API, e corta entradas acima dos
 limites após digitação ou colagem. Testes sintéticos cobrem emoji. Sem mudanças
 de API, autorização, tenant, persistência, schema, migrations ou integrações.
+
+## WP-493 — Evitar nomes repetidos ao duplicar templates (07/11/2026)
+
+Duplicar um template agora sugere “(cópia)” ou o próximo sufixo numérico
+disponível na lista da empresa, contando nomes com normalização de busca. O
+prefixo é truncado por pontos de código para respeitar o limite de 100
+caracteres. O operador ainda pode editar ou cancelar a sugestão. Teste
+sintético cobre colisões repetidas e cancelamento; sem mudanças de API,
+autorização, tenant, persistência, schema, migrations ou integrações.

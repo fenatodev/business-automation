@@ -54,6 +54,7 @@ const context = {
 vm.createContext(context);
 vm.runInContext(
   'let replyTemplateSaving = false;\n' + source.slice(start, end) +
+  '\nfunction suggestReplyTemplateDuplicateName(template) { return `${template.name} (cópia)`; }' +
   '\nthis.beginReplyTemplateEdit = beginReplyTemplateEdit; this.cancelReplyTemplateEdit = cancelReplyTemplateEdit; this.duplicateReplyTemplate = duplicateReplyTemplate;',
   context,
 );

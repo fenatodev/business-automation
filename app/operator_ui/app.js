@@ -6616,7 +6616,10 @@
       for (const t of templates) {
         const item = document.createElement("div");
         item.className = "reply-template-item";
-        if (item.dataset) item.dataset.templateId = String(t.id);
+        if (item.dataset) {
+          item.dataset.templateId = String(t.id);
+          item.dataset.templateName = t.name;
+        }
         const info = document.createElement("div");
         const name = document.createElement("span");
         name.className = "reply-template-item-name";
@@ -6667,6 +6670,20 @@
   });
 
   let replyTemplateDuplicating = false;
+  function suggestReplyTemplateDuplicateName(template) {
+    const listEl = $("reply-template-list");
+    const names = new Set(Array.from(listEl?.children || [])
+      .filter(item => item.className === "reply-template-item")
+      .map(item => normalizeReplyTemplateSearchText(item.dataset?.templateName || "")));
+    const original = Array.from(String(template.name || ""));
+    for (let copyNumber = 1; ; copyNumber++) {
+      const suffix = copyNumber === 1 ? " (cópia)" : ` (cópia ${copyNumber})`;
+      const prefix = original.slice(0, 100 - Array.from(suffix).length).join("");
+      const candidate = `${prefix}${suffix}`;
+      if (!names.has(normalizeReplyTemplateSearchText(candidate))) return candidate;
+    }
+  }
+
   function setReplyTemplateDuplicateButtonsDisabled(disabled) {
     const listEl = $("reply-template-list");
     if (!listEl) return;
@@ -6683,7 +6700,7 @@
 
   async function duplicateReplyTemplate(template, duplicateBtn) {
     if (!bearer || !company || replyTemplateDuplicating || duplicateBtn.disabled || editingReplyTemplateId === template.id) return;
-    const proposedName = `${template.name.slice(0, 92)} (cópia)`;
+    const proposedName = suggestReplyTemplateDuplicateName(template);
     const name = prompt("Nome do novo template:", proposedName);
     if (name === null) return;
     const trimmedName = name.trim();
