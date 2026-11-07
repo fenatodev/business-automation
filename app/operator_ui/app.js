@@ -6540,7 +6540,7 @@
     const normalizeSearchText = value => value
       .toLocaleLowerCase()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
+      .replace(/\p{M}/gu, "");
     const query = normalizeSearchText((search.value || "").trim());
     if (clearSearch) clearSearch.disabled = query === "";
     const items = Array.from(listEl.children).filter(item => item.className === "reply-template-item");
@@ -6618,7 +6618,7 @@
         if (item.dataset) item.dataset.searchText = `${t.name} ${t.content}`
           .toLocaleLowerCase()
           .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "");
+          .replace(/\p{M}/gu, "");
         info.appendChild(name);
         info.appendChild(preview);
         item.appendChild(info);
