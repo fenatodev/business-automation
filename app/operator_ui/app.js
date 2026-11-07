@@ -4288,6 +4288,10 @@
       session === sessionEpoch && bearer && currentCustomerId === customerId &&
       !$("customer-detail").hidden;
     const convList = $("customer-conversations-list");
+    const status = $("customer-conversations-status");
+    const retry = $("customer-conversations-retry");
+    retry.hidden = true;
+    status.textContent = "";
     convList.replaceChildren();
 
     try {
@@ -4304,7 +4308,8 @@
       const url = "/companies/" + company + "/conversations?" + params.toString();
       const convs = await conversationApi(url);
       if (!isCurrent()) return;
-      if (!convs || !convs.length) {
+      if (!Array.isArray(convs)) throw new Error("Resposta inválida ao carregar conversas.");
+      if (!convs.length) {
         const p = document.createElement("p");
         p.className = "small";
         p.textContent = "Nenhuma conversa encontrada.";
@@ -4329,9 +4334,20 @@
         convList.appendChild(item);
       }
     } catch (e) {
-      if (isCurrent()) console.error("[loadCustomerConversations] Erro:", e);
+      if (isCurrent()) {
+        status.textContent = "Não foi possível carregar as conversas. Os dados podem estar desatualizados.";
+        retry.hidden = false;
+        console.error("[loadCustomerConversations] Erro:", e);
+      }
     }
   }
+
+  $("customer-conversations-retry").addEventListener("click", () => {
+    const detail = $("customer-detail");
+    if (currentCustomerId !== null && !detail.hidden) {
+      loadCustomerConversations(currentCustomerId);
+    }
+  });
 
   function hideCustomerDetail() {
     customerConversationsVersion += 1;
