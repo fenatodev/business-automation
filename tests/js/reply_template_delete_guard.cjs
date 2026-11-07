@@ -53,7 +53,7 @@ function setup(confirmed = true) {
     },
   };
   vm.createContext(context);
-  vm.runInContext(source.slice(start, end) + '\nthis.deleteReplyTemplate = deleteReplyTemplate;', context);
+  vm.runInContext('function applyReplyTemplateFilter() {}\n' + source.slice(start, end) + '\nthis.deleteReplyTemplate = deleteReplyTemplate;', context);
   const button = {disabled: false};
   const item = {remove() { removed.push(true); list.children.pop(); }};
   return {context, button, item, list, loadStatus, emptyMessages, requests, notifications, removed, get confirmations() { return confirmations; }};

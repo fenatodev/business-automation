@@ -4,7 +4,7 @@ const vm = require('node:vm');
 
 const source = fs.readFileSync('app/operator_ui/app.js', 'utf8');
 const start = source.indexOf('  let replyTemplateLoadVersion = 0;');
-const end = source.indexOf('\n\n  $("reply-template-load-retry")', start);
+const end = source.indexOf('\n\n  let replyTemplateSaving = false;', start);
 assert(start >= 0 && end > start);
 
 function setup(templates) {
@@ -28,20 +28,25 @@ function setup(templates) {
   const context = {
     bearer: 'synthetic-token', company: 3,
     $: id => elements[id] || null,
-    templateApi: async () => templates,
+    templateApi: async (path, method) => method === 'GET' ? templates : null,
+    confirm: () => true,
+    notify() {},
+    loadReplyTemplates() {},
     document: {
       createElement(tag) {
         return {
           tagName: tag, className: '', textContent: '', attributes: {}, children: [], dataset: {}, hidden: false,
           setAttribute(name, value) { this.attributes[name] = value; },
           appendChild(child) { this.children.push(child); },
-          addEventListener() {},
+          addEventListener(event, handler) { this.handlers ||= {}; this.handlers[event] = handler; },
+          remove() { const index = list.children.indexOf(this); if (index >= 0) list.children.splice(index, 1); },
+          click() { this.handlers?.click?.(); },
         };
       },
     },
   };
   vm.createContext(context);
-  vm.runInContext(source.slice(start, end) + '\nthis.loadReplyTemplateList = loadReplyTemplateList;', context);
+  vm.runInContext(source.slice(start, end) + '\nthis.loadReplyTemplateList = loadReplyTemplateList; this.deleteReplyTemplate = deleteReplyTemplate;', context);
   return {context, list, search, filterStatus};
 }
 
@@ -66,6 +71,17 @@ async function run() {
   ui.search.value = '';
   ui.search.handler();
   assert.deepEqual(ui.list.children.map(item => item.hidden), [false, false]);
+  assert.equal(ui.filterStatus.textContent, '');
+
+  ui.search.value = 'saudação';
+  ui.search.handler();
+  await ui.context.deleteReplyTemplate(1, ui.list.children[0], ui.list.children[0].children[1]);
+  assert.deepEqual(ui.list.children.map(item => item.hidden), [true]);
+  assert.equal(ui.filterStatus.textContent, 'Nenhum template corresponde à busca.');
+
+  await ui.context.deleteReplyTemplate(2, ui.list.children[0], ui.list.children[0].children[1]);
+  assert.equal(ui.list.children.length, 1);
+  assert.equal(ui.list.children[0].textContent, 'Nenhum template salvo.');
   assert.equal(ui.filterStatus.textContent, '');
 }
 
