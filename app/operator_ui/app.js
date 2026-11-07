@@ -2966,7 +2966,7 @@
     if (!form.hidden) {
       // Auto-load suggestion when form is shown
       const convId = $("reply-conv-id").value;
-      if (convId) {
+      if (convId && !$("reply-message").value) {
         const id = parseInt(convId, 10);
         try {
           const res = await fetch("/conversations/" + id + "/suggest-reply", {

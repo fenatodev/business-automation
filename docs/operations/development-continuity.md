@@ -1,5 +1,13 @@
 # Continuidade do desenvolvimento — Codex ou Junie
 
+## WP-506 — Preservar rascunho ao abrir resposta (07/11/2026)
+
+A sugestão automática ao abrir o formulário agora só é solicitada quando o
+campo de resposta está vazio. Rascunhos existentes permanecem intactos; o
+botão explícito continua disponível para solicitar uma nova sugestão. Teste
+sintético cobre preservação e carregamento automático quando vazio. Sem mudanças
+de API, tenant, persistência, schema, migrations ou integrações.
+
 ## WP-505 — Limpar aviso ao carregar sugestão automática (07/11/2026)
 
 Ao abrir o formulário de resposta, uma sugestão automática bem-sucedida substitui
