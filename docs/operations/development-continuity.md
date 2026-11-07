@@ -1896,3 +1896,10 @@ endpoint tenant-scoped e pela tela interna. A edição pode ser cancelada; após
 salvar, lista e seletor são atualizados. Testes usam empresas e conteúdo
 sintéticos. Sem persistência nova, migration, alteração de auth ou serviço
 externo.
+
+## WP-472 — Devolver foco ao cancelar edição de template (07/11/2026)
+
+Cancelar uma edição limpa o formulário e devolve o foco ao botão “Editar” que
+iniciou a ação, se ainda estiver conectado. O fallback mantém o foco no campo
+de nome quando o botão não está disponível. Teste sintético cobre o handler;
+sem mudanças de API, tenant, persistência ou integrações.
