@@ -42,6 +42,11 @@ def test_lead_conversations_list_exists(ui_files):
     assert 'id="lead-conversations-list"' in ui_files["html"]
 
 
+def test_lead_conversations_retry_controls_exist(ui_files):
+    assert 'id="lead-conversations-status"' in ui_files["html"]
+    assert 'id="lead-conversations-retry"' in ui_files["html"]
+
+
 def test_lead_detail_in_leads_section(ui_files):
     html = ui_files["html"]
     section_start = html.index('aria-labelledby="leads-title"')
@@ -93,9 +98,21 @@ def test_lead_detail_populates_status(ui_files):
 def test_lead_detail_loads_conversations(ui_files):
     js = ui_files["js"]
     start = js.index("async function showLeadDetail")
-    end = min(start + 1500, len(js))
+    end = js.index("async function loadLeadConversations", start)
     func = js[start:end]
-    assert "lead-conversations-list" in func
+    assert "loadLeadConversations(lead)" in func
+
+
+def test_lead_detail_conversation_retry_uses_existing_loader(ui_files):
+    js = ui_files["js"]
+    assert '$("lead-conversations-retry").addEventListener("click"' in js
+    assert 'status.textContent = "Não foi possível carregar as conversas.' in js
+
+
+def test_lead_detail_conversation_retry_flow():
+    import subprocess
+
+    subprocess.run(["node", "tests/js/lead_detail_conversation_retry.cjs"], check=True)
 
 
 def test_hide_lead_detail_shows_list(ui_files):
