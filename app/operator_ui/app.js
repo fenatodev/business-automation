@@ -6611,11 +6611,17 @@
         item.appendChild(info);
         const deleteBtn = document.createElement("button");
         const editBtn = document.createElement("button");
+        const duplicateBtn = document.createElement("button");
         editBtn.type = "button";
         editBtn.className = "secondary";
         editBtn.textContent = "Editar";
         editBtn.addEventListener("click", () => beginReplyTemplateEdit(t, editBtn));
         item.appendChild(editBtn);
+        duplicateBtn.type = "button";
+        duplicateBtn.className = "secondary";
+        duplicateBtn.textContent = "Duplicar";
+        duplicateBtn.addEventListener("click", () => duplicateReplyTemplate(t, duplicateBtn));
+        item.appendChild(duplicateBtn);
         deleteBtn.type = "button";
         deleteBtn.className = "danger";
         deleteBtn.textContent = "Excluir";
@@ -6640,6 +6646,36 @@
   $("reply-template-load-retry")?.addEventListener("click", () => {
     loadReplyTemplateList();
   });
+
+  async function duplicateReplyTemplate(template, duplicateBtn) {
+    if (!bearer || !company || duplicateBtn.disabled) return;
+    const proposedName = `${template.name.slice(0, 92)} (cópia)`;
+    const name = prompt("Nome do novo template:", proposedName);
+    if (name === null) return;
+    const trimmedName = name.trim();
+    const loadStatus = $("reply-template-load-status");
+    if (!trimmedName || trimmedName.length > 100) {
+      if (loadStatus) loadStatus.textContent = "Informe um nome de até 100 caracteres.";
+      return;
+    }
+    duplicateBtn.disabled = true;
+    if (loadStatus) loadStatus.textContent = "Duplicando template";
+    try {
+      await templateApi(`/companies/${company}/reply-templates`, "POST", {
+        name: trimmedName,
+        content: template.content,
+      });
+      if (loadStatus) loadStatus.textContent = "Template duplicado.";
+      notify("Template duplicado.");
+      await loadReplyTemplateList();
+      loadReplyTemplates();
+    } catch {
+      if (loadStatus) loadStatus.textContent = "Não foi possível duplicar o template.";
+      notify("Erro ao duplicar template.");
+    } finally {
+      duplicateBtn.disabled = false;
+    }
+  }
 
   async function deleteReplyTemplate(templateId, itemEl, deleteBtn) {
     if (!bearer || !company || deleteBtn.disabled) return;
