@@ -16,6 +16,9 @@ const context = {
 };
 const select = context.$('reply-template-select');
 select.addEventListener = (event, callback) => { select.change = callback; };
+select.value = '4';
+select.options = [{dataset: {content: 'bom dia'}}];
+select.selectedIndex = 0;
 const reply = context.$('reply-message');
 reply.value = 'Olá, cliente!';
 reply.selectionStart = 5;
@@ -27,38 +30,41 @@ reply.setSelectionRange = (start, end) => {
 vm.createContext(context);
 vm.runInContext(source.slice(start, end), context);
 
-select.change({target: {
-  value: '4',
-  selectedIndex: 0,
-  options: [{dataset: {content: 'bom dia'}}],
-}});
+select.change({target: select});
 assert.equal(reply.value, 'Olá, bom diacliente!');
 assert.equal(reply.selectionStart, 12);
 assert.equal(reply.selectionEnd, 12);
+assert.equal(select.value, '');
+
+select.value = '4';
+select.change({target: select});
+assert.equal(reply.value, 'Olá, bom diabom diacliente!');
+assert.equal(reply.selectionStart, 19);
+assert.equal(select.value, '');
 
 reply.value = 'Olá cliente';
 reply.selectionStart = 4;
 reply.selectionEnd = 11;
-select.change({target: {
-  value: '5',
-  selectedIndex: 0,
-  options: [{dataset: {content: 'equipe'}}],
-}});
+select.value = '5';
+select.options = [{dataset: {content: 'equipe'}}];
+select.change({target: select});
 assert.equal(reply.value, 'Olá equipe');
 assert.equal(reply.selectionStart, 10);
 assert.equal(reply.selectionEnd, 10);
+assert.equal(select.value, '');
 
 reply.value = '';
 reply.selectionStart = 0;
 reply.selectionEnd = 0;
-select.change({target: {
-  value: '6',
-  selectedIndex: 0,
-  options: [{dataset: {content: 'Olá!'}}],
-}});
+select.value = '6';
+select.options = [{dataset: {content: 'Olá!'}}];
+select.change({target: select});
 assert.equal(reply.value, 'Olá!');
 assert.equal(reply.selectionStart, 4);
+assert.equal(select.value, '');
 
 reply.value = 'Rascunho';
-select.change({target: {value: '', options: []}});
+select.value = '';
+select.options = [];
+select.change({target: select});
 assert.equal(reply.value, 'Rascunho');
