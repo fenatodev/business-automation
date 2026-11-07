@@ -1966,3 +1966,10 @@ Após duplicar com sucesso, o operador agora recebe foco no botão “Editar” 
 novo item, identificado pelo ID retornado pela API. Teste sintético confirma
 que o foco não retorna à ação do template de origem. Sem mudanças de API,
 autorização, tenant, persistência, schema, migrations ou integrações.
+
+## WP-501 — Anunciar limpeza da busca de templates (07/11/2026)
+
+Ao limpar a busca pelo botão ou por Escape, a região de status existente agora
+anuncia “Busca limpa.” para tecnologias assistivas. Os testes sintéticos cobrem
+os handlers reais; sem mudanças de API, autorização, tenant, persistência,
+schema, migrations ou integrações.
