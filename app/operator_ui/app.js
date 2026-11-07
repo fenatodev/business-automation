@@ -6547,7 +6547,7 @@
         deleteBtn.type = "button";
         deleteBtn.className = "danger";
         deleteBtn.textContent = "Excluir";
-        deleteBtn.addEventListener("click", () => deleteReplyTemplate(t.id, item));
+        deleteBtn.addEventListener("click", () => deleteReplyTemplate(t.id, item, deleteBtn));
         item.appendChild(deleteBtn);
         listEl.appendChild(item);
       }
@@ -6565,9 +6565,10 @@
     loadReplyTemplateList();
   });
 
-  async function deleteReplyTemplate(templateId, itemEl) {
-    if (!bearer || !company) return;
+  async function deleteReplyTemplate(templateId, itemEl, deleteBtn) {
+    if (!bearer || !company || deleteBtn.disabled) return;
     if (!confirm("Excluir este template?")) return;
+    deleteBtn.disabled = true;
     try {
       await templateApi(`/companies/${company}/reply-templates/${templateId}`, "DELETE");
       itemEl.remove();
@@ -6576,6 +6577,8 @@
       loadReplyTemplates();
     } catch {
       notify("Erro ao excluir template.");
+    } finally {
+      deleteBtn.disabled = false;
     }
   }
 
