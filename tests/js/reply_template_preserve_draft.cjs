@@ -27,6 +27,7 @@ reply.setSelectionRange = (start, end) => {
   reply.selectionStart = start;
   reply.selectionEnd = end;
 };
+reply.focus = () => { reply.focused = true; };
 vm.createContext(context);
 vm.runInContext(source.slice(start, end), context);
 
@@ -34,6 +35,7 @@ select.change({target: select});
 assert.equal(reply.value, 'Olá, bom diacliente!');
 assert.equal(reply.selectionStart, 12);
 assert.equal(reply.selectionEnd, 12);
+assert.equal(reply.focused, true);
 assert.equal(select.value, '');
 
 select.value = '4';
