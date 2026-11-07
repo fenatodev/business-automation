@@ -6691,6 +6691,11 @@
       if (loadStatus) loadStatus.textContent = "Template duplicado.";
       notify("Template duplicado.");
       await loadReplyTemplateList();
+      if (editingReplyTemplateId !== null) {
+        setReplyTemplateEditButtonsDisabled(true);
+        setReplyTemplateDeleteButtonDisabled(editingReplyTemplateId, true);
+        setReplyTemplateDuplicateButtonDisabled(editingReplyTemplateId, true);
+      }
       loadReplyTemplates();
       const refreshedItem = Array.from($("reply-template-list")?.children || []).find(
         item => item.className === "reply-template-item" && item.dataset?.templateId === String(template.id)
