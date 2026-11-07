@@ -673,12 +673,22 @@
 
   // WP-144 — Load leads related to the selected opportunity
   async function loadOpportunityLeads(id, expectedVersion) {
+    const expectedSession = sessionEpoch;
+    const isCurrent = () => expectedSession === sessionEpoch &&
+      expectedVersion === selectionVersion && id === selectedId;
+    const status = $("opp-leads-status");
+    const retry = $("opp-leads-retry");
+    const list = $("opp-leads-list");
+    status.textContent = "Carregando leads…";
+    retry.hidden = true;
+    retry.disabled = true;
+    list.setAttribute("aria-busy", "true");
     try {
       const leads = await api("/opportunities/" + id + "/linked-leads");
-      if (expectedVersion !== selectionVersion || id !== selectedId) return;
-      const list = $("opp-leads-list");
+      if (!isCurrent()) return;
       list.replaceChildren();
       if (!leads || !leads.length) {
+        status.textContent = "";
         opportunityLeadId = null;
         opportunityContactType = null;
         opportunityCompanyId = null;
@@ -720,20 +730,31 @@
         });
         list.appendChild(item);
       }
+      status.textContent = "";
     } catch (error) {
-      if (expectedVersion !== selectionVersion || id !== selectedId) return;
+      if (!isCurrent()) return;
       opportunityLeadId = null;
       opportunityCompanyId = null;
-      // Silently fail — leads are supplementary info
-      const list = $("opp-leads-list");
       list.replaceChildren();
       const errorState = document.createElement("p");
       errorState.className = "small";
       errorState.setAttribute("role", "status");
       errorState.textContent = "Não foi possível carregar os leads.";
       list.appendChild(errorState);
+      status.textContent = "Falha ao carregar leads da oportunidade.";
+      retry.hidden = false;
+    } finally {
+      if (isCurrent()) {
+        list.setAttribute("aria-busy", "false");
+        retry.disabled = false;
+      }
     }
   }
+
+  $("opp-leads-retry").addEventListener("click", () => {
+    if (selectedId === null) return;
+    loadOpportunityLeads(selectedId, selectionVersion).catch(() => {});
+  });
 
   async function loadOpportunityCustomers(id, expectedVersion) {
     try {
