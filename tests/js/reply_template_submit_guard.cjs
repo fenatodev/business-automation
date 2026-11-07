@@ -70,7 +70,7 @@ async function run() {
   await Promise.all([firstSubmit, secondSubmit]);
   assert.equal(button.disabled, false);
   assert.equal(status.attributes['aria-busy'], 'false');
-  assert.equal(status.textContent, '');
+  assert.equal(status.textContent, 'Template salvo.');
   assert.equal(elements.get('reply-template-name').value, '');
   assert.equal(elements.get('reply-template-content').value, '');
   assert.deepEqual(notifications, ['Template salvo.']);
@@ -83,6 +83,7 @@ async function run() {
   await failedSubmit;
   assert.equal(failedSetup.elements.get('reply-template-save').disabled, false);
   assert.equal(failedSetup.elements.get('reply-template-save-status').attributes['aria-busy'], 'false');
+  assert.equal(failedSetup.elements.get('reply-template-save-status').textContent, 'Não foi possível salvar o template.');
   assert.equal(failedSetup.elements.get('reply-template-name').value, ' Saudação ');
   assert.deepEqual(failedSetup.notifications, ['Erro ao salvar template.']);
 }
