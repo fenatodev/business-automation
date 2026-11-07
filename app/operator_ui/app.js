@@ -6598,6 +6598,7 @@
       for (const t of templates) {
         const item = document.createElement("div");
         item.className = "reply-template-item";
+        if (item.dataset) item.dataset.templateId = String(t.id);
         const info = document.createElement("div");
         const name = document.createElement("span");
         name.className = "reply-template-item-name";
@@ -6669,6 +6670,13 @@
       notify("Template duplicado.");
       await loadReplyTemplateList();
       loadReplyTemplates();
+      const refreshedItem = Array.from($("reply-template-list")?.children || []).find(
+        item => item.className === "reply-template-item" && item.dataset?.templateId === String(template.id)
+      );
+      const refreshedDuplicateButton = Array.from(refreshedItem?.children || []).find(
+        child => child.textContent === "Duplicar"
+      );
+      refreshedDuplicateButton?.focus();
     } catch {
       if (loadStatus) loadStatus.textContent = "Não foi possível duplicar o template.";
       notify("Erro ao duplicar template.");

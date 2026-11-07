@@ -87,6 +87,13 @@ async function run() {
   assert.equal(elements.get('reply-template-load-status').textContent, '');
   assert.deepEqual(notifications, ['Template duplicado.']);
   assert.equal(selectorRefreshes, 1);
+  const refreshedOriginal = elements.get('reply-template-list').children.find(
+    child => child.dataset.templateId === '7'
+  );
+  const refreshedDuplicateButton = refreshedOriginal.children.find(
+    child => child.textContent === 'Duplicar'
+  );
+  assert.equal(refreshedDuplicateButton.focused, true);
 }
 
 run().catch(error => { console.error(error); process.exitCode = 1; });
