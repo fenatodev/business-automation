@@ -3033,6 +3033,7 @@
     const text = $("conv-suggestion-text").textContent;
     if (text) {
       $("reply-message").value = text;
+      $("reply-template-insert-status").textContent = "";
       $("human-reply-form").hidden = false;
       notify("Sugestão copiada para o formulário.");
     }
