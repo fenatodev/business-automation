@@ -99,7 +99,14 @@ async function run() {
   const refreshedDuplicateButton = refreshedOriginal.children.find(
     child => child.textContent === 'Duplicar'
   );
-  assert.equal(refreshedDuplicateButton.focused, true);
+  assert.notEqual(refreshedDuplicateButton.focused, true);
+  const createdItem = elements.get('reply-template-list').children.find(
+    child => child.dataset.templateId === '8'
+  );
+  const createdEditButton = createdItem.children.find(
+    child => child.className === 'secondary reply-template-edit'
+  );
+  assert.equal(createdEditButton.focused, true);
 
   requests.length = 0;
   await refreshedDuplicateButton.handlers.click();
