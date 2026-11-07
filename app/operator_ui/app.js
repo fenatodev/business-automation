@@ -2304,6 +2304,7 @@
         reply.value = reply.value.slice(0, start) + content + reply.value.slice(end);
         const cursor = start + content.length;
         reply.setSelectionRange(cursor, cursor);
+        reply.focus();
         e.target.value = "";
       }
     });
