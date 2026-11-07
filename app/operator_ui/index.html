@@ -563,7 +563,9 @@
               <button id="conv-reply-toggle" type="button" class="secondary" hidden>Responder</button>
             </div>
           </div>
-          <div id="conv-messages" class="conv-messages"></div>
+          <p id="conv-messages-status" class="small" role="status" aria-live="polite"></p>
+          <button id="conv-messages-retry" type="button" class="secondary" aria-controls="conv-messages" hidden>Tentar novamente</button>
+          <div id="conv-messages" class="conv-messages" aria-busy="false"></div>
           <!-- WP-270 — AI conversation summary -->
           <div id="conv-summary-panel" class="conv-summary-panel" hidden>
             <div class="conv-summary-header">

@@ -13,6 +13,7 @@ async function run(oldFails, newFails, oldFirst, failedRequest) {
   function element() {
     return {hidden: false, disabled: false, textContent: '', children: [],
       classList: {add() {}},
+      setAttribute(name, value) {this[name] = value;},
       replaceChildren() {this.children = [];},
       append(...children) {this.children.push(...children);},
       addEventListener(event, fn) {this[event] = fn;}};
@@ -53,8 +54,9 @@ async function run(oldFails, newFails, oldFirst, failedRequest) {
   if (newFails) {
     assert.equal(context.$('conv-messages').children[0].textContent, 'previous');
     assert.equal(context.$('msg-page').textContent, 'previous page');
-    assert.equal(notices.length, 1);
-    assert(!JSON.stringify(notices).includes('private'));
+    assert.equal(context.$('conv-messages-status').textContent,
+      'Não foi possível carregar as mensagens desta conversa.');
+    assert.equal(notices.length, 0);
     // Moving back recovers through the delivered pagination handler.
     context.$('msg-prev').click();
     settle(4, false, 'recovered'); await tick();
