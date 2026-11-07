@@ -6608,6 +6608,7 @@
         empty.textContent = "Nenhum template salvo.";
         listEl.appendChild(empty);
       }
+      applyReplyTemplateFilter();
       if (loadStatus) loadStatus.textContent = "Template excluído.";
       notify("Template excluído.");
       // Refresh the reply template selector in conversation reply
