@@ -12,6 +12,7 @@ function setup(confirmed = true) {
   const notifications = [];
   const removed = [];
   const emptyMessages = [];
+  const loadStatus = {textContent: ""};
   const list = {
     children: [{}],
     appendChild(element) {
@@ -36,7 +37,11 @@ function setup(confirmed = true) {
     },
     notify: message => notifications.push(message),
     loadReplyTemplates() {},
-    $(id) { return id === 'reply-template-list' ? list : null; },
+    $(id) {
+      if (id === 'reply-template-list') return list;
+      if (id === 'reply-template-load-status') return loadStatus;
+      return null;
+    },
     document: {
       createElement(tag) {
         assert.equal(tag, 'p');
@@ -51,7 +56,7 @@ function setup(confirmed = true) {
   vm.runInContext(source.slice(start, end) + '\nthis.deleteReplyTemplate = deleteReplyTemplate;', context);
   const button = {disabled: false};
   const item = {remove() { removed.push(true); list.children.pop(); }};
-  return {context, button, item, list, emptyMessages, requests, notifications, removed, get confirmations() { return confirmations; }};
+  return {context, button, item, list, loadStatus, emptyMessages, requests, notifications, removed, get confirmations() { return confirmations; }};
 }
 
 async function run() {
@@ -69,6 +74,7 @@ async function run() {
   assert.deepEqual(success.removed, [true]);
   assert.deepEqual(success.emptyMessages, ['Nenhum template salvo.']);
   assert.equal(success.list.children.at(-1).attributes.role, 'status');
+  assert.equal(success.loadStatus.textContent, 'Template excluído.');
   assert.deepEqual(success.notifications, ['Template excluído.']);
 
   const failure = setup();
@@ -78,6 +84,7 @@ async function run() {
   await failedDelete;
   assert.equal(failure.button.disabled, false);
   assert.deepEqual(failure.removed, []);
+  assert.equal(failure.loadStatus.textContent, 'Não foi possível excluir o template.');
   assert.deepEqual(failure.emptyMessages, []);
   assert.deepEqual(failure.notifications, ['Erro ao excluir template.']);
 
@@ -86,6 +93,7 @@ async function run() {
   assert.equal(cancelled.requests.length, 0);
   assert.equal(cancelled.button.disabled, false);
   assert.deepEqual(cancelled.removed, []);
+  assert.equal(cancelled.loadStatus.textContent, '');
 
   const remaining = setup();
   remaining.list.children = [{}, {}, {}];
