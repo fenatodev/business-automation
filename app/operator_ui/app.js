@@ -6730,6 +6730,11 @@
         item => item.className === "reply-template-item" &&
           createdTemplate?.id != null && item.dataset?.templateId === String(createdTemplate.id)
       );
+      if (createdItem?.hidden) {
+        const search = $("reply-template-search");
+        if (search) search.value = "";
+        applyReplyTemplateFilter();
+      }
       const createdEditButton = Array.from(createdItem?.children || []).find(
         child => child.className === "secondary reply-template-edit"
       );
