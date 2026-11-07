@@ -386,7 +386,9 @@
             <!-- WP-143 — Timeline de atividades -->
             <div id="opp-timeline-section" class="opp-timeline-section">
               <h3>Atividades</h3>
-              <div id="opp-timeline-list" class="opp-timeline-list" aria-label="Timeline da oportunidade"></div>
+              <p id="opp-timeline-status" class="small" role="status" aria-live="polite"></p>
+              <button id="opp-timeline-retry" type="button" class="secondary" aria-controls="opp-timeline-list" hidden>Tentar novamente</button>
+              <div id="opp-timeline-list" class="opp-timeline-list" aria-label="Timeline da oportunidade" aria-busy="false"></div>
             </div>
             <!-- WP-144 — Leads relacionados -->
             <div id="opp-leads-section" class="opp-leads-section">
