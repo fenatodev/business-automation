@@ -6455,18 +6455,28 @@
   setTimeout(loadAgentConfigOnConnect, 1000);
 
   // WP-265 — Reply templates management
+  let replyTemplateLoadVersion = 0;
   async function loadReplyTemplateList() {
     if (!bearer || !company) return;
     const listEl = $("reply-template-list");
     if (!listEl) return;
+    const version = ++replyTemplateLoadVersion;
+    const loadStatus = $("reply-template-load-status");
+    const retry = $("reply-template-load-retry");
+    const isCurrent = () => version === replyTemplateLoadVersion;
+    loadStatus.textContent = "Carregando templates";
+    retry.hidden = true;
+    retry.disabled = true;
     try {
       const templates = await templateApi(`/companies/${company}/reply-templates`, "GET");
+      if (!isCurrent()) return;
       listEl.replaceChildren();
       if (!templates || templates.length === 0) {
         const empty = document.createElement("p");
         empty.className = "small";
         empty.textContent = "Nenhum template salvo.";
         listEl.appendChild(empty);
+        loadStatus.textContent = "";
         return;
       }
       for (const t of templates) {
@@ -6490,10 +6500,19 @@
         item.appendChild(deleteBtn);
         listEl.appendChild(item);
       }
+      loadStatus.textContent = "";
     } catch {
-      // templates not available
+      if (!isCurrent()) return;
+      loadStatus.textContent = "Não foi possível carregar os templates.";
+      retry.hidden = false;
+    } finally {
+      if (isCurrent()) retry.disabled = false;
     }
   }
+
+  $("reply-template-load-retry")?.addEventListener("click", () => {
+    loadReplyTemplateList();
+  });
 
   async function deleteReplyTemplate(templateId, itemEl) {
     if (!bearer || !company) return;
