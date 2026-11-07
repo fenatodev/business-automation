@@ -1396,7 +1396,7 @@
           </div>
         </div>
         <p class="small">Configure o prompt e a temperatura do agente de IA para esta empresa.</p>
-        <div class="agent-config-form">
+        <div id="agent-config-form" class="agent-config-form">
           <div class="agent-config-field">
             <label for="agent-system-prompt">Prompt do sistema</label>
             <textarea id="agent-system-prompt" rows="4" placeholder="Deixe vazio para usar o padrão..."></textarea>
@@ -1420,7 +1420,8 @@
               <option value="gemma2:9b">Gemma 2 9B</option>
             </select>
           </div>
-          <div id="agent-config-status" class="small" style="margin-top:8px;"></div>
+          <div id="agent-config-status" class="small" style="margin-top:8px;" role="status" aria-live="polite"></div>
+          <button id="agent-config-load-retry" type="button" class="secondary" aria-controls="agent-config-form" hidden>Tentar novamente</button>
         </div>
 
         <!-- WP-265 — Reply templates management -->
