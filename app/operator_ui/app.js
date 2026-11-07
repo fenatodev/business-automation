@@ -6598,6 +6598,9 @@
         empty.setAttribute("role", "status");
         empty.textContent = "Nenhum template salvo.";
         listEl.appendChild(empty);
+        const search = $("reply-template-search");
+        if (search) search.value = "";
+        applyReplyTemplateFilter();
         loadStatus.textContent = "";
         return;
       }
