@@ -65,6 +65,11 @@ async function run() {
   assert.deepEqual(ui.list.children.map(item => item.hidden), [true, false]);
   assert.equal(ui.filterStatus.textContent, '1 template corresponde à busca.');
 
+  ui.search.value = 'saudacao';
+  ui.search.handler();
+  assert.deepEqual(ui.list.children.map(item => item.hidden), [false, true]);
+  assert.equal(ui.filterStatus.textContent, '1 template corresponde à busca.');
+
   ui.search.value = 'a';
   ui.search.handler();
   assert.deepEqual(ui.list.children.map(item => item.hidden), [false, false]);
