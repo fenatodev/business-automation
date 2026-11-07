@@ -56,8 +56,9 @@ const context = {
   async templateApi(path, method, body) {
     requests.push({path, method, body});
     if (method === 'GET') return templates;
-    templates.push({id: 8, ...body});
-    return {id: 8, ...body};
+    const id = Math.max(...templates.map(template => template.id)) + 1;
+    templates.push({id, ...body});
+    return {id, ...body};
   },
 };
 vm.createContext(context);
@@ -144,6 +145,27 @@ async function run() {
   await longNameDuplicateButton.handlers.click();
   assert.equal(promptDefaults.at(-1), `${'😀'.repeat(92)} (cópia)`);
   assert.equal(Array.from(promptDefaults.at(-1)).length, 100);
+
+  promptAnswers.push('Nova resposta');
+  const search = elements.get('reply-template-search');
+  search.value = 'Saudação';
+  await context.loadReplyTemplateList();
+  const sourceItem = elements.get('reply-template-list').children.find(
+    child => child.dataset.templateId === '7'
+  );
+  const sourceDuplicateButton = sourceItem.children.find(
+    child => child.textContent === 'Duplicar'
+  );
+  await sourceDuplicateButton.handlers.click();
+  assert.equal(search.value, '');
+  const filteredDuplicate = elements.get('reply-template-list').children.find(
+    child => child.dataset.templateId === '12'
+  );
+  const filteredDuplicateEdit = filteredDuplicate.children.find(
+    child => child.className === 'secondary reply-template-edit'
+  );
+  assert.equal(filteredDuplicate.hidden, false);
+  assert.equal(filteredDuplicateEdit.focused, true);
 }
 
 run().catch(error => { console.error(error); process.exitCode = 1; });
