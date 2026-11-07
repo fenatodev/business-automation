@@ -11,9 +11,11 @@ function element(value = '') {
   return {
     value,
     disabled: false,
+    attributes: {},
     addEventListener(event, callback) {
       if (event === 'submit') this.submit = callback;
     },
+    setAttribute(name, value) { this.attributes[name] = value; },
   };
 }
 
@@ -23,6 +25,7 @@ function setup() {
     ['reply-template-name', element(' Saudação ')],
     ['reply-template-content', element(' Olá! ')],
     ['reply-template-save', element()],
+    ['reply-template-save-status', element()],
   ]);
   const requests = [];
   const notifications = [];
@@ -50,6 +53,7 @@ async function run() {
   const {elements, requests, notifications} = setup();
   const form = elements.get('reply-template-form');
   const button = elements.get('reply-template-save');
+  const status = elements.get('reply-template-save-status');
   const event = {preventDefault() {}};
 
   const firstSubmit = form.submit(event);
@@ -60,9 +64,13 @@ async function run() {
   assert.equal(requests[0].body.name, 'Saudação');
   assert.equal(requests[0].body.content, 'Olá!');
   assert.equal(button.disabled, true);
+  assert.equal(status.attributes['aria-busy'], 'true');
+  assert.equal(status.textContent, 'Salvando template');
   requests[0].resolve({id: 10});
   await Promise.all([firstSubmit, secondSubmit]);
   assert.equal(button.disabled, false);
+  assert.equal(status.attributes['aria-busy'], 'false');
+  assert.equal(status.textContent, '');
   assert.equal(elements.get('reply-template-name').value, '');
   assert.equal(elements.get('reply-template-content').value, '');
   assert.deepEqual(notifications, ['Template salvo.']);
@@ -70,9 +78,11 @@ async function run() {
   const failedSetup = setup();
   const failedSubmit = failedSetup.elements.get('reply-template-form').submit(event);
   assert.equal(failedSetup.elements.get('reply-template-save').disabled, true);
+  assert.equal(failedSetup.elements.get('reply-template-save-status').attributes['aria-busy'], 'true');
   failedSetup.requests[0].reject(new Error('synthetic failure'));
   await failedSubmit;
   assert.equal(failedSetup.elements.get('reply-template-save').disabled, false);
+  assert.equal(failedSetup.elements.get('reply-template-save-status').attributes['aria-busy'], 'false');
   assert.equal(failedSetup.elements.get('reply-template-name').value, ' Saudação ');
   assert.deepEqual(failedSetup.notifications, ['Erro ao salvar template.']);
 }

@@ -1872,3 +1872,11 @@ melhoria pequena e segura disponível. Esse resultado é transitório: o
 supervisor registra o estado, aplica o backoff normal e tenta uma nova rodada.
 Somente `BLOCKED` real, falha de CI, revisão humana ou arquivo de parada encerra
 o ciclo.
+
+## WP-452 — Estado ocupado ao salvar templates de resposta (07/11/2026)
+
+O formulário de templates agora anuncia “Salvando template” em região
+acessível e marca o estado ocupado durante o POST. O estado é limpo após
+sucesso ou falha, preservando o guard contra envios duplicados e os avisos
+existentes. Testes usam DOM e API sintéticos; sem alteração de API, tenant,
+schema, migrations ou serviços externos.
