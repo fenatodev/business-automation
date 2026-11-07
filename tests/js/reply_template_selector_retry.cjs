@@ -4,7 +4,7 @@ const vm = require('node:vm');
 
 const source = fs.readFileSync('app/operator_ui/app.js', 'utf8');
 const start = source.indexOf('  // WP-264 — Load reply templates for the current company');
-const end = source.indexOf('  // WP-264 — Fill reply message when template selected', start);
+const end = source.indexOf('  // WP-459 — Insert a template without discarding the current reply draft', start);
 assert(start >= 0 && end > start);
 
 function element() {

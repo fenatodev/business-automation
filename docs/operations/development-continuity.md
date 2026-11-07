@@ -1880,3 +1880,11 @@ acessível e marca o estado ocupado durante o POST. O estado é limpo após
 sucesso ou falha, preservando o guard contra envios duplicados e os avisos
 existentes. Testes usam DOM e API sintéticos; sem alteração de API, tenant,
 schema, migrations ou serviços externos.
+
+## WP-459 — Preservar rascunho ao inserir template (07/11/2026)
+
+Selecionar um template de resposta agora insere seu conteúdo na posição do
+cursor, substituindo apenas uma seleção explícita e preservando o restante do
+rascunho. O cursor fica após o conteúdo inserido. Teste sintético cobre cursor,
+seleção, rascunho vazio e seleção vazia. Sem mudanças de API, autorização,
+tenant, schema, migrations, integrações ou serviços externos.
