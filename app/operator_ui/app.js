@@ -6655,7 +6655,7 @@
   });
 
   async function duplicateReplyTemplate(template, duplicateBtn) {
-    if (!bearer || !company || duplicateBtn.disabled) return;
+    if (!bearer || !company || duplicateBtn.disabled || editingReplyTemplateId === template.id) return;
     const proposedName = `${template.name.slice(0, 92)} (cópia)`;
     const name = prompt("Nome do novo template:", proposedName);
     if (name === null) return;
@@ -6751,6 +6751,17 @@
     if (deleteButton) deleteButton.disabled = disabled;
   }
 
+  function setReplyTemplateDuplicateButtonDisabled(templateId, disabled) {
+    const listEl = $("reply-template-list");
+    const item = Array.from(listEl?.children || []).find(
+      child => child.className === "reply-template-item" && child.dataset?.templateId === String(templateId)
+    );
+    const duplicateButton = Array.from(item?.children || []).find(
+      child => child.textContent === "Duplicar"
+    );
+    if (duplicateButton) duplicateButton.disabled = disabled;
+  }
+
   function beginReplyTemplateEdit(template, trigger = null) {
     if (editingReplyTemplateId !== null) return;
     editingReplyTemplateId = template.id;
@@ -6758,6 +6769,7 @@
     editingReplyTemplateOriginal = {name: template.name, content: template.content};
     setReplyTemplateEditButtonsDisabled(true);
     setReplyTemplateDeleteButtonDisabled(template.id, true);
+    setReplyTemplateDuplicateButtonDisabled(template.id, true);
     $("reply-template-name").value = template.name;
     $("reply-template-content").value = template.content;
     updateReplyTemplateCharacterCount("reply-template-name", "reply-template-name-count", 100);
@@ -6775,6 +6787,7 @@
     editingReplyTemplateOriginal = null;
     setReplyTemplateEditButtonsDisabled(false);
     if (editedTemplateId !== null) setReplyTemplateDeleteButtonDisabled(editedTemplateId, false);
+    if (editedTemplateId !== null) setReplyTemplateDuplicateButtonDisabled(editedTemplateId, false);
     $("reply-template-form")?.reset();
     updateReplyTemplateCharacterCount("reply-template-name", "reply-template-name-count", 100);
     updateReplyTemplateCharacterCount("reply-template-content", "reply-template-content-count", 4000);
