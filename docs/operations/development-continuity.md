@@ -1857,6 +1857,14 @@ schema, migrations, integrações ou serviços externos.
 Validação: `uv run pytest` — 3307 passaram, 2 warnings; compileall,
 `git diff --check` e `scripts/preflight.sh` PASS.
 
+## WP-443 — Retry da lista de templates de resposta (07/11/2026)
+
+A lista de templates agora anuncia carregamento e erro genérico, oferece uma
+nova tentativa após falha e preserva a lista anterior enquanto a consulta não
+conclui. Respostas substituídas são ignoradas. Teste sintético exercita falha,
+retry, sucesso e lista vazia pelo handler real. Sem mudanças de API,
+autorização, tenant, schema, migrations, integrações ou serviços externos.
+
 ## Continuidade após `NO_SAFE_WP`
 
 O executor pode concluir uma rodada com `NO_SAFE_WP` quando não houver uma
