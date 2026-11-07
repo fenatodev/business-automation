@@ -6618,6 +6618,12 @@
       await templateApi(`/companies/${company}/reply-templates/${templateId}`, "DELETE");
       itemEl.remove();
       const listEl = $("reply-template-list");
+      const nextVisibleItem = listEl && Array.from(listEl.children).find(
+        item => item.className === "reply-template-item" && !item.hidden
+      );
+      const nextDeleteButton = nextVisibleItem?.querySelector("button");
+      if (nextDeleteButton) nextDeleteButton.focus();
+      else $("reply-template-search")?.focus();
       if (listEl && listEl.children.length === 0) {
         const empty = document.createElement("p");
         empty.className = "small";
