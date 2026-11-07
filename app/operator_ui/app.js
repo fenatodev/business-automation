@@ -6519,7 +6519,11 @@
     const count = $(countId);
     if (!input || !count) return;
     const value = typeof input.value === "string" ? input.value : "";
-    count.textContent = `${value.length}/${maxLength} caracteres`;
+    const characters = Array.from(value);
+    if (characters.length > maxLength) {
+      input.value = characters.slice(0, maxLength).join("");
+    }
+    count.textContent = `${Math.min(characters.length, maxLength)}/${maxLength} caracteres`;
   }
 
   function normalizeReplyTemplateSearchText(value) {

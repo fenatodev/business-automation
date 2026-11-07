@@ -34,3 +34,13 @@ assert.equal(elements.get('reply-template-name-count').textContent, '8/100 carac
 elements.get('reply-template-content').value = 'Resposta pronta';
 elements.get('reply-template-content').handlers.input();
 assert.equal(elements.get('reply-template-content-count').textContent, '15/4000 caracteres');
+
+elements.get('reply-template-name').value = '😀'.repeat(101);
+elements.get('reply-template-name').handlers.input();
+assert.equal(Array.from(elements.get('reply-template-name').value).length, 100);
+assert.equal(elements.get('reply-template-name-count').textContent, '100/100 caracteres');
+
+elements.get('reply-template-content').value = '😀'.repeat(4001);
+elements.get('reply-template-content').handlers.input();
+assert.equal(Array.from(elements.get('reply-template-content').value).length, 4000);
+assert.equal(elements.get('reply-template-content-count').textContent, '4000/4000 caracteres');
