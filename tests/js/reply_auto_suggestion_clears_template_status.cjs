@@ -8,17 +8,21 @@ const end = source.indexOf('  // WP-226 — Suggest agent reply', start);
 assert(start >= 0 && end > start);
 
 const elements = new Map();
+let suggestionRequests = 0;
 const context = {
   bearer: 'synthetic-token',
   $: id => {
     if (!elements.has(id)) elements.set(id, {});
     return elements.get(id);
   },
-  fetch: async () => ({
-    ok: true,
-    status: 200,
-    json: async () => ({suggestion: 'Resposta sugerida'}),
-  }),
+  fetch: async () => {
+    suggestionRequests++;
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({suggestion: 'Resposta sugerida'}),
+    };
+  },
 };
 const toggle = context.$('conv-reply-toggle');
 toggle.addEventListener = (event, callback) => { toggle.click = callback; };
@@ -35,7 +39,16 @@ vm.runInContext(source.slice(start, end), context);
 async function run() {
   await toggle.click();
   assert.equal(form.hidden, false);
+  assert.equal(context.$('reply-message').value, 'Rascunho anterior');
+  assert.equal(suggestionRequests, 0);
+  assert.equal(status.textContent, 'Template "Saudação" inserido na resposta.');
+
+  context.$('reply-message').value = '';
+  status.textContent = 'Template "Saudação" inserido na resposta.';
+  await toggle.click();
+  await toggle.click();
   assert.equal(context.$('reply-message').value, 'Resposta sugerida');
+  assert.equal(suggestionRequests, 1);
   assert.equal(status.textContent, '');
 }
 
