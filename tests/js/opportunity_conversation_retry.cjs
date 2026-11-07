@@ -29,6 +29,7 @@ function setup() {
   const elements = new Map();
   const requests = [];
   const context = {
+    sessionEpoch: 1,
     selectionVersion: 4,
     selectedId: 12,
     $: id => {
@@ -105,6 +106,14 @@ async function run() {
   context.selectedId = 13;
   requests[3].resolve([{id: 22, channel: 'email', status: 'closed'}]);
   await staleLoad;
+  assert.equal(list.children[0].textContent, 'Nenhuma conversa registrada.');
+
+  context.selectionVersion = 6;
+  context.selectedId = 12;
+  const staleSessionLoad = context.loadOpportunityConversations(12, 6);
+  context.sessionEpoch += 1;
+  requests[4].resolve([{id: 23, channel: 'web', status: 'open'}]);
+  await staleSessionLoad;
   assert.equal(list.children[0].textContent, 'Nenhuma conversa registrada.');
 }
 

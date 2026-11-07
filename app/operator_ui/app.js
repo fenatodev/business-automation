@@ -548,6 +548,9 @@
 
   // WP-142 — Load conversations related to the selected opportunity
   async function loadOpportunityConversations(id, expectedVersion) {
+    const expectedSession = sessionEpoch;
+    const isCurrent = () => expectedSession === sessionEpoch &&
+      expectedVersion === selectionVersion && id === selectedId;
     const status = $("opp-conv-status");
     const retry = $("opp-conv-retry");
     const list = $("opp-conv-list");
@@ -557,7 +560,7 @@
     list.setAttribute("aria-busy", "true");
     try {
       const conversations = await api("/opportunities/" + id + "/linked-conversations");
-      if (expectedVersion !== selectionVersion || id !== selectedId) return;
+      if (!isCurrent()) return;
       list.replaceChildren();
       if (!conversations || !conversations.length) {
         status.textContent = "";
@@ -579,7 +582,7 @@
           }
         })
       );
-      if (expectedVersion !== selectionVersion || id !== selectedId) return;
+      if (!isCurrent()) return;
       status.textContent = "";
       for (let idx = 0; idx < conversations.length; idx++) {
         const conv = conversations[idx];
@@ -611,7 +614,7 @@
         list.appendChild(item);
       }
     } catch (error) {
-      if (expectedVersion !== selectionVersion || id !== selectedId) return;
+      if (!isCurrent()) return;
       list.replaceChildren();
       const errorState = document.createElement("p");
       errorState.className = "small";
@@ -620,7 +623,7 @@
       status.textContent = "Falha ao carregar conversas da oportunidade.";
       retry.hidden = false;
     } finally {
-      if (expectedVersion === selectionVersion && id === selectedId) {
+      if (isCurrent()) {
         list.setAttribute("aria-busy", "false");
         retry.disabled = false;
       }
