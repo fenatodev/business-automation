@@ -2305,6 +2305,7 @@
         const cursor = start + content.length;
         reply.setSelectionRange(cursor, cursor);
         reply.focus();
+        $("reply-template-insert-status").textContent = `Template "${selectedOption.textContent}" inserido na resposta.`;
         e.target.value = "";
       }
     });
