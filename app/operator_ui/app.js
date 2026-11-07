@@ -2123,6 +2123,8 @@
     $("conv-note-text").value = "";
     $("conv-note-text").readOnly = true;
     $("conv-note-save").disabled = true;
+    $("conv-note-retry").hidden = true;
+    $("conv-note-retry").disabled = true;
     $("conv-note-status").textContent = "Carregando nota...";
     try {
       const result = await conversationApi("/conversations/" + id + "/note");
@@ -2132,11 +2134,21 @@
       $("conv-note-text").readOnly = false;
       $("conv-note-save").disabled = false;
       conversationNoteReady = true;
+      $("conv-note-retry").hidden = true;
     } catch (error) {
       if (!isCurrent()) return;
-      $("conv-note-status").textContent = "Não foi possível carregar a nota. Selecione a conversa novamente para tentar.";
+      $("conv-note-status").textContent = "Não foi possível carregar a nota.";
+      $("conv-note-retry").hidden = false;
+    } finally {
+      if (isCurrent()) $("conv-note-retry").disabled = false;
     }
   }
+
+  $("conv-note-retry").addEventListener("click", () => {
+    if (selectedConvId !== null) {
+      return loadConversationNote(selectedConvId, ++conversationNoteVersion);
+    }
+  });
 
   // WP-264 — Load reply templates for the current company
   async function loadReplyTemplates() {

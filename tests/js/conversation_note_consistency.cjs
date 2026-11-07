@@ -25,9 +25,11 @@ function setup() {
   vm.createContext(context);
   vm.runInContext(section('  async function selectConversation(id)', '  async function loadMessages(id)') +
     section('  async function loadConversationNote(', '  // WP-264') +
+    section('  $("conv-note-retry").addEventListener', '  // WP-264') +
     section('  $("conv-note-save").addEventListener', '  // WP-147'), context);
   return {context, pending, messages, field: context.$('conv-note-text'),
-    button: context.$('conv-note-save'), status: context.$('conv-note-status')};
+    button: context.$('conv-note-save'), retry: context.$('conv-note-retry'),
+    status: context.$('conv-note-status')};
 }
 async function races(mode, fails, oldFirst, saving) {
   const {context: c, pending, messages, field, button, status} = setup();
@@ -65,20 +67,29 @@ async function races(mode, fails, oldFirst, saving) {
   }
 }
 async function recovery() {
-  const {context: c, pending, messages, field, button, status} = setup();
+  const {context: c, pending, messages, field, button, retry, status} = setup();
   let selection = c.selectConversation(1);
+  assert(retry.hidden); assert(retry.disabled);
   pending[0].reject(new Error('private error')); messages[0](); await selection;
-  assert.match(status.textContent, /Selecione a conversa novamente/);
+  assert.match(status.textContent, /Não foi possível carregar/);
   assert(!status.textContent.includes('private')); assert(field.readOnly); assert(button.disabled);
-  await button.click(); assert.equal(pending.length, 1);
+  assert(!retry.hidden); assert(!retry.disabled);
+  const retryLoad = retry.click();
+  assert(retry.hidden); assert(retry.disabled);
+  assert.equal(pending[1].path, '/conversations/1/note');
+  pending[1].resolve({note: 'Recovered'}); await retryLoad;
+  assert.equal(field.value, 'Recovered'); assert(!field.readOnly); assert(!button.disabled);
+  assert(retry.hidden); assert(!retry.disabled);
+  assert.equal(status.textContent, '');
+  assert.equal(pending.length, 2);
   selection = c.selectConversation(1);
-  pending[1].resolve({note: null}); messages[1](); await selection;
+  pending[2].resolve({note: null}); messages[1](); await selection;
   assert.equal(field.value, ''); assert(!button.disabled);
   field.value = 'draft'; let save = button.click();
-  pending[2].reject(new Error('private error')); await save;
+  pending[3].reject(new Error('private error')); await save;
   assert.equal(field.value, 'draft'); assert(!button.disabled); assert(!field.readOnly);
   assert.match(status.textContent, /Falha ao salvar/);
-  save = button.click(); pending[3].resolve({}); await save;
+  save = button.click(); pending[4].resolve({}); await save;
   assert.equal(status.textContent, 'Nota salva.');
 }
 (async () => {
