@@ -6705,7 +6705,7 @@
     if (name === null) return;
     const trimmedName = name.trim();
     const loadStatus = $("reply-template-load-status");
-    if (!trimmedName || trimmedName.length > 100) {
+    if (!trimmedName || Array.from(trimmedName).length > 100) {
       if (loadStatus) loadStatus.textContent = "Informe um nome de até 100 caracteres.";
       return;
     }

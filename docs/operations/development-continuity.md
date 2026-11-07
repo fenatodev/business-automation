@@ -1951,3 +1951,11 @@ prefixo é truncado por pontos de código para respeitar o limite de 100
 caracteres. O operador ainda pode editar ou cancelar a sugestão. Teste
 sintético cobre colisões repetidas e cancelamento; sem mudanças de API,
 autorização, tenant, persistência, schema, migrations ou integrações.
+
+## WP-494 — Validar nomes Unicode ao duplicar templates (07/11/2026)
+
+A validação do nome informado ao duplicar templates agora conta pontos de
+código Unicode, alinhando o limite de 100 caracteres com o contador do
+formulário e a API. Teste sintético confirma que 100 emoji são aceitos e
+enviados. Sem mudanças de API, autorização, tenant, persistência, schema,
+migrations, integrações ou serviços externos.

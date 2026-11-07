@@ -26,7 +26,8 @@ const elements = new Map(
 const templates = [{id: 7, name: 'Saudação', content: 'Olá, como posso ajudar?'}];
 const requests = [];
 const notifications = [];
-const promptAnswers = [null, '   ', 'Saudação (cópia)', null, null, null];
+const longUnicodeName = '😀'.repeat(100);
+const promptAnswers = [null, '   ', 'Saudação (cópia)', longUnicodeName, null, null, null];
 const promptDefaults = [];
 let selectorRefreshes = 0;
 
@@ -99,6 +100,15 @@ async function run() {
     child => child.textContent === 'Duplicar'
   );
   assert.equal(refreshedDuplicateButton.focused, true);
+
+  requests.length = 0;
+  await refreshedDuplicateButton.handlers.click();
+  assert.deepEqual(requests.map(({method, body}) => ({
+    method, body: body ? JSON.parse(JSON.stringify(body)) : null,
+  })), [
+    {method: 'POST', body: {name: longUnicodeName, content: 'Olá, como posso ajudar?'}},
+    {method: 'GET', body: null},
+  ]);
 
   templates.push(
     {id: 9, name: 'Saudação (cópia 2)', content: 'Conteúdo sintético'},
