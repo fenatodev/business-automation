@@ -16,6 +16,9 @@ function setup(templates) {
     appendChild(child) { this.children.push(child); },
   };
   const status = {textContent: ''};
+  const search = {value: 'saudacao', addEventListener() {}};
+  const clearSearch = {disabled: false, addEventListener() {}};
+  const filterStatus = {textContent: '1 template corresponde à busca.'};
   const retry = {hidden: false, disabled: false, addEventListener() {}};
   const context = {
     bearer: 'synthetic-token',
@@ -24,6 +27,9 @@ function setup(templates) {
       'reply-template-list': list,
       'reply-template-load-status': status,
       'reply-template-load-retry': retry,
+      'reply-template-search': search,
+      'reply-template-search-clear': clearSearch,
+      'reply-template-filter-status': filterStatus,
     })[id] || null,
     templateApi: async () => templates,
     document: {
@@ -39,7 +45,7 @@ function setup(templates) {
   };
   vm.createContext(context);
   vm.runInContext(source.slice(start, end) + '\nthis.loadReplyTemplateList = loadReplyTemplateList;', context);
-  return {context, list, status};
+  return {context, list, status, clearSearch, filterStatus};
 }
 
 async function run() {
@@ -50,6 +56,8 @@ async function run() {
   assert.equal(empty.list.children[0].textContent, 'Nenhum template salvo.');
   assert.equal(empty.list.children[0].attributes.role, 'status');
   assert.equal(empty.status.textContent, '');
+  assert.equal(empty.clearSearch.disabled, true);
+  assert.equal(empty.filterStatus.textContent, '');
 
   const populated = setup([{id: 1, name: 'Saudação', content: 'Olá'}]);
   await populated.context.loadReplyTemplateList();
