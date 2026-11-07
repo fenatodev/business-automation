@@ -6755,6 +6755,7 @@
   }
 
   function cancelReplyTemplateEdit() {
+    if (replyTemplateSaving) return;
     const trigger = editingReplyTemplateTrigger;
     resetReplyTemplateForm();
     if (trigger?.isConnected) trigger.focus();
@@ -6765,6 +6766,7 @@
   ["reply-template-name", "reply-template-content"].forEach(id => {
     $(id)?.addEventListener("keydown", event => {
       if (event.key !== "Escape" || editingReplyTemplateId === null) return;
+      if (replyTemplateSaving) return;
       event.preventDefault();
       cancelReplyTemplateEdit();
     });
@@ -6784,7 +6786,9 @@
     }
     replyTemplateSaving = true;
     const saveButton = $("reply-template-save");
+    const cancelButton = $("reply-template-cancel-edit");
     saveButton.disabled = true;
+    if (cancelButton) cancelButton.disabled = true;
     saveStatus.setAttribute("aria-busy", "true");
     saveStatus.textContent = "Salvando template";
     try {
@@ -6805,6 +6809,7 @@
     } finally {
       replyTemplateSaving = false;
       saveButton.disabled = false;
+      if (cancelButton) cancelButton.disabled = false;
       saveStatus.setAttribute("aria-busy", "false");
     }
   });
