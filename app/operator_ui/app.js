@@ -6614,7 +6614,7 @@
         editBtn.type = "button";
         editBtn.className = "secondary";
         editBtn.textContent = "Editar";
-        editBtn.addEventListener("click", () => beginReplyTemplateEdit(t));
+        editBtn.addEventListener("click", () => beginReplyTemplateEdit(t, editBtn));
         item.appendChild(editBtn);
         deleteBtn.type = "button";
         deleteBtn.className = "danger";
@@ -6679,8 +6679,10 @@
   }
 
   let editingReplyTemplateId = null;
-  function beginReplyTemplateEdit(template) {
+  let editingReplyTemplateTrigger = null;
+  function beginReplyTemplateEdit(template, trigger = null) {
     editingReplyTemplateId = template.id;
+    editingReplyTemplateTrigger = trigger;
     $("reply-template-name").value = template.name;
     $("reply-template-content").value = template.content;
     updateReplyTemplateCharacterCount("reply-template-name", "reply-template-name-count", 100);
@@ -6693,6 +6695,7 @@
 
   function resetReplyTemplateForm() {
     editingReplyTemplateId = null;
+    editingReplyTemplateTrigger = null;
     $("reply-template-form")?.reset();
     updateReplyTemplateCharacterCount("reply-template-name", "reply-template-name-count", 100);
     updateReplyTemplateCharacterCount("reply-template-content", "reply-template-content-count", 4000);
@@ -6702,8 +6705,10 @@
   }
 
   $("reply-template-cancel-edit")?.addEventListener("click", () => {
+    const trigger = editingReplyTemplateTrigger;
     resetReplyTemplateForm();
-    $("reply-template-name").focus();
+    if (trigger?.isConnected) trigger.focus();
+    else $("reply-template-name").focus();
   });
 
   let replyTemplateSaving = false;

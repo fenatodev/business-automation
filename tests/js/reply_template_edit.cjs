@@ -72,10 +72,13 @@ async function run() {
   assert.equal(elements.get('reply-template-cancel-edit').hidden, true);
   assert.deepEqual(refreshed, ['Template atualizado.', 'list', 'selector']);
 
-  context.beginReplyTemplateEdit({id: 13, name: 'Rascunho', content: 'Texto'});
+  const editTrigger = element();
+  editTrigger.isConnected = true;
+  context.beginReplyTemplateEdit({id: 13, name: 'Rascunho', content: 'Texto'}, editTrigger);
   elements.get('reply-template-cancel-edit').handlers.click();
   assert.equal(elements.get('reply-template-name').value, '');
   assert.equal(elements.get('reply-template-cancel-edit').hidden, true);
+  assert.equal(editTrigger.focused, true);
 }
 
 run().catch(error => { console.error(error); process.exitCode = 1; });
