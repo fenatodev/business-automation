@@ -6522,6 +6522,15 @@
     count.textContent = `${value.length}/${maxLength} caracteres`;
   }
 
+  function normalizeReplyTemplateSearchText(value) {
+    return String(value || "")
+      .toLocaleLowerCase()
+      .normalize("NFD")
+      .replace(/\p{M}/gu, "")
+      .replace(/\s+/gu, " ")
+      .trim();
+  }
+
   $("reply-template-name")?.addEventListener("input", () => {
     updateReplyTemplateCharacterCount("reply-template-name", "reply-template-name-count", 100);
   });
@@ -6537,16 +6546,12 @@
     const filterStatus = $("reply-template-filter-status");
     const listEl = $("reply-template-list");
     if (!search || !filterStatus || !listEl) return;
-    const normalizeSearchText = value => value
-      .toLocaleLowerCase()
-      .normalize("NFD")
-      .replace(/\p{M}/gu, "");
-    const query = normalizeSearchText((search.value || "").trim());
+    const query = normalizeReplyTemplateSearchText(search.value);
     if (clearSearch) clearSearch.disabled = query === "";
     const items = Array.from(listEl.children).filter(item => item.className === "reply-template-item");
     let visible = 0;
     for (const item of items) {
-      const searchText = normalizeSearchText(item.dataset?.searchText || "");
+      const searchText = normalizeReplyTemplateSearchText(item.dataset?.searchText || "");
       item.hidden = query !== "" && !searchText.includes(query);
       if (!item.hidden) visible++;
     }
@@ -6615,10 +6620,7 @@
         const preview = document.createElement("span");
         preview.className = "reply-template-item-preview";
         preview.textContent = t.content;
-        if (item.dataset) item.dataset.searchText = `${t.name} ${t.content}`
-          .toLocaleLowerCase()
-          .normalize("NFD")
-          .replace(/\p{M}/gu, "");
+        if (item.dataset) item.dataset.searchText = normalizeReplyTemplateSearchText(`${t.name} ${t.content}`);
         info.appendChild(name);
         info.appendChild(preview);
         item.appendChild(info);

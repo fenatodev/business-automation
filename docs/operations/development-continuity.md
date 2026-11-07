@@ -1928,3 +1928,10 @@ lista ficam desabilitadas e chamadas enfileiradas são ignoradas. Ao concluir,
 as ações são reabilitadas, mantendo desabilitado o template que estiver em
 edição. Teste sintético cobre duas ações concorrentes; sem mudanças de API,
 autorização, tenant, persistência, schema, migrations ou integrações.
+
+## WP-491 — Busca de templates tolerante a whitespace (07/11/2026)
+
+A busca local de templates agora colapsa sequências de espaços, tabs e quebras
+de linha na consulta e no texto indexado, preservando a exibição original.
+Teste sintético cobre conteúdo com whitespace misto. Sem mudanças de API,
+autorização, tenant, persistência, schema, migrations ou integrações.
