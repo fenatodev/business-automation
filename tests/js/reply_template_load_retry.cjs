@@ -13,6 +13,8 @@ function element() {
     disabled: false,
     textContent: '',
     children: [],
+    attributes: {},
+    setAttribute(name, value) { this.attributes[name] = value; },
     addEventListener(event, callback) {
       if (event === 'click') this.click = () => { if (!this.disabled) return callback(); };
     },

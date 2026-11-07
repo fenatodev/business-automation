@@ -6525,6 +6525,7 @@
       if (!templates || templates.length === 0) {
         const empty = document.createElement("p");
         empty.className = "small";
+        empty.setAttribute("role", "status");
         empty.textContent = "Nenhum template salvo.";
         listEl.appendChild(empty);
         loadStatus.textContent = "";
@@ -6576,6 +6577,7 @@
       if (listEl && listEl.children.length === 0) {
         const empty = document.createElement("p");
         empty.className = "small";
+        empty.setAttribute("role", "status");
         empty.textContent = "Nenhum template salvo.";
         listEl.appendChild(empty);
       }

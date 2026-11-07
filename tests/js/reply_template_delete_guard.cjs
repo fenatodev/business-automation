@@ -40,7 +40,10 @@ function setup(confirmed = true) {
     document: {
       createElement(tag) {
         assert.equal(tag, 'p');
-        return {className: '', textContent: ''};
+        return {
+          className: '', textContent: '', attributes: {},
+          setAttribute(name, value) { this.attributes[name] = value; },
+        };
       },
     },
   };
@@ -65,6 +68,7 @@ async function run() {
   assert.equal(success.button.disabled, false);
   assert.deepEqual(success.removed, [true]);
   assert.deepEqual(success.emptyMessages, ['Nenhum template salvo.']);
+  assert.equal(success.list.children.at(-1).attributes.role, 'status');
   assert.deepEqual(success.notifications, ['Template excluído.']);
 
   const failure = setup();
