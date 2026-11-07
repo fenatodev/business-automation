@@ -206,7 +206,8 @@ run_codex() {
 codex_status() {
   local last_message="$LOG_DIR/$RUN_ID.last-message.txt"
   [[ -f "$last_message" ]] || return 1
-  grep -Eo '^(PR_READY|BLOCKED|NO_SAFE_WP)$' "$last_message" | tail -n 1
+  grep -Eo '^\**(PR_READY|BLOCKED|NO_SAFE_WP)\**$' "$last_message" \
+    | tr -d '*' | tail -n 1
 }
 
 main() {
