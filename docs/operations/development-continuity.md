@@ -1844,6 +1844,19 @@ fica oculto durante nova tentativa e ignora respostas de sessão obsoletas;
 sintéticos. Escopo restrito à UI do operador, testes e documentação, sem
 mudanças de API, autorização, tenant, schema, migrations ou serviços externos.
 
+## WP-441 — Feedback de falha na atualização do dashboard (07/11/2026)
+
+O dashboard agora anuncia a atualização em andamento, apresenta uma mensagem
+genérica quando a leitura falha e remove o aviso após sucesso. O botão Atualizar
+existente permite nova tentativa; respostas obsoletas e 403 preservam os guards
+atuais. Teste sintético cobre falha de rede, HTTP 503 e recuperação.
+
+Escopo: UI interna, teste e documentação. Sem mudanças de API, auth/tenant,
+schema, migrations, integrações ou serviços externos.
+
+Validação: `uv run pytest` — 3307 passaram, 2 warnings; compileall,
+`git diff --check` e `scripts/preflight.sh` PASS.
+
 ## Continuidade após `NO_SAFE_WP`
 
 O executor pode concluir uma rodada com `NO_SAFE_WP` quando não houver uma

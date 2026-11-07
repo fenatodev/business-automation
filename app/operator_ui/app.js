@@ -3117,15 +3117,24 @@
     const version = ++dashboardRefreshVersion;
     const session = sessionEpoch;
     const isCurrent = () => version === dashboardRefreshVersion && session === sessionEpoch;
-    const res = await fetch("/internal-tasks/dashboard", {
-      headers: {"Authorization": "Bearer " + bearer},
-    });
-    if (!isCurrent()) return;
-    if (res.status === 403) {disconnect("Permissão de operador necessária."); return;}
-    if (!res.ok) return;
-    const data = await res.json();
-    if (!isCurrent()) return;
-    renderDashboard(data);
+    const status = $("dashboard-status");
+    status.textContent = "Atualizando dashboard…";
+    try {
+      const res = await fetch("/internal-tasks/dashboard", {
+        headers: {"Authorization": "Bearer " + bearer},
+      });
+      if (!isCurrent()) return;
+      if (res.status === 403) {disconnect("Permissão de operador necessária."); return;}
+      if (!res.ok) throw new ApiFailure(res.status);
+      const data = await res.json();
+      if (!isCurrent()) return;
+      renderDashboard(data);
+      status.textContent = "";
+    } catch (error) {
+      if (!isCurrent()) throw error;
+      status.textContent = "Falha ao atualizar o dashboard. Tente novamente.";
+      throw error;
+    }
   }
 
   function startDashboardRefresh() {
