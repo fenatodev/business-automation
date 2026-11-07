@@ -2044,14 +2044,22 @@
     const session = sessionEpoch;
     const isCurrent = () => epoch === messageLoadEpoch &&
       session === sessionEpoch && selectedConvId === id;
+    const status = $("conv-messages-status");
+    const retry = $("conv-messages-retry");
+    const target = $("conv-messages");
+    status.textContent = "Carregando mensagens...";
+    retry.hidden = true;
+    retry.disabled = true;
+    target.setAttribute("aria-busy", "true");
     try {
       const [messages, countResult] = await Promise.all([
         conversationApi("/conversations/" + id + "/messages?limit=" + msgPageSize + "&offset=" + msgOffset),
         conversationApi("/conversations/" + id + "/messages/count?limit=" + msgPageSize + "&offset=" + msgOffset),
       ]);
       if (!isCurrent()) return;
+      status.textContent = "";
+      retry.hidden = true;
       msgTotal = countResult.total || 0;
-      const target = $("conv-messages");
       target.replaceChildren();
       if (!messages.length) {
         const empty = document.createElement("p");
@@ -2076,9 +2084,19 @@
       updateMessagePagination();
     } catch (error) {
       if (!isCurrent()) return;
-      notify("Não foi possível carregar as mensagens.", true);
+      status.textContent = "Não foi possível carregar as mensagens desta conversa.";
+      retry.hidden = false;
+    } finally {
+      if (isCurrent()) {
+        retry.disabled = false;
+        target.setAttribute("aria-busy", "false");
+      }
     }
   }
+
+  $("conv-messages-retry").addEventListener("click", () => {
+    if (selectedConvId !== null) loadMessages(selectedConvId);
+  });
 
   function updateMessagePagination() {
     const pagination = $("msg-pagination");
