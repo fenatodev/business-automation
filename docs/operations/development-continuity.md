@@ -1935,3 +1935,10 @@ A busca local de templates agora colapsa sequências de espaços, tabs e quebras
 de linha na consulta e no texto indexado, preservando a exibição original.
 Teste sintético cobre conteúdo com whitespace misto. Sem mudanças de API,
 autorização, tenant, persistência, schema, migrations ou integrações.
+
+## WP-492 — Contagem Unicode nos limites de templates (07/11/2026)
+
+O contador de nome e conteúdo de templates agora usa pontos de código Unicode,
+compatíveis com os limites validados pela API, e corta entradas acima dos
+limites após digitação ou colagem. Testes sintéticos cobrem emoji. Sem mudanças
+de API, autorização, tenant, persistência, schema, migrations ou integrações.
