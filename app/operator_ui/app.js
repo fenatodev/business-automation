@@ -6692,7 +6692,7 @@
   }
 
   async function deleteReplyTemplate(templateId, itemEl, deleteBtn) {
-    if (!bearer || !company || deleteBtn.disabled) return;
+    if (!bearer || !company || deleteBtn.disabled || editingReplyTemplateId === templateId) return;
     if (!confirm("Excluir este template?")) return;
     deleteBtn.disabled = true;
     const loadStatus = $("reply-template-load-status");
@@ -6742,12 +6742,22 @@
     }
   }
 
+  function setReplyTemplateDeleteButtonDisabled(templateId, disabled) {
+    const listEl = $("reply-template-list");
+    const item = Array.from(listEl?.children || []).find(
+      child => child.className === "reply-template-item" && child.dataset?.templateId === String(templateId)
+    );
+    const deleteButton = Array.from(item?.children || []).find(child => child.className === "danger");
+    if (deleteButton) deleteButton.disabled = disabled;
+  }
+
   function beginReplyTemplateEdit(template, trigger = null) {
     if (editingReplyTemplateId !== null) return;
     editingReplyTemplateId = template.id;
     editingReplyTemplateTrigger = trigger;
     editingReplyTemplateOriginal = {name: template.name, content: template.content};
     setReplyTemplateEditButtonsDisabled(true);
+    setReplyTemplateDeleteButtonDisabled(template.id, true);
     $("reply-template-name").value = template.name;
     $("reply-template-content").value = template.content;
     updateReplyTemplateCharacterCount("reply-template-name", "reply-template-name-count", 100);
@@ -6759,10 +6769,12 @@
   }
 
   function resetReplyTemplateForm() {
+    const editedTemplateId = editingReplyTemplateId;
     editingReplyTemplateId = null;
     editingReplyTemplateTrigger = null;
     editingReplyTemplateOriginal = null;
     setReplyTemplateEditButtonsDisabled(false);
+    if (editedTemplateId !== null) setReplyTemplateDeleteButtonDisabled(editedTemplateId, false);
     $("reply-template-form")?.reset();
     updateReplyTemplateCharacterCount("reply-template-name", "reply-template-name-count", 100);
     updateReplyTemplateCharacterCount("reply-template-content", "reply-template-content-count", 4000);
