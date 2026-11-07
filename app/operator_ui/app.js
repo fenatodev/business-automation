@@ -6562,6 +6562,12 @@
   }
 
   $("reply-template-search")?.addEventListener("input", applyReplyTemplateFilter);
+  $("reply-template-search")?.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || !(event.currentTarget?.value || "").trim()) return;
+    event.preventDefault();
+    event.currentTarget.value = "";
+    applyReplyTemplateFilter();
+  });
   $("reply-template-search-clear")?.addEventListener("click", () => {
     const search = $("reply-template-search");
     if (!search) return;

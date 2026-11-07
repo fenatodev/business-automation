@@ -14,7 +14,7 @@ function setup(templates) {
     replaceChildren() { this.children = []; },
     appendChild(child) { this.children.push(child); },
   };
-  const search = {value: '', addEventListener(event, handler) { this.handler = handler; }, focus() { this.focused = true; }};
+  const search = {value: '', handlers: {}, addEventListener(event, handler) { this.handlers[event] = handler; }, focus() { this.focused = true; }};
   const clearSearch = {disabled: true, addEventListener(event, handler) { this.handler = handler; }};
   const filterStatus = {textContent: ''};
   const loadStatus = {textContent: ''};
@@ -61,25 +61,50 @@ async function run() {
   assert.equal(ui.list.children.length, 2);
 
   ui.search.value = 'obrigado';
-  ui.search.handler();
+  ui.search.handlers.input();
   assert.deepEqual(ui.list.children.map(item => item.hidden), [true, false]);
   assert.equal(ui.filterStatus.textContent, '1 template corresponde à busca.');
 
   ui.search.value = 'saudacao';
-  ui.search.handler();
+  ui.search.handlers.input();
   assert.deepEqual(ui.list.children.map(item => item.hidden), [false, true]);
   assert.equal(ui.filterStatus.textContent, '1 template corresponde à busca.');
 
   ui.search.value = 'a';
-  ui.search.handler();
+  ui.search.handlers.input();
   assert.deepEqual(ui.list.children.map(item => item.hidden), [false, false]);
   assert.equal(ui.filterStatus.textContent, '2 templates correspondem à busca.');
 
   ui.search.value = 'inexistente';
-  ui.search.handler();
+  ui.search.handlers.input();
   assert.deepEqual(ui.list.children.map(item => item.hidden), [true, true]);
   assert.equal(ui.filterStatus.textContent, 'Nenhum template corresponde à busca.');
   assert.equal(ui.clearSearch.disabled, false);
+
+  ui.search.value = '';
+  ui.search.handlers.input();
+  let escapePrevented = false;
+  ui.search.handlers.keydown({key: 'Escape', currentTarget: ui.search, preventDefault() { escapePrevented = true; }});
+  assert.equal(escapePrevented, false);
+  assert.equal(ui.search.value, '');
+
+  ui.search.value = 'inexistente';
+  ui.search.handlers.input();
+  escapePrevented = false;
+  ui.search.handlers.keydown({key: 'Escape', currentTarget: ui.search, preventDefault() { escapePrevented = true; }});
+  assert.equal(escapePrevented, true);
+  assert.equal(ui.search.value, '');
+  assert.deepEqual(ui.list.children.map(item => item.hidden), [false, false]);
+  assert.equal(ui.filterStatus.textContent, '');
+  assert.equal(ui.clearSearch.disabled, true);
+
+  ui.search.value = 'inexistente';
+  ui.search.handlers.input();
+  escapePrevented = false;
+  ui.search.handlers.keydown({key: 'Enter', currentTarget: ui.search, preventDefault() { escapePrevented = true; }});
+  assert.equal(escapePrevented, false);
+  assert.equal(ui.search.value, 'inexistente');
+  assert.deepEqual(ui.list.children.map(item => item.hidden), [true, true]);
 
   ui.clearSearch.handler();
   assert.equal(ui.search.value, '');
@@ -89,7 +114,7 @@ async function run() {
   assert.equal(ui.clearSearch.disabled, true);
 
   ui.search.value = 'saudação';
-  ui.search.handler();
+  ui.search.handlers.input();
   await ui.context.deleteReplyTemplate(1, ui.list.children[0], ui.list.children[0].children[1]);
   assert.deepEqual(ui.list.children.map(item => item.hidden), [true]);
   assert.equal(ui.filterStatus.textContent, 'Nenhum template corresponde à busca.');
