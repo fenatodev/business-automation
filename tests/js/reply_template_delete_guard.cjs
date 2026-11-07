@@ -68,6 +68,7 @@ async function run() {
   assert.equal(success.requests[0].path, '/companies/3/reply-templates/10');
   assert.equal(success.requests[0].method, 'DELETE');
   assert.equal(success.button.disabled, true);
+  assert.equal(success.loadStatus.textContent, 'Excluindo template');
   success.requests[0].resolve({});
   await Promise.all([firstDelete, duplicateDelete]);
   assert.equal(success.button.disabled, false);
@@ -80,6 +81,7 @@ async function run() {
   const failure = setup();
   const failedDelete = failure.context.deleteReplyTemplate(11, failure.item, failure.button);
   assert.equal(failure.button.disabled, true);
+  assert.equal(failure.loadStatus.textContent, 'Excluindo template');
   failure.requests[0].reject(new Error('synthetic failure'));
   await failedDelete;
   assert.equal(failure.button.disabled, false);

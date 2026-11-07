@@ -6613,6 +6613,7 @@
     if (!confirm("Excluir este template?")) return;
     deleteBtn.disabled = true;
     const loadStatus = $("reply-template-load-status");
+    if (loadStatus) loadStatus.textContent = "Excluindo template";
     try {
       await templateApi(`/companies/${company}/reply-templates/${templateId}`, "DELETE");
       itemEl.remove();
