@@ -1,5 +1,12 @@
 # WP-017 — Interface interna mínima do operador Client 0
 
+## Falha ao carregar configuração do agente
+
+Se a consulta da configuração do agente falhar, os valores já exibidos são
+preservados. A seção anuncia a falha sem expor detalhes e oferece **Tentar
+novamente**, que repete somente a consulta de leitura para a Company ativa.
+Uma resposta anterior substituída por uma nova consulta não atualiza os campos.
+
 **Status:** implementada no código para revisão; não é release nem interface pública.  
 **Dependência:** WP-009/010, WP-013 (piloto sintético), ADR 0003 (operator vinculado à Company).  
 **Escopo fechado:** captura manual de Opportunity, listagem, triagem e ProposalBrief.

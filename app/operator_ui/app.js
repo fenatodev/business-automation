@@ -6402,18 +6402,36 @@
   workspaceObserver.observe($("briefs-list") ? $("briefs-list").closest(".panel") : null, {attributes: true});
 
   // WP-205 — Agent configuration
+  let agentConfigLoadVersion = 0;
   async function loadAgentConfig() {
     if (!bearer || !company) return;
+    const version = ++agentConfigLoadVersion;
+    const status = $("agent-config-status");
+    const retry = $("agent-config-load-retry");
+    const isCurrent = () => version === agentConfigLoadVersion;
+    status.textContent = "Carregando configuração do agente";
+    retry.hidden = true;
+    retry.disabled = true;
     try {
       const res = await api(`/companies/${company}/agent-config`);
+      if (!isCurrent()) return;
       $("agent-system-prompt").value = res.system_prompt || "";
       $("agent-temperature").value = res.temperature ?? "";
       $("agent-max-tokens").value = res.max_tokens ?? "";
       $("agent-model").value = res.model ?? "";
+      status.textContent = "";
     } catch {
-      // config not set yet
+      if (!isCurrent()) return;
+      status.textContent = "Não foi possível carregar a configuração do agente.";
+      retry.hidden = false;
+    } finally {
+      if (isCurrent()) retry.disabled = false;
     }
   }
+
+  $("agent-config-load-retry")?.addEventListener("click", () => {
+    loadAgentConfig();
+  });
 
   $("agent-config-save")?.addEventListener("click", async () => {
     if (!bearer || !company) return;
