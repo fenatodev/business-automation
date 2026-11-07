@@ -439,20 +439,34 @@
   }
 
   async function loadBrief(id, version) {
+    const session = sessionEpoch;
+    const isCurrent = () => selectionVersion === version && selectedId === id && sessionEpoch === session;
+    const retry = $("brief-load-retry");
+    retry.hidden = true;
+    retry.disabled = true;
+    $("brief-status").textContent = "Carregando";
     try {
       const brief = await api("/opportunities/" + id + "/proposal-brief");
-      if (selectionVersion === version) displayBrief(brief);
+      if (isCurrent()) displayBrief(brief);
     } catch (error) {
-      if (selectionVersion !== version) return;
+      if (!isCurrent()) return;
       if (error instanceof ApiFailure && error.status === 404) {
         displayBrief(null);
         return;
       }
       $("brief-form").hidden = true;
       $("brief-status").textContent = "Consulta indisponível";
+      retry.hidden = false;
       notify("Não foi possível consultar o ProposalBrief.", true);
+    } finally {
+      if (isCurrent()) retry.disabled = false;
     }
   }
+
+  $("brief-load-retry").addEventListener("click", () => {
+    if (selectedId === null) return;
+    return loadBrief(selectedId, selectionVersion);
+  });
 
   async function selectOpportunity(id) {
     const record = opportunities.find((item) => item.id === id);
