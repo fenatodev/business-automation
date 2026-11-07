@@ -203,11 +203,27 @@ run_codex() {
     -o "$LOG_DIR/$RUN_ID.last-message.txt" < "$TASK_FILE"
 }
 
+codex_status() {
+  local last_message="$LOG_DIR/$RUN_ID.last-message.txt"
+  [[ -f "$last_message" ]] || return 1
+  grep -Eo '^(PR_READY|BLOCKED|NO_SAFE_WP)$' "$last_message" | tail -n 1
+}
+
 main() {
   require_tools || exit 2
   if stop_requested; then log "STOP: stop file exists: $STOP_FILE"; exit 0; fi
   prepare_main || exit 3
   run_codex || { log "BLOCKED: Codex execution failed; no retry in this run"; exit 4; }
+  case "$(codex_status || true)" in
+    NO_SAFE_WP)
+      log "NO_SAFE_WP: no safe package selected; retrying after backoff"
+      return 11
+      ;;
+    BLOCKED)
+      log "BLOCKED: Codex reported a blocking condition"
+      return 10
+      ;;
+  esac
   merge_agent_pr || exit $?
 }
 
