@@ -6401,7 +6401,7 @@
   // Load briefs on workspace visible
   workspaceObserver.observe($("briefs-list") ? $("briefs-list").closest(".panel") : null, {attributes: true});
 
-  // WP-205 — Agent configuration
+  // Agent configuration loading
   let agentConfigLoadVersion = 0;
   async function loadAgentConfig() {
     if (!bearer || !company) return;
@@ -6433,8 +6433,9 @@
     loadAgentConfig();
   });
 
+  // WP-205 — Agent configuration save
+  let agentConfigSaving = false;
   $("agent-config-save")?.addEventListener("click", async () => {
-    if (!bearer || !company) return;
     const body = {};
     const prompt = $("agent-system-prompt").value.trim();
     const temp = $("agent-temperature").value;
@@ -6444,6 +6445,10 @@
     if (temp !== "") body.temperature = parseFloat(temp);
     if (maxTokens !== "") body.max_tokens = parseInt(maxTokens, 10);
     if (model !== "") body.model = model;
+    if (!bearer || !company || agentConfigSaving) return;
+    agentConfigSaving = true;
+    const saveButton = $("agent-config-save");
+    saveButton.disabled = true;
 
     try {
       await api(`/companies/${company}/agent-config`, "PUT", body);
@@ -6452,6 +6457,9 @@
     } catch (e) {
       $("agent-config-status").textContent = "Erro ao salvar";
       $("agent-config-status").style.color = "var(--danger)";
+    } finally {
+      agentConfigSaving = false;
+      saveButton.disabled = false;
     }
   });
 
