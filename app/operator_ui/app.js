@@ -1180,6 +1180,10 @@
   // WP-093 — Save opportunity title/description edit
   $("save-edit-button").addEventListener("click", async () => {
     if (selectedId === null) return;
+    const id = selectedId;
+    const version = selectionVersion;
+    const epoch = sessionEpoch;
+    const isCurrent = () => id === selectedId && version === selectionVersion && epoch === sessionEpoch;
     const title = $("edit-title").value.trim();
     const description = $("edit-description").value.trim();
     if (!title) {
@@ -1191,12 +1195,13 @@
       return;
     }
     try {
-      const updated = await api("/opportunities/" + selectedId, {
+      const updated = await api("/opportunities/" + id, {
         method: "PATCH",
         body: { title, description },
       });
       // Update in-memory list
-      const idx = opportunities.findIndex((o) => o.id === selectedId);
+      if (!isCurrent()) return;
+      const idx = opportunities.findIndex((o) => o.id === id);
       if (idx !== -1) {
         opportunities[idx] = updated;
       }
@@ -1206,6 +1211,7 @@
       // Re-render list to reflect title changes
       showList();
     } catch (error) {
+      if (!isCurrent()) return;
       if (error instanceof ApiFailure) {
         notify(error.message, true);
       } else {
