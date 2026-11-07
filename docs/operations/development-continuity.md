@@ -1826,3 +1826,11 @@ falha seguida de sucesso, lista vazia e resposta obsoleta.
 
 Escopo limitado à UI do operador e testes. Sem mudança de API, auth/tenant,
 schema, migrations, integrações ou serviços externos.
+
+## WP-432 — Guard de sessão no retry de conversas da oportunidade (07/11/2026)
+
+O carregamento/retry descarta sucesso, falha e finalização busy se a sessão
+mudar durante a consulta. O teste sintético mantém o mesmo ID/versão da
+oportunidade para confirmar que apenas a identidade da sessão invalida a
+resposta obsoleta. Sem mudanças de API, auth/tenant, schema, migrations,
+integrações ou serviços externos.
