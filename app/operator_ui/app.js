@@ -6648,12 +6648,16 @@
   $("reply-template-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     if (!bearer || !company || replyTemplateSaving) return;
+    const saveStatus = $("reply-template-save-status");
     const name = $("reply-template-name").value.trim();
     const content = $("reply-template-content").value.trim();
-    if (!name || !content) return;
+    if (!name || !content) {
+      saveStatus.textContent = "Preencha o nome e o conteúdo do template.";
+      $(name ? "reply-template-content" : "reply-template-name").focus();
+      return;
+    }
     replyTemplateSaving = true;
     const saveButton = $("reply-template-save");
-    const saveStatus = $("reply-template-save-status");
     saveButton.disabled = true;
     saveStatus.setAttribute("aria-busy", "true");
     saveStatus.textContent = "Salvando template";
