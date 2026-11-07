@@ -642,18 +642,27 @@
       id === selectedId && session === sessionEpoch;
     if (!isCurrent()) return;
     const list = $("opp-timeline-list");
+    const status = $("opp-timeline-status");
+    const retry = $("opp-timeline-retry");
+    status.textContent = "Carregando atividades…";
+    retry.hidden = true;
+    retry.disabled = true;
+    list.setAttribute("aria-busy", "true");
     list.replaceChildren();
     try {
       const events = await api("/opportunities/" + id + "/timeline");
       if (!isCurrent()) return;
       list.replaceChildren();
       if (!events || !events.length) {
+        status.textContent = "";
         const empty = document.createElement("p");
         empty.className = "small";
+        empty.setAttribute("role", "status");
         empty.textContent = "Nenhuma atividade registrada.";
         list.appendChild(empty);
         return;
       }
+      status.textContent = "";
       for (const event of events) {
         const item = document.createElement("div");
         item.className = "opp-timeline-item";
@@ -666,10 +675,23 @@
         list.appendChild(item);
       }
     } catch (error) {
-      // Timeline is supplementary; only the current request may clear it.
-      if (isCurrent()) list.replaceChildren();
+      if (isCurrent()) {
+        list.replaceChildren();
+        status.textContent = "Falha ao carregar atividades da oportunidade.";
+        retry.hidden = false;
+      }
+    } finally {
+      if (isCurrent()) {
+        list.setAttribute("aria-busy", "false");
+        retry.disabled = false;
+      }
     }
   }
+
+  $("opp-timeline-retry").addEventListener("click", () => {
+    if (selectedId === null) return;
+    return loadOpportunityTimeline(selectedId, selectionVersion).catch(() => {});
+  });
 
   // WP-144 — Load leads related to the selected opportunity
   async function loadOpportunityLeads(id, expectedVersion) {
