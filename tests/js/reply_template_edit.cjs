@@ -26,6 +26,7 @@ function element(value = '') {
 }
 
 const elements = new Map([
+  ['reply-template-list', element()],
   ['reply-template-form', element()],
   ['reply-template-name', element()],
   ['reply-template-content', element()],
@@ -37,6 +38,14 @@ const elements = new Map([
 ]);
 const requests = [];
 const refreshed = [];
+const editButtons = [
+  {className: 'secondary reply-template-edit', disabled: false},
+  {className: 'secondary reply-template-edit', disabled: false},
+];
+elements.get('reply-template-list').children = [
+  {className: 'reply-template-item', children: [editButtons[0]]},
+  {className: 'reply-template-item', children: [editButtons[1]]},
+];
 const context = {
   bearer: 'synthetic-token', company: 3,
   $: id => elements.get(id) || null,
@@ -55,6 +64,10 @@ vm.runInContext(source.slice(start, end) + '\nthis.beginReplyTemplateEdit = begi
 
 async function run() {
   context.beginReplyTemplateEdit({id: 12, name: 'Saudação', content: 'Olá'});
+  assert.deepEqual(editButtons.map(button => button.disabled), [true, true]);
+  assert.equal(elements.get('reply-template-name').value, 'Saudação');
+  assert.equal(elements.get('reply-template-content').value, 'Olá');
+  context.beginReplyTemplateEdit({id: 14, name: 'Outro', content: 'Substituição'});
   assert.equal(elements.get('reply-template-name').value, 'Saudação');
   assert.equal(elements.get('reply-template-content').value, 'Olá');
   assert.equal(elements.get('reply-template-save').textContent, 'Salvar alterações');
@@ -70,15 +83,18 @@ async function run() {
   assert.equal(elements.get('reply-template-save-status').textContent, 'Template atualizado.');
   assert.equal(elements.get('reply-template-save').textContent, 'Salvar template');
   assert.equal(elements.get('reply-template-cancel-edit').hidden, true);
+  assert.deepEqual(editButtons.map(button => button.disabled), [false, false]);
   assert.deepEqual(refreshed, ['Template atualizado.', 'list', 'selector']);
 
   const editTrigger = element();
   editTrigger.isConnected = true;
   context.beginReplyTemplateEdit({id: 13, name: 'Rascunho', content: 'Texto'}, editTrigger);
+  assert.deepEqual(editButtons.map(button => button.disabled), [true, true]);
   elements.get('reply-template-cancel-edit').handlers.click();
   assert.equal(elements.get('reply-template-name').value, '');
   assert.equal(elements.get('reply-template-cancel-edit').hidden, true);
   assert.equal(editTrigger.focused, true);
+  assert.deepEqual(editButtons.map(button => button.disabled), [false, false]);
 }
 
 run().catch(error => { console.error(error); process.exitCode = 1; });

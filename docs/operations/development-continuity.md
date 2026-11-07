@@ -1912,3 +1912,11 @@ no handler para preservar o rascunho mesmo se um evento de clique já estiver
 enfileirado. Após sucesso ou falha, o botão retorna ao estado normal. Teste
 sintético cobre os handlers com uma requisição pendente e falha controlada;
 sem mudanças de API, autorização, tenant, schema, persistência ou integrações.
+
+## WP-479 — Preservar rascunho ao trocar template em edição (07/11/2026)
+
+Enquanto um template está sendo editado, as ações “Editar” da lista ficam
+desabilitadas e tentativas enfileiradas de iniciar outra edição são ignoradas.
+Cancelar ou salvar com sucesso reabilita as ações. Teste sintético exercita
+início, troca bloqueada, cancelamento e salvamento; sem mudanças de API,
+autorização, tenant, persistência, schema ou integrações.

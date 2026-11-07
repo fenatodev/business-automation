@@ -6620,7 +6620,7 @@
         const editBtn = document.createElement("button");
         const duplicateBtn = document.createElement("button");
         editBtn.type = "button";
-        editBtn.className = "secondary";
+        editBtn.className = "secondary reply-template-edit";
         editBtn.textContent = "Editar";
         editBtn.addEventListener("click", () => beginReplyTemplateEdit(t, editBtn));
         item.appendChild(editBtn);
@@ -6730,9 +6730,22 @@
 
   let editingReplyTemplateId = null;
   let editingReplyTemplateTrigger = null;
+  function setReplyTemplateEditButtonsDisabled(disabled) {
+    const listEl = $("reply-template-list");
+    if (!listEl) return;
+    for (const item of Array.from(listEl.children || [])) {
+      if (item.className !== "reply-template-item") continue;
+      for (const button of Array.from(item.children || [])) {
+        if (button.className === "secondary reply-template-edit") button.disabled = disabled;
+      }
+    }
+  }
+
   function beginReplyTemplateEdit(template, trigger = null) {
+    if (editingReplyTemplateId !== null) return;
     editingReplyTemplateId = template.id;
     editingReplyTemplateTrigger = trigger;
+    setReplyTemplateEditButtonsDisabled(true);
     $("reply-template-name").value = template.name;
     $("reply-template-content").value = template.content;
     updateReplyTemplateCharacterCount("reply-template-name", "reply-template-name-count", 100);
@@ -6746,6 +6759,7 @@
   function resetReplyTemplateForm() {
     editingReplyTemplateId = null;
     editingReplyTemplateTrigger = null;
+    setReplyTemplateEditButtonsDisabled(false);
     $("reply-template-form")?.reset();
     updateReplyTemplateCharacterCount("reply-template-name", "reply-template-name-count", 100);
     updateReplyTemplateCharacterCount("reply-template-content", "reply-template-content-count", 4000);
