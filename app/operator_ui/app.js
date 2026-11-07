@@ -6662,6 +6662,7 @@
       saveStatus.textContent = "Template salvo.";
       $("reply-template-name").value = "";
       $("reply-template-content").value = "";
+      $("reply-template-name").focus();
       notify("Template salvo.");
       await loadReplyTemplateList();
       // Refresh the reply template selector in conversation reply
