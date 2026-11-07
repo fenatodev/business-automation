@@ -6654,8 +6654,23 @@
     loadReplyTemplateList();
   });
 
+  let replyTemplateDuplicating = false;
+  function setReplyTemplateDuplicateButtonsDisabled(disabled) {
+    const listEl = $("reply-template-list");
+    if (!listEl) return;
+    for (const item of Array.from(listEl.children || [])) {
+      if (item.className !== "reply-template-item") continue;
+      const duplicateButton = Array.from(item.children || []).find(
+        child => child.textContent === "Duplicar"
+      );
+      if (duplicateButton) {
+        duplicateButton.disabled = disabled || editingReplyTemplateId === Number(item.dataset?.templateId);
+      }
+    }
+  }
+
   async function duplicateReplyTemplate(template, duplicateBtn) {
-    if (!bearer || !company || duplicateBtn.disabled || editingReplyTemplateId === template.id) return;
+    if (!bearer || !company || replyTemplateDuplicating || duplicateBtn.disabled || editingReplyTemplateId === template.id) return;
     const proposedName = `${template.name.slice(0, 92)} (cópia)`;
     const name = prompt("Nome do novo template:", proposedName);
     if (name === null) return;
@@ -6665,7 +6680,8 @@
       if (loadStatus) loadStatus.textContent = "Informe um nome de até 100 caracteres.";
       return;
     }
-    duplicateBtn.disabled = true;
+    replyTemplateDuplicating = true;
+    setReplyTemplateDuplicateButtonsDisabled(true);
     if (loadStatus) loadStatus.textContent = "Duplicando template";
     try {
       await templateApi(`/companies/${company}/reply-templates`, "POST", {
@@ -6687,7 +6703,8 @@
       if (loadStatus) loadStatus.textContent = "Não foi possível duplicar o template.";
       notify("Erro ao duplicar template.");
     } finally {
-      duplicateBtn.disabled = false;
+      replyTemplateDuplicating = false;
+      setReplyTemplateDuplicateButtonsDisabled(false);
     }
   }
 
