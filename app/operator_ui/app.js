@@ -6574,6 +6574,7 @@
     if (!bearer || !company || deleteBtn.disabled) return;
     if (!confirm("Excluir este template?")) return;
     deleteBtn.disabled = true;
+    const loadStatus = $("reply-template-load-status");
     try {
       await templateApi(`/companies/${company}/reply-templates/${templateId}`, "DELETE");
       itemEl.remove();
@@ -6585,10 +6586,12 @@
         empty.textContent = "Nenhum template salvo.";
         listEl.appendChild(empty);
       }
+      if (loadStatus) loadStatus.textContent = "Template excluído.";
       notify("Template excluído.");
       // Refresh the reply template selector in conversation reply
       loadReplyTemplates();
     } catch {
+      if (loadStatus) loadStatus.textContent = "Não foi possível excluir o template.";
       notify("Erro ao excluir template.");
     } finally {
       deleteBtn.disabled = false;
