@@ -1903,3 +1903,12 @@ Cancelar uma edição limpa o formulário e devolve o foco ao botão “Editar�
 iniciou a ação, se ainda estiver conectado. O fallback mantém o foco no campo
 de nome quando o botão não está disponível. Teste sintético cobre o handler;
 sem mudanças de API, tenant, persistência ou integrações.
+
+## WP-478 — Proteger edição durante salvamento (07/11/2026)
+
+Enquanto uma edição de template está sendo salva, o botão de cancelar fica
+desabilitado e o cancelamento por `Escape` é ignorado. O bloqueio também fica
+no handler para preservar o rascunho mesmo se um evento de clique já estiver
+enfileirado. Após sucesso ou falha, o botão retorna ao estado normal. Teste
+sintético cobre os handlers com uma requisição pendente e falha controlada;
+sem mudanças de API, autorização, tenant, schema, persistência ou integrações.
