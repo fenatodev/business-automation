@@ -6507,6 +6507,26 @@
 
   // WP-265 — Reply templates management
   let replyTemplateLoadVersion = 0;
+  function applyReplyTemplateFilter() {
+    const search = $("reply-template-search");
+    const filterStatus = $("reply-template-filter-status");
+    const listEl = $("reply-template-list");
+    if (!search || !filterStatus || !listEl) return;
+    const query = (search.value || "").trim().toLocaleLowerCase();
+    const items = Array.from(listEl.children).filter(item => item.className === "reply-template-item");
+    let visible = 0;
+    for (const item of items) {
+      const searchText = item.dataset?.searchText || "";
+      item.hidden = query !== "" && !searchText.includes(query);
+      if (!item.hidden) visible++;
+    }
+    filterStatus.textContent = query && items.length > 0 && visible === 0
+      ? "Nenhum template corresponde à busca."
+      : "";
+  }
+
+  $("reply-template-search")?.addEventListener("input", applyReplyTemplateFilter);
+
   async function loadReplyTemplateList() {
     if (!bearer || !company) return;
     const listEl = $("reply-template-list");
@@ -6542,6 +6562,7 @@
         const preview = document.createElement("span");
         preview.className = "reply-template-item-preview";
         preview.textContent = t.content;
+        if (item.dataset) item.dataset.searchText = `${t.name} ${t.content}`.toLocaleLowerCase();
         info.appendChild(name);
         info.appendChild(preview);
         item.appendChild(info);
@@ -6553,6 +6574,7 @@
         item.appendChild(deleteBtn);
         listEl.appendChild(item);
       }
+      applyReplyTemplateFilter();
       loadStatus.textContent = "";
     } catch {
       if (!isCurrent()) return;
