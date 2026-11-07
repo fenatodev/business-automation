@@ -1834,3 +1834,10 @@ mudar durante a consulta. O teste sintético mantém o mesmo ID/versão da
 oportunidade para confirmar que apenas a identidade da sessão invalida a
 resposta obsoleta. Sem mudanças de API, auth/tenant, schema, migrations,
 integrações ou serviços externos.
+## Continuidade após `NO_SAFE_WP`
+
+O executor pode concluir uma rodada com `NO_SAFE_WP` quando não houver uma
+melhoria pequena e segura disponível. Esse resultado é transitório: o
+supervisor registra o estado, aplica o backoff normal e tenta uma nova rodada.
+Somente `BLOCKED` real, falha de CI, revisão humana ou arquivo de parada encerra
+o ciclo.
