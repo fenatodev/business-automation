@@ -41,6 +41,8 @@ let prompts = 0;
 let requests = 0;
 const context = {
   bearer: 'synthetic-token', company: 3,
+  replyTemplateDuplicating: false,
+  setReplyTemplateDuplicateButtonsDisabled(disabled) { duplicateButton.disabled = disabled; },
   $: id => elements.get(id) || (id === 'reply-template-list' ? list : null),
   prompt() { prompts += 1; return 'Cópia'; },
   templateApi() { requests += 1; return Promise.resolve({}); },

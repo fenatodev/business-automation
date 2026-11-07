@@ -1920,3 +1920,11 @@ desabilitadas e tentativas enfileiradas de iniciar outra edição são ignoradas
 Cancelar ou salvar com sucesso reabilita as ações. Teste sintético exercita
 início, troca bloqueada, cancelamento e salvamento; sem mudanças de API,
 autorização, tenant, persistência, schema ou integrações.
+
+## WP-485 — Evitar duplicação concorrente de templates (07/11/2026)
+
+Enquanto uma cópia de template está em andamento, as ações de duplicação da
+lista ficam desabilitadas e chamadas enfileiradas são ignoradas. Ao concluir,
+as ações são reabilitadas, mantendo desabilitado o template que estiver em
+edição. Teste sintético cobre duas ações concorrentes; sem mudanças de API,
+autorização, tenant, persistência, schema, migrations ou integrações.
