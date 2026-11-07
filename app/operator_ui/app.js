@@ -6528,12 +6528,16 @@
     }
   }
 
+  let replyTemplateSaving = false;
   $("reply-template-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (!bearer || !company) return;
+    if (!bearer || !company || replyTemplateSaving) return;
     const name = $("reply-template-name").value.trim();
     const content = $("reply-template-content").value.trim();
     if (!name || !content) return;
+    replyTemplateSaving = true;
+    const saveButton = $("reply-template-save");
+    saveButton.disabled = true;
     try {
       await templateApi(`/companies/${company}/reply-templates`, "POST", {name, content});
       $("reply-template-name").value = "";
@@ -6544,6 +6548,9 @@
       loadReplyTemplates();
     } catch (err) {
       notify("Erro ao salvar template.");
+    } finally {
+      replyTemplateSaving = false;
+      saveButton.disabled = false;
     }
   });
 
