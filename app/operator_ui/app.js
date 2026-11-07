@@ -2237,16 +2237,28 @@
   });
 
   // WP-264 — Load reply templates for the current company
+  let replyTemplatesLoadVersion = 0;
   async function loadReplyTemplates() {
     const select = $("reply-template-select");
     if (!select) return;
+    const version = ++replyTemplatesLoadVersion;
+    const status = $("reply-template-status");
+    const retry = $("reply-template-retry");
+    const isCurrent = () => version === replyTemplatesLoadVersion;
+    status.textContent = "Carregando templates de resposta";
+    status.setAttribute("aria-busy", "true");
+    retry.hidden = true;
+    retry.disabled = true;
     try {
       const company = opportunities.length > 0 ? opportunities[0].company_id : null;
       if (!company) {
         $("reply-template-section").hidden = true;
+        status.textContent = "";
+        status.setAttribute("aria-busy", "false");
         return;
       }
       const templates = await templateApi("/companies/" + company + "/reply-templates", "GET");
+      if (!isCurrent()) return;
       select.replaceChildren();
       const allOpt = document.createElement("option");
       allOpt.value = "";
@@ -2260,10 +2272,23 @@
         select.appendChild(opt);
       }
       $("reply-template-section").hidden = templates.length === 0;
+      status.textContent = "";
     } catch (e) {
-      $("reply-template-section").hidden = true;
+      if (!isCurrent()) return;
+      $("reply-template-section").hidden = false;
+      status.textContent = "Não foi possível carregar os templates de resposta.";
+      retry.hidden = false;
+    } finally {
+      if (isCurrent()) {
+        status.setAttribute("aria-busy", "false");
+        retry.disabled = false;
+      }
     }
   }
+
+  $("reply-template-retry")?.addEventListener("click", () => {
+    loadReplyTemplates();
+  });
 
   // WP-264 — Fill reply message when template selected
   if ($("reply-template-select")) {
