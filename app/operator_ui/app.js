@@ -548,12 +548,19 @@
 
   // WP-142 — Load conversations related to the selected opportunity
   async function loadOpportunityConversations(id, expectedVersion) {
+    const status = $("opp-conv-status");
+    const retry = $("opp-conv-retry");
+    const list = $("opp-conv-list");
+    status.textContent = "Carregando conversas…";
+    retry.hidden = true;
+    retry.disabled = true;
+    list.setAttribute("aria-busy", "true");
     try {
       const conversations = await api("/opportunities/" + id + "/linked-conversations");
       if (expectedVersion !== selectionVersion || id !== selectedId) return;
-      const list = $("opp-conv-list");
       list.replaceChildren();
       if (!conversations || !conversations.length) {
+        status.textContent = "";
         const empty = document.createElement("p");
         empty.className = "small";
         empty.setAttribute("role", "status");
@@ -573,6 +580,7 @@
         })
       );
       if (expectedVersion !== selectionVersion || id !== selectedId) return;
+      status.textContent = "";
       for (let idx = 0; idx < conversations.length; idx++) {
         const conv = conversations[idx];
         const item = document.createElement("div");
@@ -604,15 +612,25 @@
       }
     } catch (error) {
       if (expectedVersion !== selectionVersion || id !== selectedId) return;
-      const list = $("opp-conv-list");
       list.replaceChildren();
       const errorState = document.createElement("p");
       errorState.className = "small";
-      errorState.setAttribute("role", "status");
       errorState.textContent = "Não foi possível carregar as conversas.";
       list.appendChild(errorState);
+      status.textContent = "Falha ao carregar conversas da oportunidade.";
+      retry.hidden = false;
+    } finally {
+      if (expectedVersion === selectionVersion && id === selectedId) {
+        list.setAttribute("aria-busy", "false");
+        retry.disabled = false;
+      }
     }
   }
+
+  $("opp-conv-retry").addEventListener("click", () => {
+    if (selectedId === null) return;
+    loadOpportunityConversations(selectedId, selectionVersion).catch(() => {});
+  });
 
   // WP-143 — Load activity timeline for the selected opportunity
   async function loadOpportunityTimeline(id, expectedVersion) {
