@@ -6734,6 +6734,8 @@
       if (nextDeleteButton) nextDeleteButton.focus();
       else $("reply-template-search")?.focus();
       if (listEl && listEl.children.length === 0) {
+        const search = $("reply-template-search");
+        if (search) search.value = "";
         const empty = document.createElement("p");
         empty.className = "small";
         empty.setAttribute("role", "status");

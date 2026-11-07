@@ -122,6 +122,8 @@ async function run() {
   await ui.context.deleteReplyTemplate(2, ui.list.children[0], ui.list.children[0].children[1]);
   assert.equal(ui.list.children.length, 1);
   assert.equal(ui.list.children[0].textContent, 'Nenhum template salvo.');
+  assert.equal(ui.search.value, '');
+  assert.equal(ui.clearSearch.disabled, true);
   assert.equal(ui.filterStatus.textContent, '');
 }
 
