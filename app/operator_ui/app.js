@@ -6615,7 +6615,10 @@
         const preview = document.createElement("span");
         preview.className = "reply-template-item-preview";
         preview.textContent = t.content;
-        if (item.dataset) item.dataset.searchText = `${t.name} ${t.content}`.toLocaleLowerCase();
+        if (item.dataset) item.dataset.searchText = `${t.name} ${t.content}`
+          .toLocaleLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
         info.appendChild(name);
         info.appendChild(preview);
         item.appendChild(info);
