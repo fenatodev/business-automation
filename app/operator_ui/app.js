@@ -6783,6 +6783,15 @@
     else $("reply-template-name").focus();
   }
 
+  globalThis.addEventListener?.("beforeunload", event => {
+    if (editingReplyTemplateId === null || !editingReplyTemplateOriginal) return;
+    const changed = $("reply-template-name").value !== editingReplyTemplateOriginal.name ||
+      $("reply-template-content").value !== editingReplyTemplateOriginal.content;
+    if (!changed) return;
+    event.preventDefault();
+    event.returnValue = "";
+  });
+
   $("reply-template-cancel-edit")?.addEventListener("click", cancelReplyTemplateEdit);
   ["reply-template-name", "reply-template-content"].forEach(id => {
     $(id)?.addEventListener("keydown", event => {
