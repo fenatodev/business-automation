@@ -6713,7 +6713,7 @@
     setReplyTemplateDuplicateButtonsDisabled(true);
     if (loadStatus) loadStatus.textContent = "Duplicando template";
     try {
-      await templateApi(`/companies/${company}/reply-templates`, "POST", {
+      const createdTemplate = await templateApi(`/companies/${company}/reply-templates`, "POST", {
         name: trimmedName,
         content: template.content,
       });
@@ -6726,13 +6726,14 @@
         setReplyTemplateDuplicateButtonDisabled(editingReplyTemplateId, true);
       }
       loadReplyTemplates();
-      const refreshedItem = Array.from($("reply-template-list")?.children || []).find(
-        item => item.className === "reply-template-item" && item.dataset?.templateId === String(template.id)
+      const createdItem = Array.from($("reply-template-list")?.children || []).find(
+        item => item.className === "reply-template-item" &&
+          createdTemplate?.id != null && item.dataset?.templateId === String(createdTemplate.id)
       );
-      const refreshedDuplicateButton = Array.from(refreshedItem?.children || []).find(
-        child => child.textContent === "Duplicar"
+      const createdEditButton = Array.from(createdItem?.children || []).find(
+        child => child.className === "secondary reply-template-edit"
       );
-      refreshedDuplicateButton?.focus();
+      createdEditButton?.focus();
     } catch {
       if (loadStatus) loadStatus.textContent = "Não foi possível duplicar o template.";
       notify("Erro ao duplicar template.");

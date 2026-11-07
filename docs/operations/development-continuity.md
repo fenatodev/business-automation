@@ -1959,3 +1959,10 @@ código Unicode, alinhando o limite de 100 caracteres com o contador do
 formulário e a API. Teste sintético confirma que 100 emoji são aceitos e
 enviados. Sem mudanças de API, autorização, tenant, persistência, schema,
 migrations, integrações ou serviços externos.
+
+## WP-495 — Focar o template recém-duplicado (07/11/2026)
+
+Após duplicar com sucesso, o operador agora recebe foco no botão “Editar” do
+novo item, identificado pelo ID retornado pela API. Teste sintético confirma
+que o foco não retorna à ação do template de origem. Sem mudanças de API,
+autorização, tenant, persistência, schema, migrations ou integrações.
