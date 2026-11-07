@@ -2290,16 +2290,20 @@
     loadReplyTemplates();
   });
 
-  // WP-264 — Fill reply message when template selected
+  // WP-459 — Insert a template without discarding the current reply draft
   if ($("reply-template-select")) {
     $("reply-template-select").addEventListener("change", (e) => {
       const templateId = e.target.value;
       if (!templateId) return;
       const selectedOption = e.target.options[e.target.selectedIndex];
-      // Store content in a data attribute for lookup
       const content = selectedOption.dataset.content || "";
       if (content) {
-        $("reply-message").value = content;
+        const reply = $("reply-message");
+        const start = reply.selectionStart ?? reply.value.length;
+        const end = reply.selectionEnd ?? start;
+        reply.value = reply.value.slice(0, start) + content + reply.value.slice(end);
+        const cursor = start + content.length;
+        reply.setSelectionRange(cursor, cursor);
       }
     });
   }
