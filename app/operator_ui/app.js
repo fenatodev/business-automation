@@ -2294,6 +2294,8 @@
   $("reply-message")?.addEventListener("input", () => {
     const status = $("reply-template-insert-status");
     if (status) status.textContent = "";
+    const suggestionStatus = $("reply-auto-suggestion-status");
+    if (suggestionStatus) suggestionStatus.textContent = "";
   });
 
   if ($("reply-template-select")) {
