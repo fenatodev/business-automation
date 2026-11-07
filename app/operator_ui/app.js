@@ -6576,12 +6576,16 @@
     event.preventDefault();
     event.currentTarget.value = "";
     applyReplyTemplateFilter();
+    const filterStatus = $("reply-template-filter-status");
+    if (filterStatus) filterStatus.textContent = "Busca limpa.";
   });
   $("reply-template-search-clear")?.addEventListener("click", () => {
     const search = $("reply-template-search");
     if (!search) return;
     search.value = "";
     applyReplyTemplateFilter();
+    const filterStatus = $("reply-template-filter-status");
+    if (filterStatus) filterStatus.textContent = "Busca limpa.";
     search.focus();
   });
 

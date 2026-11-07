@@ -89,6 +89,7 @@ async function run() {
   assert.equal(whitespaceEscapePrevented, true);
   assert.equal(whitespaceUi.search.value, '');
   assert.equal(whitespaceUi.clearSearch.disabled, true);
+  assert.equal(whitespaceUi.filterStatus.textContent, 'Busca limpa.');
   whitespaceUi.search.value = '\t ';
   whitespaceUi.search.handlers.input();
   whitespaceUi.clearSearch.handler();
@@ -130,7 +131,7 @@ async function run() {
   assert.equal(escapePrevented, true);
   assert.equal(ui.search.value, '');
   assert.deepEqual(ui.list.children.map(item => item.hidden), [false, false]);
-  assert.equal(ui.filterStatus.textContent, '');
+  assert.equal(ui.filterStatus.textContent, 'Busca limpa.');
   assert.equal(ui.clearSearch.disabled, true);
 
   ui.search.value = 'inexistente';
@@ -145,7 +146,7 @@ async function run() {
   assert.equal(ui.search.value, '');
   assert.equal(ui.search.focused, true);
   assert.deepEqual(ui.list.children.map(item => item.hidden), [false, false]);
-  assert.equal(ui.filterStatus.textContent, '');
+  assert.equal(ui.filterStatus.textContent, 'Busca limpa.');
   assert.equal(ui.clearSearch.disabled, true);
 
   ui.search.value = 'saudação';
