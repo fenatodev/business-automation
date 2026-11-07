@@ -6537,12 +6537,16 @@
     const filterStatus = $("reply-template-filter-status");
     const listEl = $("reply-template-list");
     if (!search || !filterStatus || !listEl) return;
-    const query = (search.value || "").trim().toLocaleLowerCase();
+    const normalizeSearchText = value => value
+      .toLocaleLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+    const query = normalizeSearchText((search.value || "").trim());
     if (clearSearch) clearSearch.disabled = query === "";
     const items = Array.from(listEl.children).filter(item => item.className === "reply-template-item");
     let visible = 0;
     for (const item of items) {
-      const searchText = item.dataset?.searchText || "";
+      const searchText = normalizeSearchText(item.dataset?.searchText || "");
       item.hidden = query !== "" && !searchText.includes(query);
       if (!item.hidden) visible++;
     }
