@@ -6754,11 +6754,20 @@
     $("reply-template-save-status").textContent = "";
   }
 
-  $("reply-template-cancel-edit")?.addEventListener("click", () => {
+  function cancelReplyTemplateEdit() {
     const trigger = editingReplyTemplateTrigger;
     resetReplyTemplateForm();
     if (trigger?.isConnected) trigger.focus();
     else $("reply-template-name").focus();
+  }
+
+  $("reply-template-cancel-edit")?.addEventListener("click", cancelReplyTemplateEdit);
+  ["reply-template-name", "reply-template-content"].forEach(id => {
+    $(id)?.addEventListener("keydown", event => {
+      if (event.key !== "Escape" || editingReplyTemplateId === null) return;
+      event.preventDefault();
+      cancelReplyTemplateEdit();
+    });
   });
 
   let replyTemplateSaving = false;
