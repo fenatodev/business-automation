@@ -63,7 +63,12 @@ async function run() {
   ui.search.value = 'obrigado';
   ui.search.handler();
   assert.deepEqual(ui.list.children.map(item => item.hidden), [true, false]);
-  assert.equal(ui.filterStatus.textContent, '');
+  assert.equal(ui.filterStatus.textContent, '1 template corresponde à busca.');
+
+  ui.search.value = 'a';
+  ui.search.handler();
+  assert.deepEqual(ui.list.children.map(item => item.hidden), [false, false]);
+  assert.equal(ui.filterStatus.textContent, '2 templates correspondem à busca.');
 
   ui.search.value = 'inexistente';
   ui.search.handler();

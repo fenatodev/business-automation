@@ -6546,9 +6546,15 @@
       item.hidden = query !== "" && !searchText.includes(query);
       if (!item.hidden) visible++;
     }
-    filterStatus.textContent = query && items.length > 0 && visible === 0
-      ? "Nenhum template corresponde à busca."
-      : "";
+    if (!query || items.length === 0) {
+      filterStatus.textContent = "";
+    } else if (visible === 0) {
+      filterStatus.textContent = "Nenhum template corresponde à busca.";
+    } else {
+      filterStatus.textContent = visible === 1
+        ? "1 template corresponde à busca."
+        : `${visible} templates correspondem à busca.`;
+    }
   }
 
   $("reply-template-search")?.addEventListener("input", applyReplyTemplateFilter);
