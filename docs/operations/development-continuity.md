@@ -1834,6 +1834,16 @@ mudar durante a consulta. O teste sintético mantém o mesmo ID/versão da
 oportunidade para confirmar que apenas a identidade da sessão invalida a
 resposta obsoleta. Sem mudanças de API, auth/tenant, schema, migrations,
 integrações ou serviços externos.
+
+## WP-440 — Retry do ProposalBrief da oportunidade (07/11/2026)
+
+O painel de ProposalBrief agora oferece nova tentativa após uma falha de
+consulta. O retry repete somente o GET do brief da oportunidade selecionada,
+fica oculto durante nova tentativa e ignora respostas de sessão obsoletas;
+404 continua indicando que ainda não existe brief. Testes usam DOM e API
+sintéticos. Escopo restrito à UI do operador, testes e documentação, sem
+mudanças de API, autorização, tenant, schema, migrations ou serviços externos.
+
 ## Continuidade após `NO_SAFE_WP`
 
 O executor pode concluir uma rodada com `NO_SAFE_WP` quando não houver uma
