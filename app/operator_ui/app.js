@@ -2982,6 +2982,8 @@
           }
           if (res.ok) {
             const data = await res.json();
+            // WP-507 — Ignore late suggestions after the operator edits or changes conversations.
+            if (form.hidden || $("reply-conv-id").value !== convId || $("reply-message").value) return;
             $("reply-message").value = data.suggestion;
             $("reply-template-insert-status").textContent = "";
           }
