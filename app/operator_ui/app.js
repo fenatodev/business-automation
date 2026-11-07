@@ -6604,7 +6604,10 @@
     if (!name || !content) return;
     replyTemplateSaving = true;
     const saveButton = $("reply-template-save");
+    const saveStatus = $("reply-template-save-status");
     saveButton.disabled = true;
+    saveStatus.setAttribute("aria-busy", "true");
+    saveStatus.textContent = "Salvando template";
     try {
       await templateApi(`/companies/${company}/reply-templates`, "POST", {name, content});
       $("reply-template-name").value = "";
@@ -6618,6 +6621,8 @@
     } finally {
       replyTemplateSaving = false;
       saveButton.disabled = false;
+      saveStatus.setAttribute("aria-busy", "false");
+      saveStatus.textContent = "";
     }
   });
 
