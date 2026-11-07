@@ -6908,7 +6908,7 @@
     saveStatus.textContent = "Salvando template";
     try {
       const editingId = editingReplyTemplateId;
-      await templateApi(editingId
+      const savedTemplate = await templateApi(editingId
         ? `/companies/${company}/reply-templates/${editingId}`
         : `/companies/${company}/reply-templates`, editingId ? "PUT" : "POST", {name, content});
       resetReplyTemplateForm();
@@ -6916,6 +6916,21 @@
       $("reply-template-name").focus();
       notify(editingId ? "Template atualizado." : "Template salvo.");
       await loadReplyTemplateList();
+      if (!editingId && savedTemplate?.id != null) {
+        const createdItem = Array.from($("reply-template-list")?.children || []).find(
+          item => item.className === "reply-template-item" &&
+            item.dataset?.templateId === String(savedTemplate.id)
+        );
+        if (createdItem?.hidden) {
+          const search = $("reply-template-search");
+          if (search) search.value = "";
+          applyReplyTemplateFilter();
+        }
+        const createdEditButton = Array.from(createdItem?.children || []).find(
+          child => child.className === "secondary reply-template-edit"
+        );
+        createdEditButton?.focus();
+      }
       // Refresh the reply template selector in conversation reply
       loadReplyTemplates();
     } catch (err) {
