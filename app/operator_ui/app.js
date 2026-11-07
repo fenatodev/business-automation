@@ -6610,6 +6610,12 @@
         info.appendChild(preview);
         item.appendChild(info);
         const deleteBtn = document.createElement("button");
+        const editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className = "secondary";
+        editBtn.textContent = "Editar";
+        editBtn.addEventListener("click", () => beginReplyTemplateEdit(t));
+        item.appendChild(editBtn);
         deleteBtn.type = "button";
         deleteBtn.className = "danger";
         deleteBtn.textContent = "Excluir";
@@ -6643,12 +6649,13 @@
     if (loadStatus) loadStatus.textContent = "Excluindo template";
     try {
       await templateApi(`/companies/${company}/reply-templates/${templateId}`, "DELETE");
+      if (editingReplyTemplateId === templateId) resetReplyTemplateForm();
       itemEl.remove();
       const listEl = $("reply-template-list");
       const nextVisibleItem = listEl && Array.from(listEl.children).find(
         item => item.className === "reply-template-item" && !item.hidden
       );
-      const nextDeleteButton = nextVisibleItem?.querySelector("button");
+      const nextDeleteButton = nextVisibleItem?.querySelector(".danger");
       if (nextDeleteButton) nextDeleteButton.focus();
       else $("reply-template-search")?.focus();
       if (listEl && listEl.children.length === 0) {
@@ -6671,6 +6678,34 @@
     }
   }
 
+  let editingReplyTemplateId = null;
+  function beginReplyTemplateEdit(template) {
+    editingReplyTemplateId = template.id;
+    $("reply-template-name").value = template.name;
+    $("reply-template-content").value = template.content;
+    updateReplyTemplateCharacterCount("reply-template-name", "reply-template-name-count", 100);
+    updateReplyTemplateCharacterCount("reply-template-content", "reply-template-content-count", 4000);
+    $("reply-template-save").textContent = "Salvar alterações";
+    $("reply-template-cancel-edit").hidden = false;
+    $("reply-template-save-status").textContent = `Editando: ${template.name}`;
+    $("reply-template-name").focus();
+  }
+
+  function resetReplyTemplateForm() {
+    editingReplyTemplateId = null;
+    $("reply-template-form")?.reset();
+    updateReplyTemplateCharacterCount("reply-template-name", "reply-template-name-count", 100);
+    updateReplyTemplateCharacterCount("reply-template-content", "reply-template-content-count", 4000);
+    $("reply-template-save").textContent = "Salvar template";
+    $("reply-template-cancel-edit").hidden = true;
+    $("reply-template-save-status").textContent = "";
+  }
+
+  $("reply-template-cancel-edit")?.addEventListener("click", () => {
+    resetReplyTemplateForm();
+    $("reply-template-name").focus();
+  });
+
   let replyTemplateSaving = false;
   $("reply-template-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -6689,12 +6724,14 @@
     saveStatus.setAttribute("aria-busy", "true");
     saveStatus.textContent = "Salvando template";
     try {
-      await templateApi(`/companies/${company}/reply-templates`, "POST", {name, content});
-      saveStatus.textContent = "Template salvo.";
-      $("reply-template-name").value = "";
-      $("reply-template-content").value = "";
+      const editingId = editingReplyTemplateId;
+      await templateApi(editingId
+        ? `/companies/${company}/reply-templates/${editingId}`
+        : `/companies/${company}/reply-templates`, editingId ? "PUT" : "POST", {name, content});
+      resetReplyTemplateForm();
+      saveStatus.textContent = editingId ? "Template atualizado." : "Template salvo.";
       $("reply-template-name").focus();
-      notify("Template salvo.");
+      notify(editingId ? "Template atualizado." : "Template salvo.");
       await loadReplyTemplateList();
       // Refresh the reply template selector in conversation reply
       loadReplyTemplates();

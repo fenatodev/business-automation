@@ -29,11 +29,16 @@ function setup() {
     ['reply-template-save', element()],
     ['reply-template-save-status', element()],
   ]);
+  elements.get('reply-template-form').reset = () => {
+    elements.get('reply-template-name').value = '';
+    elements.get('reply-template-content').value = '';
+  };
   const requests = [];
   const context = {
     bearer: 'synthetic-token',
     company: 3,
     $(id) { return elements.get(id) || element(); },
+    updateReplyTemplateCharacterCount() {},
     templateApi(path, method, body) {
       return new Promise((resolve, reject) => requests.push({path, method, body, resolve, reject}));
     },
@@ -42,7 +47,11 @@ function setup() {
     loadReplyTemplates() {},
   };
   vm.createContext(context);
-  vm.runInContext(source.slice(start, end), context);
+  vm.runInContext(
+    'let editingReplyTemplateId = null; function resetReplyTemplateForm() { $("reply-template-form").reset(); }\n' +
+      source.slice(start, end),
+    context,
+  );
   return {elements, requests};
 }
 

@@ -38,7 +38,7 @@ async function run() {
   const nextButton = {focused: false, focus() { this.focused = true; }};
   const nextItem = {
     className: 'reply-template-item', hidden: false,
-    querySelector: selector => selector === 'button' ? nextButton : null,
+    querySelector: selector => selector === '.danger' ? nextButton : null,
   };
   const currentItem = {remove() { ui.list.children.shift(); }};
   ui.list.children.push(currentItem, nextItem);

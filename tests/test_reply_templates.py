@@ -183,3 +183,74 @@ class TestReplyTemplateDelete:
         """Delete requires authentication."""
         res = client.delete("/companies/1/reply-templates/1")
         assert res.status_code in (401, 403)
+
+
+class TestReplyTemplateUpdate:
+    """Verify PUT /companies/{id}/reply-templates/{template_id}."""
+
+    def test_update_template(self, client, admin_headers, operator_a_headers):
+        _create_company(client, admin_headers, "Alpha")
+        created = client.post(
+            "/companies/1/reply-templates",
+            headers=operator_a_headers,
+            json={"name": "Antes", "content": "Conteúdo antigo"},
+        ).json()
+
+        res = client.put(
+            f"/companies/1/reply-templates/{created['id']}",
+            headers=operator_a_headers,
+            json={"name": "Depois", "content": "Conteúdo atualizado"},
+        )
+
+        assert res.status_code == 200
+        assert res.json() == {
+            "id": created["id"],
+            "name": "Depois",
+            "content": "Conteúdo atualizado",
+        }
+        assert client.get("/companies/1/reply-templates", headers=operator_a_headers).json() == [res.json()]
+
+    def test_update_missing_template_returns_404(self, client, admin_headers, operator_a_headers):
+        _create_company(client, admin_headers, "Alpha")
+        res = client.put(
+            "/companies/1/reply-templates/999",
+            headers=operator_a_headers,
+            json={"name": "Nome", "content": "Conteúdo"},
+        )
+        assert res.status_code == 404
+
+    def test_update_requires_valid_fields(self, client, admin_headers, operator_a_headers):
+        _create_company(client, admin_headers, "Alpha")
+        res = client.put(
+            "/companies/1/reply-templates/1",
+            headers=operator_a_headers,
+            json={"name": "", "content": "Conteúdo"},
+        )
+        assert res.status_code == 422
+
+    def test_update_requires_auth(self, client):
+        res = client.put(
+            "/companies/1/reply-templates/1",
+            json={"name": "Nome", "content": "Conteúdo"},
+        )
+        assert res.status_code in (401, 403)
+
+    def test_operator_cannot_update_another_company_template(
+        self, client, admin_headers, operator_a_headers, operator_b_headers
+    ):
+        _create_company(client, admin_headers, "Alpha")
+        _create_company(client, admin_headers, "Beta")
+        created = client.post(
+            "/companies/1/reply-templates",
+            headers=operator_a_headers,
+            json={"name": "Privado", "content": "Conteúdo da Alpha"},
+        ).json()
+
+        res = client.put(
+            f"/companies/1/reply-templates/{created['id']}",
+            headers=operator_b_headers,
+            json={"name": "Alterado", "content": "Tentativa cross-tenant"},
+        )
+
+        assert res.status_code == 403
+        assert client.get("/companies/1/reply-templates", headers=operator_a_headers).json()[0]["name"] == "Privado"
