@@ -6514,6 +6514,23 @@
 
   // WP-265 — Reply templates management
   let replyTemplateLoadVersion = 0;
+  function updateReplyTemplateCharacterCount(inputId, countId, maxLength) {
+    const input = $(inputId);
+    const count = $(countId);
+    if (!input || !count) return;
+    const value = typeof input.value === "string" ? input.value : "";
+    count.textContent = `${value.length}/${maxLength} caracteres`;
+  }
+
+  $("reply-template-name")?.addEventListener("input", () => {
+    updateReplyTemplateCharacterCount("reply-template-name", "reply-template-name-count", 100);
+  });
+  $("reply-template-content")?.addEventListener("input", () => {
+    updateReplyTemplateCharacterCount("reply-template-content", "reply-template-content-count", 4000);
+  });
+  updateReplyTemplateCharacterCount("reply-template-name", "reply-template-name-count", 100);
+  updateReplyTemplateCharacterCount("reply-template-content", "reply-template-content-count", 4000);
+
   function applyReplyTemplateFilter() {
     const search = $("reply-template-search");
     const clearSearch = $("reply-template-search-clear");
