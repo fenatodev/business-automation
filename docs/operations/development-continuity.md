@@ -1888,3 +1888,11 @@ cursor, substituindo apenas uma seleção explícita e preservando o restante do
 rascunho. O cursor fica após o conteúdo inserido. Teste sintético cobre cursor,
 seleção, rascunho vazio e seleção vazia. Sem mudanças de API, autorização,
 tenant, schema, migrations, integrações ou serviços externos.
+
+## WP-471 — Editar templates de resposta (07/11/2026)
+
+Operadores podem atualizar o nome e conteúdo de um template existente no
+endpoint tenant-scoped e pela tela interna. A edição pode ser cancelada; após
+salvar, lista e seletor são atualizados. Testes usam empresas e conteúdo
+sintéticos. Sem persistência nova, migration, alteração de auth ou serviço
+externo.

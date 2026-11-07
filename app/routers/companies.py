@@ -241,6 +241,30 @@ def create_reply_template(
     return ReplyTemplate(id=template["id"], name=template["name"], content=template["content"])
 
 
+@router.put("/companies/{company_id}/reply-templates/{template_id}")
+def update_reply_template(
+    company_id: int,
+    template_id: int,
+    data: ReplyTemplateCreate,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Update a reply template belonging to this company."""
+    company = db.scalar(select(Company).where(Company.id == company_id))
+    if company is None:
+        raise HTTPException(status_code=404, detail="Company not found")
+    if company.id != identity.company_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    for template in _reply_template_store.get(company_id, []):
+        if template["id"] == template_id:
+            template["name"] = data.name
+            template["content"] = data.content
+            return ReplyTemplate(id=template["id"], name=template["name"], content=template["content"])
+
+    raise HTTPException(status_code=404, detail="Template not found")
+
+
 @router.delete("/companies/{company_id}/reply-templates/{template_id}")
 def delete_reply_template(
     company_id: int,

@@ -36,6 +36,18 @@ class TestReplyTemplateManagementUI:
             html = f.read()
         assert 'id="reply-template-list"' in html
 
+    def test_template_form_has_cancel_edit_control(self):
+        with open("app/operator_ui/index.html", encoding="utf-8") as f:
+            html = f.read()
+        assert 'id="reply-template-cancel-edit"' in html
+
+    def test_js_supports_template_editing(self):
+        with open("app/operator_ui/app.js", encoding="utf-8") as f:
+            js = f.read()
+        assert 'textContent = "Editar"' in js
+        assert 'editingId ? "PUT" : "POST"' in js
+        assert "resetReplyTemplateForm" in js
+
     def test_template_management_section_exists(self):
         """Management section is in agent config panel."""
         with open("app/operator_ui/index.html") as f:
