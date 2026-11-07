@@ -44,6 +44,7 @@ context.beginReplyTemplateEdit({id: 1, name: 'Saudação', content: 'Olá'}, tri
 elements.get('reply-template-cancel-edit').handlers.click();
 assert.equal(confirmations.length, 0);
 assert.equal(elements.get('reply-template-cancel-edit').hidden, true);
+assert.equal(elements.get('reply-template-save-status').textContent, 'Edição cancelada.');
 
 context.beginReplyTemplateEdit({id: 2, name: 'Retorno', content: 'Obrigado'}, trigger);
 trigger.focused = false;
@@ -63,8 +64,11 @@ assert.equal(prevented, true);
 assert.equal(elements.get('reply-template-content').value, 'Rascunho alterado');
 
 confirmations.push(true);
-elements.get('reply-template-cancel-edit').handlers.click();
+elements.get('reply-template-content').handlers.keydown({
+  key: 'Escape', preventDefault() {},
+});
 assert.equal(elements.get('reply-template-name').value, '');
 assert.equal(elements.get('reply-template-content').value, '');
 assert.equal(elements.get('reply-template-cancel-edit').hidden, true);
 assert.equal(trigger.focused, true);
+assert.equal(elements.get('reply-template-save-status').textContent, 'Edição cancelada.');
