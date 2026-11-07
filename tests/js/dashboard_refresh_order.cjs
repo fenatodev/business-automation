@@ -5,8 +5,11 @@ const script = fs.readFileSync('app/operator_ui/app.js', 'utf8');
 const tick = () => new Promise(resolve => setImmediate(resolve));
 function setup() {
   const pending = [], rendered = [], disconnected = [];
+  const status = {textContent: ''};
   const context = {
     bearer: 'synthetic', sessionEpoch: 1, dashboardIntervalId: null,
+    ApiFailure: class ApiFailure extends Error {constructor(status) {super(String(status)); this.status = status;}},
+    $: id => {assert.equal(id, 'dashboard-status'); return status;},
     fetch(url, options) {
       assert.equal(url, '/internal-tasks/dashboard');
       assert.equal(options.headers.Authorization, 'Bearer synthetic');
@@ -19,7 +22,7 @@ function setup() {
   vm.createContext(context);
   vm.runInContext(script.slice(script.indexOf('  const DASHBOARD_REFRESH_MS'),
     script.indexOf('  function renderDashboard(')), context);
-  return {context, pending, rendered, disconnected};
+  return {context, pending, rendered, disconnected, status};
 }
 const response = (status, data) => ({status, ok: status === 200, async json() {return data;}});
 (async () => {
@@ -75,12 +78,22 @@ const response = (status, data) => ({status, ok: status === 200, async json() {r
     assert.equal(disconnected.length, 1);
   }
   {
-    const {context, pending, rendered} = setup();
+    const {context, pending, rendered, status} = setup();
     const request = context.refreshDashboard();
     pending[0].reject(new Error('synthetic network failure'));
     await assert.rejects(request);
+    assert.match(status.textContent, /Falha ao atualizar/);
     const retry = context.refreshDashboard();
     pending[1].resolve(response(200, 'recovered')); await retry;
     assert.deepEqual(rendered, ['recovered']);
+    assert.equal(status.textContent, '');
+  }
+  {
+    const {context, pending, rendered, status} = setup();
+    const request = context.refreshDashboard();
+    pending[0].resolve(response(503));
+    await assert.rejects(request);
+    assert.match(status.textContent, /Falha ao atualizar/);
+    assert.deepEqual(rendered, []);
   }
 })().catch(error => {console.error(error); process.exitCode = 1;});
