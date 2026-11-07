@@ -6730,6 +6730,7 @@
 
   let editingReplyTemplateId = null;
   let editingReplyTemplateTrigger = null;
+  let editingReplyTemplateOriginal = null;
   function setReplyTemplateEditButtonsDisabled(disabled) {
     const listEl = $("reply-template-list");
     if (!listEl) return;
@@ -6745,6 +6746,7 @@
     if (editingReplyTemplateId !== null) return;
     editingReplyTemplateId = template.id;
     editingReplyTemplateTrigger = trigger;
+    editingReplyTemplateOriginal = {name: template.name, content: template.content};
     setReplyTemplateEditButtonsDisabled(true);
     $("reply-template-name").value = template.name;
     $("reply-template-content").value = template.content;
@@ -6759,6 +6761,7 @@
   function resetReplyTemplateForm() {
     editingReplyTemplateId = null;
     editingReplyTemplateTrigger = null;
+    editingReplyTemplateOriginal = null;
     setReplyTemplateEditButtonsDisabled(false);
     $("reply-template-form")?.reset();
     updateReplyTemplateCharacterCount("reply-template-name", "reply-template-name-count", 100);
@@ -6770,6 +6773,10 @@
 
   function cancelReplyTemplateEdit() {
     if (replyTemplateSaving) return;
+    if (editingReplyTemplateOriginal && (
+      $("reply-template-name").value !== editingReplyTemplateOriginal.name ||
+      $("reply-template-content").value !== editingReplyTemplateOriginal.content
+    ) && !confirm("Descartar as alterações não salvas deste template?")) return;
     const trigger = editingReplyTemplateTrigger;
     resetReplyTemplateForm();
     if (trigger?.isConnected) trigger.focus();

@@ -33,6 +33,7 @@ function setup() {
   const context = {
     bearer: 'synthetic-token', company: 3,
     $: id => elements.get(id) || null,
+    confirm: () => true,
     updateReplyTemplateCharacterCount() {},
     templateApi() {
       return new Promise((resolve, reject) => {

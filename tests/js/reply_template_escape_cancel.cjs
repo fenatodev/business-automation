@@ -31,6 +31,7 @@ const elements = new Map([
 ]);
 const context = {
   $: id => elements.get(id) || null,
+  confirm: () => true,
   updateReplyTemplateCharacterCount() {},
 };
 vm.createContext(context);
