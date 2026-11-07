@@ -70,6 +70,16 @@ async function run() {
   assert.deepEqual(ui.list.children.map(item => item.hidden), [false, true]);
   assert.equal(ui.filterStatus.textContent, '1 template corresponde à busca.');
 
+  const whitespaceUi = setup([
+    {id: 5, name: 'Atendimento', content: 'Horário\n\t  comercial'},
+    {id: 6, name: 'Outro', content: 'Texto sintético'},
+  ]);
+  await whitespaceUi.context.loadReplyTemplateList();
+  whitespaceUi.search.value = 'horário comercial';
+  whitespaceUi.search.handlers.input();
+  assert.deepEqual(whitespaceUi.list.children.map(item => item.hidden), [false, true]);
+  assert.equal(whitespaceUi.filterStatus.textContent, '1 template corresponde à busca.');
+
   const unicodeUi = setup([
     {id: 3, name: 'Alpha\u1ab0beta', content: 'Texto sintético'},
     {id: 4, name: 'Outro', content: 'Sem correspondência'},
