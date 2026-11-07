@@ -11,6 +11,14 @@ function setup(confirmed = true) {
   const requests = [];
   const notifications = [];
   const removed = [];
+  const emptyMessages = [];
+  const list = {
+    children: [{}],
+    appendChild(element) {
+      this.children.push(element);
+      emptyMessages.push(element.textContent);
+    },
+  };
   let confirmations = 0;
   const context = {
     bearer: 'synthetic-token',
@@ -28,12 +36,19 @@ function setup(confirmed = true) {
     },
     notify: message => notifications.push(message),
     loadReplyTemplates() {},
+    $(id) { return id === 'reply-template-list' ? list : null; },
+    document: {
+      createElement(tag) {
+        assert.equal(tag, 'p');
+        return {className: '', textContent: ''};
+      },
+    },
   };
   vm.createContext(context);
   vm.runInContext(source.slice(start, end) + '\nthis.deleteReplyTemplate = deleteReplyTemplate;', context);
   const button = {disabled: false};
-  const item = {remove() { removed.push(true); }};
-  return {context, button, item, requests, notifications, removed, get confirmations() { return confirmations; }};
+  const item = {remove() { removed.push(true); list.children.pop(); }};
+  return {context, button, item, list, emptyMessages, requests, notifications, removed, get confirmations() { return confirmations; }};
 }
 
 async function run() {
@@ -49,6 +64,7 @@ async function run() {
   await Promise.all([firstDelete, duplicateDelete]);
   assert.equal(success.button.disabled, false);
   assert.deepEqual(success.removed, [true]);
+  assert.deepEqual(success.emptyMessages, ['Nenhum template salvo.']);
   assert.deepEqual(success.notifications, ['Template excluído.']);
 
   const failure = setup();
@@ -58,6 +74,7 @@ async function run() {
   await failedDelete;
   assert.equal(failure.button.disabled, false);
   assert.deepEqual(failure.removed, []);
+  assert.deepEqual(failure.emptyMessages, []);
   assert.deepEqual(failure.notifications, ['Erro ao excluir template.']);
 
   const cancelled = setup(false);
@@ -65,6 +82,13 @@ async function run() {
   assert.equal(cancelled.requests.length, 0);
   assert.equal(cancelled.button.disabled, false);
   assert.deepEqual(cancelled.removed, []);
+
+  const remaining = setup();
+  remaining.list.children = [{}, {}, {}];
+  const removeOne = remaining.context.deleteReplyTemplate(13, remaining.item, remaining.button);
+  remaining.requests[0].resolve({});
+  await removeOne;
+  assert.deepEqual(remaining.emptyMessages, []);
 }
 
 run().catch(error => { console.error(error); process.exitCode = 1; });

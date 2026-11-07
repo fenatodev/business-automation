@@ -6572,6 +6572,13 @@
     try {
       await templateApi(`/companies/${company}/reply-templates/${templateId}`, "DELETE");
       itemEl.remove();
+      const listEl = $("reply-template-list");
+      if (listEl && listEl.children.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "small";
+        empty.textContent = "Nenhum template salvo.";
+        listEl.appendChild(empty);
+      }
       notify("Template excluído.");
       // Refresh the reply template selector in conversation reply
       loadReplyTemplates();
