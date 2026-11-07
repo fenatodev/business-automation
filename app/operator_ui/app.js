@@ -3578,15 +3578,12 @@
 
   // WP-114 — Lead detail panel
   let currentLeadId = null;
+  let currentLead = null;
   let leadConversationsVersion = 0;
 
   async function showLeadDetail(lead) {
-    const version = ++leadConversationsVersion;
-    const session = sessionEpoch;
-    const isCurrent = () => version === leadConversationsVersion &&
-      session === sessionEpoch && bearer && currentLeadId === lead.id &&
-      !$("lead-detail").hidden;
     currentLeadId = lead.id;
+    currentLead = lead;
     $("leads-list").hidden = true;
     $("leads-pagination").hidden = true;
     $("lead-detail").hidden = false;
@@ -3613,13 +3610,27 @@
       }
     }
 
+    await loadLeadConversations(lead);
+  }
+
+  async function loadLeadConversations(lead) {
+    const version = ++leadConversationsVersion;
+    const session = sessionEpoch;
+    const isCurrent = () => version === leadConversationsVersion &&
+      session === sessionEpoch && bearer && currentLeadId === lead.id &&
+      !$("lead-detail").hidden;
     const convList = $("lead-conversations-list");
+    const status = $("lead-conversations-status");
+    const retry = $("lead-conversations-retry");
+    retry.hidden = true;
+    status.textContent = "";
     convList.replaceChildren();
     try {
       const company = lead.company_id;
       const params = new URLSearchParams({lead_id: lead.id, limit: 50});
       const convs = await conversationApi("/companies/" + company + "/conversations?" + params);
       if (!isCurrent()) return;
+      status.textContent = "";
       const leadConvs = (convs || []).filter((c) => c.lead_id === lead.id);
       if (!leadConvs.length) {
         const p = document.createElement("p");
@@ -3635,13 +3646,22 @@
         }
       }
     } catch (e) {
-      if (isCurrent()) console.error("[showLeadDetail] Falha ao carregar conversas:", e);
+      if (isCurrent()) {
+        status.textContent = "Não foi possível carregar as conversas. Os dados podem estar desatualizados.";
+        retry.hidden = false;
+        console.error("[showLeadDetail] Falha ao carregar conversas:", e);
+      }
     }
   }
+
+  $("lead-conversations-retry").addEventListener("click", () => {
+    if (currentLead && currentLeadId === currentLead.id) return loadLeadConversations(currentLead);
+  });
 
   function hideLeadDetail() {
     leadConversationsVersion += 1;
     currentLeadId = null;
+    currentLead = null;
     $("leads-list").hidden = false;
     $("lead-detail").hidden = true;
     if (leadTotal > leadPageSize) {
