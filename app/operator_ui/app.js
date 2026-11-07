@@ -6864,8 +6864,15 @@
     const trigger = editingReplyTemplateTrigger;
     resetReplyTemplateForm();
     $("reply-template-save-status").textContent = "Edição cancelada.";
-    if (trigger?.isConnected) trigger.focus();
-    else $("reply-template-name").focus();
+    if (trigger?.isConnected) {
+      const item = trigger.closest?.(".reply-template-item");
+      if (item?.hidden) {
+        const search = $("reply-template-search");
+        if (search) search.value = "";
+        applyReplyTemplateFilter();
+      }
+      trigger.focus();
+    } else $("reply-template-name").focus();
   }
 
   globalThis.addEventListener?.("beforeunload", event => {
