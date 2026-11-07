@@ -1,6 +1,7 @@
 """WP-110 — Editar customer via UI."""
 
 import pytest
+import subprocess
 
 
 @pytest.fixture
@@ -101,3 +102,7 @@ def test_edit_form_refreshes_list_after_save(ui_files):
     js = ui_files["js"]
     # After saving, should refresh the list
     assert 'refreshCustomers' in js
+
+
+def test_customer_edit_ignores_stale_save_response():
+    subprocess.run(["node", "tests/js/customer_edit_consistency.cjs"], check=True)
