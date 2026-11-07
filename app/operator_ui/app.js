@@ -4291,12 +4291,14 @@
     const status = $("customer-conversations-status");
     const retry = $("customer-conversations-retry");
     retry.hidden = true;
-    status.textContent = "";
+    retry.disabled = true;
+    status.textContent = "Carregando conversas...";
     convList.replaceChildren();
 
     try {
       const company = opportunities.length > 0 ? opportunities[0].company_id : null;
       if (!company) {
+        status.textContent = "";
         const p = document.createElement("p");
         p.className = "small";
         p.textContent = "Não é possível determinar a company.";
@@ -4309,6 +4311,7 @@
       const convs = await conversationApi(url);
       if (!isCurrent()) return;
       if (!Array.isArray(convs)) throw new Error("Resposta inválida ao carregar conversas.");
+      status.textContent = "";
       if (!convs.length) {
         const p = document.createElement("p");
         p.className = "small";
@@ -4339,6 +4342,8 @@
         retry.hidden = false;
         console.error("[loadCustomerConversations] Erro:", e);
       }
+    } finally {
+      if (isCurrent()) retry.disabled = false;
     }
   }
 

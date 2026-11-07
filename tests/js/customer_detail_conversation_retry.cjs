@@ -15,7 +15,10 @@ function element() {
     style: {},
     replaceChildren() { this.children = []; },
     appendChild(child) { this.children.push(child); },
-    addEventListener(event, callback) { this[event] = callback; },
+    addEventListener(event, callback) {
+      this[event] = callback;
+      if (event === 'click') this.click = () => { if (!this.disabled) return callback(); };
+    },
   };
 }
 
@@ -61,20 +64,26 @@ async function run() {
   const {context, elements, requests} = setup();
   const firstLoad = context.showCustomerDetail({id: 9, name: 'Synthetic customer'});
   assert.equal(requests[0].customerId, '9');
+  assert.equal(elements.get('customer-conversations-retry').disabled, true);
+  assert.match(elements.get('customer-conversations-status').textContent, /Carregando/);
   requests[0].reject(new Error('private backend details'));
   await firstLoad;
   assert.match(elements.get('customer-conversations-status').textContent, /Não foi possível carregar/);
   assert(!elements.get('customer-conversations-status').textContent.includes('private'));
   assert.equal(elements.get('customer-conversations-retry').hidden, false);
+  assert.equal(elements.get('customer-conversations-retry').disabled, false);
 
+  elements.get('customer-conversations-retry').click();
   elements.get('customer-conversations-retry').click();
   assert.equal(requests.length, 2);
   assert.equal(requests[1].customerId, '9');
   assert.equal(elements.get('customer-conversations-retry').hidden, true);
+  assert.equal(elements.get('customer-conversations-retry').disabled, true);
   await settle(requests[1], () => requests[1].resolve([
     {id: 17, channel: 'web', status: 'open'},
   ]));
   assert.equal(elements.get('customer-conversations-status').textContent, '');
+  assert.equal(elements.get('customer-conversations-retry').disabled, false);
   assert.equal(elements.get('customer-conversations-list').children.length, 1);
   assert.equal(elements.get('customer-conversations-list').children[0].children[0].children[0].textContent, 'web');
 
@@ -82,6 +91,7 @@ async function run() {
   requests[2].resolve([]);
   await emptyLoad;
   assert.equal(elements.get('customer-conversations-retry').hidden, true);
+  assert.equal(elements.get('customer-conversations-retry').disabled, false);
   assert.equal(elements.get('customer-conversations-list').children[0].textContent, 'Nenhuma conversa encontrada.');
 
   const staleLoad = context.showCustomerDetail({id: 10, name: 'Another synthetic customer'});
