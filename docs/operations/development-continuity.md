@@ -1,5 +1,12 @@
 # Continuidade do desenvolvimento — Codex ou Junie
 
+## WP-504 — Limpar aviso de template após envio (07/11/2026)
+
+Depois que a API aceita o envio de uma resposta, o formulário é limpo e o aviso
+de inserção do template também é removido. Se o envio falha, rascunho e aviso
+permanecem para a pessoa poder tentar novamente. O teste sintético exercita o
+listener real; sem mudança de API, autorização, tenant ou serviços externos.
+
 ## WP-503 — Limpar aviso ao copiar sugestão (07/11/2026)
 
 Copiar uma sugestão de resposta para o formulário limpa o aviso anterior de

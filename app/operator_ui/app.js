@@ -3152,6 +3152,7 @@
       });
       $("human-reply-form").reset();
       $("reply-conv-id").value = id;
+      $("reply-template-insert-status").textContent = "";
       notify("Mensagem enviada na conversa #" + id + ".");
       await selectConversation(id);
     });
