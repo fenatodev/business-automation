@@ -20,6 +20,7 @@ select.value = '4';
 select.options = [{dataset: {content: 'bom dia'}}];
 select.selectedIndex = 0;
 const reply = context.$('reply-message');
+reply.addEventListener = (event, callback) => { reply[event] = callback; };
 reply.value = 'Olá, cliente!';
 reply.selectionStart = 5;
 reply.selectionEnd = 5;

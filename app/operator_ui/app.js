@@ -2291,6 +2291,11 @@
   });
 
   // WP-459 — Insert a template without discarding the current reply draft
+  $("reply-message")?.addEventListener("input", () => {
+    const status = $("reply-template-insert-status");
+    if (status) status.textContent = "";
+  });
+
   if ($("reply-template-select")) {
     $("reply-template-select").addEventListener("change", (e) => {
       const templateId = e.target.value;
