@@ -2,10 +2,19 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from fastapi import Query
+from sqlalchemy import func
 from app.auth import AccessIdentity
 from app.dependencies import get_db, require_admin, require_operator
-from app.models import Company
-from app.schemas import CompanyAgentConfig, CompanyCreate, ReplyTemplate, ReplyTemplateCreate
+from app.models import Company, Conversation, Customer, Lead, Opportunity
+from app.schemas import (
+    CompanyAgentConfig,
+    CompanyCreate,
+    GlobalSearchResponse,
+    GlobalSearchResult,
+    ReplyTemplate,
+    ReplyTemplateCreate,
+)
 
 
 # WP-204 — In-memory agent config store (no migration required)
@@ -286,3 +295,116 @@ def delete_reply_template(
             return {"deleted": True}
 
     raise HTTPException(status_code=404, detail="Template not found")
+
+
+@router.get("/companies/{company_id}/search")
+def global_search(
+    company_id: int,
+    q: str = Query(min_length=1, max_length=200, description="Search query"),
+    limit: int = Query(5, ge=1, le=20, description="Max results per entity type"),
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Search across all entity types for this company.
+
+    Returns results grouped by entity type: opportunities, conversations,
+    leads, and customers. Each result includes entity_type, entity_id,
+    title, and an optional snippet.
+    """
+    company = db.scalar(select(Company).where(Company.id == company_id))
+    if company is None:
+        raise HTTPException(status_code=404, detail="Company not found")
+    if company.id != identity.company_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    pattern = f"%{q}%"
+
+    # Search opportunities
+    opps = db.scalars(
+        select(Opportunity)
+        .where(Opportunity.company_id == company_id)
+        .where(
+            func.lower(Opportunity.title).like(func.lower(pattern)) |
+            func.lower(Opportunity.description).like(func.lower(pattern))
+        )
+        .order_by(Opportunity.id)
+        .limit(limit)
+    ).all()
+    opportunity_results = [
+        GlobalSearchResult(
+            entity_type="opportunity",
+            entity_id=opp.id,
+            title=opp.title or "",
+            snippet=(opp.description or "")[:120],
+        )
+        for opp in opps
+    ]
+
+    # Search conversations
+    convs = db.scalars(
+        select(Conversation)
+        .where(Conversation.company_id == company_id)
+        .where(
+            func.lower(Conversation.channel).like(func.lower(pattern))
+        )
+        .order_by(Conversation.id)
+        .limit(limit)
+    ).all()
+    conversation_results = [
+        GlobalSearchResult(
+            entity_type="conversation",
+            entity_id=conv.id,
+            title=f"Conversa #{conv.id} · {conv.channel}",
+            snippet=f"Status: {conv.status}",
+        )
+        for conv in convs
+    ]
+
+    # Search leads
+    leads = db.scalars(
+        select(Lead)
+        .where(Lead.company_id == company_id)
+        .where(
+            func.lower(Lead.name).like(func.lower(pattern)) |
+            func.lower(Lead.phone).like(func.lower(pattern))
+        )
+        .order_by(Lead.id)
+        .limit(limit)
+    ).all()
+    lead_results = [
+        GlobalSearchResult(
+            entity_type="lead",
+            entity_id=lead.id,
+            title=lead.name or "Sem nome",
+            snippet=lead.phone or "",
+        )
+        for lead in leads
+    ]
+
+    # Search customers
+    custs = db.scalars(
+        select(Customer)
+        .where(Customer.company_id == company_id)
+        .where(
+            func.lower(Customer.name).like(func.lower(pattern)) |
+            func.lower(Customer.phone).like(func.lower(pattern))
+        )
+        .order_by(Customer.id)
+        .limit(limit)
+    ).all()
+    customer_results = [
+        GlobalSearchResult(
+            entity_type="customer",
+            entity_id=cust.id,
+            title=cust.name or "Sem nome",
+            snippet=cust.phone or "",
+        )
+        for cust in custs
+    ]
+
+    return GlobalSearchResponse(
+        opportunities=opportunity_results,
+        conversations=conversation_results,
+        leads=lead_results,
+        customers=customer_results,
+    )
