@@ -683,3 +683,23 @@ class FavoriteResponse(BaseModel):
     entity_id: int
     favorited: bool
     favorited_at: datetime | None = None
+
+
+# ---------------------------------------------------------------------------
+# WP-522 — Activity feed
+# ---------------------------------------------------------------------------
+
+
+class ActivityItem(BaseModel):
+    """Single activity item in the feed."""
+
+    activity_type: str  # "opportunity_created", "brief_approved", "brief_rejected", "conversation_replied", "lead_converted", "opportunity_closed"
+    entity_id: int
+    title: str
+    timestamp: datetime
+
+
+class ActivityFeedResponse(BaseModel):
+    """Response for activity feed endpoint."""
+
+    items: list[ActivityItem] = []

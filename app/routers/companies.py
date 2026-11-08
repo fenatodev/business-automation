@@ -6,8 +6,10 @@ from fastapi import Query
 from sqlalchemy import func
 from app.auth import AccessIdentity
 from app.dependencies import get_db, require_admin, require_operator
-from app.models import Company, Conversation, Customer, Lead, Opportunity
+from app.models import Company, Conversation, Customer, Lead, Message, Opportunity, ProposalBrief
 from app.schemas import (
+    ActivityFeedResponse,
+    ActivityItem,
     CompanyAgentConfig,
     CompanyCreate,
     GlobalSearchResponse,
@@ -412,3 +414,121 @@ def global_search(
         leads=lead_results,
         customers=customer_results,
     )
+
+
+@router.get("/companies/{company_id}/activity")
+def get_activity_feed(
+    company_id: int,
+    limit: int = Query(20, ge=1, le=100, description="Max activity items"),
+    period: str = Query("7d", pattern=r"^(7d|30d|90d)$", description="Time period: 7d, 30d, or 90d"),
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Get recent activity feed for this company.
+
+    Aggregates activities from opportunities, briefs, conversations,
+    and leads within the specified time period.
+    """
+    from datetime import timedelta
+
+    company = db.scalar(select(Company).where(Company.id == company_id))
+    if company is None:
+        raise HTTPException(status_code=404, detail="Company not found")
+    if company.id != identity.company_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    # Calculate cutoff date
+    days = {"7d": 7, "30d": 30, "90d": 90}[period]
+    from datetime import datetime, timezone
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+
+    items: list[ActivityItem] = []
+
+    # Opportunity created
+    opps = db.scalars(
+        select(Opportunity)
+        .where(Opportunity.company_id == company_id)
+        .where(Opportunity.created_at >= cutoff)
+        .order_by(Opportunity.created_at.desc())
+    ).all()
+    for opp in opps:
+        items.append(ActivityItem(
+            activity_type="opportunity_created",
+            entity_id=opp.id,
+            title=f"Oportunidade criada: {opp.title}",
+            timestamp=opp.created_at,
+        ))
+
+    # Opportunity closed
+    for opp in opps:
+        if opp.closed_at and opp.closed_at >= cutoff:
+            outcome_label = "ganha" if opp.outcome == "won" else "perdida"
+            items.append(ActivityItem(
+                activity_type="opportunity_closed",
+                entity_id=opp.id,
+                title=f"Oportunidade {outcome_label}: {opp.title}",
+                timestamp=opp.closed_at,
+            ))
+
+    # Brief approved/rejected
+    briefs = db.scalars(
+        select(ProposalBrief)
+        .join(Opportunity)
+        .where(Opportunity.company_id == company_id)
+        .where(ProposalBrief.decided_at.isnot(None))
+        .where(ProposalBrief.decided_at >= cutoff)
+        .order_by(ProposalBrief.decided_at.desc())
+    ).all()
+    for brief in briefs:
+        opp = db.scalar(select(Opportunity).where(Opportunity.id == brief.opportunity_id))
+        status_label = "aprovado" if brief.status == "approved" else "rejeitado"
+        items.append(ActivityItem(
+            activity_type="brief_approved" if brief.status == "approved" else "brief_rejected",
+            entity_id=brief.id,
+            title=f"Brief {status_label}: {opp.title if opp else 'N/A'}",
+            timestamp=brief.decided_at,
+        ))
+
+    # Conversation replied (agent messages)
+    convs = db.scalars(
+        select(Conversation)
+        .where(Conversation.company_id == company_id)
+        .where(Conversation.updated_at >= cutoff)
+        .order_by(Conversation.updated_at.desc())
+    ).all()
+    for conv in convs:
+        # Check if there are agent messages in this conversation
+        has_reply = db.scalar(
+            select(Message.id)
+            .where(Message.conversation_id == conv.id)
+            .where(Message.sender_type == "agent")
+        ) is not None
+        if has_reply:
+            items.append(ActivityItem(
+                activity_type="conversation_replied",
+                entity_id=conv.id,
+                title=f"Resposta enviada: conversa #{conv.id} ({conv.channel})",
+                timestamp=conv.updated_at,
+            ))
+
+    # Lead converted
+    leads = db.scalars(
+        select(Lead)
+        .where(Lead.company_id == company_id)
+        .where(Lead.status == "converted")
+        .where(Lead.updated_at >= cutoff)
+        .order_by(Lead.updated_at.desc())
+    ).all()
+    for lead in leads:
+        items.append(ActivityItem(
+            activity_type="lead_converted",
+            entity_id=lead.id,
+            title=f"Lead convertido: {lead.name}",
+            timestamp=lead.updated_at,
+        ))
+
+    # Sort by timestamp descending and limit
+    items.sort(key=lambda x: x.timestamp, reverse=True)
+    items = items[:limit]
+
+    return ActivityFeedResponse(items=items)
