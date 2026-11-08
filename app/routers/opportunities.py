@@ -12,6 +12,8 @@ from app.auth import AccessIdentity
 from app.dependencies import get_db, require_operator
 from app.models import Company, Conversation, Customer, Lead, Opportunity, ProposalBrief
 from app.schemas import (
+    FavoriteResponse,
+    FavoriteToggle,
     OpportunityBulkDelete,
     OpportunityBulkTriage,
     OpportunityBulkTriageSuggestion,
@@ -28,6 +30,7 @@ from app.schemas import (
     ProposalBriefSuggestion,
     ProposalBriefUpdate,
 )
+from app.routers.companies import _favorites_store
 
 
 router = APIRouter()
@@ -2077,3 +2080,29 @@ def suggest_brief(
             deliverables="",
             acceptance_criteria="",
         )
+
+
+@router.patch("/opportunities/{opportunity_id}/favorite")
+def toggle_opportunity_favorite(
+    opportunity_id: int,
+    data: FavoriteToggle,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Toggle favorite status for an opportunity."""
+    opportunity = _get_tenant_opportunity(db, opportunity_id, identity.company_id)
+
+    key = (identity.company_id, "opportunity", opportunity_id)
+    if data.favorited:
+        from datetime import datetime, timezone
+        _favorites_store[key] = {"favorited_at": datetime.now(timezone.utc)}
+    else:
+        _favorites_store.pop(key, None)
+
+    favorited_at = _favorites_store.get(key, {}).get("favorited_at")
+    return FavoriteResponse(
+        entity_type="opportunity",
+        entity_id=opportunity_id,
+        favorited=data.favorited,
+        favorited_at=favorited_at,
+    )

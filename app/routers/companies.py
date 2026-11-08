@@ -30,6 +30,10 @@ _agent_usage_store: dict[int, dict[str, int]] = {}
 _reply_template_store: dict[int, list[dict[str, object]]] = {}
 _reply_template_next_id: int = 1
 
+# WP-521 — In-memory favorites store (no migration required)
+# Keyed by (company_id, entity_type, entity_id); values are dicts with favorited_at
+_favorites_store: dict[tuple[int, str, int], dict[str, object]] = {}
+
 
 def _get_agent_usage(company_id: int) -> dict[str, int]:
     """Get agent usage stats for a company."""

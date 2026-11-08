@@ -22,8 +22,11 @@ from app.schemas import (
     ConversationCreate,
     ConversationSummary,
     ConversationUpdate,
+    FavoriteResponse,
+    FavoriteToggle,
     MessageCreate,
 )
+from app.routers.companies import _favorites_store
 from app.services.agent import AgentServiceError, generate_agent_reply
 from app.services.agent import summarize_conversation as _summarize_conversation
 
@@ -1301,3 +1304,29 @@ def bulk_delete_conversations(
         "deleted_ids": sorted(deleted_ids),
         "skipped": sorted(skipped),
     }
+
+
+@router.patch("/conversations/{conversation_id}/favorite")
+def toggle_conversation_favorite(
+    conversation_id: int,
+    data: FavoriteToggle,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Toggle favorite status for a conversation."""
+    conversation = _get_tenant_conversation(db, conversation_id, identity.company_id)
+
+    key = (identity.company_id, "conversation", conversation_id)
+    if data.favorited:
+        from datetime import datetime, timezone
+        _favorites_store[key] = {"favorited_at": datetime.now(timezone.utc)}
+    else:
+        _favorites_store.pop(key, None)
+
+    favorited_at = _favorites_store.get(key, {}).get("favorited_at")
+    return FavoriteResponse(
+        entity_type="conversation",
+        entity_id=conversation_id,
+        favorited=data.favorited,
+        favorited_at=favorited_at,
+    )
