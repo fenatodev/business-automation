@@ -142,3 +142,6 @@ def _job_to_response(job) -> JobStatusResponse:
         started_at=job.started_at.isoformat() if job.started_at else None,
         completed_at=job.completed_at.isoformat() if job.completed_at else None,
     )
+
+
+# WP-535 health check moved to companies router (no _local_only restriction)

@@ -750,3 +750,50 @@ def get_notifications(
         notifications=notifications,
         unread_count=len(unread),
     )
+
+
+# ---------------------------------------------------------------------------
+# WP-534 — Rate limit status endpoint
+# ---------------------------------------------------------------------------
+
+
+@router.get("/companies/{company_id}/rate-limit-status")
+def get_rate_limit_status(
+    company_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Get the AI rate limit status for this company."""
+    company = db.scalar(select(Company).where(Company.id == company_id))
+    if company is None:
+        raise HTTPException(status_code=404, detail="Company not found")
+    if identity.company_id and identity.company_id != company_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    from app.services.rate_limiter import rate_limiter
+
+    return rate_limiter.status(company_id)
+
+
+# ---------------------------------------------------------------------------
+# WP-535 — Agent health check endpoint
+# ---------------------------------------------------------------------------
+
+
+@router.get("/companies/{company_id}/agent-health")
+def agent_health(
+    company_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Check if the AI agent provider is available."""
+    company = db.scalar(select(Company).where(Company.id == company_id))
+    if company is None:
+        raise HTTPException(status_code=404, detail="Company not found")
+    if identity.company_id and identity.company_id != company_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    from app.services.agent import get_provider
+
+    provider = get_provider()
+    return provider.health_check()
