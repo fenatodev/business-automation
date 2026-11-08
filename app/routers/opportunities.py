@@ -327,6 +327,84 @@ def list_opportunities(
     return opportunities[offset:offset + limit]
 
 
+@router.get("/opportunities/export")
+def export_opportunities_csv(
+    next_action: str | None = Query(None, description="Filter by next_action status"),
+    source: str | None = Query(None, description="Filter by source"),
+    q: str | None = Query(None, description="Search keywords in title and description"),
+    from_date: str | None = Query(None, description="Filter captured_at >= date (YYYY-MM-DD)"),
+    to_date: str | None = Query(None, description="Filter captured_at <= date (YYYY-MM-DD)"),
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Export opportunities to CSV with optional filters.
+
+    Returns a CSV file with columns: id, source, title, description, budget,
+    deadline, next_action, outcome, final_value, captured_at, created_at.
+    """
+    stmt = (
+        select(Opportunity)
+        .where(Opportunity.company_id == identity.company_id)
+    )
+
+    if next_action is not None:
+        stmt = stmt.where(Opportunity.next_action == next_action)
+
+    if source is not None:
+        stmt = stmt.where(Opportunity.source == source)
+
+    if q:
+        pattern = f"%{q}%"
+        stmt = stmt.where(
+            func.lower(Opportunity.title).like(func.lower(pattern)) |
+            func.lower(Opportunity.description).like(func.lower(pattern))
+        )
+
+    if from_date:
+        stmt = stmt.where(Opportunity.captured_at >= from_date)
+    if to_date:
+        stmt = stmt.where(Opportunity.captured_at <= to_date + "T23:59:59")
+
+    stmt = stmt.order_by(Opportunity.id)
+    opportunities = db.scalars(stmt).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "id", "source", "title", "description", "budget", "deadline",
+        "next_action", "outcome", "reason", "final_value",
+        "captured_at", "created_at",
+    ])
+
+    for opp in opportunities:
+        writer.writerow([
+            opp.id,
+            opp.source,
+            opp.title,
+            opp.description,
+            opp.budget or "",
+            opp.deadline or "",
+            opp.next_action,
+            opp.outcome or "",
+            opp.reason or "",
+            opp.final_value or "",
+            opp.captured_at.isoformat() if opp.captured_at else "",
+            opp.created_at.isoformat() if opp.created_at else "",
+        ])
+
+    csv_content = output.getvalue()
+    output.close()
+
+    return Response(
+        content=csv_content.encode("utf-8"),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=opportunities.csv",
+            "Content-Type": "text/csv; charset=utf-8",
+        },
+    )
+
+
 @router.get("/opportunities/count")
 def count_opportunities(
     exclude_archived: bool = False,
