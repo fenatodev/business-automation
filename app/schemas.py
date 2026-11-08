@@ -821,3 +821,43 @@ class TriageSuggestion(BaseModel):
     next_action: str  # "qualify", "schedule_demo", "send_proposal", "follow_up", "transfer_human", "close_conversation"
     confidence: float
     reason: str
+
+
+# ---------------------------------------------------------------------------
+# WP-544 — Escalation schemas
+# ---------------------------------------------------------------------------
+
+
+class EscalationRuleCreate(BaseModel):
+    """Request to create an escalation rule."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    max_response_minutes: int = 30
+    enabled: bool = True
+
+
+class EscalationRuleResponse(BaseModel):
+    """Response for an escalation rule."""
+
+    name: str
+    max_response_minutes: int
+    enabled: bool
+
+
+class EscalationAlert(BaseModel):
+    """Alert for a conversation that needs escalation."""
+
+    conversation_id: int
+    conversation_title: str
+    last_customer_message_at: str
+    minutes_since_response: int
+    rule_name: str
+
+
+class EscalationResponse(BaseModel):
+    """Response for escalation check."""
+
+    alerts: list[EscalationAlert] = []
+    rules: list[EscalationRuleResponse] = []
