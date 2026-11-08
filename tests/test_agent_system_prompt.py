@@ -53,7 +53,7 @@ def test_agent_service_uses_custom_prompt():
     """Agent service uses custom prompt when provided."""
     with open("app/services/agent.py") as f:
         code = f.read()
-    assert "system_prompt if system_prompt else" in code
+    assert "system_prompt or _DEFAULT_SYSTEM_PROMPT" in code
     assert "_DEFAULT_SYSTEM_PROMPT" in code
 
 
@@ -63,7 +63,7 @@ def test_agent_service_prompt_fallback():
         code = f.read()
     assert "_DEFAULT_SYSTEM_PROMPT" in code
     # The fallback pattern
-    assert "prompt = system_prompt if system_prompt else _DEFAULT_SYSTEM_PROMPT" in code
+    assert "system_prompt or _DEFAULT_SYSTEM_PROMPT" in code
 
 
 def test_agent_request_system_prompt_is_optional():

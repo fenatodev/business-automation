@@ -8,12 +8,24 @@ import pytest
 from unittest.mock import patch, MagicMock
 import httpx
 
-from app.services.agent import generate_agent_reply, AgentServiceError
+from app.services.agent import (
+    generate_agent_reply,
+    AgentServiceError,
+    _available_providers,
+    register_provider,
+    NoopProvider,
+    OllamaProvider,
+)
 from app.database import settings
+
+
+def _reset_providers():
+    _available_providers.clear()
 
 
 def test_fallback_when_custom_model_fails():
     """When custom model fails, agent falls back to default model."""
+    _reset_providers()
     call_count = 0
 
     def fake_post(url, **kwargs):
@@ -28,7 +40,9 @@ def test_fallback_when_custom_model_fails():
         resp.json.return_value = {"message": {"content": "Fallback response"}}
         return resp
 
-    with patch("app.services.agent.httpx.post", side_effect=fake_post):
+    provider = OllamaProvider()
+    register_provider("default", provider)
+    with patch("httpx.post", side_effect=fake_post):
         result = generate_agent_reply(
             "Hello",
             [],
@@ -41,12 +55,15 @@ def test_fallback_when_custom_model_fails():
 
 def test_no_fallback_when_using_default_model():
     """When already using default model, no fallback attempt."""
+    _reset_providers()
     def fake_post(url, **kwargs):
         resp = MagicMock()
         resp.raise_for_status.side_effect = httpx.HTTPError("Default model failed")
         return resp
 
-    with patch("app.services.agent.httpx.post", side_effect=fake_post):
+    provider = OllamaProvider()
+    register_provider("default", provider)
+    with patch("httpx.post", side_effect=fake_post):
         with pytest.raises(AgentServiceError, match="Ollama request failed"):
             generate_agent_reply(
                 "Hello",
@@ -57,12 +74,15 @@ def test_no_fallback_when_using_default_model():
 
 def test_no_fallback_when_model_is_none():
     """When model is None, no fallback attempt."""
+    _reset_providers()
     def fake_post(url, **kwargs):
         resp = MagicMock()
         resp.raise_for_status.side_effect = httpx.HTTPError("Failed")
         return resp
 
-    with patch("app.services.agent.httpx.post", side_effect=fake_post):
+    provider = OllamaProvider()
+    register_provider("default", provider)
+    with patch("httpx.post", side_effect=fake_post):
         with pytest.raises(AgentServiceError, match="Ollama request failed"):
             generate_agent_reply(
                 "Hello",
@@ -73,6 +93,7 @@ def test_no_fallback_when_model_is_none():
 
 def test_fallback_uses_default_model_in_body():
     """The fallback request uses settings.ollama_model."""
+    _reset_providers()
     calls = []
 
     def fake_post(url, **kwargs):
@@ -86,7 +107,9 @@ def test_fallback_uses_default_model_in_body():
         resp.json.return_value = {"message": {"content": "OK"}}
         return resp
 
-    with patch("app.services.agent.httpx.post", side_effect=fake_post):
+    provider = OllamaProvider()
+    register_provider("default", provider)
+    with patch("httpx.post", side_effect=fake_post):
         generate_agent_reply("Hello", [], model="custom-model")
 
     assert calls[0] == "custom-model"
@@ -95,18 +118,22 @@ def test_fallback_uses_default_model_in_body():
 
 def test_fallback_raises_when_default_also_fails():
     """If both custom and default model fail, raise AgentServiceError."""
+    _reset_providers()
     def fake_post(url, **kwargs):
         resp = MagicMock()
         resp.raise_for_status.side_effect = httpx.HTTPError("All models failed")
         return resp
 
-    with patch("app.services.agent.httpx.post", side_effect=fake_post):
+    provider = OllamaProvider()
+    register_provider("default", provider)
+    with patch("httpx.post", side_effect=fake_post):
         with pytest.raises(AgentServiceError, match="Ollama request failed"):
             generate_agent_reply("Hello", [], model="custom-model")
 
 
 def test_no_fallback_when_custom_model_succeeds():
     """When custom model succeeds, no fallback is attempted."""
+    _reset_providers()
     call_count = 0
 
     def fake_post(url, **kwargs):
@@ -117,7 +144,9 @@ def test_no_fallback_when_custom_model_succeeds():
         resp.json.return_value = {"message": {"content": "Custom model response"}}
         return resp
 
-    with patch("app.services.agent.httpx.post", side_effect=fake_post):
+    provider = OllamaProvider()
+    register_provider("default", provider)
+    with patch("httpx.post", side_effect=fake_post):
         result = generate_agent_reply("Hello", [], model="custom-model")
 
     assert result == "Custom model response"
@@ -129,5 +158,5 @@ def test_fallback_code_exists_in_agent():
     with open("app/services/agent.py") as f:
         code = f.read()
     assert "WP-220" in code
-    assert "fall back to the default model" in code
-    assert 'body["model"] = settings.ollama_model' in code
+    assert "fallback to default model" in code
+    assert 'body["model"] = self.default_model' in code
