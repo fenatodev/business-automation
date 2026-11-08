@@ -1,6 +1,6 @@
 import csv
 import io
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
 from fastapi.responses import Response
@@ -23,6 +23,7 @@ from app.schemas import (
     ProposalBriefBulkDelete,
     ProposalBriefBulkStatus,
     ProposalBriefCreate,
+    ProposalBriefDecision,
     ProposalBriefSuggestion,
     ProposalBriefUpdate,
 )
@@ -1119,6 +1120,7 @@ def update_proposal_brief(
 @router.patch("/opportunities/{opportunity_id}/proposal-brief/approve")
 def approve_proposal_brief(
     opportunity_id: int,
+    data: ProposalBriefDecision | None = None,
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
@@ -1126,6 +1128,7 @@ def approve_proposal_brief(
 
     Atomic operation: updates both brief status and opportunity next_action.
     Only accepts briefs that are 'ready_for_review'.
+    Optional operator_note is preserved for audit trail.
     """
     opportunity = _get_tenant_opportunity(
         db,
@@ -1145,6 +1148,9 @@ def approve_proposal_brief(
         )
 
     brief.status = "approved"
+    if data is not None and data.operator_note is not None:
+        brief.operator_note = data.operator_note
+    brief.decided_at = datetime.now(timezone.utc)
     opportunity.next_action = "in_progress"
 
     db.commit()
@@ -1156,6 +1162,7 @@ def approve_proposal_brief(
 @router.patch("/opportunities/{opportunity_id}/proposal-brief/reject")
 def reject_proposal_brief(
     opportunity_id: int,
+    data: ProposalBriefDecision | None = None,
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
@@ -1163,6 +1170,7 @@ def reject_proposal_brief(
 
     Only accepts briefs that are 'approved' or 'ready_for_review'.
     Does not change the opportunity next_action.
+    Optional operator_note is preserved for audit trail.
     """
     opportunity = _get_tenant_opportunity(
         db,
@@ -1182,6 +1190,70 @@ def reject_proposal_brief(
         )
 
     brief.status = "draft"
+    if data is not None and data.operator_note is not None:
+        brief.operator_note = data.operator_note
+    brief.decided_at = datetime.now(timezone.utc)
+
+    db.commit()
+    db.refresh(brief)
+
+    return brief
+
+
+@router.patch("/proposal-briefs/{brief_id}/decision")
+def decide_proposal_brief(
+    brief_id: int,
+    data: ProposalBriefDecision,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Unified decision endpoint for a proposal brief.
+
+    Approves or rejects the brief in a single call, recording the operator
+    note and decision timestamp.  The brief must belong to the authenticated
+    tenant (via its opportunity).
+    """
+    brief = db.scalar(
+        select(ProposalBrief)
+        .join(Opportunity, ProposalBrief.opportunity_id == Opportunity.id)
+        .where(
+            ProposalBrief.id == brief_id,
+            Opportunity.company_id == identity.company_id,
+        )
+    )
+
+    if brief is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Brief not found",
+        )
+
+    now = datetime.now(timezone.utc)
+
+    if data.decision == "approve":
+        if brief.status != "ready_for_review":
+            raise HTTPException(
+                status_code=400,
+                detail="Brief must be 'ready_for_review' to approve",
+            )
+        brief.status = "approved"
+        opportunity = db.scalar(
+            select(Opportunity).where(Opportunity.id == brief.opportunity_id)
+        )
+        if opportunity is not None:
+            opportunity.next_action = "in_progress"
+    else:
+        # reject
+        if brief.status not in ("approved", "ready_for_review"):
+            raise HTTPException(
+                status_code=400,
+                detail="Brief must be 'approved' or 'ready_for_review' to reject",
+            )
+        brief.status = "draft"
+
+    if data.operator_note is not None:
+        brief.operator_note = data.operator_note
+    brief.decided_at = now
 
     db.commit()
     db.refresh(brief)
