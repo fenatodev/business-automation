@@ -9,7 +9,8 @@
 # This script is agent-agnostic. Configure your agent via environment variables:
 #
 #   BA_AGENT_BIN=/path/to/agent-executable   (required)
-#   BA_AGENT_KIND=stdin                       (default; reads task from stdin)
+#   BA_AGENT_KIND=junie                       (default; uses --task flag)
+#   BA_AGENT_KIND=stdin                       (fallback; reads task from stdin)
 #   BA_AGENT_ARGS="--flag1 --flag2"           (optional extra arguments)
 #
 # Examples:
@@ -33,7 +34,7 @@ MAX_BACKOFF="${BA_CONTINUOUS_MAX_BACKOFF:-300}"
 
 # Agent configuration (BA_AGENT_BIN is required)
 AGENT_BIN="${BA_AGENT_BIN:-}"
-AGENT_KIND="${BA_AGENT_KIND:-stdin}"
+AGENT_KIND="${BA_AGENT_KIND:-junie}"
 AGENT_ARGS="${BA_AGENT_ARGS:-}"
 
 GH_BIN="${BA_GH_BIN:-gh}"
@@ -50,7 +51,8 @@ Required environment:
   BA_AGENT_BIN=/path/to/agent   Agent executable (required)
 
 Optional environment:
-  BA_AGENT_KIND=stdin           Agent mode (default: stdin)
+  BA_AGENT_KIND=junie           Agent mode (default: junie, uses --task flag)
+  BA_AGENT_KIND=stdin           Fallback mode (reads task from stdin)
   BA_AGENT_ARGS="--f1 --f2"     Extra arguments passed to the agent
   BA_CONTINUOUS_WORKTREE=/path  Worktree directory (default: script parent)
   BA_CONTINUOUS_LOG_DIR=/path   Log directory (default: /tmp/...-agent-loop)
@@ -66,8 +68,9 @@ Options:
   -h, --help Show this help
 
 Agent contract:
-  The agent reads the task prompt from stdin and must end its output with
-  exactly one status: PR_READY, BLOCKED, or NO_SAFE_WP.
+  The agent receives the task prompt (via --task for Junie or stdin for generic
+  agents) and must end its output with exactly one status: PR_READY, BLOCKED,
+  or NO_SAFE_WP.
 EOF
 }
 
@@ -253,15 +256,29 @@ run_agent() {
 
   local last_message="$LOG_DIR/$RUN_ID.last-message.txt"
 
-  # Build agent command arguments
+  # Build agent command arguments based on agent kind
   local args=()
   if [[ -n "$AGENT_ARGS" ]]; then
-    # Shell-split AGENT_ARGS into array
     read -ra args <<< "$AGENT_ARGS"
   fi
 
-  # Execute agent: read task from stdin, capture output
-  "$AGENT_BIN" "${args[@]}" < "$TASK_FILE" > "$last_message" 2>&1
+  case "$AGENT_KIND" in
+    junie)
+      # Junie CLI: pass task via --task flag (non-interactive mode)
+      # Read the task file content and pass it as --task argument
+      local task_content
+      task_content="$(<"$TASK_FILE")"
+      "$AGENT_BIN" --task="$task_content" "${args[@]}" > "$last_message" 2>&1
+      ;;
+    stdin)
+      # Generic stdin mode: agent reads task from stdin
+      "$AGENT_BIN" "${args[@]}" < "$TASK_FILE" > "$last_message" 2>&1
+      ;;
+    *)
+      log "BLOCKED: unsupported agent kind: $AGENT_KIND"
+      return 1
+      ;;
+  esac
 }
 
 agent_status() {
