@@ -1,22 +1,73 @@
 #!/usr/bin/env bash
+#
+# continuous-dev-loop.sh — Agent-agnostic continuous development supervisor.
+#
+# Runs one independent agent execution per safe work package. Logs stay outside
+# the repository. The loop stops on /tmp/business-automation.stop, a dirty
+# worktree, an open agent PR, or a real blocking condition.
+#
+# This script is agent-agnostic. Configure your agent via environment variables:
+#
+#   BA_AGENT_BIN=/path/to/agent-executable   (required)
+#   BA_AGENT_KIND=stdin                       (default; reads task from stdin)
+#   BA_AGENT_ARGS="--flag1 --flag2"           (optional extra arguments)
+#
+# Examples:
+#   BA_AGENT_BIN=junie scripts/continuous-dev-loop.sh
+#   BA_AGENT_BIN=antigravity scripts/continuous-dev-loop.sh
+#   BA_AGENT_BIN=codex BA_AGENT_KIND=codex scripts/continuous-dev-loop.sh
+#
+# The agent receives the task prompt via stdin and must report one of:
+#   PR_READY   — PR opened, ready for CI and merge
+#   BLOCKED    — blocking condition; stop the loop
+#   NO_SAFE_WP — no safe work package available; retry after backoff
+#
 set -Eeuo pipefail
 
 WORKTREE="${BA_CONTINUOUS_WORKTREE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-LOG_DIR="${BA_CONTINUOUS_LOG_DIR:-/tmp/business-automation-codex-loop}"
+LOG_DIR="${BA_CONTINUOUS_LOG_DIR:-/tmp/business-automation-agent-loop}"
 STOP_FILE="${BA_CONTINUOUS_STOP_FILE:-/tmp/business-automation.stop}"
 TASK_FILE="${BA_CONTINUOUS_TASK_FILE:-$WORKTREE/scripts/continuous-dev-task.md}"
 INTERVAL="${BA_CONTINUOUS_INTERVAL:-20}"
 MAX_BACKOFF="${BA_CONTINUOUS_MAX_BACKOFF:-300}"
-CODEX_BIN="${BA_CODEX_BIN:-codex}"
+
+# Agent configuration (BA_AGENT_BIN is required)
+AGENT_BIN="${BA_AGENT_BIN:-}"
+AGENT_KIND="${BA_AGENT_KIND:-stdin}"
+AGENT_ARGS="${BA_AGENT_ARGS:-}"
+
 GH_BIN="${BA_GH_BIN:-gh}"
 
 usage() {
   cat <<'EOF'
 Usage: scripts/continuous-dev-loop.sh [--once] [--dry-run]
 
-Runs one independent Codex execution per safe work package. Logs stay outside
+Runs one independent agent execution per safe work package. Logs stay outside
 the repository. The loop stops on /tmp/business-automation.stop, a dirty
 worktree, an open agent PR, or a real blocking condition.
+
+Required environment:
+  BA_AGENT_BIN=/path/to/agent   Agent executable (required)
+
+Optional environment:
+  BA_AGENT_KIND=stdin           Agent mode (default: stdin)
+  BA_AGENT_ARGS="--f1 --f2"     Extra arguments passed to the agent
+  BA_CONTINUOUS_WORKTREE=/path  Worktree directory (default: script parent)
+  BA_CONTINUOUS_LOG_DIR=/path   Log directory (default: /tmp/...-agent-loop)
+  BA_CONTINUOUS_STOP_FILE=/path Stop sentinel file (default: /tmp/business-automation.stop)
+  BA_CONTINUOUS_TASK_FILE=/path Task prompt file (default: scripts/continuous-dev-task.md)
+  BA_CONTINUOUS_INTERVAL=20     Base backoff interval in seconds
+  BA_CONTINUOUS_MAX_BACKOFF=300 Maximum backoff interval in seconds
+  BA_GH_BIN=gh                  GitHub CLI path
+
+Options:
+  --once     Run a single iteration and exit
+  --dry-run  Print what would be done without executing
+  -h, --help Show this help
+
+Agent contract:
+  The agent reads the task prompt from stdin and must end its output with
+  exactly one status: PR_READY, BLOCKED, or NO_SAFE_WP.
 EOF
 }
 
@@ -46,9 +97,10 @@ on_signal() {
 trap on_signal INT TERM
 
 require_tools() {
-  command -v "$CODEX_BIN" >/dev/null || { log "BLOCKED: Codex CLI not found"; return 1; }
+  [[ -n "$AGENT_BIN" ]] || { log "BLOCKED: BA_AGENT_BIN is not set"; return 1; }
+  command -v "$AGENT_BIN" >/dev/null 2>&1 || { log "BLOCKED: agent executable not found: $AGENT_BIN"; return 1; }
   command -v git >/dev/null || { log "BLOCKED: git not found"; return 1; }
-  command -v "$GH_BIN" >/dev/null || { log "BLOCKED: GitHub CLI not found"; return 1; }
+  command -v "$GH_BIN" >/dev/null || { log "BLOCKED: GitHub CLI not found: $GH_BIN"; return 1; }
   command -v jq >/dev/null || { log "BLOCKED: jq not found"; return 1; }
   [[ -f "$TASK_FILE" ]] || { log "BLOCKED: task file missing: $TASK_FILE"; return 1; }
 }
@@ -135,7 +187,7 @@ merge_agent_pr() {
   count="$(printf '%s\n' "$prs" | jq -s 'length')"
   if [[ "$count" != "1" ]]; then
     if [[ "$count" == "0" ]]; then
-      log "BLOCKED: Codex ended without exactly one open WP PR"
+      log "BLOCKED: agent ended without exactly one open WP PR"
     else
       log "BLOCKED: multiple open WP PRs; refusing to choose"
       printf '%s\n' "$prs"
@@ -192,18 +244,27 @@ merge_agent_pr() {
   log "PASS: PR #$number merged and main synchronized"
 }
 
-run_codex() {
-  log "START: independent Codex execution"
+run_agent() {
+  log "START: independent agent execution ($AGENT_BIN, kind=$AGENT_KIND)"
   if ((DRY_RUN)); then
-    log "DRY-RUN: would execute Codex with $TASK_FILE"
+    log "DRY-RUN: would execute $AGENT_BIN with $TASK_FILE"
     return 0
   fi
-  "$CODEX_BIN" exec --ephemeral --ignore-user-config --sandbox danger-full-access \
-    -c 'approval_policy="never"' -C "$WORKTREE" \
-    -o "$LOG_DIR/$RUN_ID.last-message.txt" < "$TASK_FILE"
+
+  local last_message="$LOG_DIR/$RUN_ID.last-message.txt"
+
+  # Build agent command arguments
+  local args=()
+  if [[ -n "$AGENT_ARGS" ]]; then
+    # Shell-split AGENT_ARGS into array
+    read -ra args <<< "$AGENT_ARGS"
+  fi
+
+  # Execute agent: read task from stdin, capture output
+  "$AGENT_BIN" "${args[@]}" < "$TASK_FILE" > "$last_message" 2>&1
 }
 
-codex_status() {
+agent_status() {
   local last_message="$LOG_DIR/$RUN_ID.last-message.txt"
   [[ -f "$last_message" ]] || return 1
   grep -Eo '\**(PR_READY|BLOCKED|NO_SAFE_WP)\**' "$last_message" \
@@ -214,14 +275,14 @@ main() {
   require_tools || exit 2
   if stop_requested; then log "STOP: stop file exists: $STOP_FILE"; exit 0; fi
   prepare_main || exit 3
-  run_codex || { log "BLOCKED: Codex execution failed; no retry in this run"; exit 4; }
-  case "$(codex_status || true)" in
+  run_agent || { log "BLOCKED: agent execution failed; no retry in this run"; exit 4; }
+  case "$(agent_status || true)" in
     NO_SAFE_WP)
       log "NO_SAFE_WP: no safe package selected; retrying after backoff"
       return 11
       ;;
     BLOCKED)
-      log "BLOCKED: Codex reported a blocking condition"
+      log "BLOCKED: agent reported a blocking condition"
       return 10
       ;;
   esac

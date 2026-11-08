@@ -2025,3 +2025,11 @@ Ao limpar a busca pelo botão ou por Escape, a região de status existente agora
 anuncia “Busca limpa.” para tecnologias assistivas. Os testes sintéticos cobrem
 os handlers reais; sem mudanças de API, autorização, tenant, persistência,
 schema, migrations ou integrações.
+## Supervisor agnóstico de executor
+
+O supervisor local não depende mais exclusivamente do Codex. O executor padrão
+continua sendo `codex`, mas Junie CLI, Antigravity CLI ou um wrapper local do
+agente podem ser usados com `BA_AGENT_KIND=stdin` e `BA_AGENT_BIN=/caminho/do-wrapper`.
+O wrapper recebe `scripts/continuous-dev-task.md` em stdin e deve retornar
+`PR_READY`, `BLOCKED` ou `NO_SAFE_WP`. Os gates de worktree, escopo protegido,
+CI, head SHA, revisão humana e merge normal permanecem no supervisor.
