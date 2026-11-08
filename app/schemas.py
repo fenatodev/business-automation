@@ -725,3 +725,34 @@ class NotificationResponse(BaseModel):
 
     notifications: list[NotificationItem] = []
     unread_count: int = 0
+
+
+# ---------------------------------------------------------------------------
+# WP-532 — Job queue schemas
+# ---------------------------------------------------------------------------
+
+
+class JobCreate(BaseModel):
+    """Request to create a new job."""
+
+    task_type: str = "generic"
+    payload: dict[str, object] = {}
+
+
+class JobStatusResponse(BaseModel):
+    """Response for job status."""
+
+    job_id: str
+    task_type: str
+    status: str
+    result: object | None = None
+    error: str | None = None
+    created_at: str
+    started_at: str | None = None
+    completed_at: str | None = None
+
+
+class JobListResponse(BaseModel):
+    """Response for job list."""
+
+    jobs: list[JobStatusResponse] = []
