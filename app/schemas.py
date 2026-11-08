@@ -771,3 +771,40 @@ class JobListResponse(BaseModel):
     """Response for job list."""
 
     jobs: list[JobStatusResponse] = []
+
+
+# ---------------------------------------------------------------------------
+# WP-542 — Scheduled job schemas
+# ---------------------------------------------------------------------------
+
+
+class ScheduledJobCreate(BaseModel):
+    """Request to create a scheduled job."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    interval_seconds: int
+    task_type: str = "scheduled"
+    payload: dict[str, object] = {}
+
+
+class ScheduledJobStatus(BaseModel):
+    """Response for a scheduled job."""
+
+    scheduled_id: str
+    name: str
+    interval_seconds: int
+    task_type: str
+    enabled: bool
+    last_run_at: str | None = None
+    next_run_at: str | None = None
+    last_job_id: str | None = None
+    last_status: str | None = None
+    last_error: str | None = None
+
+
+class ScheduledJobListResponse(BaseModel):
+    """Response for listing scheduled jobs."""
+
+    jobs: list[ScheduledJobStatus] = []

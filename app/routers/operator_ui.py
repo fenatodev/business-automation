@@ -12,7 +12,15 @@ from fastapi.responses import FileResponse
 
 from app.dependencies import require_operator
 from app.dependencies import AccessIdentity
-from app.schemas import JobCreate, JobListResponse, JobRetryConfig, JobStatusResponse
+from app.schemas import (
+    JobCreate,
+    JobListResponse,
+    JobRetryConfig,
+    JobStatusResponse,
+    ScheduledJobCreate,
+    ScheduledJobListResponse,
+    ScheduledJobStatus,
+)
 
 
 router = APIRouter(prefix="/operator", include_in_schema=False)
@@ -177,3 +185,108 @@ def retry_job(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return _job_to_response(job_queue.get_job(job_id))
+
+
+# ---------------------------------------------------------------------------
+# WP-542 — Scheduled job endpoints
+# ---------------------------------------------------------------------------
+
+
+def _scheduled_to_response(sj) -> ScheduledJobStatus:
+    """Convert a ScheduledJob to ScheduledJobStatus."""
+    return ScheduledJobStatus(
+        scheduled_id=sj.scheduled_id,
+        name=sj.name,
+        interval_seconds=sj.interval_seconds,
+        task_type=sj.task_type,
+        enabled=sj.enabled,
+        last_run_at=sj.last_run_at.isoformat() if sj.last_run_at else None,
+        next_run_at=sj.next_run_at.isoformat() if sj.next_run_at else None,
+        last_job_id=sj.last_job_id,
+        last_status=sj.last_status,
+        last_error=sj.last_error,
+    )
+
+
+@router.post(
+    "/scheduled-jobs",
+    response_model=ScheduledJobStatus,
+)
+def create_scheduled_job(
+    data: ScheduledJobCreate,
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Create a new scheduled job."""
+    from app.services.scheduler import scheduler
+
+    sj = scheduler.add(
+        name=data.name,
+        interval_seconds=data.interval_seconds,
+        task_type=data.task_type,
+        payload=dict(data.payload),
+    )
+    return _scheduled_to_response(sj)
+
+
+@router.get("/scheduled-jobs", response_model=ScheduledJobListResponse)
+def list_scheduled_jobs(
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """List all scheduled jobs."""
+    from app.services.scheduler import scheduler
+
+    jobs = scheduler.list()
+    return ScheduledJobListResponse(
+        jobs=[_scheduled_to_response(j) for j in jobs]
+    )
+
+
+@router.get(
+    "/scheduled-jobs/{scheduled_id}",
+    response_model=ScheduledJobStatus,
+)
+def get_scheduled_job(
+    scheduled_id: str,
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Get a scheduled job by ID."""
+    from app.services.scheduler import scheduler
+
+    sj = scheduler.get(scheduled_id)
+    if sj is None:
+        raise HTTPException(status_code=404, detail="Scheduled job not found")
+    return _scheduled_to_response(sj)
+
+
+@router.delete(
+    "/scheduled-jobs/{scheduled_id}",
+    response_model=bool,
+)
+def delete_scheduled_job(
+    scheduled_id: str,
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Delete a scheduled job."""
+    from app.services.scheduler import scheduler
+
+    removed = scheduler.remove(scheduled_id)
+    if not removed:
+        raise HTTPException(status_code=404, detail="Scheduled job not found")
+    return True
+
+
+@router.post(
+    "/scheduled-jobs/{scheduled_id}/run",
+    response_model=JobStatusResponse,
+)
+def run_scheduled_job_now(
+    scheduled_id: str,
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Manually trigger a scheduled job immediately."""
+    from app.services.scheduler import scheduler
+
+    job = scheduler.run_now(scheduled_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Scheduled job not found")
+    return _job_to_response(job)
