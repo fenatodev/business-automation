@@ -7,8 +7,12 @@ Essa página não faz login, não altera auth e não concede acesso tenant.
 from pathlib import Path
 import ipaddress
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse
+
+from app.dependencies import require_operator
+from app.dependencies import AccessIdentity
+from app.schemas import JobCreate, JobListResponse, JobStatusResponse
 
 
 router = APIRouter(prefix="/operator", include_in_schema=False)
@@ -72,3 +76,69 @@ def operator_script(request: Request):
 @router.get("/styles.css")
 def operator_styles(request: Request):
     return _static_response(request, "styles.css", "text/css")
+
+
+# ---------------------------------------------------------------------------
+# WP-532 — Job queue endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.post("/jobs", response_model=JobStatusResponse)
+def create_job(
+    data: JobCreate,
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Create a new async job."""
+    from app.services.job_queue import job_queue
+
+    job = job_queue.create_job(
+        task_type=data.task_type,
+        company_id=identity.company_id,
+        payload=dict(data.payload),
+    )
+    return _job_to_response(job)
+
+
+@router.get("/jobs/{job_id}", response_model=JobStatusResponse)
+def get_job_status(
+    job_id: str,
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Get job status by ID."""
+    from app.services.job_queue import job_queue
+
+    job = job_queue.get_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.company_id and job.company_id != identity.company_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    return _job_to_response(job)
+
+
+@router.get("/jobs", response_model=JobListResponse)
+def list_jobs(
+    limit: int = 20,
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """List recent jobs for this company."""
+    from app.services.job_queue import JobStatus, job_queue
+
+    jobs = job_queue.list_jobs(
+        company_id=identity.company_id,
+        limit=min(limit, 100),
+    )
+    return JobListResponse(jobs=[_job_to_response(j) for j in jobs])
+
+
+def _job_to_response(job) -> JobStatusResponse:
+    """Convert a Job to JobStatusResponse."""
+    return JobStatusResponse(
+        job_id=job.job_id,
+        task_type=job.task_type,
+        status=job.status.value,
+        result=job.result,
+        error=job.error,
+        created_at=job.created_at.isoformat(),
+        started_at=job.started_at.isoformat() if job.started_at else None,
+        completed_at=job.completed_at.isoformat() if job.completed_at else None,
+    )
