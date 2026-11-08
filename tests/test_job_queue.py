@@ -119,7 +119,7 @@ def test_execute_job_sync_success():
 def test_execute_job_sync_failure():
     """Execute job synchronously captures error."""
     q = _fresh_queue()
-    job = q.create_job(task_type="test")
+    job = q.create_job(task_type="test", max_retries=0)
     def failing_func():
         raise ValueError("test error")
     q.execute_job(job.job_id, failing_func, _async=False)

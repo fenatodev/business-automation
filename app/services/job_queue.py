@@ -6,7 +6,7 @@ like AI replies, summaries, and other background tasks.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from threading import Thread
 from typing import Any, Callable
@@ -26,6 +26,8 @@ class Job:
         task_type: str = "generic",
         company_id: int | None = None,
         payload: dict[str, Any] | None = None,
+        max_retries: int = 3,
+        backoff_multiplier: float = 2.0,
     ):
         self.job_id = job_id or str(uuid.uuid4())
         self.task_type = task_type
@@ -37,6 +39,11 @@ class Job:
         self.created_at = datetime.now(timezone.utc)
         self.started_at: datetime | None = None
         self.completed_at: datetime | None = None
+        # WP-540 — retry with exponential backoff
+        self.max_retries = max_retries
+        self.retry_count = 0
+        self.next_retry_at: datetime | None = None
+        self.backoff_multiplier = backoff_multiplier
 
 
 class JobQueue:
@@ -51,9 +58,17 @@ class JobQueue:
         task_type: str,
         company_id: int | None = None,
         payload: dict[str, Any] | None = None,
+        max_retries: int = 3,
+        backoff_multiplier: float = 2.0,
     ) -> Job:
         """Create a new job and add it to the queue."""
-        job = Job(task_type=task_type, company_id=company_id, payload=payload)
+        job = Job(
+            task_type=task_type,
+            company_id=company_id,
+            payload=payload,
+            max_retries=max_retries,
+            backoff_multiplier=backoff_multiplier,
+        )
         self._jobs[job.job_id] = job
         return job
 
@@ -105,10 +120,32 @@ class JobQueue:
             job.status = JobStatus.COMPLETED
         except Exception as exc:
             job.error = str(exc)
-            job.status = JobStatus.FAILED
-        finally:
+            # WP-540 — schedule retry with exponential backoff if retries remain
+            if job.retry_count < job.max_retries:
+                job.retry_count += 1
+                backoff_seconds = self._calculate_backoff(
+                    job.retry_count, job.backoff_multiplier
+                )
+                job.next_retry_at = datetime.now(timezone.utc).replace(
+                    microsecond=0
+                ) + timedelta(seconds=backoff_seconds)
+                job.status = JobStatus.PENDING
+                job.started_at = None
+                job.completed_at = None
+            else:
+                job.status = JobStatus.FAILED
+        if job.status in (JobStatus.COMPLETED, JobStatus.FAILED):
             job.completed_at = datetime.now(timezone.utc)
         return job
+
+    @staticmethod
+    def _calculate_backoff(retry_count: int, multiplier: float) -> float:
+        """Calculate exponential backoff delay in seconds.
+
+        Formula: multiplier ^ (retry_count - 1)
+        Example: multiplier=2.0 → 1s, 2s, 4s, 8s, ...
+        """
+        return multiplier ** (retry_count - 1)
 
     def cleanup_completed(self, older_than_seconds: int = 3600) -> int:
         """Remove completed/failed jobs older than the threshold."""
@@ -122,6 +159,39 @@ class JobQueue:
         for jid in to_remove:
             del self._jobs[jid]
         return len(to_remove)
+
+    def get_pending_retries(self) -> list[Job]:
+        """Get jobs that are scheduled for retry (next_retry_at <= now)."""
+        now = datetime.now(timezone.utc)
+        return [
+            job
+            for job in self._jobs.values()
+            if job.status == JobStatus.PENDING
+            and job.next_retry_at is not None
+            and job.next_retry_at <= now
+        ]
+
+    def retry_job(self, job_id: str) -> Job:
+        """Manually retry a failed job, resetting its state for re-execution.
+
+        Returns the job ready to be re-executed. Raises KeyError if not found.
+        Raises ValueError if the job is not in FAILED status.
+        """
+        job = self._jobs.get(job_id)
+        if job is None:
+            raise KeyError(f"Job {job_id} not found")
+        if job.status != JobStatus.FAILED:
+            raise ValueError(
+                f"Job {job_id} is in {job.status.value} status, not FAILED"
+            )
+        # Reset job state for retry
+        job.status = JobStatus.PENDING
+        job.error = None
+        job.result = None
+        job.started_at = None
+        job.completed_at = None
+        job.next_retry_at = None
+        return job
 
 
 # Global job queue instance
