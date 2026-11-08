@@ -25,9 +25,14 @@ from app.schemas import (
     FavoriteResponse,
     FavoriteToggle,
     MessageCreate,
+    TriageSuggestion,
 )
 from app.routers.companies import _favorites_store
-from app.services.agent import AgentServiceError, generate_agent_reply
+from app.services.agent import (
+    AgentServiceError,
+    generate_agent_reply,
+    suggest_triage as _suggest_triage,
+)
 from app.services.agent import summarize_conversation as _summarize_conversation
 
 
@@ -1418,4 +1423,54 @@ def toggle_conversation_favorite(
         entity_id=conversation_id,
         favorited=data.favorited,
         favorited_at=favorited_at,
+    )
+
+
+# ---------------------------------------------------------------------------
+# WP-543 — Auto-triage
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/conversations/{conversation_id}/suggest-triage",
+    response_model=TriageSuggestion,
+)
+def suggest_triage_endpoint(
+    conversation_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Suggest triage action for a conversation based on AI analysis."""
+    conversation = _get_tenant_conversation(
+        db,
+        conversation_id,
+        identity.company_id,
+    )
+
+    history_messages = db.scalars(
+        select(Message)
+        .where(Message.conversation_id == conversation.id)
+        .order_by(Message.id)
+    ).all()
+
+    history = [
+        {
+            "sender_type": item.sender_type,
+            "content": item.content,
+        }
+        for item in history_messages
+    ]
+
+    try:
+        result = _suggest_triage(history)
+    except AgentServiceError:
+        raise HTTPException(
+            status_code=503,
+            detail="Agent service unavailable",
+        )
+
+    return TriageSuggestion(
+        next_action=result.get("next_action", "follow_up"),
+        confidence=result.get("confidence", 0.5),
+        reason=result.get("reason", "Análise automática"),
     )
