@@ -15,6 +15,10 @@ from app.schemas import (
     ActivityItem,
     CompanyAgentConfig,
     CompanyCreate,
+    EscalationAlert,
+    EscalationResponse,
+    EscalationRuleCreate,
+    EscalationRuleResponse,
     GlobalSearchResponse,
     GlobalSearchResult,
     NotificationItem,
@@ -797,3 +801,138 @@ def agent_health(
 
     provider = get_provider()
     return provider.health_check()
+
+
+# ---------------------------------------------------------------------------
+# WP-544 — Escalation endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/companies/{company_id}/escalation-rules",
+    response_model=EscalationRuleResponse,
+)
+def create_escalation_rule(
+    company_id: int,
+    data: EscalationRuleCreate,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Create an escalation rule for a company."""
+    company = db.scalar(select(Company).where(Company.id == company_id))
+    if company is None:
+        raise HTTPException(status_code=404, detail="Company not found")
+    if identity.company_id and identity.company_id != company_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    from app.services.escalation import EscalationRule, add_escalation_rule
+
+    rule = EscalationRule(
+        name=data.name,
+        company_id=company_id,
+        max_response_minutes=data.max_response_minutes,
+        enabled=data.enabled,
+    )
+    add_escalation_rule(rule)
+    return EscalationRuleResponse(
+        name=rule.name,
+        max_response_minutes=rule.max_response_minutes,
+        enabled=rule.enabled,
+    )
+
+
+@router.get(
+    "/companies/{company_id}/escalations",
+    response_model=EscalationResponse,
+)
+def get_escalations(
+    company_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Check for conversations that need escalation."""
+    company = db.scalar(select(Company).where(Company.id == company_id))
+    if company is None:
+        raise HTTPException(status_code=404, detail="Company not found")
+    if identity.company_id and identity.company_id != company_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    from app.services.escalation import check_escalations, get_escalation_rules
+
+    alerts = check_escalations(db, company_id)
+    rules = get_escalation_rules(company_id)
+
+    return EscalationResponse(
+        alerts=[
+            EscalationAlert(
+                conversation_id=a.conversation_id,
+                conversation_title=a.conversation_title,
+                last_customer_message_at=a.last_customer_message_at.isoformat(),
+                minutes_since_response=a.minutes_since_response,
+                rule_name=a.rule_name,
+            )
+            for a in alerts
+        ],
+        rules=[
+            EscalationRuleResponse(
+                name=r.name,
+                max_response_minutes=r.max_response_minutes,
+                enabled=r.enabled,
+            )
+            for r in rules
+        ],
+    )
+
+
+@router.get(
+    "/companies/{company_id}/escalation-rules",
+    response_model=list[EscalationRuleResponse],
+)
+def list_escalation_rules(
+    company_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """List all escalation rules for a company."""
+    company = db.scalar(select(Company).where(Company.id == company_id))
+    if company is None:
+        raise HTTPException(status_code=404, detail="Company not found")
+    if identity.company_id and identity.company_id != company_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    from app.services.escalation import get_escalation_rules
+
+    rules = get_escalation_rules(company_id)
+    return [
+        EscalationRuleResponse(
+            name=r.name,
+            max_response_minutes=r.max_response_minutes,
+            enabled=r.enabled,
+        )
+        for r in rules
+    ]
+
+
+@router.delete(
+    "/companies/{company_id}/escalation-rules/{rule_name}",
+    response_model=bool,
+)
+def delete_escalation_rule(
+    company_id: int,
+    rule_name: str,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Delete an escalation rule."""
+    company = db.scalar(select(Company).where(Company.id == company_id))
+    if company is None:
+        raise HTTPException(status_code=404, detail="Company not found")
+    if identity.company_id and identity.company_id != company_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    from app.services.escalation import remove_escalation_rule
+
+    removed = remove_escalation_rule(company_id, rule_name)
+    if not removed:
+        raise HTTPException(status_code=404, detail="Rule not found")
+    return True
