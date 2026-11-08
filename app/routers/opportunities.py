@@ -16,6 +16,7 @@ from app.schemas import (
     OpportunityBulkTriage,
     OpportunityBulkTriageSuggestion,
     OpportunityBulkTriageSuggestionResponse,
+    OpportunityClose,
     OpportunityCreate,
     OpportunityTriageSuggestion,
     OpportunityTriageUpdate,
@@ -907,6 +908,43 @@ _VALID_TRANSITIONS = {
     "done": set(),  # terminal state
     "lost": set(),  # terminal state
 }
+
+
+@router.patch("/opportunities/{opportunity_id}/close")
+def close_opportunity(
+    opportunity_id: int,
+    data: OpportunityClose,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Close an opportunity as won or lost with optional reason and final value.
+
+    Sets outcome, reason, final_value, and closed_at.  Also advances
+    next_action to 'done' (won) or 'lost' so the pipeline reflects the
+    final state.
+    """
+    opportunity = _get_tenant_opportunity(
+        db,
+        opportunity_id,
+        identity.company_id,
+    )
+
+    if opportunity.outcome is not None:
+        raise HTTPException(
+            status_code=400,
+            detail="Opportunity is already closed",
+        )
+
+    opportunity.outcome = data.outcome
+    opportunity.reason = data.reason
+    opportunity.final_value = data.final_value
+    opportunity.closed_at = datetime.now(timezone.utc)
+    opportunity.next_action = "done" if data.outcome == "won" else "lost"
+
+    db.commit()
+    db.refresh(opportunity)
+
+    return opportunity
 
 
 @router.patch("/opportunities/{opportunity_id}/triage")

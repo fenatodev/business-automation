@@ -396,6 +396,16 @@ class OpportunityBulkTriageSuggestionResponse(BaseModel):
     total_count: int
 
 
+class OpportunityClose(BaseModel):
+    """Close an opportunity as won or lost with optional reason and final value."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    outcome: Literal["won", "lost"]
+    reason: str | None = Field(default=None, max_length=2000)
+    final_value: str | None = Field(default=None, max_length=120)
+
+
 class ConversationBulkDelete(BaseModel):
     """Bulk delete multiple conversations."""
 
