@@ -20,10 +20,12 @@ from app.schemas import (
     ConversationBulkDelete,
     ConversationBulkStatus,
     ConversationCreate,
+    ConversationSummary,
     ConversationUpdate,
     MessageCreate,
 )
 from app.services.agent import AgentServiceError, generate_agent_reply
+from app.services.agent import summarize_conversation as _summarize_conversation
 
 
 router = APIRouter()
@@ -202,6 +204,80 @@ def suggest_reply(
         "conversation_id": conversation.id,
         "suggestion": response,
     }
+
+
+@router.post("/conversations/{conversation_id}/summarize")
+def summarize_conversation_endpoint(
+    conversation_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """WP-516 — Generate an AI summary of a conversation.
+
+    Returns a summary with key points and action items. If the agent
+    service is unavailable, returns a fallback summary based on the
+    last message instead of raising 503.
+    """
+    conversation = _get_tenant_conversation(
+        db,
+        conversation_id,
+        identity.company_id,
+    )
+
+    history_messages = db.scalars(
+        select(Message)
+        .where(Message.conversation_id == conversation.id)
+        .order_by(Message.id)
+    ).all()
+
+    if not history_messages:
+        return ConversationSummary(
+            summary="Nenhuma mensagem nesta conversa.",
+            key_points=[],
+            action_items=[],
+        )
+
+    history = [
+        {
+            "sender_type": item.sender_type,
+            "content": item.content,
+        }
+        for item in history_messages
+    ]
+
+    try:
+        from app.routers.companies import _agent_config_store, _record_agent_call
+
+        company_config = _agent_config_store.get(identity.company_id, {})
+        effective_model = company_config.get("model")
+
+        result = _summarize_conversation(
+            history=history,
+            model=effective_model,
+        )
+        _record_agent_call(identity.company_id, success=True)
+    except AgentServiceError:
+        # Graceful fallback: return a simple summary from the last message
+        from app.routers.companies import _record_agent_call
+
+        _record_agent_call(identity.company_id, success=False)
+
+        last_msg = history_messages[-1]
+        summary_text = last_msg.content[:200]
+        if len(last_msg.content) > 200:
+            summary_text += "..."
+
+        return ConversationSummary(
+            summary=f"Última mensagem: {summary_text}",
+            key_points=[],
+            action_items=[],
+        )
+
+    return ConversationSummary(
+        summary=result.get("summary", ""),
+        key_points=result.get("key_points", []),
+        action_items=result.get("action_items", []),
+    )
 
 
 @router.post("/conversations/{conversation_id}/suggest-lead")

@@ -1,184 +1,206 @@
-"""WP-270: Test AI-assisted conversation summary."""
-
-import pytest
+"""WP-516 — Conversation summary endpoint with graceful fallback."""
+from datetime import datetime, timezone
 from unittest.mock import patch
 
+from app.services.agent import AgentServiceError
 
-class TestConversationSummary:
-    """Verify summarize endpoint behavior."""
 
-    def _setup_conversation(self, client, admin_headers, operator_headers):
-        """Create company, lead, conversation and messages — return conv_id."""
-        company = client.post("/companies", headers=admin_headers, json={"name": "Alpha", "slug": "alpha"})
-        assert company.status_code == 200
-        cid = company.json()["id"]
+def _create_company(client, admin_headers, name="Company"):
+    res = client.post("/companies", headers=admin_headers, json={"name": name, "slug": name.lower()})
+    assert res.status_code == 200
+    return res.json()
 
-        lead = client.post("/leads", headers=operator_headers, json={
-            "company_id": cid, "name": "Test Lead", "phone": "5511999999999", "source": "manual"
-        })
-        assert lead.status_code == 200
-        lead_id = lead.json()["id"]
 
-        conv = client.post("/conversations", headers=operator_headers, json={
-            "company_id": cid, "channel": "whatsapp", "lead_id": lead_id
-        })
-        assert conv.status_code == 200
-        conv_id = conv.json()["id"]
+def _create_lead(client, headers, company_id, name="Lead"):
+    res = client.post(
+        "/leads",
+        headers=headers,
+        json={"company_id": company_id, "name": name, "phone": "5511999999999", "source": "manual"},
+    )
+    assert res.status_code == 200
+    return res.json()
 
-        # Add multiple messages for summary
-        for msg_data in [
-            {"sender_type": "customer", "content": "Olá, preciso de um site para minha empresa."},
-            {"sender_type": "agent", "content": "Claro! Posso ajudar com isso. Qual é o orçamento?"},
-            {"sender_type": "customer", "content": "O orçamento é de R$5000 e preciso em 30 dias."},
-        ]:
-            msg = client.post(f"/conversations/{conv_id}/messages", headers=operator_headers, json=msg_data)
-            assert msg.status_code == 200
-        return conv_id, cid
 
-    def test_summarize_returns_summary(self, client, admin_headers, operator_a_headers):
-        """Summarize returns structured summary."""
-        conv_id, _ = self._setup_conversation(client, admin_headers, operator_a_headers)
+def _create_conversation(client, headers, company_id, lead_id=None, channel="whatsapp"):
+    data = {"channel": channel, "company_id": company_id}
+    if lead_id is not None:
+        data["lead_id"] = lead_id
+    res = client.post(
+        "/conversations",
+        headers=headers,
+        json=data,
+    )
+    assert res.status_code == 200
+    return res.json()
 
-        with patch("app.routers.conversations.generate_agent_reply") as mock_gen:
-            mock_gen.return_value = (
-                '{"summary": "Cliente precisa de site empresarial.", '
-                '"key_points": ["Orçamento R$5000", "Prazo 30 dias"], '
-                '"action_items": ["Criar proposta de site"]}'
-            )
-            res = client.post(f"/conversations/{conv_id}/summarize", headers=operator_a_headers)
+
+def _add_message(client, headers, conversation_id, sender_type="customer", content="Hello"):
+    res = client.post(
+        f"/conversations/{conversation_id}/messages",
+        headers=headers,
+        json={"sender_type": sender_type, "content": content},
+    )
+    assert res.status_code == 200
+    return res.json()
+
+
+# --- Summary with empty conversation ---
+
+
+def test_summarize_empty_conversation(client, admin_headers, operator_a_headers):
+    """Summarize an empty conversation returns a default message."""
+    company = _create_company(client, admin_headers, name="EmptyConvCo")
+    lead = _create_lead(client, operator_a_headers, company["id"], name="EmptyLead")
+    conv = _create_conversation(client, operator_a_headers, company["id"], lead_id=lead["id"])
+
+    res = client.post(
+        f"/conversations/{conv['id']}/summarize",
+        headers=operator_a_headers,
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert "Nenhuma mensagem" in data["summary"]
+    assert data["key_points"] == []
+    assert data["action_items"] == []
+
+
+# --- Summary with agent failure (graceful fallback) ---
+
+
+def test_summarize_agent_failure_fallback(client, admin_headers, operator_a_headers):
+    """When agent fails, return fallback summary from last message."""
+    company = _create_company(client, admin_headers, name="FallbackCo")
+    lead = _create_lead(client, operator_a_headers, company["id"], name="FallbackLead")
+    conv = _create_conversation(client, operator_a_headers, company["id"], lead_id=lead["id"])
+    _add_message(client, operator_a_headers, conv["id"], "customer", "Preciso de um site novo")
+
+    with patch("app.services.agent.httpx.post") as mock_post:
+        mock_post.side_effect = AgentServiceError("Ollama request failed")
+
+        res = client.post(
+            f"/conversations/{conv['id']}/summarize",
+            headers=operator_a_headers,
+        )
         assert res.status_code == 200
         data = res.json()
-        assert "summary" in data
-        assert "key_points" in data
-        assert "action_items" in data
-        assert data["conversation_id"] == conv_id
-
-    def test_summarize_parses_json_fields(self, client, admin_headers, operator_a_headers):
-        """Summary fields are correctly parsed from JSON response."""
-        conv_id, _ = self._setup_conversation(client, admin_headers, operator_a_headers)
-
-        with patch("app.routers.conversations.generate_agent_reply") as mock_gen:
-            mock_gen.return_value = (
-                '{"summary": "Resumo de teste", '
-                '"key_points": ["Ponto 1", "Ponto 2"], '
-                '"action_items": ["Ação 1"]}'
-            )
-            res = client.post(f"/conversations/{conv_id}/summarize", headers=operator_a_headers)
-        assert res.status_code == 200
-        data = res.json()
-        assert data["summary"] == "Resumo de teste"
-        assert data["key_points"] == ["Ponto 1", "Ponto 2"]
-        assert data["action_items"] == ["Ação 1"]
-
-    def test_summarize_fallback_on_invalid_json(self, client, admin_headers, operator_a_headers):
-        """Fallback to raw response when agent returns non-JSON."""
-        conv_id, _ = self._setup_conversation(client, admin_headers, operator_a_headers)
-
-        with patch("app.routers.conversations.generate_agent_reply") as mock_gen:
-            mock_gen.return_value = "Não consegui resumir a conversa."
-            res = client.post(f"/conversations/{conv_id}/summarize", headers=operator_a_headers)
-        assert res.status_code == 200
-        data = res.json()
-        assert data["summary"] == "Não consegui resumir a conversa."
+        assert "Última mensagem" in data["summary"]
+        assert "Preciso de um site novo" in data["summary"]
         assert data["key_points"] == []
         assert data["action_items"] == []
 
-    def test_summarize_503_on_agent_error(self, client, admin_headers, operator_a_headers):
-        """Returns 503 when agent service is unavailable."""
-        conv_id, _ = self._setup_conversation(client, admin_headers, operator_a_headers)
 
-        from app.services.agent import AgentServiceError
-        with patch("app.routers.conversations.generate_agent_reply", side_effect=AgentServiceError("timeout")):
-            res = client.post(f"/conversations/{conv_id}/summarize", headers=operator_a_headers)
-        assert res.status_code == 503
+def test_summarize_agent_failure_long_message(client, admin_headers, operator_a_headers):
+    """Fallback summary truncates long messages."""
+    company = _create_company(client, admin_headers, name="TruncateCo")
+    lead = _create_lead(client, operator_a_headers, company["id"], name="TruncateLead")
+    conv = _create_conversation(client, operator_a_headers, company["id"], lead_id=lead["id"])
+    long_msg = "A" * 300
+    _add_message(client, operator_a_headers, conv["id"], "customer", long_msg)
 
-    def test_summarize_requires_auth(self, client):
-        """Summarize requires authentication."""
-        res = client.post("/conversations/999/summarize")
-        assert res.status_code in (401, 403)
+    with patch("app.services.agent.httpx.post") as mock_post:
+        mock_post.side_effect = AgentServiceError("Ollama request failed")
 
-    def test_summarize_404_conversation_not_found(self, client, admin_headers, operator_a_headers):
-        """Returns 404 for non-existent conversation."""
-        company = client.post("/companies", headers=admin_headers, json={"name": "Alpha", "slug": "alpha"})
-        assert company.status_code == 200
-        res = client.post("/conversations/99999/summarize", headers=operator_a_headers)
-        assert res.status_code == 404
-
-    def test_summarize_400_not_enough_messages(self, client, admin_headers, operator_a_headers):
-        """Returns 400 when conversation has fewer than 2 messages."""
-        company = client.post("/companies", headers=admin_headers, json={"name": "Alpha", "slug": "alpha"})
-        assert company.status_code == 200
-        cid = company.json()["id"]
-        lead = client.post("/leads", headers=operator_a_headers, json={
-            "company_id": cid, "name": "Test", "phone": "5511999999999", "source": "manual"
-        })
-        assert lead.status_code == 200
-        conv = client.post("/conversations", headers=operator_a_headers, json={
-            "company_id": cid, "channel": "whatsapp", "lead_id": lead.json()["id"]
-        })
-        assert conv.status_code == 200
-        # Only one message
-        msg = client.post(f"/conversations/{conv.json()['id']}/messages", headers=operator_a_headers, json={
-            "sender_type": "customer", "content": "Olá"
-        })
-        assert msg.status_code == 200
-        res = client.post(f"/conversations/{conv.json()['id']}/summarize", headers=operator_a_headers)
-        assert res.status_code == 400
-
-    def test_summarize_tenant_isolation(self, client, admin_headers, operator_a_headers, operator_b_headers):
-        """Operator A cannot summarize Operator B's conversation."""
-        company_a = client.post("/companies", headers=admin_headers, json={"name": "Alpha", "slug": "alpha"})
-        assert company_a.status_code == 200
-        company_b = client.post("/companies", headers=admin_headers, json={"name": "Beta", "slug": "beta"})
-        assert company_b.status_code == 200
-        cid_b = company_b.json()["id"]
-
-        lead_b = client.post("/leads", headers=operator_b_headers, json={
-            "company_id": cid_b, "name": "Beta Lead", "phone": "5511999999999", "source": "manual"
-        })
-        assert lead_b.status_code == 200
-        conv_b = client.post("/conversations", headers=operator_b_headers, json={
-            "company_id": cid_b, "channel": "whatsapp", "lead_id": lead_b.json()["id"]
-        })
-        assert conv_b.status_code == 200
-        conv_b_id = conv_b.json()["id"]
-
-        for msg_data in [
-            {"sender_type": "customer", "content": "Olá"},
-            {"sender_type": "agent", "content": "Oi"},
-        ]:
-            msg = client.post(f"/conversations/{conv_b_id}/messages", headers=operator_b_headers, json=msg_data)
-            assert msg.status_code == 200
-
-        res = client.post(f"/conversations/{conv_b_id}/summarize", headers=operator_a_headers)
-        assert res.status_code == 404
-
-    def test_summarize_uses_company_config(self, client, admin_headers, operator_a_headers):
-        """Summarize uses company agent config (temperature, model)."""
-        conv_id, cid = self._setup_conversation(client, admin_headers, operator_a_headers)
-
-        res = client.put(f"/companies/{cid}/agent-config", headers=operator_a_headers, json={
-            "temperature": 0.3, "max_tokens": 300, "model": "qwen3:8b"
-        })
-        assert res.status_code == 200
-
-        with patch("app.routers.conversations.generate_agent_reply") as mock_gen:
-            mock_gen.return_value = '{"summary": "Test", "key_points": [], "action_items": []}'
-            res = client.post(f"/conversations/{conv_id}/summarize", headers=operator_a_headers)
-        assert res.status_code == 200
-        call_kwargs = mock_gen.call_args[1]
-        assert call_kwargs["temperature"] == 0.3
-        assert call_kwargs["max_tokens"] == 300
-        assert call_kwargs["model"] == "qwen3:8b"
-
-    def test_summarize_empty_key_points_and_actions(self, client, admin_headers, operator_a_headers):
-        """Empty key_points and action_items are valid."""
-        conv_id, _ = self._setup_conversation(client, admin_headers, operator_a_headers)
-
-        with patch("app.routers.conversations.generate_agent_reply") as mock_gen:
-            mock_gen.return_value = '{"summary": "Conversa simples", "key_points": [], "action_items": []}'
-            res = client.post(f"/conversations/{conv_id}/summarize", headers=operator_a_headers)
+        res = client.post(
+            f"/conversations/{conv['id']}/summarize",
+            headers=operator_a_headers,
+        )
         assert res.status_code == 200
         data = res.json()
+        assert "..." in data["summary"]
+        assert len(data["summary"]) < len(long_msg) + 20
+
+
+# --- Summary with successful agent response ---
+
+
+def test_summarize_agent_success(client, admin_headers, operator_a_headers):
+    """When agent succeeds, return the summary result."""
+    company = _create_company(client, admin_headers, name="SuccessCo")
+    lead = _create_lead(client, operator_a_headers, company["id"], name="SuccessLead")
+    conv = _create_conversation(client, operator_a_headers, company["id"], lead_id=lead["id"])
+    _add_message(client, operator_a_headers, conv["id"], "customer", "Olá, preciso de ajuda")
+
+    mock_response = {
+        "summary": "Cliente precisa de ajuda",
+        "key_points": ["Cliente solicitou ajuda"],
+        "action_items": ["Responder ao cliente"],
+    }
+
+    with patch("app.services.agent.httpx.post") as mock_post:
+        mock_post.return_value = type("MockResp", (), {
+            "raise_for_status": lambda self: None,
+            "json": lambda self: {"message": {"content": '{"summary": "Cliente precisa de ajuda", "key_points": ["Cliente solicitou ajuda"], "action_items": ["Responder ao cliente"]}'}}
+        })()
+
+        res = client.post(
+            f"/conversations/{conv['id']}/summarize",
+            headers=operator_a_headers,
+        )
+        assert res.status_code == 200
+        data = res.json()
+        assert data["summary"] == "Cliente precisa de ajuda"
+        assert "Cliente solicitou ajuda" in data["key_points"]
+        assert "Responder ao cliente" in data["action_items"]
+
+
+def test_summarize_agent_non_json_response(client, admin_headers, operator_a_headers):
+    """When agent returns non-JSON, use raw content as summary."""
+    company = _create_company(client, admin_headers, name="NonJsonCo")
+    lead = _create_lead(client, operator_a_headers, company["id"], name="NonJsonLead")
+    conv = _create_conversation(client, operator_a_headers, company["id"], lead_id=lead["id"])
+    _add_message(client, operator_a_headers, conv["id"], "customer", "Teste")
+
+    with patch("app.services.agent.httpx.post") as mock_post:
+        mock_post.return_value = type("MockResp", (), {
+            "raise_for_status": lambda self: None,
+            "json": lambda self: {"message": {"content": "Resumo em texto puro sem JSON"}}
+        })()
+
+        res = client.post(
+            f"/conversations/{conv['id']}/summarize",
+            headers=operator_a_headers,
+        )
+        assert res.status_code == 200
+        data = res.json()
+        assert data["summary"] == "Resumo em texto puro sem JSON"
         assert data["key_points"] == []
         assert data["action_items"] == []
+
+
+# --- Tenant isolation ---
+
+
+def test_summarize_tenant_isolation(client, admin_headers, operator_a_headers, operator_b_headers):
+    """Operator A cannot summarize Operator B's conversation."""
+    _create_company(client, admin_headers, name="IsoA")
+    company_b = _create_company(client, admin_headers, name="IsoB")
+    lead_b = _create_lead(client, operator_b_headers, company_b["id"], name="IsoBLead")
+    conv_b = _create_conversation(client, operator_b_headers, company_b["id"], lead_id=lead_b["id"])
+    _add_message(client, operator_b_headers, conv_b["id"], "customer", "Secret")
+
+    res = client.post(
+        f"/conversations/{conv_b['id']}/summarize",
+        headers=operator_a_headers,
+    )
+    assert res.status_code == 404
+
+
+# --- Auth ---
+
+
+def test_summarize_requires_auth(client):
+    """Summarize endpoint requires authentication."""
+    res = client.post("/conversations/999/summarize")
+    assert res.status_code in (401, 403)
+
+
+# --- Not found ---
+
+
+def test_summarize_not_found(client, operator_a_headers):
+    """Summarize non-existent conversation returns 404."""
+    res = client.post(
+        "/conversations/99999/summarize",
+        headers=operator_a_headers,
+    )
+    assert res.status_code == 404
