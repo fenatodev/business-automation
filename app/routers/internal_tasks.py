@@ -1,6 +1,7 @@
 """Operator-only creation/status for internal synthetic intake tasks."""
 import csv
 import io
+from datetime import datetime, timedelta, timezone
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
@@ -61,38 +62,55 @@ def create_task(trigger: ReviewQueueTrigger, db: Session = Depends(get_db),
 
 @router.get("/dashboard")
 def get_dashboard(
+    period: int | None = Query(default=None, ge=1, le=365, description="Filter metrics by last N days (7, 30, 90)"),
     db: Session = Depends(get_db),
     identity: AccessIdentity = Depends(require_operator),
 ):
-    """Aggregate dashboard counts for the authenticated tenant."""
+    """Aggregate dashboard counts for the authenticated tenant.
+
+    WP-517 — Optional period filter: when set, only counts records created
+    in the last N days.  Defaults to all-time when omitted.
+    """
     company_id = identity.company_id
 
+    cutoff = None
+    if period is not None:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=period)
+
+    def _cutoff_filter(model):
+        if cutoff is not None:
+            return model.created_at >= cutoff
+        return True
+
     # Opportunities by next_action
-    opp_rows = db.execute(
+    opp_query = (
         select(Opportunity.next_action, func.count(Opportunity.id))
-        .where(Opportunity.company_id == company_id)
+        .where(Opportunity.company_id == company_id, _cutoff_filter(Opportunity))
         .group_by(Opportunity.next_action)
-    ).all()
+    )
+    opp_rows = db.execute(opp_query).all()
     opportunities = {"total": sum(c for _, c in opp_rows)}
     for action, count in opp_rows:
         opportunities[action] = int(count)
 
     # Conversations by status
-    conv_rows = db.execute(
+    conv_query = (
         select(Conversation.status, func.count(Conversation.id))
-        .where(Conversation.company_id == company_id)
+        .where(Conversation.company_id == company_id, _cutoff_filter(Conversation))
         .group_by(Conversation.status)
-    ).all()
+    )
+    conv_rows = db.execute(conv_query).all()
     conversations = {"total": sum(c for _, c in conv_rows)}
     for status, count in conv_rows:
         conversations[status] = int(count)
 
     # Leads by status
-    lead_rows = db.execute(
+    lead_query = (
         select(Lead.status, func.count(Lead.id))
-        .where(Lead.company_id == company_id)
+        .where(Lead.company_id == company_id, _cutoff_filter(Lead))
         .group_by(Lead.status)
-    ).all()
+    )
+    lead_rows = db.execute(lead_query).all()
     leads = {"total": sum(c for _, c in lead_rows)}
     for status, count in lead_rows:
         leads[status] = int(count)
@@ -101,42 +119,46 @@ def get_dashboard(
     task_summary = tasks.task_summary(db, company_id)
 
     # Review queue summary
-    rq_rows = db.execute(
+    rq_query = (
         select(ReviewQueueItem.status, func.count(ReviewQueueItem.id))
-        .where(ReviewQueueItem.company_id == company_id)
+        .where(ReviewQueueItem.company_id == company_id, _cutoff_filter(ReviewQueueItem))
         .group_by(ReviewQueueItem.status)
-    ).all()
+    )
+    rq_rows = db.execute(rq_query).all()
     review_queue = {"total": sum(c for _, c in rq_rows)}
     for status, count in rq_rows:
         review_queue[status] = int(count)
 
     # WP-244 — Briefs by status (tenant-isolated via JOIN with Opportunity)
-    brief_rows = db.execute(
+    brief_query = (
         select(ProposalBrief.status, func.count(ProposalBrief.id))
         .join(Opportunity, ProposalBrief.opportunity_id == Opportunity.id)
-        .where(Opportunity.company_id == company_id)
+        .where(Opportunity.company_id == company_id, _cutoff_filter(ProposalBrief))
         .group_by(ProposalBrief.status)
-    ).all()
+    )
+    brief_rows = db.execute(brief_query).all()
     briefs = {"total": sum(c for _, c in brief_rows)}
     for status, count in brief_rows:
         briefs[status] = int(count)
 
     # WP-198 — Opportunities by source
-    opp_source_rows = db.execute(
+    opp_source_query = (
         select(Opportunity.source, func.count(Opportunity.id))
-        .where(Opportunity.company_id == company_id)
+        .where(Opportunity.company_id == company_id, _cutoff_filter(Opportunity))
         .group_by(Opportunity.source)
-    ).all()
+    )
+    opp_source_rows = db.execute(opp_source_query).all()
     opportunities_by_source = {"total": sum(c for _, c in opp_source_rows)}
     for source, count in opp_source_rows:
         opportunities_by_source[source] = int(count)
 
     # WP-199 — Leads by source
-    lead_source_rows = db.execute(
+    lead_source_query = (
         select(Lead.source, func.count(Lead.id))
-        .where(Lead.company_id == company_id)
+        .where(Lead.company_id == company_id, _cutoff_filter(Lead))
         .group_by(Lead.source)
-    ).all()
+    )
+    lead_source_rows = db.execute(lead_source_query).all()
     leads_by_source = {"total": sum(c for _, c in lead_source_rows)}
     for source, count in lead_source_rows:
         leads_by_source[source] = int(count)
@@ -195,7 +217,7 @@ def get_dashboard(
     from app.routers.opportunities import _calculate_priority_score
     all_opps = db.scalars(
         select(Opportunity)
-        .where(Opportunity.company_id == company_id)
+        .where(Opportunity.company_id == company_id, _cutoff_filter(Opportunity))
         .order_by(Opportunity.id)
     ).all()
     high_priority = []
@@ -219,7 +241,7 @@ def get_dashboard(
     activities = []
     for opp in db.scalars(
         select(Opportunity)
-        .where(Opportunity.company_id == company_id)
+        .where(Opportunity.company_id == company_id, _cutoff_filter(Opportunity))
         .order_by(Opportunity.created_at.desc())
         .limit(10)
     ).all():
@@ -231,7 +253,7 @@ def get_dashboard(
         })
     for conv in db.scalars(
         select(Conversation)
-        .where(Conversation.company_id == company_id)
+        .where(Conversation.company_id == company_id, _cutoff_filter(Conversation))
         .order_by(Conversation.created_at.desc())
         .limit(10)
     ).all():
@@ -243,7 +265,7 @@ def get_dashboard(
         })
     for lead in db.scalars(
         select(Lead)
-        .where(Lead.company_id == company_id)
+        .where(Lead.company_id == company_id, _cutoff_filter(Lead))
         .order_by(Lead.created_at.desc())
         .limit(10)
     ).all():
@@ -259,24 +281,26 @@ def get_dashboard(
     # WP-256 — Business performance metrics
     # Lead conversion rate: leads converted to customers / total leads
     total_leads = db.scalar(
-        select(func.count(Lead.id)).where(Lead.company_id == company_id)
+        select(func.count(Lead.id)).where(Lead.company_id == company_id, _cutoff_filter(Lead))
     ) or 0
     converted_leads = db.scalar(
         select(func.count(Lead.id)).where(
             Lead.company_id == company_id,
             Lead.status == "converted",
+            _cutoff_filter(Lead),
         )
     ) or 0
     lead_conversion_rate = (converted_leads / total_leads * 100) if total_leads > 0 else 0.0
 
     # Opportunity closure rate: done + lost / total opportunities
     total_opps = db.scalar(
-        select(func.count(Opportunity.id)).where(Opportunity.company_id == company_id)
+        select(func.count(Opportunity.id)).where(Opportunity.company_id == company_id, _cutoff_filter(Opportunity))
     ) or 0
     closed_opps = db.scalar(
         select(func.count(Opportunity.id)).where(
             Opportunity.company_id == company_id,
             Opportunity.next_action.in_(["done", "lost", "ignore"]),
+            _cutoff_filter(Opportunity),
         )
     ) or 0
     opportunity_closure_rate = (closed_opps / total_opps * 100) if total_opps > 0 else 0.0
@@ -285,7 +309,7 @@ def get_dashboard(
     total_briefs = db.scalar(
         select(func.count(ProposalBrief.id))
         .join(Opportunity, ProposalBrief.opportunity_id == Opportunity.id)
-        .where(Opportunity.company_id == company_id)
+        .where(Opportunity.company_id == company_id, _cutoff_filter(ProposalBrief))
     ) or 0
     approved_briefs = db.scalar(
         select(func.count(ProposalBrief.id))
@@ -293,6 +317,7 @@ def get_dashboard(
         .where(
             Opportunity.company_id == company_id,
             ProposalBrief.status == "approved",
+            _cutoff_filter(ProposalBrief),
         )
     ) or 0
     brief_approval_rate = (approved_briefs / total_briefs * 100) if total_briefs > 0 else 0.0
@@ -307,6 +332,7 @@ def get_dashboard(
     }
 
     return {
+        "period": period,
         "opportunities": opportunities,
         "conversations": conversations,
         "leads": leads,
