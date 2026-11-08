@@ -703,3 +703,25 @@ class ActivityFeedResponse(BaseModel):
     """Response for activity feed endpoint."""
 
     items: list[ActivityItem] = []
+
+
+# ---------------------------------------------------------------------------
+# WP-524 — Notifications
+# ---------------------------------------------------------------------------
+
+
+class NotificationItem(BaseModel):
+    """Single notification item."""
+
+    notification_type: str  # "new_opportunity", "brief_pending", "brief_approved", "brief_rejected"
+    entity_id: int
+    title: str
+    timestamp: datetime
+    read: bool = False
+
+
+class NotificationResponse(BaseModel):
+    """Response for notifications endpoint."""
+
+    notifications: list[NotificationItem] = []
+    unread_count: int = 0
