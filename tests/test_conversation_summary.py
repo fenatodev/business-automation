@@ -1,8 +1,13 @@
 """WP-516 — Conversation summary endpoint with graceful fallback."""
 from datetime import datetime, timezone
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
-from app.services.agent import AgentServiceError
+from app.services.agent import (
+    AgentServiceError,
+    _available_providers,
+    register_provider,
+    OllamaProvider,
+)
 
 
 def _create_company(client, admin_headers, name="Company"):
@@ -69,12 +74,15 @@ def test_summarize_empty_conversation(client, admin_headers, operator_a_headers)
 
 def test_summarize_agent_failure_fallback(client, admin_headers, operator_a_headers):
     """When agent fails, return fallback summary from last message."""
+    _available_providers.clear()
     company = _create_company(client, admin_headers, name="FallbackCo")
     lead = _create_lead(client, operator_a_headers, company["id"], name="FallbackLead")
     conv = _create_conversation(client, operator_a_headers, company["id"], lead_id=lead["id"])
     _add_message(client, operator_a_headers, conv["id"], "customer", "Preciso de um site novo")
 
-    with patch("app.services.agent.httpx.post") as mock_post:
+    provider = OllamaProvider()
+    register_provider("default", provider)
+    with patch("httpx.post") as mock_post:
         mock_post.side_effect = AgentServiceError("Ollama request failed")
 
         res = client.post(
@@ -91,13 +99,16 @@ def test_summarize_agent_failure_fallback(client, admin_headers, operator_a_head
 
 def test_summarize_agent_failure_long_message(client, admin_headers, operator_a_headers):
     """Fallback summary truncates long messages."""
+    _available_providers.clear()
     company = _create_company(client, admin_headers, name="TruncateCo")
     lead = _create_lead(client, operator_a_headers, company["id"], name="TruncateLead")
     conv = _create_conversation(client, operator_a_headers, company["id"], lead_id=lead["id"])
     long_msg = "A" * 300
     _add_message(client, operator_a_headers, conv["id"], "customer", long_msg)
 
-    with patch("app.services.agent.httpx.post") as mock_post:
+    provider = OllamaProvider()
+    register_provider("default", provider)
+    with patch("httpx.post") as mock_post:
         mock_post.side_effect = AgentServiceError("Ollama request failed")
 
         res = client.post(
@@ -115,22 +126,19 @@ def test_summarize_agent_failure_long_message(client, admin_headers, operator_a_
 
 def test_summarize_agent_success(client, admin_headers, operator_a_headers):
     """When agent succeeds, return the summary result."""
+    _available_providers.clear()
     company = _create_company(client, admin_headers, name="SuccessCo")
     lead = _create_lead(client, operator_a_headers, company["id"], name="SuccessLead")
     conv = _create_conversation(client, operator_a_headers, company["id"], lead_id=lead["id"])
     _add_message(client, operator_a_headers, conv["id"], "customer", "Olá, preciso de ajuda")
 
-    mock_response = {
-        "summary": "Cliente precisa de ajuda",
-        "key_points": ["Cliente solicitou ajuda"],
-        "action_items": ["Responder ao cliente"],
-    }
-
-    with patch("app.services.agent.httpx.post") as mock_post:
-        mock_post.return_value = type("MockResp", (), {
-            "raise_for_status": lambda self: None,
-            "json": lambda self: {"message": {"content": '{"summary": "Cliente precisa de ajuda", "key_points": ["Cliente solicitou ajuda"], "action_items": ["Responder ao cliente"]}'}}
-        })()
+    provider = OllamaProvider()
+    register_provider("default", provider)
+    with patch("httpx.post") as mock_post:
+        mock_resp = MagicMock()
+        mock_resp.raise_for_status.return_value = None
+        mock_resp.json.return_value = {"message": {"content": '{"summary": "Cliente precisa de ajuda", "key_points": ["Cliente solicitou ajuda"], "action_items": ["Responder ao cliente"]}'}}
+        mock_post.return_value = mock_resp
 
         res = client.post(
             f"/conversations/{conv['id']}/summarize",
@@ -145,16 +153,19 @@ def test_summarize_agent_success(client, admin_headers, operator_a_headers):
 
 def test_summarize_agent_non_json_response(client, admin_headers, operator_a_headers):
     """When agent returns non-JSON, use raw content as summary."""
+    _available_providers.clear()
     company = _create_company(client, admin_headers, name="NonJsonCo")
     lead = _create_lead(client, operator_a_headers, company["id"], name="NonJsonLead")
     conv = _create_conversation(client, operator_a_headers, company["id"], lead_id=lead["id"])
     _add_message(client, operator_a_headers, conv["id"], "customer", "Teste")
 
-    with patch("app.services.agent.httpx.post") as mock_post:
-        mock_post.return_value = type("MockResp", (), {
-            "raise_for_status": lambda self: None,
-            "json": lambda self: {"message": {"content": "Resumo em texto puro sem JSON"}}
-        })()
+    provider = OllamaProvider()
+    register_provider("default", provider)
+    with patch("httpx.post") as mock_post:
+        mock_resp = MagicMock()
+        mock_resp.raise_for_status.return_value = None
+        mock_resp.json.return_value = {"message": {"content": "Resumo em texto puro sem JSON"}}
+        mock_post.return_value = mock_resp
 
         res = client.post(
             f"/conversations/{conv['id']}/summarize",

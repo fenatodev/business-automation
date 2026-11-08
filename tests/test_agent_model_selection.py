@@ -41,7 +41,7 @@ def test_agent_service_accepts_model_parameter():
         code = f.read()
     assert "model: str | None = None" in code
     # Verify model is used in body
-    assert '"model": model if model else settings.ollama_model' in code
+    assert '"model": model_name' in code
 
 
 def test_agent_service_falls_back_to_default_model():
@@ -102,10 +102,8 @@ def test_agent_model_used_in_ollama_request():
     with open("app/services/agent.py") as f:
         code = f.read()
     # The model should be in the body dict
-    body_start = code.index('# Build request body')
-    body_section = code[body_start:body_start+300]
-    assert '"model":' in body_section
-    assert 'model if model else' in body_section
+    assert '"model": model_name' in code
+    assert 'model_name = model or self.default_model' in code
 
 
 def test_model_parameter_in_generate_agent_reply_signature():
