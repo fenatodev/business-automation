@@ -98,11 +98,11 @@ class TestConvertLeadBackend:
         customers_code = (pathlib.Path("app/routers/customers.py")).read_text()
         assert '@router.post("/leads/{lead_id}/convert")' in customers_code
 
-    def test_convert_sets_status_to_won(self):
-        """Convert endpoint sets lead status to 'won'."""
+    def test_convert_sets_status_to_converted(self):
+        """Convert endpoint sets lead status to 'converted'."""
         import pathlib
         customers_code = (pathlib.Path("app/routers/customers.py")).read_text()
-        assert 'lead.status = "won"' in customers_code
+        assert 'lead.status = "converted"' in customers_code
 
     def test_convert_creates_customer(self):
         """Convert endpoint creates a Customer from the Lead."""
@@ -117,8 +117,10 @@ class TestConvertLeadBackend:
         customers_code = (pathlib.Path("app/routers/customers.py")).read_text()
         assert "existing_customer" in customers_code or "already converted" in customers_code.lower()
 
-    def test_convert_returns_409_on_duplicate(self):
-        """Convert endpoint returns 409 if lead already converted."""
+    def test_convert_is_idempotent(self):
+        """Convert endpoint is idempotent: returns existing customer instead of 409."""
         import pathlib
         customers_code = (pathlib.Path("app/routers/customers.py")).read_text()
-        assert "409" in customers_code
+        # Returns existing customer rather than raising 409
+        assert "existing_customer" in customers_code
+        assert "return existing_customer" in customers_code

@@ -351,7 +351,9 @@ def test_convert_lead_to_customer_success(
         f"/leads/{lead['id']}/convert",
         headers=operator_a_headers,
     )
-    assert second.status_code == 409
+    # Idempotent: returns existing customer instead of 409
+    assert second.status_code == 200
+    assert second.json()["id"] == data["id"]
 
 
 def test_create_conversation_rules_are_tenant_safe(
