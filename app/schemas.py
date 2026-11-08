@@ -737,6 +737,8 @@ class JobCreate(BaseModel):
 
     task_type: str = "generic"
     payload: dict[str, object] = {}
+    max_retries: int = 3
+    backoff_multiplier: float = 2.0
 
 
 class JobStatusResponse(BaseModel):
@@ -750,6 +752,19 @@ class JobStatusResponse(BaseModel):
     created_at: str
     started_at: str | None = None
     completed_at: str | None = None
+    # WP-540 — retry fields
+    retry_count: int = 0
+    max_retries: int = 3
+    next_retry_at: str | None = None
+
+
+class JobRetryConfig(BaseModel):
+    """Configuration for job retry."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    max_retries: int = 3
+    backoff_multiplier: float = 2.0
 
 
 class JobListResponse(BaseModel):
