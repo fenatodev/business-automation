@@ -272,6 +272,10 @@ run_agent() {
       # Read the task file content and pass it as --task argument
       local task_content
       task_content="$(<"$TASK_FILE")"
+      # Export JUNIE_API_KEY if set, so the agent subprocess can authenticate
+      if [[ -n "${JUNIE_API_KEY:-}" ]]; then
+        export JUNIE_API_KEY
+      fi
       "$AGENT_BIN" --task="$task_content" "${args[@]}" > "$last_message" 2>&1
       ;;
     stdin)
