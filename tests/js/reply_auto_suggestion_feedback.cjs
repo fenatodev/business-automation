@@ -51,7 +51,9 @@ async function run() {
   let resolveFetch;
   const pending = setup(() => new Promise(resolve => { resolveFetch = resolve; }));
   const request = pending.$('conv-reply-toggle').click();
+  assert.equal(pending.$('reply-auto-suggestion-status').textContent, 'Gerando sugestão...');
   pending.$('reply-message').value = 'Rascunho do operador';
+  pending.$('reply-message').input();
   resolveFetch({status: 503, ok: false});
   await request;
   assert.equal(pending.$('reply-message').value, 'Rascunho do operador');
@@ -63,6 +65,15 @@ async function run() {
   edited.$('reply-message').input();
   assert.equal(edited.$('reply-auto-suggestion-status').textContent, '');
   assert.equal(edited.$('reply-template-insert-status').textContent, '');
+
+  const successful = setup(async () => ({
+    status: 200,
+    ok: true,
+    json: async () => ({suggestion: 'Resposta sugerida'}),
+  }));
+  await successful.$('conv-reply-toggle').click();
+  assert.equal(successful.$('reply-message').value, 'Resposta sugerida');
+  assert.equal(successful.$('reply-auto-suggestion-status').textContent, '');
 }
 
 run().catch(error => { console.error(error); process.exitCode = 1; });

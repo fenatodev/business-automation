@@ -2971,6 +2971,7 @@
       suggestionStatus.textContent = "";
       const convId = $("reply-conv-id").value;
       if (convId && !$("reply-message").value) {
+        suggestionStatus.textContent = "Gerando sugestão...";
         const id = parseInt(convId, 10);
         try {
           const res = await fetch("/conversations/" + id + "/suggest-reply", {
@@ -2995,6 +2996,7 @@
             // WP-507 — Ignore late suggestions after the operator edits or changes conversations.
             if (!isCurrent()) return;
             $("reply-message").value = data.suggestion;
+            suggestionStatus.textContent = "";
             $("reply-template-insert-status").textContent = "";
           } else if (isCurrent()) {
             suggestionStatus.textContent = "Não foi possível gerar uma sugestão. Você pode escrever a resposta manualmente.";
