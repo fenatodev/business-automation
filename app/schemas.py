@@ -483,6 +483,15 @@ class ProposalBriefSuggestion(BaseModel):
     risks: str | None = None
 
 
+class ProposalBriefDecision(BaseModel):
+    """Operator decision for a proposal brief (approve or reject with optional note)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    decision: Literal["approve", "reject"]
+    operator_note: str | None = Field(default=None, max_length=2000)
+
+
 class CommercialIntakeEvaluateRequest(BaseModel):
     """Request body for the private commercial intake evaluate endpoint.
 
