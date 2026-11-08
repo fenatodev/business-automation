@@ -3023,6 +3023,8 @@
             "Content-Type": "application/json",
           },
         });
+        const isCurrent = () => $("reply-conv-id").value === convId;
+        if (!isCurrent()) return;
         if (res.status === 400) {
           notify("Nenhuma mensagem do cliente nesta conversa.", true);
           return;
@@ -3036,11 +3038,14 @@
           return;
         }
         const data = await res.json();
+        if (!isCurrent()) return;
         $("conv-suggestion-text").textContent = data.suggestion;
         $("conv-suggestion").hidden = false;
         notify("Sugestão gerada.");
       } catch (e) {
-        notify("Erro ao solicitar sugestão.", true);
+        if ($("reply-conv-id").value === convId) {
+          notify("Erro ao solicitar sugestão.", true);
+        }
       }
     });
   });
