@@ -223,6 +223,22 @@ class Opportunity(Base):
         Text,
         nullable=True,
     )
+    outcome: Mapped[str | None] = mapped_column(
+        String(20),
+        nullable=True,
+    )
+    reason: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+    final_value: Mapped[str | None] = mapped_column(
+        String(120),
+        nullable=True,
+    )
+    closed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
