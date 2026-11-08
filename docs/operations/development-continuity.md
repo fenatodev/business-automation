@@ -1,5 +1,13 @@
 # Continuidade do desenvolvimento — Codex ou Junie
 
+## WP-510 — Ignorar sugestão de resposta de outra conversa (07/11/2026)
+
+Uma sugestão explícita que termina após a troca de conversa agora é descartada,
+inclusive se a seleção mudar durante a leitura do JSON. Erros atrasados também
+não exibem avisos na conversa atual. Teste sintético controla as duas etapas
+assíncronas do handler; sem mudanças de API, autorização, persistência, schema,
+migrations, integrações ou serviços externos.
+
 ## WP-506 — Preservar rascunho ao abrir resposta (07/11/2026)
 
 A sugestão automática ao abrir o formulário agora só é solicitada quando o
