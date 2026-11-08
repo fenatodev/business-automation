@@ -134,6 +134,95 @@ def agent_reply(
     }
 
 
+@router.post("/conversations/{conversation_id}/agent-reply-async")
+def agent_reply_async(
+    conversation_id: int,
+    data: AgentRequest,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """WP-533 — Async agent reply: create job and return immediately.
+
+    The job generates the reply in the background. Client polls job status
+    to get the result.
+    """
+    from app.services.job_queue import job_queue
+
+    conversation = _get_tenant_conversation(
+        db,
+        conversation_id,
+        identity.company_id,
+    )
+
+    # Persist customer message first
+    customer_message = Message(
+        conversation_id=conversation.id,
+        sender_type="customer",
+        content=data.content,
+    )
+    db.add(customer_message)
+    db.commit()
+
+    # Build history for the job
+    history_messages = db.scalars(
+        select(Message)
+        .where(Message.conversation_id == conversation.id)
+        .order_by(Message.id)
+    ).all()
+    history = [
+        {"sender_type": item.sender_type, "content": item.content}
+        for item in history_messages
+    ]
+
+    # Load company agent config
+    from app.routers.companies import _agent_config_store
+
+    company_config = _agent_config_store.get(identity.company_id, {})
+    effective_prompt = data.system_prompt or company_config.get("system_prompt")
+    effective_temp = data.temperature if data.temperature is not None else company_config.get("temperature")
+    effective_max_tokens = data.max_tokens if data.max_tokens is not None else company_config.get("max_tokens")
+    effective_model = data.model if data.model is not None else company_config.get("model")
+
+    # Create async job
+    job = job_queue.create_job(
+        task_type="agent_reply",
+        company_id=identity.company_id,
+        payload={
+            "conversation_id": conversation.id,
+            "message": data.content,
+            "history": history,
+            "system_prompt": effective_prompt,
+            "temperature": effective_temp,
+            "max_tokens": effective_max_tokens,
+            "model": effective_model,
+            "_company_id": identity.company_id,
+        },
+    )
+
+    def _run_reply(payload):
+        from app.services.agent import generate_agent_reply
+        from app.routers.companies import _record_agent_call
+
+        reply = generate_agent_reply(
+            message=payload["message"],
+            history=payload["history"],
+            system_prompt=payload.get("system_prompt"),
+            temperature=payload.get("temperature"),
+            max_tokens=payload.get("max_tokens"),
+            model=payload.get("model"),
+        )
+        _record_agent_call(payload.get("_company_id"), success=True)
+        return reply
+
+    job_queue.execute_job(job.job_id, _run_reply, _async=True)
+
+    return {
+        "job_id": job.job_id,
+        "status": job.status.value,
+        "conversation_id": conversation.id,
+    }
+
+
 @router.post("/conversations/{conversation_id}/suggest-reply")
 def suggest_reply(
     conversation_id: int,
