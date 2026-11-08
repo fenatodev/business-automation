@@ -199,6 +199,9 @@ def test_provider_switching():
         def health_check(self):
             return {"provider": "custom", "status": "healthy"}
 
+        def suggest_triage(self, history):
+            return {"next_action": "follow_up", "confidence": 0.5, "reason": "Custom"}
+
     register_provider("default", CustomProvider())
     result2 = generate_agent_reply("test", [])
     assert result2 == "CUSTOM_REPLY"

@@ -808,3 +808,16 @@ class ScheduledJobListResponse(BaseModel):
     """Response for listing scheduled jobs."""
 
     jobs: list[ScheduledJobStatus] = []
+
+
+# ---------------------------------------------------------------------------
+# WP-543 — Auto-triage schemas
+# ---------------------------------------------------------------------------
+
+
+class TriageSuggestion(BaseModel):
+    """AI-suggested triage action for a conversation."""
+
+    next_action: str  # "qualify", "schedule_demo", "send_proposal", "follow_up", "transfer_human", "close_conversation"
+    confidence: float
+    reason: str

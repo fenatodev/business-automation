@@ -29,6 +29,16 @@ _SUMMARY_SYSTEM_PROMPT = (
 )
 
 
+_TRIAGE_SYSTEM_PROMPT = (
+    "Analise a conversa a seguir e sugira a melhor próxima ação de triagem. "
+    "Retorne um JSON com as chaves 'next_action' (uma das: "
+    "'qualify', 'schedule_demo', 'send_proposal', 'follow_up', "
+    "'transfer_human', 'close_conversation'), "
+    "'confidence' (float entre 0 e 1) e "
+    "'reason' (explicação curta em português)."
+)
+
+
 class AgentProvider(ABC):
     """Abstract interface for AI agent providers."""
 
@@ -60,6 +70,13 @@ class AgentProvider(ABC):
         """Check if the provider is available.
 
         Returns a dict with 'provider', 'status' and optional 'details'.
+        """
+
+    @abstractmethod
+    def suggest_triage(self, history: list[dict]) -> dict:
+        """Suggest triage action for a conversation.
+
+        Returns a dict with 'next_action', 'confidence' and 'reason'.
         """
 
 
@@ -224,6 +241,42 @@ class OllamaProvider(AgentProvider):
                 "details": {"error": str(exc)},
             }
 
+    def suggest_triage(self, history: list[dict]) -> dict:
+        messages = [{"role": "system", "content": _TRIAGE_SYSTEM_PROMPT}]
+        role_map = {
+            "customer": "user",
+            "agent": "assistant",
+            "human": "assistant",
+            "system": "system",
+        }
+        for item in history:
+            messages.append(
+                {
+                    "role": role_map.get(item["sender_type"], "user"),
+                    "content": item["content"],
+                }
+            )
+        messages.append({"role": "user", "content": "Sugira a próxima ação de triagem."})
+
+        content = self._chat(messages)
+
+        try:
+            parsed = _json.loads(content)
+            if isinstance(parsed, dict):
+                return {
+                    "next_action": parsed.get("next_action", "follow_up"),
+                    "confidence": float(parsed.get("confidence", 0.5)),
+                    "reason": parsed.get("reason", "Análise automática"),
+                }
+        except (_json.JSONDecodeError, ValueError):
+            pass
+
+        return {
+            "next_action": "follow_up",
+            "confidence": 0.5,
+            "reason": content[:200] if content else "Análise automática",
+        }
+
 
 class NoopProvider(AgentProvider):
     """No-op provider that returns placeholder responses (for testing/fallback)."""
@@ -255,6 +308,13 @@ class NoopProvider(AgentProvider):
             "provider": "noop",
             "status": "healthy",
             "details": {"note": "No-op provider always healthy"},
+        }
+
+    def suggest_triage(self, history: list[dict]) -> dict:
+        return {
+            "next_action": "follow_up",
+            "confidence": 0.5,
+            "reason": "[Triagem indisponível — agente desativado]",
         }
 
 
@@ -338,3 +398,14 @@ def generate_agent_reply(
         max_tokens=max_tokens,
         model=model,
     )
+
+
+def suggest_triage(history: list[dict]) -> dict:
+    """Suggest triage action for a conversation.
+
+    Returns a dict with 'next_action', 'confidence' and 'reason'.
+    Raises AgentServiceError on failure.
+    """
+    _ensure_default_provider()
+    provider = get_provider()
+    return provider.suggest_triage(history)
