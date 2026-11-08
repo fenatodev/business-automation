@@ -400,10 +400,7 @@ def convert_lead_to_customer(
     )
 
     if existing_customer:
-        raise HTTPException(
-            status_code=409,
-            detail="Lead already converted to customer",
-        )
+        return existing_customer
 
     customer = Customer(
         company_id=identity.company_id,
@@ -412,9 +409,22 @@ def convert_lead_to_customer(
         phone=lead.phone,
     )
 
-    lead.status = "won"
+    lead.status = "converted"
 
     db.add(customer)
+    db.flush()
+
+    # Link conversations: set customer_id on conversations that reference this lead
+    from app.models import Conversation
+    conversations = db.scalars(
+        select(Conversation).where(
+            Conversation.company_id == identity.company_id,
+            Conversation.lead_id == lead.id,
+        )
+    ).all()
+    for conv in conversations:
+        conv.customer_id = customer.id
+
     db.commit()
     db.refresh(customer)
 
