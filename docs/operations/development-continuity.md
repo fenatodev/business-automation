@@ -1,5 +1,12 @@
 # Continuidade do desenvolvimento — Codex ou Junie
 
+## WP-511 — Feedback durante sugestão automática de resposta (07/11/2026)
+
+O formulário anuncia “Gerando sugestão...” enquanto aguarda a sugestão
+automática e limpa o estado ao aplicá-la. Testes sintéticos cobrem carregamento,
+sucesso e edição durante solicitação. Sem mudanças de API, autorização,
+persistência, schema, migrations, integrações ou serviços externos.
+
 ## WP-510 — Ignorar sugestão de resposta de outra conversa (07/11/2026)
 
 Uma sugestão explícita que termina após a troca de conversa agora é descartada,
