@@ -2,7 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+import csv
+import io
 from fastapi import Query
+from fastapi.responses import Response
 from sqlalchemy import func
 from app.auth import AccessIdentity
 from app.dependencies import get_db, require_admin, require_operator
@@ -532,3 +535,118 @@ def get_activity_feed(
     items = items[:limit]
 
     return ActivityFeedResponse(items=items)
+
+
+@router.get("/companies/{company_id}/report")
+def export_dashboard_report(
+    company_id: int,
+    period: str = Query("7d", pattern=r"^(7d|30d|90d)$", description="Time period: 7d, 30d, or 90d"),
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Export dashboard metrics as CSV.
+
+    Returns a CSV with consolidated metrics: opportunities, conversations,
+    leads, customers, and briefs counts for the specified period.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    company = db.scalar(select(Company).where(Company.id == company_id))
+    if company is None:
+        raise HTTPException(status_code=404, detail="Company not found")
+    if company.id != identity.company_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    days = {"7d": 7, "30d": 30, "90d": 90}[period]
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+
+    # Count opportunities
+    total_opps = db.scalar(
+        select(func.count(Opportunity.id))
+        .where(Opportunity.company_id == company_id)
+    ) or 0
+    recent_opps = db.scalar(
+        select(func.count(Opportunity.id))
+        .where(Opportunity.company_id == company_id)
+        .where(Opportunity.created_at >= cutoff)
+    ) or 0
+    closed_opps = db.scalar(
+        select(func.count(Opportunity.id))
+        .where(Opportunity.company_id == company_id)
+        .where(Opportunity.closed_at.isnot(None))
+    ) or 0
+    won_opps = db.scalar(
+        select(func.count(Opportunity.id))
+        .where(Opportunity.company_id == company_id)
+        .where(Opportunity.outcome == "won")
+    ) or 0
+
+    # Count conversations
+    total_convs = db.scalar(
+        select(func.count(Conversation.id))
+        .where(Conversation.company_id == company_id)
+    ) or 0
+    open_convs = db.scalar(
+        select(func.count(Conversation.id))
+        .where(Conversation.company_id == company_id)
+        .where(Conversation.status == "open")
+    ) or 0
+
+    # Count leads
+    total_leads = db.scalar(
+        select(func.count(Lead.id))
+        .where(Lead.company_id == company_id)
+    ) or 0
+    converted_leads = db.scalar(
+        select(func.count(Lead.id))
+        .where(Lead.company_id == company_id)
+        .where(Lead.status == "converted")
+    ) or 0
+
+    # Count customers
+    total_customers = db.scalar(
+        select(func.count(Customer.id))
+        .where(Customer.company_id == company_id)
+    ) or 0
+
+    # Count briefs
+    total_briefs = db.scalar(
+        select(func.count(ProposalBrief.id))
+        .join(Opportunity)
+        .where(Opportunity.company_id == company_id)
+    ) or 0
+    approved_briefs = db.scalar(
+        select(func.count(ProposalBrief.id))
+        .join(Opportunity)
+        .where(Opportunity.company_id == company_id)
+        .where(ProposalBrief.status == "approved")
+    ) or 0
+
+    # Build CSV
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["metric", "value"])
+    writer.writerow(["period", period])
+    writer.writerow(["total_opportunities", total_opps])
+    writer.writerow(["recent_opportunities", recent_opps])
+    writer.writerow(["closed_opportunities", closed_opps])
+    writer.writerow(["won_opportunities", won_opps])
+    writer.writerow(["total_conversations", total_convs])
+    writer.writerow(["open_conversations", open_convs])
+    writer.writerow(["total_leads", total_leads])
+    writer.writerow(["converted_leads", converted_leads])
+    writer.writerow(["total_customers", total_customers])
+    writer.writerow(["total_briefs", total_briefs])
+    writer.writerow(["approved_briefs", approved_briefs])
+
+    csv_content = output.getvalue()
+    output.close()
+
+    return Response(
+        content=csv_content.encode("utf-8"),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename=dashboard_report_{period}.csv",
+            "Content-Type": "text/csv; charset=utf-8",
+        },
+    )
