@@ -638,3 +638,26 @@ class InternalTaskOut(BaseModel):
     result: dict[str, int] | None = None
     error_code: str | None = None
     created_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# WP-520 — Global search
+# ---------------------------------------------------------------------------
+
+
+class GlobalSearchResult(BaseModel):
+    """Single result from global search."""
+
+    entity_type: str  # "opportunity", "conversation", "lead", "customer"
+    entity_id: int
+    title: str
+    snippet: str | None = None
+
+
+class GlobalSearchResponse(BaseModel):
+    """Response for global search endpoint."""
+
+    opportunities: list[GlobalSearchResult] = []
+    conversations: list[GlobalSearchResult] = []
+    leads: list[GlobalSearchResult] = []
+    customers: list[GlobalSearchResult] = []
