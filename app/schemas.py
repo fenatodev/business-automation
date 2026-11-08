@@ -661,3 +661,25 @@ class GlobalSearchResponse(BaseModel):
     conversations: list[GlobalSearchResult] = []
     leads: list[GlobalSearchResult] = []
     customers: list[GlobalSearchResult] = []
+
+
+# ---------------------------------------------------------------------------
+# WP-521 — Favorites
+# ---------------------------------------------------------------------------
+
+
+class FavoriteToggle(BaseModel):
+    """Toggle favorite status for an entity."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    favorited: bool
+
+
+class FavoriteResponse(BaseModel):
+    """Response for favorite toggle."""
+
+    entity_type: str  # "opportunity" or "conversation"
+    entity_id: int
+    favorited: bool
+    favorited_at: datetime | None = None
