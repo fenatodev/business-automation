@@ -17,6 +17,8 @@ from app.schemas import (
     CompanyCreate,
     GlobalSearchResponse,
     GlobalSearchResult,
+    NotificationItem,
+    NotificationResponse,
     ReplyTemplate,
     ReplyTemplateCreate,
 )
@@ -649,4 +651,102 @@ def export_dashboard_report(
             "Content-Disposition": f"attachment; filename=dashboard_report_{period}.csv",
             "Content-Type": "text/csv; charset=utf-8",
         },
+    )
+
+
+@router.get("/companies/{company_id}/notifications")
+def get_notifications(
+    company_id: int,
+    since: str | None = Query(None, description="Only notifications after this ISO timestamp"),
+    limit: int = Query(20, ge=1, le=100, description="Max notifications"),
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Get notifications for this company.
+
+    Returns notifications based on recent activity: new opportunities,
+    briefs pending review, briefs approved/rejected.
+    """
+    from datetime import datetime, timezone
+
+    company = db.scalar(select(Company).where(Company.id == company_id))
+    if company is None:
+        raise HTTPException(status_code=404, detail="Company not found")
+    if company.id != identity.company_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    since_dt = None
+    if since:
+        try:
+            since_dt = datetime.fromisoformat(since.replace("Z", "+00:00"))
+        except (ValueError, AttributeError):
+            pass
+
+    notifications: list[NotificationItem] = []
+
+    # Briefs pending review
+    pending_briefs = db.scalars(
+        select(ProposalBrief)
+        .join(Opportunity)
+        .where(Opportunity.company_id == company_id)
+        .where(ProposalBrief.status == "draft")
+        .where(ProposalBrief.created_at >= since_dt if since_dt else True)
+        .order_by(ProposalBrief.created_at.desc())
+    ).all()
+    for brief in pending_briefs:
+        opp = db.scalar(select(Opportunity).where(Opportunity.id == brief.opportunity_id))
+        notifications.append(NotificationItem(
+            notification_type="brief_pending",
+            entity_id=brief.id,
+            title=f"Brief pendente: {opp.title if opp else 'N/A'}",
+            timestamp=brief.created_at,
+        ))
+
+    # Briefs approved/rejected
+    decided_briefs = db.scalars(
+        select(ProposalBrief)
+        .join(Opportunity)
+        .where(Opportunity.company_id == company_id)
+        .where(ProposalBrief.decided_at.isnot(None))
+        .where(ProposalBrief.decided_at >= since_dt if since_dt else True)
+        .order_by(ProposalBrief.decided_at.desc())
+    ).all()
+    for brief in decided_briefs:
+        opp = db.scalar(select(Opportunity).where(Opportunity.id == brief.opportunity_id))
+        status_label = "aprovado" if brief.status == "approved" else "rejeitado"
+        notifications.append(NotificationItem(
+            notification_type="brief_approved" if brief.status == "approved" else "brief_rejected",
+            entity_id=brief.id,
+            title=f"Brief {status_label}: {opp.title if opp else 'N/A'}",
+            timestamp=brief.decided_at,
+        ))
+
+    # New opportunities (last 24h)
+    from datetime import timedelta
+    recent_cutoff = datetime.now(timezone.utc) - timedelta(days=1)
+    if since_dt:
+        recent_cutoff = max(recent_cutoff, since_dt)
+    new_opps = db.scalars(
+        select(Opportunity)
+        .where(Opportunity.company_id == company_id)
+        .where(Opportunity.created_at >= recent_cutoff)
+        .order_by(Opportunity.created_at.desc())
+    ).all()
+    for opp in new_opps:
+        notifications.append(NotificationItem(
+            notification_type="new_opportunity",
+            entity_id=opp.id,
+            title=f"Nova oportunidade: {opp.title}",
+            timestamp=opp.created_at,
+        ))
+
+    # Sort by timestamp descending and limit
+    notifications.sort(key=lambda x: x.timestamp, reverse=True)
+    notifications = notifications[:limit]
+
+    unread = [n for n in notifications if n.read is False]
+
+    return NotificationResponse(
+        notifications=notifications,
+        unread_count=len(unread),
     )
