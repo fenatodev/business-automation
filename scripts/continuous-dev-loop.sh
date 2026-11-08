@@ -13,10 +13,13 @@
 #   BA_AGENT_KIND=stdin                       (fallback; reads task from stdin)
 #   BA_AGENT_ARGS="--flag1 --flag2"           (optional extra arguments)
 #
+# For Junie CLI, authentication is required. Set one of:
+#   JUNIE_API_KEY=your_api_key
+#   Or pass --auth via BA_AGENT_ARGS: BA_AGENT_ARGS="--auth your_api_key"
+#
 # Examples:
-#   BA_AGENT_BIN=junie scripts/continuous-dev-loop.sh
+#   JUNIE_API_KEY=sk-... BA_AGENT_BIN=scripts/junie-wrapper.sh scripts/continuous-dev-loop.sh
 #   BA_AGENT_BIN=antigravity scripts/continuous-dev-loop.sh
-#   BA_AGENT_BIN=codex BA_AGENT_KIND=codex scripts/continuous-dev-loop.sh
 #
 # The agent receives the task prompt via stdin and must report one of:
 #   PR_READY   — PR opened, ready for CI and merge
@@ -49,6 +52,7 @@ worktree, an open agent PR, or a real blocking condition.
 
 Required environment:
   BA_AGENT_BIN=/path/to/agent   Agent executable (required)
+  For Junie CLI: set JUNIE_API_KEY or use BA_AGENT_ARGS="--auth <key>"
 
 Optional environment:
   BA_AGENT_KIND=junie           Agent mode (default: junie, uses --task flag)
