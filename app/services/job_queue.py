@@ -19,6 +19,16 @@ class JobStatus(str, Enum):
     FAILED = "failed"
 
 
+def _persist_job(job: Job):
+    """Persist a job to the SQLite store (WP-541)."""
+    try:
+        from app.services.job_store import job_store
+        job_store.save(job)
+    except Exception:
+        # Persistence failure should not break the queue
+        pass
+
+
 class Job:
     def __init__(
         self,
@@ -70,6 +80,7 @@ class JobQueue:
             backoff_multiplier=backoff_multiplier,
         )
         self._jobs[job.job_id] = job
+        _persist_job(job)
         return job
 
     def get_job(self, job_id: str) -> Job | None:
@@ -136,6 +147,7 @@ class JobQueue:
                 job.status = JobStatus.FAILED
         if job.status in (JobStatus.COMPLETED, JobStatus.FAILED):
             job.completed_at = datetime.now(timezone.utc)
+        _persist_job(job)
         return job
 
     @staticmethod
@@ -191,6 +203,7 @@ class JobQueue:
         job.started_at = None
         job.completed_at = None
         job.next_retry_at = None
+        _persist_job(job)
         return job
 
 
