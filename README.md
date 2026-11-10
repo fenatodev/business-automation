@@ -51,7 +51,36 @@ O projeto tem dois objetivos complementares:
 - Consolidated dashboard CSV export (WP-275) — single CSV with all dashboard metrics;
 - Opportunity progress bar (WP-276) — visual cycle progress indicator in opportunity detail panel;
 - Failed tasks badge in notifications (WP-277) — failed internal tasks appear in notification polling and task section badge;
-- 3130 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
+- Create conversation from opportunity (WP-278) — form with AI-assisted message suggestion in opportunity detail panel;
+- AI-assisted lead suggestion from conversation (WP-267) — `POST /conversations/{id}/suggest-lead` extracts lead info from messages;
+- AI-assisted customer suggestion from conversation (WP-268) — `POST /conversations/{id}/suggest-customer` extracts customer info from messages;
+- AI-assisted opportunity suggestion from conversation (WP-269) — `POST /conversations/{id}/suggest-opportunity` extracts opportunity info from messages;
+- AI-assisted opportunity suggestion from lead (WP-271) — `POST /leads/{id}/suggest-opportunity` generates opportunity fields from lead data;
+- AI-assisted opportunity suggestion from customer (WP-272) — `POST /customers/{id}/suggest-opportunity` generates opportunity fields from customer data;
+- AI-assisted lead suggestion from customer (WP-273) — `POST /customers/{id}/suggest-lead` generates lead fields from customer data;
+- AI-assisted conversation message suggestion (WP-274) — `POST /conversations/suggest-message` suggests opening message for new conversations;
+- Conversation summary by AI — `POST /conversations/{id}/summarize` generates summary, key points, and action items;
+- Opportunity priority score (WP-238) — auto-calculated 0-100 score based on deadline, budget, status, source;
+- Opportunity priority filter (WP-266) — `?priority_level=` (high/medium/low) in list, count, export CSV;
+- Opportunity priority in export CSV (WP-246) — includes score and level columns;
+- High priority opportunities in dashboard (WP-239) — shows urgent opportunities on dashboard;
+- Bulk AI triage suggestion (WP-247/249) — `POST /opportunities/bulk-suggest-triage` for 1-100 opportunities;
+- AI brief suggestion (WP-240/241) — `POST /opportunities/{id}/suggest-brief` with UI button and auto-fill;
+- Briefs metrics in dashboard (WP-244) — brief count by status on dashboard;
+- Briefs ready for review in next actions (WP-245) — alerts operator to briefs needing review;
+- Detailed brief export CSV (WP-250) — 12 columns including diagnosis, scope, deliverables, criteria;
+- Browser title notification badge — shows pending count in browser tab title;
+- Auto AI suggestion on reply form (WP-252) — loads AI suggestion when opening reply form;
+- Section keyboard shortcuts (WP-253) — Ctrl+1-7 navigates between operator sections;
+- Lead source filter (WP-277) — `?source=` in GET /leads with UI dropdown;
+- Opportunity priority filter in UI (WP-266) — dropdown for filtering by high/medium/low priority;
+- Conversation triage suggestion — `POST /conversations/{id}/suggest-triage` suggests next action for conversations;
+- Follow-up tasks — automatic follow-up task creation based on conversation context;
+- Scheduled jobs — cron-like periodic tasks for recurring operations;
+- SQLite job persistence — durable storage for scheduled jobs;
+- Conversation escalation rules — automatic escalation based on response time and priority;
+- Auto-triage for conversations — AI suggests triage action when conversation is created;
+- 3641 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
 
 ## Engineering case study
 
@@ -64,7 +93,7 @@ The useful part of this project is not the idea of "AI for business". It is the 
 | Authentication | Bearer API keys with role-based access (admin, operator). |
 | API failure behavior | Missing resources and invalid ownership return explicit client errors. |
 | AI integration failure | Customer input preserved, failed agent output not fabricated, internal details not leaked. |
-| Regression protection | 3130 tests cover happy paths, failures, tenant isolation, UI contracts, cross-module creation, AI-assisted triage and intake suggestion. |
+| Regression protection | 3641 tests cover happy paths, failures, tenant isolation, UI contracts, cross-module creation, AI-assisted triage and intake suggestion. |
 | Product boundaries | ERP and automation engines remain external integrations. |
 
 ### Example evaluation mindset

@@ -31,9 +31,10 @@
   let convFilterQuery = "";
   let convFilterCustomerId = "";
   let convFilterLeadId = "";
-  let convFilterSort = "last_message";
   let convFilterFromDate = "";
   let convFilterToDate = "";
+  // WP-279 — Favorites state
+  const convFavorites = new Map();
   let convOffset = 0;
   const convPageSize = 50;
   let convTotal = 0;
@@ -1924,6 +1925,7 @@
           /^\/conversations\/$/.test(path) ||
           /^\/conversations\/suggest-message$/.test(path) ||
           /^\/conversations\/\d+\/$/.test(path) ||
+          /^\/conversations\/\d+\/favorite$/.test(path) ||
           /^\/conversations\/\d+\/messages(\/count)?(\?|$)/.test(path) ||
           /^\/conversations\/\d+\/note$/.test(path) ||
           /^\/conversations\/\d+\/suggest-lead$/.test(path) ||
@@ -2071,6 +2073,18 @@
       meta.className = "conv-status-badge conv-status-" + (conv.status || "unknown");
       meta.textContent = conv.status || "—";
       button.append(title, meta);
+      // WP-279 — Favorite button
+      const favBtn = document.createElement("button");
+      favBtn.type = "button";
+      favBtn.className = "conv-fav-btn";
+      favBtn.setAttribute("aria-label", "Favoritar conversa");
+      const isFav = convFavorites.get(conv.id) || false;
+      favBtn.textContent = isFav ? "★" : "☆";
+      favBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleConversationFavorite(conv.id);
+      });
+      row.append(favBtn);
       button.addEventListener("click", () => {
         selectConversation(conv.id).catch(() => {
           notify("Falha ao carregar mensagens desta conversa.", true);
@@ -2088,6 +2102,22 @@
       $("conv-bulk-count").textContent = selectedConvIds.size + " selecionadas";
     } else {
       bar.hidden = true;
+    }
+  }
+
+  // WP-279 — Toggle favorite for a conversation
+  async function toggleConversationFavorite(id) {
+    const current = convFavorites.get(id) || false;
+    try {
+      const result = await conversationApi("/conversations/" + id + "/favorite", "PATCH", {
+        favorited: !current
+      });
+      convFavorites.set(id, result.favorited);
+      showConversationList();
+    } catch (error) {
+      if (error instanceof ApiFailure) {
+        notify("Não foi possível atualizar favorito.", true);
+      }
     }
   }
 

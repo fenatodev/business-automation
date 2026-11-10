@@ -1582,6 +1582,20 @@ footer {
 .conv-status-closed { background: #2a2a2a; color: #808080; }
 .conv-status-unknown { background: #2a2a2a; color: #808080; }
 
+/* WP-279 — Favorite button */
+.conv-fav-btn {
+  background: none;
+  border: none;
+  font-size: 1.2em;
+  cursor: pointer;
+  padding: 4px 8px;
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+.conv-fav-btn:hover {
+  color: #f59e0b;
+}
+
 /* WP-119 — Lead status badges */
 .lead-status-badge {
   display: inline-block;
