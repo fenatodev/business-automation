@@ -1,5 +1,9 @@
 # Continuidade do desenvolvimento — Codex ou Junie
 
+## WP-280 — Sugestão de triagem IA para conversas na UI (10/11/2026)
+
+O backend já suportava sugestão de triagem para conversas (POST /conversations/{id}/suggest-triage, WP-543) mas a UI não expunha. Adicionado botão "🤖 Sugerir triagem" no painel de detalhes da conversa; painel de resultado com ação sugerida, confiança e motivo; handlers apply/dismiss; allowlist atualizada. 24 testes de contrato UI.
+
 ## WP-279 — Favoritos em conversas na UI (10/11/2026)
 
 O backend já suportava favoritos em conversas (PATCH /conversations/{id}/favorite) mas a UI não expunha. Adicionado botão ★/☆ em cada item da lista de conversas; estado mantido em Map local; toggle via conversationApi com allowlist atualizada. CSS com estilo de botão e hover dourado. 16 testes de contrato UI.
