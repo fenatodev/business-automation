@@ -19,6 +19,8 @@ from app.schemas import (
     EscalationResponse,
     EscalationRuleCreate,
     EscalationRuleResponse,
+    FollowupConfigCreate,
+    FollowupConfigResponse,
     GlobalSearchResponse,
     GlobalSearchResult,
     NotificationItem,
@@ -936,3 +938,66 @@ def delete_escalation_rule(
     if not removed:
         raise HTTPException(status_code=404, detail="Rule not found")
     return True
+
+
+# ---------------------------------------------------------------------------
+# WP-545 — Follow-up config endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/companies/{company_id}/followup-config",
+    response_model=FollowupConfigResponse,
+)
+def set_followup_config(
+    company_id: int,
+    data: FollowupConfigCreate,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Set follow-up config for a company."""
+    company = db.scalar(select(Company).where(Company.id == company_id))
+    if company is None:
+        raise HTTPException(status_code=404, detail="Company not found")
+    if identity.company_id and identity.company_id != company_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    from app.services.followup import FollowupConfig, set_followup_config as _set
+
+    config = FollowupConfig(
+        company_id=company_id,
+        stale_days=data.stale_days,
+        enabled=data.enabled,
+    )
+    _set(config)
+    return FollowupConfigResponse(
+        stale_days=config.stale_days,
+        enabled=config.enabled,
+    )
+
+
+@router.get(
+    "/companies/{company_id}/followup-config",
+    response_model=FollowupConfigResponse | None,
+)
+def get_company_followup_config(
+    company_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Get follow-up config for a company."""
+    company = db.scalar(select(Company).where(Company.id == company_id))
+    if company is None:
+        raise HTTPException(status_code=404, detail="Company not found")
+    if identity.company_id and identity.company_id != company_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    from app.services.followup import get_followup_config as _get
+
+    config = _get(company_id)
+    if config is None:
+        return None
+    return FollowupConfigResponse(
+        stale_days=config.stale_days,
+        enabled=config.enabled,
+    )

@@ -755,3 +755,41 @@ def bulk_retry_tasks(
         "retried_ids": sorted(retried_ids),
         "skipped": sorted(skipped),
     }
+
+
+# ---------------------------------------------------------------------------
+# WP-545 — Follow-up task creation
+# ---------------------------------------------------------------------------
+
+
+@router.post("/followup", response_model=InternalTaskOut)
+def create_followup_task(
+    data: dict,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Create a follow-up task for a stale opportunity."""
+    opportunity_id = data.get("opportunity_id")
+    if not opportunity_id:
+        raise HTTPException(status_code=400, detail="opportunity_id required")
+
+    opp = db.scalar(
+        select(Opportunity).where(
+            Opportunity.id == opportunity_id,
+            Opportunity.company_id == identity.company_id,
+        )
+    )
+    if opp is None:
+        raise HTTPException(status_code=404, detail="Opportunity not found")
+
+    import uuid
+
+    from app.schemas import ReviewQueueTrigger
+
+    trigger = ReviewQueueTrigger(
+        channel="internal",
+        message=f"Follow-up: {opp.title or f'Opportunity #{opp.id}'}",
+        event_id=str(uuid.uuid4()),
+    )
+    task = tasks.enqueue(db, trigger, identity.company_id)
+    return InternalTaskOut.model_validate(task)

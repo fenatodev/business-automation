@@ -861,3 +861,39 @@ class EscalationResponse(BaseModel):
 
     alerts: list[EscalationAlert] = []
     rules: list[EscalationRuleResponse] = []
+
+
+# ---------------------------------------------------------------------------
+# WP-545 — Follow-up schemas
+# ---------------------------------------------------------------------------
+
+
+class FollowupConfigCreate(BaseModel):
+    """Request to set follow-up config for a company."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    stale_days: int = 14
+    enabled: bool = True
+
+
+class FollowupConfigResponse(BaseModel):
+    """Response for follow-up config."""
+
+    stale_days: int
+    enabled: bool
+
+
+class StaleOpportunityResponse(BaseModel):
+    """Response for a stale opportunity."""
+
+    opportunity_id: int
+    title: str
+    days_since_activity: int
+    next_action: str | None = None
+
+
+class StaleOpportunitiesResponse(BaseModel):
+    """Response for stale opportunities list."""
+
+    opportunities: list[StaleOpportunityResponse] = []

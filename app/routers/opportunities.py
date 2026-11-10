@@ -29,6 +29,8 @@ from app.schemas import (
     ProposalBriefDecision,
     ProposalBriefSuggestion,
     ProposalBriefUpdate,
+    StaleOpportunityResponse,
+    StaleOpportunitiesResponse,
 )
 from app.routers.companies import _favorites_store
 
@@ -753,6 +755,33 @@ def get_priority_opportunities(
 
     scored.sort(key=lambda x: x["priority_score"], reverse=True)
     return scored[:limit]
+
+
+@router.get("/opportunities/stale", response_model=StaleOpportunitiesResponse)
+def get_stale_opportunities(
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+    stale_days: int = Query(14, ge=1),
+):
+    """Find opportunities that have been inactive for a configurable period."""
+    from app.services.followup import find_stale_opportunities
+
+    stale = find_stale_opportunities(
+        db,
+        identity.company_id,
+        stale_days=stale_days,
+    )
+    return StaleOpportunitiesResponse(
+        opportunities=[
+            StaleOpportunityResponse(
+                opportunity_id=s.opportunity_id,
+                title=s.title,
+                days_since_activity=s.days_since_activity,
+                next_action=s.next_action,
+            )
+            for s in stale
+        ]
+    )
 
 
 @router.get("/opportunities/{opportunity_id}")

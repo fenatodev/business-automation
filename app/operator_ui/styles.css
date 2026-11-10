@@ -1515,6 +1515,28 @@ footer {
   color: var(--muted);
 }
 
+/* WP-278 — Create conversation from opportunity */
+.conv-opp-form {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.conv-opp-form label {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.conv-opp-form select,
+.conv-opp-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 0.85rem;
+}
+
 /* WP-118 — Opportunity status badges */
 .opp-status-badge {
   display: inline-block;

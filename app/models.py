@@ -97,7 +97,7 @@ class Customer(Base):
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
-    )    
+    )
 
 
 class Conversation(Base):
@@ -141,7 +141,8 @@ class Conversation(Base):
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
-    )    
+    )
+
 
 class Message(Base):
     __tablename__ = "messages"
