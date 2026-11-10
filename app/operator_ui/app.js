@@ -1926,6 +1926,7 @@
           /^\/conversations\/suggest-message$/.test(path) ||
           /^\/conversations\/\d+\/$/.test(path) ||
           /^\/conversations\/\d+\/favorite$/.test(path) ||
+          /^\/conversations\/\d+\/suggest-triage$/.test(path) ||
           /^\/conversations\/\d+\/messages(\/count)?(\?|$)/.test(path) ||
           /^\/conversations\/\d+\/note$/.test(path) ||
           /^\/conversations\/\d+\/suggest-lead$/.test(path) ||
@@ -2131,6 +2132,9 @@
     $("conv-reply-toggle").hidden = false;
     $("conv-suggest-reply").hidden = false;
     $("conv-summarize").hidden = false;
+    // WP-280 — Show triage suggestion button
+    $("conv-suggest-triage").hidden = false;
+    $("conv-triage-suggestion").hidden = true;
     $("conv-close-toggle").hidden = false;
     $("conv-note-section").hidden = false;
     $("conv-suggestion").hidden = true;
@@ -3133,6 +3137,70 @@
   // WP-270 — Dismiss summary
   $("conv-dismiss-summary").addEventListener("click", () => {
     $("conv-summary-panel").hidden = true;
+  });
+
+  // WP-280 — AI triage suggestion for conversations
+  let convTriageSuggestion = null;
+
+  $("conv-suggest-triage").addEventListener("click", () => {
+    const convId = $("reply-conv-id").value;
+    if (!convId) {
+      notify("Selecione uma conversa primeiro.", true);
+      return;
+    }
+    const button = $("conv-suggest-triage");
+    button.disabled = true;
+    button.textContent = "⏳ Analisando...";
+    conversationApi("/conversations/" + convId + "/suggest-triage", "POST")
+      .then((result) => {
+        convTriageSuggestion = result;
+        renderConvTriageSuggestion();
+        $("conv-triage-suggestion").hidden = false;
+      })
+      .catch((error) => {
+        if (error instanceof ApiFailure && error.status === 503) {
+          notify("Agente indisponível. Tente novamente mais tarde.", true);
+        } else {
+          notify("Não foi possível obter sugestão de triagem.", true);
+        }
+      })
+      .finally(() => {
+        button.disabled = false;
+        button.textContent = "🤖 Sugerir triagem";
+      });
+  });
+
+  function renderConvTriageSuggestion() {
+    if (!convTriageSuggestion) return;
+    const target = $("conv-triage-suggestion-content");
+    target.replaceChildren();
+    const items = [
+      { label: "Ação sugerida", value: convTriageSuggestion.next_action || "—" },
+      { label: "Confiança", value: (convTriageSuggestion.confidence != null ? Math.round(convTriageSuggestion.confidence * 100) + "%" : "—") },
+      { label: "Motivo", value: convTriageSuggestion.reason || "—" },
+    ];
+    for (const item of items) {
+      const div = document.createElement("div");
+      div.className = "small";
+      const label = document.createElement("strong");
+      label.textContent = item.label + ": ";
+      const value = document.createElement("span");
+      value.textContent = item.value;
+      div.append(label, value);
+      target.appendChild(div);
+    }
+  }
+
+  $("apply-conv-triage-suggestion").addEventListener("click", () => {
+    if (!convTriageSuggestion) return;
+    notify("Sugestão de triagem: " + convTriageSuggestion.next_action);
+    $("conv-triage-suggestion").hidden = true;
+    convTriageSuggestion = null;
+  });
+
+  $("dismiss-conv-triage-suggestion").addEventListener("click", () => {
+    $("conv-triage-suggestion").hidden = true;
+    convTriageSuggestion = null;
   });
 
   // WP-270 — Render conversation summary

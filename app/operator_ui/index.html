@@ -568,6 +568,7 @@
               <button id="conv-close-toggle" type="button" class="secondary" hidden>Fechar</button>
               <button id="conv-summarize" type="button" class="secondary" hidden>📋 Resumir</button>
               <button id="conv-suggest-reply" type="button" class="secondary" hidden>🤖 Sugerir resposta</button>
+              <button id="conv-suggest-triage" type="button" class="secondary" hidden>🤖 Sugerir triagem</button>
               <button id="conv-reply-toggle" type="button" class="secondary" hidden>Responder</button>
             </div>
           </div>
@@ -581,6 +582,14 @@
               <button id="conv-dismiss-summary" type="button" class="secondary small">Fechar</button>
             </div>
             <div id="conv-summary-content"></div>
+          </div>
+          <!-- WP-280 — AI triage suggestion for conversations -->
+          <div id="conv-triage-suggestion" class="triage-suggestion-panel" hidden>
+            <div id="conv-triage-suggestion-content"></div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button type="button" id="apply-conv-triage-suggestion" class="primary">Aplicar sugestão</button>
+              <button type="button" id="dismiss-conv-triage-suggestion" class="secondary">Descartar</button>
+            </div>
           </div>
           <div id="conv-suggestion" class="conv-suggestion" hidden>
             <div class="conv-suggestion-header">
