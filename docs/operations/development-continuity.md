@@ -1,5 +1,9 @@
 # Continuidade do desenvolvimento — Codex ou Junie
 
+## WP-279 — Favoritos em conversas na UI (10/11/2026)
+
+O backend já suportava favoritos em conversas (PATCH /conversations/{id}/favorite) mas a UI não expunha. Adicionado botão ★/☆ em cada item da lista de conversas; estado mantido em Map local; toggle via conversationApi com allowlist atualizada. CSS com estilo de botão e hover dourado. 16 testes de contrato UI.
+
 ## WP-511 — Feedback durante sugestão automática de resposta (07/11/2026)
 
 O formulário anuncia “Gerando sugestão...” enquanto aguarda a sugestão
