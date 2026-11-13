@@ -1,5 +1,9 @@
 # Continuidade do desenvolvimento — Codex ou Junie
 
+## WP-283 — opportunity_id na UI de sugestão de mensagem (13/11/2026)
+
+O handler `opp-conv-suggest` do JS enviava apenas lead_id/customer_id. Atualizado para enviar `opportunity_id` quando não há lead/customer associado, permitindo sugestão IA para oportunidades sem contatos vinculados.
+
 ## WP-282 — Sugestão IA de status de lead (13/11/2026)
 
 Novo endpoint `POST /leads/{id}/suggest-status` que analisa o contexto do lead (nome, interesse, fonte, status atual, contagem de conversas) e sugere o próximo status mais adequado. Schema `LeadStatusSuggestion` com suggested_status, reasoning e confidence. Usa config da company, retorna 503 quando agente indisponível.
