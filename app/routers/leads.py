@@ -512,3 +512,96 @@ def suggest_opportunity_from_lead(
             "suggested_requirements": None,
             "reasoning": response,
         }
+
+
+@router.post("/leads/{lead_id}/suggest-status")
+def suggest_lead_status(
+    lead_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """WP-282 — Suggest next status for a lead based on context.
+
+    Analyzes the lead data (name, interest, source, current status,
+    conversations) and suggests the next appropriate status.
+    Does NOT persist — returns only the suggestion.
+    """
+    lead = _get_tenant_lead(
+        db,
+        lead_id,
+        identity.company_id,
+    )
+
+    # Build prompt from lead data
+    prompt_parts = []
+    prompt_parts.append(f"Nome: {lead.name}")
+    if lead.phone:
+        prompt_parts.append(f"Telefone: {lead.phone}")
+    if lead.source:
+        prompt_parts.append(f"Fonte: {lead.source}")
+    if lead.interest:
+        prompt_parts.append(f"Interesse: {lead.interest}")
+    prompt_parts.append(f"Status atual: {lead.status}")
+    prompt_parts.append(f"Criado em: {lead.created_at.isoformat()}")
+
+    # Count related conversations
+    from app.models import Conversation
+    conv_count = db.scalar(
+        select(func.count(Conversation.id)).where(
+            Conversation.lead_id == lead.id
+        )
+    ) or 0
+    prompt_parts.append(f"Conversas: {conv_count}")
+    lead_text = "\n".join(prompt_parts)
+
+    system_prompt = (
+        "Com base nos dados deste lead, sugira o próximo status mais adequado.\n"
+        "Os status possíveis são: new, contacted, qualified, proposal, won, lost.\n"
+        "Retorne apenas JSON com esta estrutura:\n"
+        '{"suggested_status": "status_sugerido", '
+        '"reasoning": "por que este status é adequado", '
+        '"confidence": 0.85}\n'
+        "A confiança deve ser um número entre 0.0 e 1.0."
+    )
+
+    try:
+        from app.routers.companies import _agent_config_store, _record_agent_call
+        from app.services.agent import AgentServiceError, generate_agent_reply
+
+        company_config = _agent_config_store.get(identity.company_id, {})
+        effective_temp = company_config.get("temperature")
+        effective_max_tokens = company_config.get("max_tokens")
+        effective_model = company_config.get("model")
+
+        response = generate_agent_reply(
+            message=lead_text,
+            history=[],
+            system_prompt=system_prompt,
+            temperature=effective_temp,
+            max_tokens=effective_max_tokens,
+            model=effective_model,
+        )
+        _record_agent_call(identity.company_id, success=True)
+    except AgentServiceError:
+        _record_agent_call(identity.company_id, success=False)
+        raise HTTPException(
+            status_code=503,
+            detail="Agent service unavailable",
+        )
+
+    import json
+    try:
+        parsed = json.loads(response)
+        return {
+            "lead_id": lead.id,
+            "suggested_status": parsed.get("suggested_status", lead.status),
+            "reasoning": parsed.get("reasoning", response),
+            "confidence": parsed.get("confidence"),
+        }
+    except (json.JSONDecodeError, AttributeError):
+        return {
+            "lead_id": lead.id,
+            "suggested_status": lead.status,
+            "reasoning": response,
+            "confidence": None,
+        }

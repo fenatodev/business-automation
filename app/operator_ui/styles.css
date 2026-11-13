@@ -891,6 +891,19 @@ footer {
   color: var(--text);
 }
 
+/* WP-285 — Lead status suggestion row */
+.lead-status-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+.lead-suggest-status-btn {
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
 /* Leads — Convert button — WP-085 */
 .lead-convert-btn {
   margin-top: 8px;

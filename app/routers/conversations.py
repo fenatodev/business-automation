@@ -14,7 +14,7 @@ from app.dependencies import (
     require_operator,
     require_operator_company,
 )
-from app.models import Company, Conversation, Customer, Lead, Message
+from app.models import Company, Conversation, Customer, Lead, Message, Opportunity
 from app.schemas import (
     AgentRequest,
     ConversationBulkDelete,
@@ -733,10 +733,30 @@ def suggest_conversation_message(
             context_parts.append(f"Telefone: {customer.phone}")
         if customer.email:
             context_parts.append(f"E-mail: {customer.email}")
+    elif data.opportunity_id is not None:
+        opp = db.scalar(
+            select(Opportunity).where(
+                Opportunity.id == data.opportunity_id,
+                Opportunity.company_id == identity.company_id,
+            )
+        )
+        if opp is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Opportunity not found",
+            )
+        context_parts.append(f"Tipo: Oportunidade")
+        context_parts.append(f"Título: {opp.title}")
+        if opp.description:
+            context_parts.append(f"Descrição: {opp.description}")
+        if opp.budget:
+            context_parts.append(f"Orçamento: {opp.budget}")
+        if opp.deadline:
+            context_parts.append(f"Prazo: {opp.deadline}")
     else:
         raise HTTPException(
             status_code=400,
-            detail="lead_id or customer_id is required",
+            detail="lead_id, customer_id, or opportunity_id is required",
         )
 
     context_text = "\n".join(context_parts)

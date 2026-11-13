@@ -57,6 +57,7 @@ class ConversationCreate(BaseModel):
     ]
     lead_id: int | None = None
     customer_id: int | None = None
+    opportunity_id: int | None = None
 
 class ConversationUpdate(BaseModel):
     """Update conversation status and/or internal note."""
@@ -136,6 +137,14 @@ class LeadSuggestion(BaseModel):
     suggested_phone: str | None = None
     suggested_interest: str | None = None
     reasoning: str
+
+
+class LeadStatusSuggestion(BaseModel):
+    """AI-generated next status suggestion for a lead."""
+
+    suggested_status: Literal["new", "contacted", "qualified", "proposal", "won", "lost"]
+    reasoning: str
+    confidence: float | None = None
 
 
 class CustomerSuggestion(BaseModel):

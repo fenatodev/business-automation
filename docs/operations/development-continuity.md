@@ -1,5 +1,17 @@
 # Continuidade do desenvolvimento — Codex ou Junie
 
+## WP-283 — opportunity_id na UI de sugestão de mensagem (13/11/2026)
+
+O handler `opp-conv-suggest` do JS enviava apenas lead_id/customer_id. Atualizado para enviar `opportunity_id` quando não há lead/customer associado, permitindo sugestão IA para oportunidades sem contatos vinculados.
+
+## WP-282 — Sugestão IA de status de lead (13/11/2026)
+
+Novo endpoint `POST /leads/{id}/suggest-status` que analisa o contexto do lead (nome, interesse, fonte, status atual, contagem de conversas) e sugere o próximo status mais adequado. Schema `LeadStatusSuggestion` com suggested_status, reasoning e confidence. Usa config da company, retorna 503 quando agente indisponível.
+
+## WP-281 — Opportunity context em sugestão de mensagem (13/11/2026)
+
+O endpoint `POST /conversations/suggest-message` (WP-274) aceitava apenas `lead_id` e `customer_id`. Adicionado suporte a `opportunity_id`: o schema `ConversationCreate` inclui `opportunity_id` opcional; o endpoint extrai título, descrição, orçamento e prazo da oportunidade para contexto da IA. Import de `Opportunity` adicionado ao router de conversas.
+
 ## WP-280 — Sugestão de triagem IA para conversas na UI (10/11/2026)
 
 O backend já suportava sugestão de triagem para conversas (POST /conversations/{id}/suggest-triage, WP-543) mas a UI não expunha. Adicionado botão "🤖 Sugerir triagem" no painel de detalhes da conversa; painel de resultado com ação sugerida, confiança e motivo; handlers apply/dismiss; allowlist atualizada. 24 testes de contrato UI.

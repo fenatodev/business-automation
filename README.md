@@ -82,7 +82,10 @@ O projeto tem dois objetivos complementares:
 - Auto-triage for conversations — AI suggests triage action when conversation is created;
 - Conversation favorites (WP-279) — toggle favorite (★/☆) on conversations with visual star button;
 - AI triage suggestion for conversations (WP-280) — button in conversation detail panel suggests triage action via `POST /conversations/{id}/suggest-triage`;
-- 3681 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
+- Opportunity context in message suggestion (WP-281) — `POST /conversations/suggest-message` accepts `opportunity_id`;
+- AI-assisted lead status suggestion (WP-282) — `POST /leads/{id}/suggest-status` suggests next status;
+- Opportunity context in UI message suggestion (WP-283) — opp-conv-suggest sends opportunity_id;
+- 3698 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
 
 ## Engineering case study
 
@@ -95,7 +98,7 @@ The useful part of this project is not the idea of "AI for business". It is the 
 | Authentication | Bearer API keys with role-based access (admin, operator). |
 | API failure behavior | Missing resources and invalid ownership return explicit client errors. |
 | AI integration failure | Customer input preserved, failed agent output not fabricated, internal details not leaked. |
-| Regression protection | 3681 tests cover happy paths, failures, tenant isolation, UI contracts, cross-module creation, AI-assisted triage and intake suggestion. |
+| Regression protection | 3703 tests cover happy paths, failures, tenant isolation, UI contracts, cross-module creation, AI-assisted triage and intake suggestion. |
 | Product boundaries | ERP and automation engines remain external integrations. |
 
 ### Example evaluation mindset
