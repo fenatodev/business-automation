@@ -32,6 +32,7 @@ app.include_router(leads_router)
 app.include_router(opportunities_router)
 app.include_router(operator_ui_router)
 app.include_router(review_queue_router)
+app.include_router(internal_tasks_router)
 app.include_router(scheduler_router)
 app.include_router(jobs_router)
 
