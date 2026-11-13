@@ -57,6 +57,7 @@ class ConversationCreate(BaseModel):
     ]
     lead_id: int | None = None
     customer_id: int | None = None
+    opportunity_id: int | None = None
 
 class ConversationUpdate(BaseModel):
     """Update conversation status and/or internal note."""
