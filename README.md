@@ -98,7 +98,7 @@ The useful part of this project is not the idea of "AI for business". It is the 
 | Authentication | Bearer API keys with role-based access (admin, operator). |
 | API failure behavior | Missing resources and invalid ownership return explicit client errors. |
 | AI integration failure | Customer input preserved, failed agent output not fabricated, internal details not leaked. |
-| Regression protection | 3698 tests cover happy paths, failures, tenant isolation, UI contracts, cross-module creation, AI-assisted triage and intake suggestion. |
+| Regression protection | 3703 tests cover happy paths, failures, tenant isolation, UI contracts, cross-module creation, AI-assisted triage and intake suggestion. |
 | Product boundaries | ERP and automation engines remain external integrations. |
 
 ### Example evaluation mindset
