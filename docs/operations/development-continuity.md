@@ -1,5 +1,9 @@
 # Continuidade do desenvolvimento — Codex ou Junie
 
+## WP-282 — Sugestão IA de status de lead (13/11/2026)
+
+Novo endpoint `POST /leads/{id}/suggest-status` que analisa o contexto do lead (nome, interesse, fonte, status atual, contagem de conversas) e sugere o próximo status mais adequado. Schema `LeadStatusSuggestion` com suggested_status, reasoning e confidence. Usa config da company, retorna 503 quando agente indisponível.
+
 ## WP-281 — Opportunity context em sugestão de mensagem (13/11/2026)
 
 O endpoint `POST /conversations/suggest-message` (WP-274) aceitava apenas `lead_id` e `customer_id`. Adicionado suporte a `opportunity_id`: o schema `ConversationCreate` inclui `opportunity_id` opcional; o endpoint extrai título, descrição, orçamento e prazo da oportunidade para contexto da IA. Import de `Opportunity` adicionado ao router de conversas.

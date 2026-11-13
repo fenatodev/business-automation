@@ -83,6 +83,7 @@ O projeto tem dois objetivos complementares:
 - Conversation favorites (WP-279) — toggle favorite (★/☆) on conversations with visual star button;
 - AI triage suggestion for conversations (WP-280) — button in conversation detail panel suggests triage action via `POST /conversations/{id}/suggest-triage`;
 - Opportunity context in message suggestion (WP-281) — `POST /conversations/suggest-message` accepts `opportunity_id`;
+- AI-assisted lead status suggestion (WP-282) — `POST /leads/{id}/suggest-status` suggests next status;
 - 3686 pytest tests covering happy paths, invalid relationships, agent-service failures, tenant isolation, and UI contracts.
 
 ## Engineering case study
