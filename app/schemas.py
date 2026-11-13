@@ -139,6 +139,14 @@ class LeadSuggestion(BaseModel):
     reasoning: str
 
 
+class LeadStatusSuggestion(BaseModel):
+    """AI-generated next status suggestion for a lead."""
+
+    suggested_status: Literal["new", "contacted", "qualified", "proposal", "won", "lost"]
+    reasoning: str
+    confidence: float | None = None
+
+
 class CustomerSuggestion(BaseModel):
     """AI-generated customer suggestion from conversation context."""
 
