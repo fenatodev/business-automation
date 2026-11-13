@@ -1368,13 +1368,16 @@
     withButton(button, async () => {
       if (selectedId === null) return;
       try {
-        const result = await conversationApi("/conversations/suggest-message", "POST", {
+        const body = {
           company_id: opportunityCompanyId,
           channel: $("opp-conv-channel").value,
           ...(opportunityContactType === "lead"
             ? {lead_id: opportunityLeadId}
-            : {customer_id: opportunityCustomerId}),
-        });
+            : opportunityContactType === "customer"
+              ? {customer_id: opportunityCustomerId}
+              : {opportunity_id: selectedId}),
+        };
+        const result = await conversationApi("/conversations/suggest-message", "POST", body);
         if (version !== selectionVersion || selectedId === null) return;
         oppConvSuggestion = {...result, __version: version};
         const content = $("opp-conv-suggestion-content");
