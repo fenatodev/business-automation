@@ -30,9 +30,27 @@ function setup(name, content) {
     ['reply-template-save-status', element()],
   ]);
   const requests = [];
+  const listeners = [];
+  const document = {
+    addEventListener(event, callback) { listeners.push({event, callback}); },
+    createElement() {
+      return {
+        className: '',
+        textContent: '',
+        children: [],
+        appendChild(el) { this.children.push(el); },
+        replaceChildren() {},
+        addEventListener() {},
+        setAttribute() {},
+        hidden: false,
+      };
+    },
+    getElementById(id) { return elements.get(id) || null; },
+  };
   const context = {
     bearer: 'synthetic-token',
     company: 3,
+    document,
     $: id => elements.get(id) || element(),
     templateApi(...args) { requests.push(args); },
     notify() {},

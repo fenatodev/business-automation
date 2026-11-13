@@ -25,9 +25,9 @@ class TestThemeToggleUI:
 
     def test_theme_toggle_in_topbar_right(self):
         """Theme toggle is inside topbar-right container."""
-        topbar_right = re.search(r'class="topbar-right".*?</div>', self.html, re.DOTALL)
+        topbar_right = re.search(r'class="topbar-right"[^>]*>(.*?)</div>\s*</header>', self.html, re.DOTALL)
         assert topbar_right is not None
-        assert 'id="theme-toggle"' in topbar_right.group(0)
+        assert 'id="theme-toggle"' in topbar_right.group(1)
 
     def test_css_dark_theme_variables(self):
         """Dark theme CSS variables are defined in :root."""
