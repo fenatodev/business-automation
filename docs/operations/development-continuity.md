@@ -1,5 +1,9 @@
 # Continuidade do desenvolvimento — Codex ou Junie
 
+## WP-281 — Opportunity context em sugestão de mensagem (13/11/2026)
+
+O endpoint `POST /conversations/suggest-message` (WP-274) aceitava apenas `lead_id` e `customer_id`. Adicionado suporte a `opportunity_id`: o schema `ConversationCreate` inclui `opportunity_id` opcional; o endpoint extrai título, descrição, orçamento e prazo da oportunidade para contexto da IA. Import de `Opportunity` adicionado ao router de conversas.
+
 ## WP-280 — Sugestão de triagem IA para conversas na UI (10/11/2026)
 
 O backend já suportava sugestão de triagem para conversas (POST /conversations/{id}/suggest-triage, WP-543) mas a UI não expunha. Adicionado botão "🤖 Sugerir triagem" no painel de detalhes da conversa; painel de resultado com ação sugerida, confiança e motivo; handlers apply/dismiss; allowlist atualizada. 24 testes de contrato UI.
