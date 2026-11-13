@@ -3718,7 +3718,8 @@
   async function leadApi(path, method, body) {
     // Allow /leads with optional query params, /leads/{status}, /leads/{id}, /leads/count
     // WP-271 — also allow /leads/{id}/suggest-opportunity
-    if (!(/^\/leads($|\/(new|contacted|qualified|proposal|won|lost)$|\/count$|\/\d+$|\/\d+\/suggest-opportunity$)/.test(path.split("?")[0]))) {
+    // WP-285 — also allow /leads/{id}/suggest-status
+    if (!(/^\/leads($|\/(new|contacted|qualified|proposal|won|lost)$|\/count$|\/\d+$|\/\d+\/suggest-(opportunity|status)$)/.test(path.split("?")[0]))) {
       console.error("[leadApi] Rota não permitida:", path);
       return;
     }
@@ -3859,6 +3860,9 @@
       }
       item.appendChild(details);
 
+      const statusRow = document.createElement("div");
+      statusRow.className = "lead-status-row";
+
       const select = document.createElement("select");
       select.className = "lead-status-select";
       for (const s of leadStatusOptions) {
@@ -3871,7 +3875,21 @@
       select.addEventListener("change", () => {
         updateLeadStatus(lead.id, select.value);
       });
-      item.appendChild(select);
+      statusRow.appendChild(select);
+
+      // WP-285 — AI-assisted lead status suggestion button
+      const suggestBtn = document.createElement("button");
+      suggestBtn.className = "lead-suggest-status-btn secondary";
+      suggestBtn.textContent = "🤖 Sugerir";
+      suggestBtn.type = "button";
+      suggestBtn.title = "Sugerir próximo status com IA";
+      suggestBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        suggestLeadStatus(lead.id, select, suggestBtn);
+      });
+      statusRow.appendChild(suggestBtn);
+
+      item.appendChild(statusRow);
 
       // Convert button — WP-085 (hide for already-converted leads)
       if (lead.status !== "won") {
@@ -4286,6 +4304,27 @@
     if (res.status === 403) {disconnect("Permissão de operador necessária."); return;}
     if (!res.ok) {console.error("[updateLeadNotes] Erro:", res.status); return;}
     notify("Notas do lead #" + leadId + " salvas.");
+  }
+
+  // WP-285 — AI-assisted lead status suggestion
+  async function suggestLeadStatus(leadId, select, button) {
+    const originalText = button.textContent;
+    button.textContent = "⏳";
+    button.disabled = true;
+    try {
+      const res = await leadApi("/leads/" + leadId + "/suggest-status", "POST");
+      if (res && res.suggested_status) {
+        if (confirm("IA sugeriu status: " + (leadStatusLabels[res.suggested_status] || res.suggested_status) + "\n" + (res.reasoning || "") + "\n\nAplicar?")) {
+          select.value = res.suggested_status;
+          updateLeadStatus(leadId, res.suggested_status);
+        }
+      }
+    } catch (error) {
+      console.error("[suggestLeadStatus] Erro:", error);
+    } finally {
+      button.textContent = originalText;
+      button.disabled = false;
+    }
   }
 
   // Convert lead to customer — WP-085
