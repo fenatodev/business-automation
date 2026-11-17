@@ -436,6 +436,16 @@ class OpportunityReactivationResponse(BaseModel):
     total_count: int
 
 
+class LeadConversionAnalyticsResponse(BaseModel):
+    """Conversion analytics from leads to customers."""
+
+    total_leads: int
+    converted_leads: int
+    conversion_rate: float
+    avg_days_to_convert: float | None = None
+    conversions_by_source: dict[str, int]
+
+
 class ConversationBulkDelete(BaseModel):
     """Bulk delete multiple conversations."""
 

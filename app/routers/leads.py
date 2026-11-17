@@ -14,8 +14,14 @@ from app.dependencies import (
     require_operator,
     require_operator_company,
 )
-from app.models import Company, Lead
-from app.schemas import LeadBulkDelete, LeadBulkStatus, LeadCreate, LeadUpdate
+from app.models import Company, Customer, Lead
+from app.schemas import (
+    LeadBulkDelete,
+    LeadBulkStatus,
+    LeadCreate,
+    LeadConversionAnalyticsResponse,
+    LeadUpdate,
+)
 
 
 router = APIRouter()
@@ -300,6 +306,85 @@ def export_leads_csv(
         headers={
             "Content-Disposition": "attachment; filename=leads.csv",
         },
+    )
+
+
+@router.get(
+    "/leads/conversion-analytics",
+    response_model=LeadConversionAnalyticsResponse,
+)
+def get_lead_conversion_analytics(
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Return lead-to-customer conversion analytics (tenant-isolated).
+
+    Calculates conversion rate, average days to convert, and breaks
+    down conversions by lead source. Useful for the operator dashboard
+    to track commercial pipeline effectiveness.
+    """
+    total_leads = db.scalar(
+        select(func.count(Lead.id)).where(
+            Lead.company_id == identity.company_id
+        )
+    ) or 0
+
+    converted_leads = db.scalar(
+        select(func.count(Lead.id)).where(
+            Lead.company_id == identity.company_id,
+            Lead.status == "converted",
+        )
+    ) or 0
+
+    conversion_rate = (
+        (converted_leads / total_leads * 100) if total_leads > 0 else 0.0
+    )
+
+    # Calculate average days to convert for leads that have a linked customer
+    converted_with_customer = db.scalars(
+        select(Lead).where(
+            Lead.company_id == identity.company_id,
+            Lead.status == "converted",
+        )
+    ).all()
+
+    avg_days = None
+    if converted_with_customer:
+        days_list = []
+        for lead in converted_with_customer:
+            # Find the customer created from this lead
+            customer = db.scalar(
+                select(Customer).where(
+                    Customer.lead_id == lead.id,
+                    Customer.company_id == identity.company_id,
+                )
+            )
+            if customer and lead.created_at and customer.created_at:
+                delta = (customer.created_at - lead.created_at).total_seconds() / 86400
+                days_list.append(delta)
+        if days_list:
+            avg_days = round(sum(days_list) / len(days_list), 1)
+
+    # Conversions by source
+    source_rows = db.execute(
+        select(
+            Lead.source,
+            func.count(Lead.id),
+        )
+        .where(
+            Lead.company_id == identity.company_id,
+            Lead.status == "converted",
+        )
+        .group_by(Lead.source)
+    ).all()
+    conversions_by_source = {row[0]: row[1] for row in source_rows}
+
+    return LeadConversionAnalyticsResponse(
+        total_leads=total_leads,
+        converted_leads=converted_leads,
+        conversion_rate=round(conversion_rate, 1),
+        avg_days_to_convert=avg_days,
+        conversions_by_source=conversions_by_source,
     )
 
 
