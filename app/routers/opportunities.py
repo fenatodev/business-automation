@@ -1,6 +1,6 @@
 import csv
 import io
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
 from fastapi.responses import Response
@@ -20,6 +20,8 @@ from app.schemas import (
     OpportunityBulkTriageSuggestionResponse,
     OpportunityClose,
     OpportunityCreate,
+    OpportunityReactivationResponse,
+    OpportunityReactivationSuggestion,
     OpportunityTriageSuggestion,
     OpportunityTriageUpdate,
     OpportunityUpdate,
@@ -781,6 +783,73 @@ def get_stale_opportunities(
             )
             for s in stale
         ]
+    )
+
+
+@router.get(
+    "/opportunities/reactivation-suggestions",
+    response_model=OpportunityReactivationResponse,
+)
+def get_reactivation_suggestions(
+    min_days: int = Query(
+        default=30,
+        ge=1,
+        le=3650,
+        description="Minimum days since lost to be suggested (default 30)",
+    ),
+    max_results: int = Query(
+        default=20,
+        ge=1,
+        le=100,
+        description="Maximum number of suggestions (default 20)",
+    ),
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Suggest lost opportunities for reactivation.
+
+    Returns opportunities that were marked as 'lost' and have been closed
+    for at least `min_days`. Sorted by most recently lost first, so the
+    operator can prioritize re-engagement while context is still fresh.
+    """
+    cutoff = datetime.now(timezone.utc) - timedelta(days=min_days)
+
+    lost_opportunities = db.scalars(
+        select(Opportunity)
+        .where(
+            Opportunity.company_id == identity.company_id,
+            Opportunity.next_action == "lost",
+            Opportunity.closed_at.isnot(None),
+            Opportunity.closed_at <= cutoff,
+        )
+        .order_by(desc(Opportunity.closed_at))
+        .limit(max_results)
+    ).all()
+
+    suggestions = []
+    for opp in lost_opportunities:
+        days_since = (
+            (datetime.now(timezone.utc) - opp.closed_at).days
+            if opp.closed_at
+            else 0
+        )
+        suggestions.append(
+            OpportunityReactivationSuggestion(
+                id=opp.id,
+                title=opp.title,
+                budget=opp.budget,
+                reason=opp.reason,
+                closed_at=opp.closed_at,
+                days_since_lost=days_since,
+                source=opp.source,
+                lead_id=opp.lead_id,
+                customer_id=opp.customer_id,
+            )
+        )
+
+    return OpportunityReactivationResponse(
+        suggestions=suggestions,
+        total_count=len(suggestions),
     )
 
 

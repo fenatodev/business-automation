@@ -415,6 +415,27 @@ class OpportunityClose(BaseModel):
     final_value: str | None = Field(default=None, max_length=120)
 
 
+class OpportunityReactivationSuggestion(BaseModel):
+    """A single lost opportunity suggested for reactivation."""
+
+    id: int
+    title: str
+    budget: str | None = None
+    reason: str | None = None
+    closed_at: datetime | None = None
+    days_since_lost: int
+    source: str
+    lead_id: int | None = None
+    customer_id: int | None = None
+
+
+class OpportunityReactivationResponse(BaseModel):
+    """Response from the reactivation suggestions endpoint."""
+
+    suggestions: list[OpportunityReactivationSuggestion]
+    total_count: int
+
+
 class ConversationBulkDelete(BaseModel):
     """Bulk delete multiple conversations."""
 
