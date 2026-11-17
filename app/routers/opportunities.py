@@ -20,6 +20,8 @@ from app.schemas import (
     OpportunityBulkTriageSuggestionResponse,
     OpportunityClose,
     OpportunityCreate,
+    OpportunityPipelineMetricsResponse,
+    OpportunityPipelineStage,
     OpportunityReactivationResponse,
     OpportunityReactivationSuggestion,
     OpportunityTriageSuggestion,
@@ -850,6 +852,73 @@ def get_reactivation_suggestions(
     return OpportunityReactivationResponse(
         suggestions=suggestions,
         total_count=len(suggestions),
+    )
+
+
+@router.get(
+    "/opportunities/pipeline-metrics",
+    response_model=OpportunityPipelineMetricsResponse,
+)
+def get_pipeline_metrics(
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Return pipeline metrics: opportunities grouped by next_action stage.
+
+    Provides a snapshot of the commercial pipeline for the operator dashboard,
+    including counts per stage, won/lost breakdown, and win rate.
+    """
+    # Count opportunities per next_action stage
+    stage_rows = db.execute(
+        select(
+            Opportunity.next_action,
+            func.count(Opportunity.id),
+        )
+        .where(Opportunity.company_id == identity.company_id)
+        .group_by(Opportunity.next_action)
+    ).all()
+
+    # Define stage order for consistent output
+    stage_order = [
+        "pending", "follow", "prepare_proposal",
+        "in_progress", "done", "lost", "ignore",
+    ]
+
+    stages: list[OpportunityPipelineStage] = []
+    stage_counts = {row[0]: row[1] for row in stage_rows}
+    for stage in stage_order:
+        count = stage_counts.get(stage, 0)
+        if count > 0:
+            stages.append(OpportunityPipelineStage(stage=stage, count=count))
+
+    total = sum(s.count for s in stages)
+
+    # Won/lost from outcome field (closed opportunities)
+    won_rows = db.execute(
+        select(func.count(Opportunity.id))
+        .where(
+            Opportunity.company_id == identity.company_id,
+            Opportunity.outcome == "won",
+        )
+    ).scalar_one()
+
+    lost_rows = db.execute(
+        select(func.count(Opportunity.id))
+        .where(
+            Opportunity.company_id == identity.company_id,
+            Opportunity.outcome == "lost",
+        )
+    ).scalar_one()
+
+    closed = won_rows + lost_rows
+    win_rate = (won_rows / closed * 100) if closed > 0 else 0.0
+
+    return OpportunityPipelineMetricsResponse(
+        total_opportunities=total,
+        stages=stages,
+        won_count=won_rows,
+        lost_count=lost_rows,
+        win_rate=round(win_rate, 1),
     )
 
 

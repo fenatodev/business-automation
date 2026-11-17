@@ -436,6 +436,24 @@ class OpportunityReactivationResponse(BaseModel):
     total_count: int
 
 
+class OpportunityPipelineStage(BaseModel):
+    """Opportunity count and budget for a single pipeline stage."""
+
+    stage: str
+    count: int
+    budget_total: float | None = None
+
+
+class OpportunityPipelineMetricsResponse(BaseModel):
+    """Pipeline metrics: opportunities grouped by next_action stage."""
+
+    total_opportunities: int
+    stages: list[OpportunityPipelineStage]
+    won_count: int
+    lost_count: int
+    win_rate: float
+
+
 class LeadConversionAnalyticsResponse(BaseModel):
     """Conversion analytics from leads to customers."""
 
