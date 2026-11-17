@@ -3,6 +3,9 @@
 Provides cron-like scheduling for recurring tasks like cleanup,
 health checks, and reminders. Uses a background thread to check
 and execute scheduled jobs at their intervals.
+
+Supports task handlers for specific task_types:
+- "followup": automatically creates follow-up tasks for stale opportunities.
 """
 from __future__ import annotations
 
@@ -158,3 +161,74 @@ class Scheduler:
 
 # Global scheduler instance
 scheduler = Scheduler()
+
+
+def handle_followup_job(payload: dict[str, Any]) -> int:
+    """Execute a follow-up job: find stale opportunities and create follow-up tasks.
+
+    This function is called by the scheduler when a "followup" task_type job runs.
+    It queries all companies with follow-up config enabled, finds stale opportunities,
+    and creates InternalTask records for each.
+
+    Returns the number of follow-up tasks created.
+    """
+    from app.database import SessionLocal
+    from app.models import Company, InternalTask
+    from app.services.followup import find_stale_opportunities, get_followup_config
+    from sqlalchemy import select
+    import uuid as _uuid
+
+    db = SessionLocal()
+    created_count = 0
+
+    try:
+        # Get all companies with follow-up config enabled
+        companies = db.scalars(select(Company)).all()
+
+        for company in companies:
+            config = get_followup_config(company.id)
+            if not config or not config.enabled:
+                continue
+
+            stale = find_stale_opportunities(
+                db,
+                company.id,
+                stale_days=config.stale_days,
+            )
+
+            for stale_opp in stale:
+                # Deduplicate by opportunity_id in payload
+                event_id = f"followup-{stale_opp.opportunity_id}-{stale_opp.days_since_activity}"
+                existing = db.scalars(
+                    select(InternalTask).where(
+                        InternalTask.company_id == company.id,
+                        InternalTask.event_id == event_id,
+                    )
+                ).first()
+
+                if existing is None:
+                    task = InternalTask(
+                        company_id=company.id,
+                        event_id=event_id,
+                        payload={
+                            "task_type": "followup",
+                            "opportunity_id": stale_opp.opportunity_id,
+                            "title": stale_opp.title,
+                            "days_since_activity": stale_opp.days_since_activity,
+                            "next_action": stale_opp.next_action,
+                        },
+                        status="queued",
+                        attempts=0,
+                        available_at=datetime.now(timezone.utc),
+                    )
+                    db.add(task)
+                    created_count += 1
+
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+    return created_count
