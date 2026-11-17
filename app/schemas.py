@@ -955,3 +955,22 @@ class StaleOpportunitiesResponse(BaseModel):
     """Response for stale opportunities list."""
 
     opportunities: list[StaleOpportunityResponse] = []
+
+
+class ConversationChannelStats(BaseModel):
+    """Conversation count for a single channel."""
+
+    channel: str
+    count: int
+
+
+class ConversationAnalyticsResponse(BaseModel):
+    """Conversation analytics for the operator dashboard."""
+
+    total_conversations: int
+    open_conversations: int
+    closed_conversations: int
+    by_channel: list[ConversationChannelStats]
+    total_messages: int
+    customer_messages: int
+    agent_messages: int

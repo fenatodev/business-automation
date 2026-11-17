@@ -17,8 +17,10 @@ from app.dependencies import (
 from app.models import Company, Conversation, Customer, Lead, Message, Opportunity
 from app.schemas import (
     AgentRequest,
+    ConversationAnalyticsResponse,
     ConversationBulkDelete,
     ConversationBulkStatus,
+    ConversationChannelStats,
     ConversationCreate,
     ConversationSummary,
     ConversationUpdate,
@@ -679,6 +681,92 @@ def suggest_opportunity(
             "suggested_requirements": None,
             "reasoning": response,
         }
+
+
+@router.get(
+    "/conversations/analytics",
+    response_model=ConversationAnalyticsResponse,
+)
+def get_conversation_analytics(
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Return conversation analytics for the operator dashboard.
+
+    Provides a snapshot of conversation metrics: totals by status,
+    breakdown by channel, and message counts by sender type.
+    """
+    # Total conversations by status
+    total = db.scalar(
+        select(func.count(Conversation.id))
+        .where(Conversation.company_id == identity.company_id)
+    ) or 0
+
+    open_count = db.scalar(
+        select(func.count(Conversation.id))
+        .where(
+            Conversation.company_id == identity.company_id,
+            Conversation.status == "open",
+        )
+    ) or 0
+
+    closed_count = db.scalar(
+        select(func.count(Conversation.id))
+        .where(
+            Conversation.company_id == identity.company_id,
+            Conversation.status == "closed",
+        )
+    ) or 0
+
+    # Conversations by channel
+    channel_rows = db.execute(
+        select(
+            Conversation.channel,
+            func.count(Conversation.id),
+        )
+        .where(Conversation.company_id == identity.company_id)
+        .group_by(Conversation.channel)
+    ).all()
+
+    by_channel = [
+        ConversationChannelStats(channel=row[0], count=row[1])
+        for row in channel_rows
+    ]
+
+    # Message counts by sender_type for this company's conversations
+    conversation_ids = db.scalars(
+        select(Conversation.id)
+        .where(Conversation.company_id == identity.company_id)
+    ).all()
+
+    if conversation_ids:
+        msg_rows = db.execute(
+            select(
+                Message.sender_type,
+                func.count(Message.id),
+            )
+            .where(Message.conversation_id.in_(conversation_ids))
+            .group_by(Message.sender_type)
+        ).all()
+
+        msg_by_sender = {row[0]: row[1] for row in msg_rows}
+        total_messages = sum(msg_by_sender.values())
+        customer_messages = msg_by_sender.get("customer", 0)
+        agent_messages = msg_by_sender.get("agent", 0)
+    else:
+        total_messages = 0
+        customer_messages = 0
+        agent_messages = 0
+
+    return ConversationAnalyticsResponse(
+        total_conversations=total,
+        open_conversations=open_count,
+        closed_conversations=closed_count,
+        by_channel=by_channel,
+        total_messages=total_messages,
+        customer_messages=customer_messages,
+        agent_messages=agent_messages,
+    )
 
 
 @router.post("/conversations/suggest-message")
