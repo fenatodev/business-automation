@@ -14,8 +14,14 @@ from app.dependencies import (
     require_operator,
     require_operator_company,
 )
-from app.models import Company, Customer, Lead
-from app.schemas import CustomerBulkDelete, CustomerCreate, CustomerUpdate
+from app.models import Company, Customer, Lead, Opportunity
+from app.schemas import (
+    CustomerBulkDelete,
+    CustomerCreate,
+    CustomerOpportunityItem,
+    CustomerOpportunitiesResponse,
+    CustomerUpdate,
+)
 
 
 router = APIRouter()
@@ -202,6 +208,66 @@ def get_customer(
         db,
         customer_id,
         identity.company_id,
+    )
+
+
+@router.get(
+    "/customers/{customer_id}/opportunities",
+    response_model=CustomerOpportunitiesResponse,
+)
+def get_customer_opportunities(
+    customer_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Return all opportunities related to a customer.
+
+    Includes opportunities linked directly via customer_id and those
+    linked via a lead that was converted to this customer.
+    """
+    customer = _get_tenant_customer(db, customer_id, identity.company_id)
+
+    # Find opportunities by customer_id directly
+    opps = db.scalars(
+        select(Opportunity)
+        .where(
+            Opportunity.company_id == identity.company_id,
+            Opportunity.customer_id == customer_id,
+        )
+        .order_by(Opportunity.id)
+    ).all()
+
+    # Also find opportunities linked via leads that were converted to this customer
+    # (i.e., leads with the same phone number)
+    lead_opps = db.scalars(
+        select(Opportunity)
+        .join(Lead, Opportunity.lead_id == Lead.id)
+        .where(
+            Opportunity.company_id == identity.company_id,
+            Lead.phone == customer.phone,
+            Opportunity.customer_id.is_(None),  # only lead-linked, not customer-linked
+        )
+        .order_by(Opportunity.id)
+    ).all()
+    opps.extend(lead_opps)
+
+    items = [
+        CustomerOpportunityItem(
+            opportunity_id=opp.id,
+            title=opp.title,
+            source=opp.source,
+            next_action=opp.next_action,
+            outcome=opp.outcome,
+            budget=opp.budget,
+            deadline=opp.deadline,
+            created_at=opp.created_at.isoformat(),
+        )
+        for opp in opps
+    ]
+
+    return CustomerOpportunitiesResponse(
+        opportunities=items,
+        total=len(items),
     )
 
 
