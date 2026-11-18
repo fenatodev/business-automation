@@ -1081,6 +1081,23 @@ class CustomerOpportunitiesResponse(BaseModel):
     total: int
 
 
+class CustomerConversationItem(BaseModel):
+    """A single conversation related to a customer."""
+
+    conversation_id: int
+    channel: str
+    status: str
+    message_count: int
+    created_at: str
+
+
+class CustomerConversationsResponse(BaseModel):
+    """Conversations related to a customer."""
+
+    conversations: list[CustomerConversationItem] = []
+    total: int
+
+
 class LeadConversationItem(BaseModel):
     """A single conversation related to a lead."""
 
