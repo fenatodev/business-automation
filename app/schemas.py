@@ -1079,3 +1079,40 @@ class CustomerOpportunitiesResponse(BaseModel):
 
     opportunities: list[CustomerOpportunityItem] = []
     total: int
+
+
+class LeadConversationItem(BaseModel):
+    """A single conversation related to a lead."""
+
+    conversation_id: int
+    channel: str
+    status: str
+    message_count: int
+    created_at: str
+
+
+class LeadConversationsResponse(BaseModel):
+    """Conversations related to a lead."""
+
+    conversations: list[LeadConversationItem] = []
+    total: int
+
+
+class LeadOpportunityItem(BaseModel):
+    """A single opportunity related to a lead."""
+
+    opportunity_id: int
+    title: str
+    source: str
+    next_action: str
+    outcome: str | None = None
+    budget: str | None = None
+    deadline: str | None = None
+    created_at: str
+
+
+class LeadOpportunitiesResponse(BaseModel):
+    """Opportunities related to a lead."""
+
+    opportunities: list[LeadOpportunityItem] = []
+    total: int
