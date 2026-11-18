@@ -14,12 +14,16 @@ from app.dependencies import (
     require_operator,
     require_operator_company,
 )
-from app.models import Company, Customer, Lead
+from app.models import Company, Conversation, Customer, Lead, Message, Opportunity
 from app.schemas import (
     LeadBulkDelete,
     LeadBulkStatus,
+    LeadConversationsResponse,
+    LeadConversationItem,
     LeadCreate,
     LeadConversionAnalyticsResponse,
+    LeadOpportunityItem,
+    LeadOpportunitiesResponse,
     LeadSourceMetricsItem,
     LeadSourceMetricsResponse,
     LeadStatusMetricsItem,
@@ -474,6 +478,91 @@ def get_lead(
         db,
         lead_id,
         identity.company_id,
+    )
+
+
+@router.get(
+    "/leads/{lead_id}/conversations",
+    response_model=LeadConversationsResponse,
+)
+def get_lead_conversations(
+    lead_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Return all conversations linked to a lead."""
+    _get_tenant_lead(db, lead_id, identity.company_id)
+
+    convs = db.scalars(
+        select(Conversation)
+        .where(
+            Conversation.company_id == identity.company_id,
+            Conversation.lead_id == lead_id,
+        )
+        .order_by(Conversation.id)
+    ).all()
+
+    items = []
+    for conv in convs:
+        msg_count = db.scalar(
+            select(func.count(Message.id)).where(
+                Message.conversation_id == conv.id
+            )
+        ) or 0
+        items.append(
+            LeadConversationItem(
+                conversation_id=conv.id,
+                channel=conv.channel,
+                status=conv.status,
+                message_count=msg_count,
+                created_at=conv.created_at.isoformat(),
+            )
+        )
+
+    return LeadConversationsResponse(
+        conversations=items,
+        total=len(items),
+    )
+
+
+@router.get(
+    "/leads/{lead_id}/opportunities",
+    response_model=LeadOpportunitiesResponse,
+)
+def get_lead_opportunities(
+    lead_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Return all opportunities linked to a lead."""
+    _get_tenant_lead(db, lead_id, identity.company_id)
+
+    opps = db.scalars(
+        select(Opportunity)
+        .where(
+            Opportunity.company_id == identity.company_id,
+            Opportunity.lead_id == lead_id,
+        )
+        .order_by(Opportunity.id)
+    ).all()
+
+    items = [
+        LeadOpportunityItem(
+            opportunity_id=opp.id,
+            title=opp.title,
+            source=opp.source,
+            next_action=opp.next_action,
+            outcome=opp.outcome,
+            budget=opp.budget,
+            deadline=opp.deadline,
+            created_at=opp.created_at.isoformat(),
+        )
+        for opp in opps
+    ]
+
+    return LeadOpportunitiesResponse(
+        opportunities=items,
+        total=len(items),
     )
 
 
