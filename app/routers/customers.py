@@ -14,9 +14,11 @@ from app.dependencies import (
     require_operator,
     require_operator_company,
 )
-from app.models import Company, Customer, Lead, Opportunity
+from app.models import Company, Conversation, Customer, Lead, Message, Opportunity
 from app.schemas import (
     CustomerBulkDelete,
+    CustomerConversationItem,
+    CustomerConversationsResponse,
     CustomerCreate,
     CustomerOpportunityItem,
     CustomerOpportunitiesResponse,
@@ -267,6 +269,50 @@ def get_customer_opportunities(
 
     return CustomerOpportunitiesResponse(
         opportunities=items,
+        total=len(items),
+    )
+
+
+@router.get(
+    "/customers/{customer_id}/conversations",
+    response_model=CustomerConversationsResponse,
+)
+def get_customer_conversations(
+    customer_id: int,
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Return all conversations linked to a customer."""
+    _get_tenant_customer(db, customer_id, identity.company_id)
+
+    convs = db.scalars(
+        select(Conversation)
+        .where(
+            Conversation.company_id == identity.company_id,
+            Conversation.customer_id == customer_id,
+        )
+        .order_by(Conversation.id)
+    ).all()
+
+    items = []
+    for conv in convs:
+        msg_count = db.scalar(
+            select(func.count(Message.id)).where(
+                Message.conversation_id == conv.id
+            )
+        ) or 0
+        items.append(
+            CustomerConversationItem(
+                conversation_id=conv.id,
+                channel=conv.channel,
+                status=conv.status,
+                message_count=msg_count,
+                created_at=conv.created_at.isoformat(),
+            )
+        )
+
+    return CustomerConversationsResponse(
+        conversations=items,
         total=len(items),
     )
 
