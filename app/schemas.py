@@ -974,3 +974,21 @@ class ConversationAnalyticsResponse(BaseModel):
     total_messages: int
     customer_messages: int
     agent_messages: int
+
+
+class ConversationSLAItem(BaseModel):
+    """A single conversation with pending agent response."""
+
+    conversation_id: int
+    channel: str
+    last_customer_message_at: str
+    minutes_waiting: int
+    lead_name: str | None = None
+    customer_name: str | None = None
+
+
+class ConversationSLAResponse(BaseModel):
+    """Response for conversation SLA monitoring."""
+
+    pending_replies: list[ConversationSLAItem] = []
+    total_pending: int
