@@ -1012,3 +1012,31 @@ class OpportunityWinRateBySourceResponse(BaseModel):
     overall_won: int
     overall_lost: int
     overall_win_rate: float
+
+
+class LeadStatusMetricsItem(BaseModel):
+    """Lead count for a single status."""
+
+    status: str
+    count: int
+
+
+class LeadStatusMetricsResponse(BaseModel):
+    """Lead count breakdown by status."""
+
+    by_status: list[LeadStatusMetricsItem] = []
+    total: int
+
+
+class LeadSourceMetricsItem(BaseModel):
+    """Lead count for a single source."""
+
+    source: str
+    count: int
+
+
+class LeadSourceMetricsResponse(BaseModel):
+    """Lead count breakdown by source."""
+
+    by_source: list[LeadSourceMetricsItem] = []
+    total: int
