@@ -1040,3 +1040,42 @@ class LeadSourceMetricsResponse(BaseModel):
 
     by_source: list[LeadSourceMetricsItem] = []
     total: int
+
+
+class OpportunityConversationItem(BaseModel):
+    """A single conversation related to an opportunity."""
+
+    conversation_id: int
+    channel: str
+    status: str
+    lead_name: str | None = None
+    customer_name: str | None = None
+    message_count: int
+    created_at: str
+
+
+class OpportunityConversationResponse(BaseModel):
+    """Conversations related to an opportunity."""
+
+    conversations: list[OpportunityConversationItem] = []
+    total: int
+
+
+class CustomerOpportunityItem(BaseModel):
+    """A single opportunity related to a customer."""
+
+    opportunity_id: int
+    title: str
+    source: str
+    next_action: str
+    outcome: str | None = None
+    budget: str | None = None
+    deadline: str | None = None
+    created_at: str
+
+
+class CustomerOpportunitiesResponse(BaseModel):
+    """Opportunities related to a customer."""
+
+    opportunities: list[CustomerOpportunityItem] = []
+    total: int
