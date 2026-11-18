@@ -20,6 +20,10 @@ from app.schemas import (
     LeadBulkStatus,
     LeadCreate,
     LeadConversionAnalyticsResponse,
+    LeadSourceMetricsItem,
+    LeadSourceMetricsResponse,
+    LeadStatusMetricsItem,
+    LeadStatusMetricsResponse,
     LeadUpdate,
 )
 
@@ -385,6 +389,78 @@ def get_lead_conversion_analytics(
         conversion_rate=round(conversion_rate, 1),
         avg_days_to_convert=avg_days,
         conversions_by_source=conversions_by_source,
+    )
+
+
+@router.get(
+    "/leads/status-metrics",
+    response_model=LeadStatusMetricsResponse,
+)
+def get_lead_status_metrics(
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Return lead count breakdown by status (tenant-isolated).
+
+    Useful for the operator dashboard to track the lead funnel.
+    """
+    status_rows = db.execute(
+        select(
+            Lead.status,
+            func.count(Lead.id),
+        )
+        .where(Lead.company_id == identity.company_id)
+        .group_by(Lead.status)
+    ).all()
+
+    by_status = [
+        LeadStatusMetricsItem(status=row[0], count=row[1])
+        for row in status_rows
+    ]
+    # Sort by count descending
+    by_status.sort(key=lambda x: x.count, reverse=True)
+
+    total = sum(item.count for item in by_status)
+
+    return LeadStatusMetricsResponse(
+        by_status=by_status,
+        total=total,
+    )
+
+
+@router.get(
+    "/leads/source-metrics",
+    response_model=LeadSourceMetricsResponse,
+)
+def get_lead_source_metrics(
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Return lead count breakdown by source (tenant-isolated).
+
+    Useful for the operator dashboard to track which channels bring leads.
+    """
+    source_rows = db.execute(
+        select(
+            Lead.source,
+            func.count(Lead.id),
+        )
+        .where(Lead.company_id == identity.company_id)
+        .group_by(Lead.source)
+    ).all()
+
+    by_source = [
+        LeadSourceMetricsItem(source=row[0], count=row[1])
+        for row in source_rows
+    ]
+    # Sort by count descending
+    by_source.sort(key=lambda x: x.count, reverse=True)
+
+    total = sum(item.count for item in by_source)
+
+    return LeadSourceMetricsResponse(
+        by_source=by_source,
+        total=total,
     )
 
 
