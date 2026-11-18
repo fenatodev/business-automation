@@ -1,5 +1,6 @@
 import csv
 import io
+from datetime import datetime, timezone
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -22,6 +23,8 @@ from app.schemas import (
     ConversationBulkStatus,
     ConversationChannelStats,
     ConversationCreate,
+    ConversationSLAItem,
+    ConversationSLAResponse,
     ConversationSummary,
     ConversationUpdate,
     FavoriteResponse,
@@ -766,6 +769,106 @@ def get_conversation_analytics(
         total_messages=total_messages,
         customer_messages=customer_messages,
         agent_messages=agent_messages,
+    )
+
+
+@router.get(
+    "/conversations/sla",
+    response_model=ConversationSLAResponse,
+)
+def get_conversation_sla(
+    minutes_threshold: int = Query(default=30, ge=1, le=1440, description="Only conversations waiting longer than this"),
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Return conversations where the customer's last message has no agent reply.
+
+    Used by the operator dashboard to monitor response SLA compliance.
+    Returns only open conversations where the last message is from the
+    customer and no subsequent agent message exists.
+    """
+    now = datetime.now(timezone.utc)
+
+    # Find open conversations for this company
+    open_conversations = db.scalars(
+        select(Conversation.id)
+        .where(
+            Conversation.company_id == identity.company_id,
+            Conversation.status == "open",
+        )
+    ).all()
+
+    if not open_conversations:
+        return ConversationSLAResponse(pending_replies=[], total_pending=0)
+
+    pending_replies = []
+
+    for conv_id in open_conversations:
+        # Get messages ordered by creation time
+        messages = db.scalars(
+            select(Message)
+            .where(Message.conversation_id == conv_id)
+            .order_by(Message.id)
+        ).all()
+
+        if not messages:
+            continue
+
+        last_msg = messages[-1]
+
+        # Only care if last message is from customer
+        if last_msg.sender_type != "customer":
+            continue
+
+        minutes_waiting = int(
+            (now - last_msg.created_at.replace(tzinfo=timezone.utc)
+             if last_msg.created_at.tzinfo is None
+             else now - last_msg.created_at).total_seconds() / 60
+        )
+
+        # Apply threshold filter
+        if minutes_waiting < minutes_threshold:
+            continue
+
+        # Get conversation details
+        conv = db.scalar(
+            select(Conversation).where(Conversation.id == conv_id)
+        )
+        if conv is None:
+            continue
+
+        lead_name = None
+        customer_name = None
+        if conv.lead_id:
+            lead = db.scalar(
+                select(Lead).where(Lead.id == conv.lead_id)
+            )
+            if lead:
+                lead_name = lead.name
+        if conv.customer_id:
+            customer = db.scalar(
+                select(Customer).where(Customer.id == conv.customer_id)
+            )
+            if customer:
+                customer_name = customer.name
+
+        pending_replies.append(
+            ConversationSLAItem(
+                conversation_id=conv_id,
+                channel=conv.channel,
+                last_customer_message_at=last_msg.created_at.isoformat(),
+                minutes_waiting=minutes_waiting,
+                lead_name=lead_name,
+                customer_name=customer_name,
+            )
+        )
+
+    # Sort by minutes_waiting descending (most urgent first)
+    pending_replies.sort(key=lambda x: x.minutes_waiting, reverse=True)
+
+    return ConversationSLAResponse(
+        pending_replies=pending_replies,
+        total_pending=len(pending_replies),
     )
 
 
