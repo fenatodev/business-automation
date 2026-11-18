@@ -27,6 +27,8 @@ from app.schemas import (
     OpportunityTriageSuggestion,
     OpportunityTriageUpdate,
     OpportunityUpdate,
+    OpportunityWinRateBySourceItem,
+    OpportunityWinRateBySourceResponse,
     ProposalBriefBulkDelete,
     ProposalBriefBulkStatus,
     ProposalBriefCreate,
@@ -919,6 +921,90 @@ def get_pipeline_metrics(
         won_count=won_rows,
         lost_count=lost_rows,
         win_rate=round(win_rate, 1),
+    )
+
+
+@router.get(
+    "/opportunities/win-rate-by-source",
+    response_model=OpportunityWinRateBySourceResponse,
+)
+def get_win_rate_by_source(
+    db: Session = Depends(get_db),
+    identity: AccessIdentity = Depends(require_operator),
+):
+    """Return win rate breakdown by opportunity source.
+
+    Only considers closed opportunities (outcome won or lost).
+    Useful for the operator dashboard to understand which channels
+    bring the best conversion rates.
+    """
+    # Get counts per source for closed opportunities
+    source_rows = db.execute(
+        select(
+            Opportunity.source,
+            func.count(Opportunity.id),
+        )
+        .where(
+            Opportunity.company_id == identity.company_id,
+            Opportunity.outcome.in_(["won", "lost"]),
+        )
+        .group_by(Opportunity.source)
+    ).all()
+
+    by_source: list[OpportunityWinRateBySourceItem] = []
+    overall_total = 0
+    overall_won = 0
+    overall_lost = 0
+
+    for source, total in source_rows:
+        won = db.scalar(
+            select(func.count(Opportunity.id))
+            .where(
+                Opportunity.company_id == identity.company_id,
+                Opportunity.source == source,
+                Opportunity.outcome == "won",
+            )
+        ) or 0
+
+        lost = db.scalar(
+            select(func.count(Opportunity.id))
+            .where(
+                Opportunity.company_id == identity.company_id,
+                Opportunity.source == source,
+                Opportunity.outcome == "lost",
+            )
+        ) or 0
+
+        closed = won + lost
+        win_rate = round((won / closed * 100), 1) if closed > 0 else 0.0
+
+        by_source.append(
+            OpportunityWinRateBySourceItem(
+                source=source,
+                total=closed,
+                won=won,
+                lost=lost,
+                win_rate=win_rate,
+            )
+        )
+
+        overall_total += closed
+        overall_won += won
+        overall_lost += lost
+
+    # Sort by total descending
+    by_source.sort(key=lambda x: x.total, reverse=True)
+
+    overall_win_rate = (
+        round((overall_won / overall_total * 100), 1) if overall_total > 0 else 0.0
+    )
+
+    return OpportunityWinRateBySourceResponse(
+        by_source=by_source,
+        overall_total=overall_total,
+        overall_won=overall_won,
+        overall_lost=overall_lost,
+        overall_win_rate=overall_win_rate,
     )
 
 

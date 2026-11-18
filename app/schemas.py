@@ -992,3 +992,23 @@ class ConversationSLAResponse(BaseModel):
 
     pending_replies: list[ConversationSLAItem] = []
     total_pending: int
+
+
+class OpportunityWinRateBySourceItem(BaseModel):
+    """Win rate statistics for a single opportunity source."""
+
+    source: str
+    total: int
+    won: int
+    lost: int
+    win_rate: float
+
+
+class OpportunityWinRateBySourceResponse(BaseModel):
+    """Win rate breakdown by opportunity source."""
+
+    by_source: list[OpportunityWinRateBySourceItem] = []
+    overall_total: int
+    overall_won: int
+    overall_lost: int
+    overall_win_rate: float
