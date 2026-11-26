@@ -185,6 +185,23 @@ def test_malformed_or_non_synthetic_scenarios_are_rejected(mutate, error: str) -
         validate_scenario(scenario)
 
 
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("tenant_ref", []),
+        ("tenant_ref", "real-tenant"),
+        ("opportunity_ref", {}),
+        ("opportunity_ref", 123),
+    ],
+)
+def test_event_references_must_be_synthetic_strings(field: str, value: object) -> None:
+    scenario = deepcopy(load_scenario())
+    scenario["events"][0][field] = value
+
+    with pytest.raises(SimulationInputError, match="event_subject_ref_not_synthetic"):
+        validate_scenario(scenario)
+
+
 def test_checkpoint_rejects_foreign_or_tampered_state() -> None:
     scenario = load_scenario()
     state = new_state(scenario)

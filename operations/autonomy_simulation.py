@@ -105,6 +105,11 @@ def validate_scenario(scenario: Any) -> dict[str, Any]:
             raise SimulationInputError("event_schema_invalid")
         if not _is_synthetic_ref(event["event_id"]):
             raise SimulationInputError("event_id_not_synthetic")
+        if (
+            not _is_synthetic_ref(event["tenant_ref"])
+            or not _is_synthetic_ref(event["opportunity_ref"])
+        ):
+            raise SimulationInputError("event_subject_ref_not_synthetic")
         if type(event["at_hour"]) is not int or not 0 <= event["at_hour"] <= scenario["duration_hours"]:
             raise SimulationInputError("event_hour_invalid")
         if event["at_hour"] < previous_hour:
