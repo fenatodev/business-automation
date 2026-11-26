@@ -62,6 +62,8 @@ def find_stale_opportunities(
     db: Session,
     company_id: int,
     stale_days: int | None = None,
+    *,
+    now: datetime | None = None,
 ) -> list[StaleOpportunity]:
     """Find opportunities that have been inactive for the configured period."""
     config = get_followup_config(company_id)
@@ -74,7 +76,11 @@ def find_stale_opportunities(
         else:
             stale_days = 14
 
-    threshold = datetime.now(timezone.utc) - timedelta(days=stale_days)
+    now = now or datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+
+    threshold = now - timedelta(days=stale_days)
 
     opportunities = db.scalars(
         select(Opportunity).where(
@@ -91,7 +97,7 @@ def find_stale_opportunities(
 
         if last_activity < threshold:
             days_since = int(
-                (datetime.now(timezone.utc) - last_activity).total_seconds() / 86400
+                (now - last_activity).total_seconds() / 86400
             )
             stale.append(
                 StaleOpportunity(

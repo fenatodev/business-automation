@@ -8,6 +8,7 @@ from app.services.followup import (
     set_followup_config,
     _followup_configs,
 )
+from conftest import TestingSessionLocal
 
 
 def _reset_configs():
@@ -20,7 +21,9 @@ def _create_company(client, admin_headers, name="Company"):
     return res.json()
 
 
-def _create_opportunity(client, headers, company_id, title="Test Opp"):
+def _create_opportunity(
+    client, headers, company_id, title="Test Opp", captured_at="2026-01-01T00:00:00Z",
+):
     res = client.post(
         "/opportunities",
         headers=headers,
@@ -29,7 +32,7 @@ def _create_opportunity(client, headers, company_id, title="Test Opp"):
             "external_url": f"https://example.com/{title.lower().replace(' ', '-')}",
             "title": title,
             "description": "Test description",
-            "captured_at": "2026-01-01T00:00:00Z",
+            "captured_at": captured_at,
         },
     )
     assert res.status_code == 200, res.text
@@ -61,6 +64,58 @@ def test_find_stale_no_config():
     _reset_configs()
     # Without DB, just verify it doesn't crash
     pass
+
+
+def test_find_stale_opportunities_uses_fixed_time_and_tenant_scope(
+    client, admin_headers, operator_a_headers, operator_b_headers,
+):
+    _reset_configs()
+    company_a = _create_company(client, admin_headers, name="ClockCoA")
+    company_b = _create_company(client, admin_headers, name="ClockCoB")
+    now = datetime(2026, 3, 10, 12, 0)
+
+    stale_a = _create_opportunity(
+        client,
+        operator_a_headers,
+        company_a["id"],
+        title="Stale A",
+        captured_at=(now - timedelta(days=3)).isoformat(),
+    )
+    _create_opportunity(
+        client,
+        operator_a_headers,
+        company_a["id"],
+        title="At cutoff A",
+        captured_at=(now - timedelta(days=2)).isoformat(),
+    )
+    closed_a = _create_opportunity(
+        client,
+        operator_a_headers,
+        company_a["id"],
+        title="Closed A",
+        captured_at=(now - timedelta(days=3)).isoformat(),
+    )
+    close_response = client.patch(
+        f"/opportunities/{closed_a['id']}/close",
+        headers=operator_a_headers,
+        json={"outcome": "lost"},
+    )
+    assert close_response.status_code == 200
+    _create_opportunity(
+        client,
+        operator_b_headers,
+        company_b["id"],
+        title="Stale B",
+        captured_at=(now - timedelta(days=3)).isoformat(),
+    )
+
+    with TestingSessionLocal() as db:
+        stale = find_stale_opportunities(
+            db, company_a["id"], stale_days=2, now=now
+        )
+
+    assert [item.opportunity_id for item in stale] == [stale_a["id"]]
+    assert stale[0].days_since_activity == 3
 
 
 # --- Endpoint tests ---
