@@ -1,5 +1,13 @@
 # Continuidade do desenvolvimento — Codex ou Junie
 
+## WP-559 — Sessão isolável no handler de follow-up (26/11/2026)
+
+`handle_followup_job()` aceita uma sessão SQLAlchemy opcional para poder ser
+exercitado com SQLite em memória. Sem sessão fornecida, o handler continua
+criando e fechando `SessionLocal`; com sessão emprestada, não a fecha. O trabalho
+adicionou cobertura direta para criação, deduplicação, configuração por tenant e
+ciclo de vida da sessão, sem alterar API, schema, integrações ou operação real.
+
 ## WP-558 — Validação de referências sintéticas em eventos (26/11/2026)
 
 O validador do ensaio offline WP-557 agora rejeita referências de tenant e

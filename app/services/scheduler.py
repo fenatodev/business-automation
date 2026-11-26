@@ -14,6 +14,8 @@ from datetime import datetime, timedelta, timezone
 from threading import Event, Thread
 from typing import Any, Callable
 
+from sqlalchemy.orm import Session
+
 from app.services.job_queue import Job, JobQueue, JobStatus
 
 
@@ -163,7 +165,11 @@ class Scheduler:
 scheduler = Scheduler()
 
 
-def handle_followup_job(payload: dict[str, Any]) -> int:
+def handle_followup_job(
+    payload: dict[str, Any],
+    *,
+    db: Session | None = None,
+) -> int:
     """Execute a follow-up job: find stale opportunities and create follow-up tasks.
 
     This function is called by the scheduler when a "followup" task_type job runs.
@@ -176,9 +182,10 @@ def handle_followup_job(payload: dict[str, Any]) -> int:
     from app.models import Company, InternalTask
     from app.services.followup import find_stale_opportunities, get_followup_config
     from sqlalchemy import select
-    import uuid as _uuid
 
-    db = SessionLocal()
+    owns_session = db is None
+    if db is None:
+        db = SessionLocal()
     created_count = 0
 
     try:
@@ -229,6 +236,7 @@ def handle_followup_job(payload: dict[str, Any]) -> int:
         db.rollback()
         raise
     finally:
-        db.close()
+        if owns_session:
+            db.close()
 
     return created_count
