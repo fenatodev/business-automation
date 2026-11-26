@@ -1,5 +1,14 @@
 # Continuidade do desenvolvimento — Codex ou Junie
 
+## WP-558 — Validação de referências sintéticas em eventos (26/11/2026)
+
+O validador do ensaio offline WP-557 agora rejeita referências de tenant e
+oportunidade que não sejam strings no formato sintético, antes de consultar o
+subject. Isso transforma entradas inválidas em `SimulationInputError` previsível,
+em vez de permitir exceções de tipo ou tratá-las como subject desconhecido.
+Coberto por quatro casos de regressão; sem mudanças na API, banco, autenticação,
+integrações ou comportamento de produção.
+
 ## WP-283 — opportunity_id na UI de sugestão de mensagem (13/11/2026)
 
 O handler `opp-conv-suggest` do JS enviava apenas lead_id/customer_id. Atualizado para enviar `opportunity_id` quando não há lead/customer associado, permitindo sugestão IA para oportunidades sem contatos vinculados.
