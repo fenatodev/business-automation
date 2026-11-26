@@ -1,0 +1,226 @@
+{
+  "schema_version": 1,
+  "scenario_ref": "SYN-WP557-DUAL-PATH",
+  "start_at": "2026-01-01T00:00:00Z",
+  "duration_hours": 72,
+  "checkpoint_hour": 36,
+  "policy": {
+    "max_contacts_per_subject_channel": 2
+  },
+  "subjects": [
+    {
+      "tenant_ref": "SYN-TENANT-A",
+      "opportunity_ref": "SYN-OPP-A-001",
+      "route": "recovery",
+      "channel": "email",
+      "contact_permission": true,
+      "human_review_required": false
+    },
+    {
+      "tenant_ref": "SYN-TENANT-A",
+      "opportunity_ref": "SYN-OPP-A-002",
+      "route": "recovery",
+      "channel": "email",
+      "contact_permission": false,
+      "human_review_required": false
+    },
+    {
+      "tenant_ref": "SYN-TENANT-A",
+      "opportunity_ref": "SYN-OPP-A-003",
+      "route": "recovery",
+      "channel": "web",
+      "contact_permission": true,
+      "human_review_required": false
+    },
+    {
+      "tenant_ref": "SYN-TENANT-A",
+      "opportunity_ref": "SYN-OPP-A-004",
+      "route": "recovery",
+      "channel": "email",
+      "contact_permission": true,
+      "human_review_required": true
+    },
+    {
+      "tenant_ref": "SYN-TENANT-B",
+      "opportunity_ref": "SYN-OPP-B-001",
+      "route": "inbound",
+      "channel": "web",
+      "contact_permission": true,
+      "human_review_required": false
+    },
+    {
+      "tenant_ref": "SYN-TENANT-B",
+      "opportunity_ref": "SYN-OPP-B-002",
+      "route": "inbound",
+      "channel": "web",
+      "contact_permission": false,
+      "human_review_required": false
+    },
+    {
+      "tenant_ref": "SYN-TENANT-B",
+      "opportunity_ref": "SYN-OPP-B-003",
+      "route": "inbound",
+      "channel": "email",
+      "contact_permission": true,
+      "human_review_required": true
+    },
+    {
+      "tenant_ref": "SYN-TENANT-B",
+      "opportunity_ref": "SYN-OPP-B-004",
+      "route": "inbound",
+      "channel": "web",
+      "contact_permission": true,
+      "human_review_required": false
+    }
+  ],
+  "events": [
+    {
+      "event_id": "SYN-EVT-CROSS-TENANT",
+      "tenant_ref": "SYN-TENANT-B",
+      "opportunity_ref": "SYN-OPP-B-001",
+      "at_hour": 0,
+      "kind": "inbound_received",
+      "synthetic_message": "SYNTHETIC: Quero organizar a triagem de pedidos da loja."
+    },
+    {
+      "event_id": "SYN-EVT-A-003-01",
+      "tenant_ref": "SYN-TENANT-A",
+      "opportunity_ref": "SYN-OPP-A-003",
+      "at_hour": 0,
+      "kind": "followup_due"
+    },
+    {
+      "event_id": "SYN-EVT-A-004-01",
+      "tenant_ref": "SYN-TENANT-A",
+      "opportunity_ref": "SYN-OPP-A-004",
+      "at_hour": 0,
+      "kind": "human_handoff"
+    },
+    {
+      "event_id": "SYN-EVT-B-002-01",
+      "tenant_ref": "SYN-TENANT-B",
+      "opportunity_ref": "SYN-OPP-B-002",
+      "at_hour": 0,
+      "kind": "inbound_received",
+      "synthetic_message": "SYNTHETIC: Tenho interesse em organizar os contatos recebidos."
+    },
+    {
+      "event_id": "SYN-EVT-B-003-01",
+      "tenant_ref": "SYN-TENANT-B",
+      "opportunity_ref": "SYN-OPP-B-003",
+      "at_hour": 0,
+      "kind": "inbound_received",
+      "synthetic_message": "SYNTHETIC: Preciso avaliar uma integração antes de responder."
+    },
+    {
+      "event_id": "SYN-EVT-CROSS-TENANT",
+      "tenant_ref": "SYN-TENANT-A",
+      "opportunity_ref": "SYN-OPP-A-001",
+      "at_hour": 12,
+      "kind": "followup_due",
+      "fail_once": true
+    },
+    {
+      "event_id": "SYN-EVT-A-003-OPT-OUT",
+      "tenant_ref": "SYN-TENANT-A",
+      "opportunity_ref": "SYN-OPP-A-003",
+      "at_hour": 12,
+      "kind": "opt_out"
+    },
+    {
+      "event_id": "SYN-EVT-B-004-01",
+      "tenant_ref": "SYN-TENANT-B",
+      "opportunity_ref": "SYN-OPP-B-004",
+      "at_hour": 12,
+      "kind": "inbound_received",
+      "fail_once": true,
+      "synthetic_message": "SYNTHETIC: Quero entender quais etapas podem ser automatizadas."
+    },
+    {
+      "event_id": "SYN-EVT-CROSS-TENANT",
+      "tenant_ref": "SYN-TENANT-A",
+      "opportunity_ref": "SYN-OPP-A-001",
+      "at_hour": 24,
+      "kind": "followup_due"
+    },
+    {
+      "event_id": "SYN-EVT-A-002-01",
+      "tenant_ref": "SYN-TENANT-A",
+      "opportunity_ref": "SYN-OPP-A-002",
+      "at_hour": 24,
+      "kind": "followup_due"
+    },
+    {
+      "event_id": "SYN-EVT-B-001-02",
+      "tenant_ref": "SYN-TENANT-B",
+      "opportunity_ref": "SYN-OPP-B-001",
+      "at_hour": 24,
+      "kind": "followup_due"
+    },
+    {
+      "event_id": "SYN-EVT-B-004-01",
+      "tenant_ref": "SYN-TENANT-B",
+      "opportunity_ref": "SYN-OPP-B-004",
+      "at_hour": 24,
+      "kind": "inbound_received",
+      "synthetic_message": "SYNTHETIC: Quero entender quais etapas podem ser automatizadas."
+    },
+    {
+      "event_id": "SYN-EVT-A-003-02",
+      "tenant_ref": "SYN-TENANT-A",
+      "opportunity_ref": "SYN-OPP-A-003",
+      "at_hour": 36,
+      "kind": "followup_due"
+    },
+    {
+      "event_id": "SYN-EVT-A-004-02",
+      "tenant_ref": "SYN-TENANT-A",
+      "opportunity_ref": "SYN-OPP-A-004",
+      "at_hour": 36,
+      "kind": "followup_due"
+    },
+    {
+      "event_id": "SYN-EVT-B-001-03",
+      "tenant_ref": "SYN-TENANT-B",
+      "opportunity_ref": "SYN-OPP-B-001",
+      "at_hour": 48,
+      "kind": "followup_due"
+    },
+    {
+      "event_id": "SYN-EVT-CROSS-TENANT",
+      "tenant_ref": "SYN-TENANT-A",
+      "opportunity_ref": "SYN-OPP-A-001",
+      "at_hour": 48,
+      "kind": "followup_due"
+    },
+    {
+      "event_id": "SYN-EVT-A-001-02",
+      "tenant_ref": "SYN-TENANT-A",
+      "opportunity_ref": "SYN-OPP-A-001",
+      "at_hour": 60,
+      "kind": "followup_due"
+    },
+    {
+      "event_id": "SYN-EVT-CROSS-TENANT",
+      "tenant_ref": "SYN-TENANT-B",
+      "opportunity_ref": "SYN-OPP-B-001",
+      "at_hour": 60,
+      "kind": "inbound_received",
+      "synthetic_message": "SYNTHETIC: Quero organizar a triagem de pedidos da loja."
+    },
+    {
+      "event_id": "SYN-EVT-B-001-04",
+      "tenant_ref": "SYN-TENANT-B",
+      "opportunity_ref": "SYN-OPP-B-001",
+      "at_hour": 72,
+      "kind": "followup_due"
+    },
+    {
+      "event_id": "SYN-EVT-A-001-03",
+      "tenant_ref": "SYN-TENANT-A",
+      "opportunity_ref": "SYN-OPP-A-001",
+      "at_hour": 72,
+      "kind": "followup_due"
+    }
+  ]
+}
